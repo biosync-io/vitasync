@@ -1,0 +1,174 @@
+---
+title: Quickstart
+description: Get VitaSync running locally and make your first API call in minutes.
+---
+
+import { Steps, Tabs, TabItem, Aside, Code } from '@astrojs/starlight/components';
+
+## Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) + Docker Compose **or** Node.js 22+ and pnpm 10+
+- PostgreSQL 16 and Redis 7 (provided automatically via Docker Compose)
+
+---
+
+## Run with Docker Compose
+
+<Steps>
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/your-org/vitasync.git
+   cd vitasync
+   ```
+
+2. **Configure environment variables**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Open `.env` and set the required secrets:
+
+   | Variable | How to generate |
+   |----------|----------------|
+   | `JWT_SECRET` | `openssl rand -base64 32` |
+   | `ENCRYPTION_KEY` | `openssl rand -hex 32` |
+   | `OAUTH_REDIRECT_BASE_URL` | Public base URL, e.g. `http://localhost:3001` |
+
+   Provider credentials (Fitbit, Garmin, etc.) are **optional** for the first boot — add them when ready.
+
+   :::tip
+   The `ADMIN_API_KEY` from `.env` is auto-created on first boot. Use it to authenticate every API call during development.
+   :::
+
+3. **Start all services**
+
+   ```bash
+   docker compose up -d
+   ```
+
+   This starts the API, BullMQ worker, Next.js dashboard, PostgreSQL, and Redis.
+
+   ```bash
+   docker compose logs -f api worker   # follow logs
+   ```
+
+4. **Verify the API is healthy**
+
+   ```bash
+   curl http://localhost:3001/health
+   # → {"status":"ok"}
+   ```
+
+</Steps>
+
+---
+
+## Run locally (without Docker)
+
+<Steps>
+
+1. **Install dependencies**
+
+   ```bash
+   pnpm install
+   ```
+
+2. **Configure and migrate**
+
+   ```bash
+   cp .env.example .env
+   # Set DATABASE_URL and REDIS_URL, then:
+   pnpm db:migrate
+   ```
+
+3. **Start all dev servers**
+
+   ```bash
+   pnpm dev
+   ```
+
+   All apps start in watch mode with hot reload.
+
+</Steps>
+
+---
+
+## Access Points
+
+| Service | URL |
+|---------|-----|
+| Web dashboard | http://localhost:3000 |
+| REST API | http://localhost:3001 |
+| OpenAPI / Swagger UI | http://localhost:3001/docs |
+
+---
+
+## Your First API Call
+
+<Steps>
+
+1. **Create a workspace user**
+
+   ```bash
+   export API_KEY=vs_live_changeme_for_production
+
+   curl -X POST http://localhost:3001/v1/users \
+     -H "Authorization: Bearer $API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"externalId":"user_123","email":"jane@example.com"}'
+   ```
+
+   ```json
+   {
+     "id": "01HXYZ...",
+     "externalId": "user_123",
+     "email": "jane@example.com",
+     "createdAt": "2026-03-13T00:00:00.000Z"
+   }
+   ```
+
+2. **Start an OAuth flow**
+
+   Open this URL in a browser (replace `<user_id>` with the `id` returned above):
+
+   ```
+   http://localhost:3001/v1/oauth/fitbit/authorize?userId=<user_id>
+   ```
+
+   After the user grants access, VitaSync stores the tokens and enqueues an initial sync automatically.
+
+3. **Query health metrics**
+
+   ```bash
+   curl "http://localhost:3001/v1/users/<user_id>/health?metricType=STEPS&limit=30" \
+     -H "Authorization: Bearer $API_KEY"
+   ```
+
+   ```json
+   {
+     "data": [
+       {
+         "metricType": "STEPS",
+         "value": 8432,
+         "unit": "count",
+         "recordedAt": "2026-03-12T00:00:00.000Z",
+         "provider": "fitbit"
+       }
+     ],
+     "total": 30
+   }
+   ```
+
+</Steps>
+
+---
+
+## Next Steps
+
+- [Architecture overview](/architecture/overview/) — understand how the API, worker, and providers fit together
+- [Supported providers](/providers/supported/) — see which wearable platforms are available
+- [API reference](/api-reference/introduction/) — full endpoint docs
+- [Add a provider](/dev-guides/adding-a-provider/) — integrate a new wearable brand

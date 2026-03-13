@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" fill="none">
+  <circle cx="20" cy="20" r="10" fill="#2563EB"/>
+  <path d="M14 20 Q20 10 26 20 Q20 30 14 20Z" fill="white"/>
+  <text x="38" y="27" font-family="system-ui, sans-serif" font-size="20" font-weight="700" fill="#1e293b">VitaSync</text>
+</svg>

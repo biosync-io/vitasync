@@ -1,0 +1,74 @@
+---
+title: Architecture Overview
+description: How the VitaSync API, worker, and provider packages fit together.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+VitaSync is a TypeScript monorepo with three runtime applications and a set of shared packages.
+
+## Repository Layout
+
+```
+vitasync/
+├── apps/
+│   ├── api/        # Fastify 5 REST API
+│   ├── worker/     # BullMQ background worker
+│   └── web/        # Next.js 15 App Router dashboard
+├── packages/
+│   ├── types/      # Shared TypeScript types
+│   ├── db/         # Drizzle ORM schemas + postgres.js client
+│   └── providers/
+│       ├── core/   # Abstract providers + ProviderRegistry
+│       ├── fitbit/
+│       ├── garmin/
+│       ├── strava/
+│       └── whoop/
+└── helm/vitasync/  # Production Helm chart
+```
+
+## Request Flow
+
+```
+Client
+  │
+  ▼
+API (Fastify 5)
+  ├─ auth plugin → verifies API key hash (SHA-256)
+  ├─ GET  /v1/providers         → list registered providers
+  ├─ POST /v1/users             → create / find user
+  ├─ GET  /v1/oauth/:p/authorize → start OAuth flow
+  ├─ GET  /v1/oauth/:p/callback  → exchange code, store tokens
+  ├─ GET  /v1/users/:id/connections
+  ├─ POST /v1/users/:id/connections/:cid/sync  → enqueue sync job
+  ├─ GET  /v1/users/:id/health  → query metrics with filters
+  ├─ POST /v1/api-keys
+  └─ POST /v1/webhooks
+
+          │ BullMQ enqueue
+          ▼
+    Worker process
+      ├─ resolves provider from ProviderRegistry
+      ├─ decrypts OAuth tokens (AES-256-GCM)
+      ├─ streams data via provider.syncData() → AsyncGenerator
+      ├─ bulk-inserts to health_metrics (idempotent)
+      └─ enqueues webhook delivery job
+```
+
+## Key Design Decisions
+
+### Plugin-Based Providers
+
+Each provider is an independent `packages/providers/<name>/` package that extends `OAuth2Provider` or `OAuth1Provider` from `@biosync-io/provider-core`. Providers register themselves into a singleton `ProviderRegistry` at startup. Adding a new provider requires **zero changes to the core packages**.
+
+### Idempotent Writes
+
+Health metrics are inserted with a composite unique index on `(userId, providerId, metricType, recordedAt)`. A sync job can safely be retried or re-triggered — duplicate rows are silently ignored via `ON CONFLICT DO NOTHING`.
+
+### Async Generator Streaming
+
+`provider.syncData()` is an `AsyncGenerator<SyncDataPoint>`. The worker consumes it lazily, batching rows before writing to the database, keeping memory usage flat regardless of how many records a provider returns.
+
+### Multi-Tenancy via Workspaces
+
+Every resource (users, connections, metrics, webhooks, API keys) belongs to a **workspace**. API keys are scoped to a workspace and hashed before storage. This makes VitaSync safe to use as a backend for multi-tenant SaaS products.

@@ -1,0 +1,48 @@
+---
+title: Welcome to VitaSync
+description: Self-hosted wearable health data aggregation — one API for Fitbit, Garmin, Whoop, Strava and more.
+template: splash
+hero:
+  tagline: Connect every wearable to a single API you fully control.
+  image:
+    file: ../../assets/logo-dark.svg
+  actions:
+    - text: Get started
+      link: /quickstart/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/your-org/vitasync
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What is VitaSync?
+
+VitaSync is a fully TypeScript monorepo that gives you a **production-ready, multi-tenant platform** for collecting and querying health data from wearable devices.
+
+Create users with your own IDs, connect their devices via OAuth, then query their health metrics through a clean REST API — all on your own infrastructure.
+
+## Key Features
+
+<CardGrid stagger>
+  <Card title="Plugin provider system" icon="puzzle">
+    Add a new wearable brand by implementing one abstract class and calling `register()` — no core changes required.
+  </Card>
+  <Card title="Multi-tenant by design" icon="random">
+    Workspaces isolate data. API keys are scoped per workspace, making it safe to embed in a SaaS product.
+  </Card>
+  <Card title="Async-first syncs" icon="rocket">
+    BullMQ workers handle sync and webhook delivery. `syncData` streams via `AsyncGenerator` so large datasets stay memory-safe.
+  </Card>
+  <Card title="Idempotent by default" icon="approve-check-circle">
+    Composite unique index on `(userId, providerId, metricType, recordedAt)` — re-running a sync is always safe.
+  </Card>
+  <Card title="AES-256-GCM token storage" icon="seti:lock">
+    OAuth tokens encrypted at rest. API keys stored as SHA-256 hashes only — never in plain text.
+  </Card>
+  <Card title="OpenAPI / Swagger UI" icon="open-book">
+    Interactive API docs auto-generated at `/docs` whenever the API server is running.
+  </Card>
+</CardGrid>

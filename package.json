@@ -17,7 +17,10 @@
     "clean": "turbo run clean && rimraf node_modules",
     "db:generate": "turbo run db:generate --filter=@biosync-io/db",
     "db:migrate": "turbo run db:migrate --filter=@biosync-io/db",
-    "db:studio": "turbo run db:studio --filter=@biosync-io/db"
+    "db:studio": "turbo run db:studio --filter=@biosync-io/db",
+    "docs:dev": "turbo run dev --filter=@biosync-io/docs",
+    "docs:build": "turbo run build --filter=@biosync-io/docs",
+    "docs:preview": "turbo run preview --filter=@biosync-io/docs"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
