@@ -7,7 +7,15 @@ export default defineConfig({
       title: "VitaSync",
       description:
         "Self-hosted wearable health data aggregation platform — one API for Fitbit, Garmin, Whoop, Strava and more.",
-      head: [],
+      head: [
+        { tag: "script", attrs: { src: "/particles.js", defer: true } },
+      ],
+      logo: {
+        dark: "./src/assets/logo-dark.svg",
+        light: "./src/assets/logo-light.svg",
+        alt: "VitaSync",
+        replacesTitle: true,
+      },
       social: [
         { icon: "github", label: "GitHub", href: "https://github.com/your-org/vitasync" },
       ],

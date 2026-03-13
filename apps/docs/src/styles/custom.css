@@ -10,3 +10,11 @@
   --sl-color-accent: #2563eb;
   --sl-color-accent-high: #1d4ed8;
 }
+
+/* Lift page chrome above the particle canvas */
+.page,
+.header,
+[data-pagefind-body] {
+  position: relative;
+  z-index: 1;
+}
