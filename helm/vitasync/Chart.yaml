@@ -1,0 +1,24 @@
+apiVersion: v2
+name: vitasync
+description: A Helm chart for deploying VitaSync — a self-hosted wearable health data aggregation platform with a TypeScript/Fastify API, BullMQ worker, and Next.js dashboard.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/your-org/vitasync
+sources:
+  - https://github.com/your-org/vitasync
+keywords:
+  - health
+  - wearables
+  - fitness
+  - self-hosted
+  - fitbit
+  - garmin
+  - fastify
+  - nextjs
+  - quantified-self
+maintainers:
+  - name: VitaSync Contributors
+dependencies: []
+annotations:
+  category: Health

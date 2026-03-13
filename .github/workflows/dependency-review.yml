@@ -1,0 +1,29 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  pull-requests: write  # Required to post review comments
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          # Fail on any HIGH or CRITICAL vulnerability
+          fail-on-severity: high
+          # Warn on licenses incompatible with commercial use
+          deny-licenses: GPL-2.0, GPL-3.0, AGPL-3.0
+          # Surface results as a PR comment
+          comment-summary-in-pr: always
+          # Suppress non-actionable advisories
+          allow-ghsas: ""

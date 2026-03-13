@@ -1,0 +1,64 @@
+# docker-compose.dev.yml — overlays on top of docker-compose.yml for local development
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Or use: make dev (which runs the above automatically)
+
+name: vitasync
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"  # expose to host for local DB tools
+
+  redis:
+    ports:
+      - "6379:6379"  # expose to host for redis-cli / RedisInsight
+
+  api:
+    build:
+      target: builder  # use builder stage so we can mount source
+    command: ["pnpm", "--filter", "@biosync-io/api", "dev"]
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://vitasync:changeme@postgres:5432/vitasync
+      REDIS_URL: redis://redis:6379
+      PORT: "3001"
+      HOST: "0.0.0.0"
+      LOG_LEVEL: debug
+      JWT_SECRET: dev-jwt-secret-at-least-32-chars-long
+      ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+      CORS_ORIGINS: "http://localhost:3000"
+      OAUTH_REDIRECT_BASE_URL: "http://localhost:3001"
+    volumes:
+      - ./apps/api/src:/repo/apps/api/src:ro
+      - ./packages:/repo/packages:ro
+    ports:
+      - "3001:3001"
+
+  worker:
+    build:
+      target: builder
+    command: ["pnpm", "--filter", "@biosync-io/worker", "dev"]
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://vitasync:changeme@postgres:5432/vitasync
+      REDIS_URL: redis://redis:6379
+      ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+      LOG_LEVEL: debug
+    volumes:
+      - ./apps/worker/src:/repo/apps/worker/src:ro
+      - ./packages:/repo/packages:ro
+
+  web:
+    build:
+      dockerfile: apps/web/Dockerfile
+      target: builder
+    command: ["pnpm", "--filter", "@biosync-io/web", "dev"]
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    volumes:
+      - ./apps/web/src:/repo/apps/web/src:ro
+      - ./apps/web/public:/repo/apps/web/public:ro
+    ports:
+      - "3000:3000"

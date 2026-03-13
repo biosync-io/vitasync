@@ -1,0 +1,55 @@
+name: Stale Issues & PRs
+
+on:
+  schedule:
+    # Run every day at 01:00 UTC
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    name: Mark & Close Stale
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/stale@v9
+        with:
+          # ── Issues ─────────────────────────────────────────────
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          stale-issue-label: "stale"
+          stale-issue-message: >
+            This issue has been inactive for 60 days. It will be closed in
+            14 days unless there is new activity or it is pinned.
+            If this is still relevant, please leave a comment or remove the
+            `stale` label.
+          close-issue-message: >
+            Closing due to inactivity. Feel free to reopen if this is still
+            relevant — please include any additional context so we can
+            prioritize it.
+          close-issue-reason: not_planned
+
+          # ── Pull Requests ───────────────────────────────────────
+          days-before-pr-stale: 30
+          days-before-pr-close: 7
+          stale-pr-label: "stale"
+          stale-pr-message: >
+            This pull request has been inactive for 30 days. It will be
+            closed in 7 days unless there is new activity.
+            If you're still working on this, please push an update or leave a
+            comment.
+          close-pr-message: >
+            Closing due to inactivity. The branch has been preserved — feel
+            free to reopen if you'd like to pick this up again.
+
+          # ── Exemptions ─────────────────────────────────────────
+          exempt-issue-labels: "pinned,security,bug,good first issue"
+          exempt-pr-labels: "pinned,security,do-not-merge"
+          exempt-all-milestones: true
+
+          # Limit operations per run to avoid hitting API rate limits
+          operations-per-run: 100

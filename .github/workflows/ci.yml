@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10"
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages (types, db, providers)
+        run: |
+          pnpm --filter @vitasync/types build
+          pnpm --filter @vitasync/db build
+          pnpm --filter @vitasync/provider-core build
+          pnpm --filter @vitasync/provider-fitbit build
+          pnpm --filter @vitasync/provider-garmin build
+          pnpm --filter @vitasync/provider-strava build
+          pnpm --filter @vitasync/provider-whoop build
+
+      - name: Lint (Biome)
+        run: pnpm exec biome ci .
+
+      - name: Type check
+        run: pnpm run typecheck
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: vitasync_test
+          POSTGRES_USER: vitasync
+          POSTGRES_PASSWORD: testpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://vitasync:testpassword@localhost:5432/vitasync_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: test-jwt-secret-at-least-32-characters-long
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      OAUTH_REDIRECT_BASE_URL: http://localhost:3001
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: |
+          pnpm --filter @vitasync/types build
+          pnpm --filter @vitasync/db build
+          pnpm --filter @vitasync/provider-core build
+          pnpm --filter @vitasync/provider-fitbit build
+          pnpm --filter @vitasync/provider-garmin build
+          pnpm --filter @vitasync/provider-strava build
+          pnpm --filter @vitasync/provider-whoop build
+
+      - name: Run migrations
+        run: pnpm --filter @vitasync/db run db:migrate
+
+      - name: Run tests
+        run: pnpm run test -- --reporter=verbose
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false

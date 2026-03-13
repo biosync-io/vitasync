@@ -1,0 +1,291 @@
+# Default values for vitasync.
+# Override with: helm install vitasync ./helm/vitasync -f my-values.yaml
+
+# -- Global image settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+
+# -- Override the release name
+nameOverride: ""
+fullnameOverride: ""
+
+# ─────────────────────────────────────────────
+# API service (Fastify)
+# ─────────────────────────────────────────────
+api:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: ghcr.io/your-org/vitasync-api
+    tag: ""  # defaults to .Chart.AppVersion
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 3001
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 3001
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 3001
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    failureThreshold: 3
+
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    fsGroup: 1001
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: ["ALL"]
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  extraEnv: []
+  # - name: EXTRA_VAR
+  #   value: "foo"
+
+# ─────────────────────────────────────────────
+# Worker service (BullMQ)
+# ─────────────────────────────────────────────
+worker:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/your-org/vitasync-worker
+    tag: ""
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+  podDisruptionBudget:
+    enabled: false
+    minAvailable: 1
+
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    fsGroup: 1001
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: ["ALL"]
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  extraEnv: []
+
+# ─────────────────────────────────────────────
+# Web dashboard (Next.js)
+# ─────────────────────────────────────────────
+web:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/your-org/vitasync-web
+    tag: ""
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+  podDisruptionBudget:
+    enabled: false
+    minAvailable: 1
+
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 3000
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 3000
+    initialDelaySeconds: 15
+    periodSeconds: 5
+    failureThreshold: 3
+
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    fsGroup: 1001
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    capabilities:
+      drop: ["ALL"]
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  extraEnv: []
+
+# ─────────────────────────────────────────────
+# Database migration Job (runs on install/upgrade)
+# ─────────────────────────────────────────────
+migrations:
+  enabled: true
+  image:
+    repository: ghcr.io/your-org/vitasync-api
+    tag: ""
+    pullPolicy: IfNotPresent
+  # Annotations to trigger migration on upgrade (ArgoCD / Flux compatible)
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: hook-succeeded
+
+# ─────────────────────────────────────────────
+# Ingress
+# ─────────────────────────────────────────────
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  # kubernetes.io/ingress.class: nginx
+  # cert-manager.io/cluster-issuer: letsencrypt-prod
+
+  # Routing rules
+  # api.example.com → api service
+  # app.example.com → web service
+  api:
+    host: api.vitasync.example.com
+    tls: false
+    secretName: vitasync-api-tls
+  web:
+    host: app.vitasync.example.com
+    tls: false
+    secretName: vitasync-web-tls
+
+# ─────────────────────────────────────────────
+# Service Account
+# ─────────────────────────────────────────────
+serviceAccount:
+  create: true
+  automount: false
+  annotations: {}
+  name: ""
+
+# ─────────────────────────────────────────────
+# Application configuration
+# These become a ConfigMap; secrets go in `secrets` below.
+# ─────────────────────────────────────────────
+config:
+  # API
+  NODE_ENV: "production"
+  PORT: "3001"
+  LOG_LEVEL: "info"
+  CORS_ORIGINS: ""         # comma-separated allowed origins
+  RATE_LIMIT_MAX: "100"
+  RATE_LIMIT_WINDOW_MS: "60000"
+  OAUTH_REDIRECT_BASE_URL: ""  # e.g. https://api.vitasync.example.com
+
+  # Web
+  NEXT_PUBLIC_API_URL: ""  # e.g. https://api.vitasync.example.com
+
+# ─────────────────────────────────────────────
+# Secrets — stored in a Kubernetes Secret.
+# In production, use Sealed Secrets / External Secrets Operator instead
+# and set existingSecret below.
+# ─────────────────────────────────────────────
+secrets:
+  # Leave empty and use existingSecret for production
+  existingSecret: ""
+
+  # If existingSecret is empty, the chart creates a secret from these values.
+  # NEVER commit real values to version control.
+  DATABASE_URL: ""        # postgresql://user:pass@host:5432/vitasync
+  REDIS_URL: ""           # redis://:pass@host:6379
+  JWT_SECRET: ""          # min 32 chars random string
+  ENCRYPTION_KEY: ""      # 64-char hex (256-bit) for AES-256-GCM
+
+  # Provider OAuth credentials (only include providers you have credentials for)
+  FITBIT_CLIENT_ID: ""
+  FITBIT_CLIENT_SECRET: ""
+  GARMIN_CONSUMER_KEY: ""
+  GARMIN_CONSUMER_SECRET: ""
+  WITHINGS_CLIENT_ID: ""
+  WITHINGS_CLIENT_SECRET: ""
+  POLAR_CLIENT_ID: ""
+  POLAR_CLIENT_SECRET: ""
+  STRAVA_CLIENT_ID: ""
+  STRAVA_CLIENT_SECRET: ""

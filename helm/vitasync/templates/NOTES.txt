@@ -1,0 +1,76 @@
+Thank you for installing {{ .Chart.Name }} v{{ .Chart.AppVersion }}!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  VitaSync — Wearable Health Data Aggregation Platform
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Release name : {{ .Release.Name }}
+Namespace    : {{ .Release.Namespace }}
+
+Components deployed:
+{{- if .Values.api.enabled }}
+  ✓ API (Fastify)   — {{ include "vitasync.api.image" . }}
+{{- end }}
+{{- if .Values.worker.enabled }}
+  ✓ Worker (BullMQ) — {{ include "vitasync.worker.image" . }}
+{{- end }}
+{{- if .Values.web.enabled }}
+  ✓ Web (Next.js)   — {{ include "vitasync.web.image" . }}
+{{- end }}
+{{- if .Values.migrations.enabled }}
+  ✓ Migration job ran as a pre-install/pre-upgrade hook
+{{- end }}
+
+──────────────────────────────────────────────────
+  Accessing the services
+──────────────────────────────────────────────────
+
+{{- if .Values.ingress.enabled }}
+
+API:  https://{{ .Values.ingress.api.host }}
+Web:  https://{{ .Values.ingress.web.host }}
+Docs: https://{{ .Values.ingress.api.host }}/docs
+
+{{- else }}
+
+Ingress is disabled. Use port-forward to access locally:
+
+  # API
+  kubectl port-forward -n {{ .Release.Namespace }} \
+    svc/{{ include "vitasync.fullname" . }}-api {{ .Values.api.service.port }}:{{ .Values.api.service.port }}
+
+  # Web dashboard
+  kubectl port-forward -n {{ .Release.Namespace }} \
+    svc/{{ include "vitasync.fullname" . }}-web {{ .Values.web.service.port }}:{{ .Values.web.service.port }}
+
+Then open:  http://localhost:{{ .Values.web.service.port }}
+API docs:   http://localhost:{{ .Values.api.service.port }}/docs
+
+{{- end }}
+
+──────────────────────────────────────────────────
+  First steps
+──────────────────────────────────────────────────
+
+1. Create your first API key via the API:
+
+   curl -X POST http://localhost:{{ .Values.api.service.port }}/v1/api-keys \
+     -H "Authorization: Bearer <admin-key>" \
+     -H "Content-Type: application/json" \
+     -d '{"name":"My Key","scopes":["admin"]}'
+
+2. List available providers:
+
+   curl http://localhost:{{ .Values.api.service.port }}/v1/providers
+
+3. Full documentation: https://github.com/your-org/vitasync#readme
+
+──────────────────────────────────────────────────
+  Troubleshooting
+──────────────────────────────────────────────────
+
+View logs:
+  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }} -f
+
+Check migration job:
+  kubectl get jobs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}

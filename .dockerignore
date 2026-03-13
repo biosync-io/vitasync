@@ -1,0 +1,45 @@
+# Root .dockerignore — applies to all builds (Docker uses this from build context root)
+
+# Dependencies
+node_modules
+**/node_modules
+.pnpm-store
+
+# Build artifacts
+**/dist
+**/.next
+**/out
+
+# Dev/test files
+**/*.test.ts
+**/*.spec.ts
+**/coverage
+**/.nyc_output
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea
+.vscode
+
+# Environment files (secrets must not enter images)
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# Docs / CI (not needed at runtime)
+docs
+*.md
+.github
+helm
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
