@@ -2,6 +2,8 @@ import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 
 export default defineConfig({
+  site: 'https://your-org.github.io',
+  base: '/vitasync',
   integrations: [
     starlight({
       title: "VitaSync",
