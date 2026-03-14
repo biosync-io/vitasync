@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { providerRegistry } from "@biosync-io/provider-core"
 import { ConnectionService } from "../../services/connection.service.js"
-import { getConfig } from "../../config.js"
+import { config } from "../../config.js"
 
 const connectionService = new ConnectionService()
 
@@ -37,7 +37,7 @@ const oauthRoutes: FastifyPluginAsync = async (app) => {
     cleanExpiredState()
 
     const state = `${Date.now()}_${Math.random().toString(36).slice(2)}`
-    const redirectUri = `${getConfig().OAUTH_REDIRECT_BASE_URL}/v1/oauth/${providerId}/callback`
+    const redirectUri = `${config.OAUTH_REDIRECT_BASE_URL}/v1/oauth/${providerId}/callback`
 
     const { url, codeVerifier } = await connectionService.getAuthorizationUrl(providerId, redirectUri, state)
 
@@ -77,7 +77,7 @@ const oauthRoutes: FastifyPluginAsync = async (app) => {
 
     stateStore.delete(state)
 
-    const redirectUri = `${getConfig().OAUTH_REDIRECT_BASE_URL}/v1/oauth/${providerId}/callback`
+    const redirectUri = `${config.OAUTH_REDIRECT_BASE_URL}/v1/oauth/${providerId}/callback`
 
     const connection = await connectionService.completeOAuth2({
       userId: stored.userId,

@@ -1,6 +1,6 @@
 import { Queue } from "bullmq"
 import IORedis from "ioredis"
-import { getConfig } from "../config.js"
+import { config } from "../config.js"
 
 let _connection: IORedis | null = null
 let _syncQueue: Queue | null = null
@@ -8,7 +8,7 @@ let _webhookQueue: Queue | null = null
 
 function getConnection(): IORedis {
   if (!_connection) {
-    _connection = new IORedis(getConfig().REDIS_URL, {
+    _connection = new IORedis(config.REDIS_URL, {
       maxRetriesPerRequest: null, // Required by BullMQ
       enableReadyCheck: false,
     })

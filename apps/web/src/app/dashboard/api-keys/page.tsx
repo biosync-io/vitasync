@@ -119,11 +119,14 @@ export default function ApiKeysPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <button
-              onClick={() => createMutation.mutate({
-                name: form.name,
-                scopes: form.scopes,
-                expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined,
-              })}
+              onClick={() => {
+                const expiresAt = form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined
+                createMutation.mutate({
+                  name: form.name,
+                  scopes: form.scopes,
+                  ...(expiresAt !== undefined ? { expiresAt } : {}),
+                })
+              }}
               disabled={!form.name || form.scopes.length === 0 || createMutation.isPending}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
             >

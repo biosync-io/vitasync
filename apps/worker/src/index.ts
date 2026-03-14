@@ -1,5 +1,5 @@
 import { Worker, Queue } from "bullmq"
-import IORedis from "ioredis"
+import { Redis } from "ioredis"
 import { getConfig } from "./config.js"
 import { initDb, closeDb } from "@biosync-io/db"
 import { registerFitbitProvider } from "@biosync-io/provider-fitbit"
@@ -18,7 +18,7 @@ async function main() {
   // Connect to the database
   await initDb(config.DATABASE_URL)
 
-  const connection = new IORedis(config.REDIS_URL, {
+  const connection = new Redis(config.REDIS_URL, {
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
   })

@@ -1,5 +1,5 @@
 import { Queue } from "bullmq"
-import type IORedis from "ioredis"
+import type { Redis } from "ioredis"
 import { getDb, providerConnections, users } from "@biosync-io/db"
 import { eq } from "drizzle-orm"
 
@@ -17,7 +17,7 @@ import { eq } from "drizzle-orm"
 
 const SYNC_INTERVAL_MS = parseInt(process.env["SYNC_INTERVAL_MS"] ?? "900000", 10) // default 15 minutes
 
-export async function startPeriodicScheduler(syncQueue: Queue, connection: IORedis): Promise<() => Promise<void>> {
+export async function startPeriodicScheduler(syncQueue: Queue, connection: Redis): Promise<() => Promise<void>> {
   // Also set up a BullMQ repeatable job as a fallback scheduler
   // This ensures scheduling continues even if the worker restarts
   await syncQueue.add(
@@ -32,11 +32,11 @@ export async function startPeriodicScheduler(syncQueue: Queue, connection: IORed
   console.info(`[scheduler] Periodic sync enabled — interval: ${SYNC_INTERVAL_MS / 1000}s`)
 
   // Also run an immediate sweep on startup to avoid waiting a full interval
-  await scheduleSweep(syncQueue)
+  await enqueueAllActiveConnections(syncQueue)
 
   // In-process interval as a belt-and-suspenders approach
   const timer = setInterval(() => {
-    scheduleSweep(syncQueue).catch((err) => {
+    enqueueAllActiveConnections(syncQueue).catch((err) => {
       console.error("[scheduler] Sweep error:", err)
     })
   }, SYNC_INTERVAL_MS)
@@ -52,7 +52,7 @@ export async function startPeriodicScheduler(syncQueue: Queue, connection: IORed
  * Query all active connections and enqueue a sync job for each.
  * Uses a per-connection jobId to deduplicate — BullMQ will skip if already queued.
  */
-async function scheduleSweep(syncQueue: Queue): Promise<void> {
+export async function enqueueAllActiveConnections(syncQueue: Queue): Promise<void> {
   const db = getDb()
 
   const activeConnections = await db
@@ -90,3 +90,4 @@ async function scheduleSweep(syncQueue: Queue): Promise<void> {
     ),
   )
 }
+

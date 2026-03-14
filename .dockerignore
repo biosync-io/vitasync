@@ -6,6 +6,7 @@ node_modules
 .pnpm-store
 
 # Build artifacts
+**/node_modules
 **/dist
 **/.next
 **/out

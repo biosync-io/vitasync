@@ -2,8 +2,9 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import type { Route } from "next"
 
-const navItems = [
+const navItems: Array<{ href: Route<string>; label: string; icon: string }> = [
   { href: "/dashboard", label: "Overview", icon: "⬡" },
   { href: "/dashboard/providers", label: "Providers", icon: "⚡" },
   { href: "/dashboard/users", label: "Users", icon: "👤" },

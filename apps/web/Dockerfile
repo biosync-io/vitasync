@@ -20,6 +20,7 @@ WORKDIR /repo
 
 COPY --from=deps /repo/node_modules ./node_modules
 COPY --from=deps /repo/apps/web/node_modules ./apps/web/node_modules
+COPY --from=deps /repo/packages/types/node_modules ./packages/types/node_modules
 
 COPY pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY packages/types ./packages/types

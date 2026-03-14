@@ -138,7 +138,7 @@ export class StravaProvider extends OAuth2Provider {
       refreshToken: raw.refresh_token,
       tokenType: raw.token_type,
       expiresAt: new Date(raw.expires_at * 1000),
-      raw: tokens.raw, // preserve athleteId
+      ...(tokens.raw !== undefined ? { raw: tokens.raw } : {}), // preserve athleteId
     }
   }
 

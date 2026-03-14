@@ -2,7 +2,7 @@ import { getDb, providerConnections, users } from "@biosync-io/db"
 import { eq, and } from "drizzle-orm"
 import { providerRegistry } from "@biosync-io/provider-core"
 import { encrypt, decrypt } from "../lib/crypto.js"
-import { getConfig } from "../config.js"
+import { config } from "../config.js"
 import type { ProviderConnection, ProviderTokens } from "@biosync-io/types"
 
 export class ConnectionService {
@@ -11,7 +11,7 @@ export class ConnectionService {
   }
 
   private get encryptionKey() {
-    return getConfig().ENCRYPTION_KEY
+    return config.ENCRYPTION_KEY
   }
 
   /**

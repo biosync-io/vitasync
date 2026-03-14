@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { usersApi, healthApi, type HealthMetric, type HealthSummary } from "../../../../lib/api"
+import { usersApi, healthApi, type HealthMetric, type HealthSummary } from "../../../lib/api"
 
 const METRIC_LABELS: Record<string, string> = {
   steps: "Steps",
@@ -36,13 +36,17 @@ export default function HealthDataPage() {
 
   const { data: metricsResult, isLoading: loadingMetrics } = useQuery({
     queryKey: ["health-data", selectedUserId, metricType, from, to],
-    queryFn: () =>
-      healthApi.query(selectedUserId, {
-        metricType: metricType || undefined,
-        from: from ? new Date(from).toISOString() : undefined,
-        to: to ? new Date(to).toISOString() : undefined,
+    queryFn: () => {
+      const resolved = metricType || undefined
+      const fromIso = from ? new Date(from).toISOString() : undefined
+      const toIso = to ? new Date(to).toISOString() : undefined
+      return healthApi.query(selectedUserId, {
+        ...(resolved !== undefined ? { metricType: resolved } : {}),
+        ...(fromIso !== undefined ? { from: fromIso } : {}),
+        ...(toIso !== undefined ? { to: toIso } : {}),
         limit: 200,
-      }),
+      })
+    },
     enabled: !!selectedUserId,
   })
 

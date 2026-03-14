@@ -99,12 +99,13 @@ export class GarminProvider extends OAuth1Provider {
           if (err) {
             reject(new Error(`Garmin access token failed: ${JSON.stringify(err)}`))
           } else {
+            const garminUserId = (results as Record<string, unknown>)?.["xoauth_garmin_userid"] as
+              | string
+              | undefined
             resolve({
               token,
               tokenSecret: secret,
-              userId: (results as Record<string, unknown>)?.["xoauth_garmin_userid"] as
-                | string
-                | undefined,
+              ...(garminUserId !== undefined ? { userId: garminUserId } : {}),
               raw: results as Record<string, unknown>,
             })
           }

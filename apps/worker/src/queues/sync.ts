@@ -1,13 +1,13 @@
 import { Queue } from "bullmq"
-import IORedis from "ioredis"
+import { Redis } from "ioredis"
 import { getConfig } from "../config.js"
 
-let _connection: IORedis | null = null
+let _connection: Redis | null = null
 let _syncQueue: Queue | null = null
 
-function getConnection(): IORedis {
+function getConnection(): Redis {
   if (!_connection) {
-    _connection = new IORedis(getConfig().REDIS_URL, {
+    _connection = new Redis(getConfig().REDIS_URL, {
       maxRetriesPerRequest: null,
       enableReadyCheck: false,
     })
