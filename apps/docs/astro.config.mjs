@@ -1,11 +1,8 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 
-const isProd = process.env.GITHUB_ACTIONS === "true";
-
 export default defineConfig({
   site: "https://biosync-io.github.io",
-  base: isProd ? "/vitasync" : "/",
   integrations: [
     starlight({
       title: "VitaSync",
