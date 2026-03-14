@@ -6,26 +6,104 @@ on:
     tags:
       - "v*.*.*"
   workflow_dispatch:
+    inputs:
+      version_bump:
+        description: "Version bump type"
+        required: false
+        default: "patch"
+        type: choice
+        options: [patch, minor, major]
 
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ${{ github.repository_owner }}/vitasync
 
 jobs:
+  # ── Auto-bump version on every push to main ───────────────────────────────
+  # Pushes made with GITHUB_TOKEN do NOT re-trigger workflows — no loop risk.
+  release:
+    name: Bump Version & Tag
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      tag: ${{ steps.bump.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        id: bump
+        env:
+          BUMP: ${{ inputs.version_bump || 'patch' }}
+        run: |
+          current=$(node -p "require('./package.json').version")
+          IFS='.' read -ra v <<< "$current"
+          major=${v[0]}; minor=${v[1]}; patch=${v[2]}
+          case "$BUMP" in
+            major) major=$((major+1)); minor=0; patch=0 ;;
+            minor) minor=$((minor+1)); patch=0 ;;
+            *)     patch=$((patch+1)) ;;
+          esac
+          version="$major.$minor.$patch"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+          # Update root package.json version
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+            pkg.version = process.argv[1];
+            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+          " "$version"
+
+      - name: Commit, tag and push
+        run: |
+          git add package.json
+          git diff --staged --quiet || git commit -m "chore: release ${{ steps.bump.outputs.tag }} [skip ci]"
+          git tag ${{ steps.bump.outputs.tag }}
+          git push origin HEAD:main
+          git push origin ${{ steps.bump.outputs.tag }}
+
+  # ── Build and push Docker images to GHCR ─────────────────────────────────
   build-and-push:
     name: Build & Push ${{ matrix.app }}
     runs-on: ubuntu-latest
+    # Run after release (main push) or directly on tag push / workflow_dispatch
+    needs: [release]
+    if: |
+      always() &&
+      (needs.release.result == 'success' || needs.release.result == 'skipped') &&
+      needs.release.result != 'failure'
     permissions:
       contents: read
       packages: write
-
     strategy:
       fail-fast: false
       matrix:
         app: [api, worker, web]
-
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            # Manual tag push — use the tag itself
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            # Main push — use the version bumped by the release job
+            echo "version=${{ needs.release.outputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -43,11 +121,11 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.app }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=ref,event=branch
+            type=raw,value=${{ steps.ver.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ steps.ver.outputs.version }}
+            type=semver,pattern={{major}},value=v${{ steps.ver.outputs.version }}
             type=sha,prefix=sha-,format=short
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -62,17 +140,29 @@ jobs:
           provenance: true
           sbom: true
 
+  # ── Package and push Helm chart to GHCR ──────────────────────────────────
   helm-package:
     name: Package & Push Helm Chart
     runs-on: ubuntu-latest
-    needs: build-and-push
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [release, build-and-push]
+    if: |
+      always() &&
+      needs.build-and-push.result == 'success' &&
+      (needs.release.result == 'success' || startsWith(github.ref, 'refs/tags/v'))
     permissions:
       contents: read
       packages: write
-
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ needs.release.outputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Install Helm
         uses: azure/setup-helm@v4
@@ -80,12 +170,8 @@ jobs:
       - name: Log in to GHCR (OCI Helm registry)
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.REGISTRY }} --username ${{ github.actor }} --password-stdin
 
-      - name: Extract version
-        id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-
       - name: Package Helm chart
-        run: helm package helm/vitasync --version ${{ steps.version.outputs.version }} --app-version ${{ steps.version.outputs.version }}
+        run: helm package helm/vitasync --version ${{ steps.ver.outputs.version }} --app-version ${{ steps.ver.outputs.version }}
 
       - name: Push Helm chart to GHCR
-        run: helm push vitasync-${{ steps.version.outputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ github.repository_owner }}
+        run: helm push vitasync-${{ steps.ver.outputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ github.repository_owner }}
