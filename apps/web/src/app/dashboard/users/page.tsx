@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
+import type { Route } from "next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { usersApi, type User } from "../../../lib/api"
 
@@ -131,6 +133,12 @@ export default function UsersPage() {
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-right text-sm">
+                    <Link
+                      href={`/dashboard/users/${user.id}` as Route<string>}
+                      className="mr-3 text-indigo-600 hover:text-indigo-800 text-xs font-medium"
+                    >
+                      View
+                    </Link>
                     <button
                       onClick={() => deleteMutation.mutate(user.id)}
                       className="text-red-500 hover:text-red-700 text-xs"

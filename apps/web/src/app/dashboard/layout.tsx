@@ -9,8 +9,10 @@ const navItems: Array<{ href: Route<string>; label: string; icon: string }> = [
   { href: "/dashboard/providers", label: "Providers", icon: "⚡" },
   { href: "/dashboard/users", label: "Users", icon: "👤" },
   { href: "/dashboard/health", label: "Health Data", icon: "♥" },
+  { href: "/dashboard/activity", label: "Activity", icon: "🏃" },
   { href: "/dashboard/webhooks", label: "Webhooks", icon: "🔔" },
   { href: "/dashboard/api-keys", label: "API Keys", icon: "🔑" },
+  { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

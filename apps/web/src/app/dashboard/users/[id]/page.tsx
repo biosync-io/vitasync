@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { usersApi, connectionsApi, healthApi, type User } from "../../../../lib/api"
+import { usersApi, connectionsApi, healthApi, eventsApi, personalRecordsApi, type User, type WorkoutEvent, type PersonalRecord } from "../../../../lib/api"
 import type { HealthSummary } from "../../../../lib/api"
 
 const METRIC_LABELS: Record<string, string> = {
@@ -51,6 +51,20 @@ export default function UserDetailPage() {
     queryFn: () => healthApi.summary(id),
     enabled: !!id,
   })
+
+  const { data: eventsResult } = useQuery({
+    queryKey: ["user-events", id],
+    queryFn: () => eventsApi.list(id, { limit: 10 }),
+    enabled: !!id,
+  })
+  const recentEvents: WorkoutEvent[] = eventsResult?.data ?? []
+
+  const { data: prResult } = useQuery({
+    queryKey: ["personal-records", id],
+    queryFn: () => personalRecordsApi.list(id),
+    enabled: !!id,
+  })
+  const prData: PersonalRecord[] = prResult?.data ?? []
 
   const updateMutation = useMutation({
     mutationFn: (body: { email?: string; displayName?: string }) => usersApi.update(id, body),
@@ -153,12 +167,12 @@ export default function UserDetailPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <button
-              onClick={() =>
-                updateMutation.mutate({
-                  email: editForm.email || undefined,
-                  displayName: editForm.displayName || undefined,
-                })
-              }
+              onClick={() => {
+                const payload: { email?: string; displayName?: string } = {}
+                if (editForm.email) payload.email = editForm.email
+                if (editForm.displayName) payload.displayName = editForm.displayName
+                updateMutation.mutate(payload)
+              }}
               disabled={updateMutation.isPending}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
             >
@@ -286,6 +300,80 @@ export default function UserDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Recent Activity */}
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-900">Recent Activity</h2>
+          <Link
+            href="/dashboard/activity"
+            className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+          >
+            Browse all →
+          </Link>
+        </div>
+        {recentEvents.length === 0 ? (
+          <p className="text-sm text-gray-400">No activity events synced yet.</p>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {recentEvents.map((ev) => (
+              <div key={ev.id} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      ev.eventType === "workout"
+                        ? "bg-orange-100 text-orange-700"
+                        : ev.eventType === "sleep"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-green-100 text-green-700"
+                    }`}
+                  >
+                    {ev.eventType}
+                  </span>
+                  <div>
+                    <p className="text-sm text-gray-900">
+                      {ev.title ?? ev.activityType?.replace(/_/g, " ") ?? ev.eventType}
+                    </p>
+                    <p className="text-xs text-gray-400">{new Date(ev.startedAt).toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="text-right text-xs text-gray-500 tabular-nums space-x-2">
+                  {ev.durationSeconds != null && (
+                    <span>{Math.floor(ev.durationSeconds / 60)}m</span>
+                  )}
+                  {ev.caloriesKcal != null && (
+                    <span>{Math.round(ev.caloriesKcal)} kcal</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Personal Records */}
+      {prData.length > 0 && (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-sm font-semibold text-gray-900">Personal Records</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {prData.map((pr) => (
+              <div key={pr.id} className="rounded-lg border border-amber-100 bg-amber-50 p-4">
+                <p className="truncate text-xs font-medium text-gray-500 capitalize">
+                  {pr.metricType.replace(/_/g, " ")}
+                  {pr.category && (
+                    <span className="ml-1 text-gray-400">· {pr.category.replace(/_/g, " ")}</span>
+                  )}
+                </p>
+                <p className="mt-1 text-xl font-bold text-gray-900">
+                  {pr.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  {pr.unit && <span className="ml-1 text-sm font-normal text-gray-500">{pr.unit}</span>}
+                </p>
+                <p className="mt-1 text-xs text-gray-400">{new Date(pr.recordedAt).toLocaleDateString()}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

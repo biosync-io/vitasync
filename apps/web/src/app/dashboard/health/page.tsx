@@ -37,11 +37,10 @@ export default function HealthDataPage() {
   const { data: metricsResult, isLoading: loadingMetrics } = useQuery({
     queryKey: ["health-data", selectedUserId, metricType, from, to],
     queryFn: () => {
-      const resolved = metricType || undefined
       const fromIso = from ? new Date(from).toISOString() : undefined
       const toIso = to ? new Date(to).toISOString() : undefined
       return healthApi.query(selectedUserId, {
-        ...(resolved !== undefined ? { metricType: resolved } : {}),
+        ...(metricType ? { metricType } : {}),
         ...(fromIso !== undefined ? { from: fromIso } : {}),
         ...(toIso !== undefined ? { to: toIso } : {}),
         limit: 200,

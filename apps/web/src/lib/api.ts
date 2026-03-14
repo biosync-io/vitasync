@@ -98,6 +98,31 @@ export const webhooksApi = {
       body: JSON.stringify({ isActive }),
     }),
   delete: (id: string) => request<void>(`/v1/webhooks/${id}`, { method: "DELETE" }),
+  deliveries: (id: string) => request<WebhookDelivery[]>(`/v1/webhooks/${id}/deliveries`),
+}
+
+// ---- Events ----
+export const eventsApi = {
+  list: (
+    userId: string,
+    opts?: { eventType?: string; from?: string; to?: string; limit?: number; cursor?: string },
+  ) => {
+    const params = new URLSearchParams()
+    if (opts?.eventType) params.set("eventType", opts.eventType)
+    if (opts?.from) params.set("from", opts.from)
+    if (opts?.to) params.set("to", opts.to)
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    if (opts?.cursor) params.set("cursor", opts.cursor)
+    return request<{ data: WorkoutEvent[]; nextCursor?: string; hasMore: boolean }>(
+      `/v1/users/${userId}/events?${params}`,
+    )
+  },
+}
+
+// ---- Personal Records ----
+export const personalRecordsApi = {
+  list: (userId: string) =>
+    request<{ data: PersonalRecord[] }>(`/v1/users/${userId}/personal-records`),
 }
 
 // ---- Shared types (local to client, not re-exported from @biosync-io/types to avoid SSR issues) ----
@@ -159,4 +184,49 @@ export interface Webhook {
   isActive: boolean
   description: string | null
   createdAt: string
+}
+
+export interface WebhookDelivery {
+  id: string
+  webhookId: string
+  eventType: string
+  status: string
+  attempts: number
+  lastAttemptedAt: string | null
+  deliveredAt: string | null
+  responseStatus: number | null
+  createdAt: string
+}
+
+export interface WorkoutEvent {
+  id: string
+  userId: string
+  connectionId: string
+  providerId: string
+  eventType: "workout" | "sleep" | "activity"
+  activityType: string | null
+  title: string | null
+  startedAt: string
+  endedAt: string | null
+  durationSeconds: number | null
+  distanceMeters: number | null
+  caloriesKcal: number | null
+  avgHeartRate: number | null
+  maxHeartRate: number | null
+  avgSpeedMps: number | null
+  elevationGainMeters: number | null
+  notes: string | null
+  createdAt: string
+}
+
+export interface PersonalRecord {
+  id: string
+  userId: string
+  metricType: string
+  category: string | null
+  value: number
+  unit: string | null
+  recordedAt: string
+  providerId: string
+  updatedAt: string
 }
