@@ -39,8 +39,11 @@ export const providersApi = {
 export const usersApi = {
   list: (opts?: { limit?: number; offset?: number }) =>
     request<User[]>(`/v1/users?limit=${opts?.limit ?? 50}&offset=${opts?.offset ?? 0}`),
+  get: (id: string) => request<User>(`/v1/users/${id}`),
   create: (body: { externalId: string; email?: string; displayName?: string }) =>
     request<User>("/v1/users", { method: "POST", body: JSON.stringify(body) }),
+  update: (id: string, body: { email?: string; displayName?: string }) =>
+    request<User>(`/v1/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   delete: (id: string) => request<void>(`/v1/users/${id}`, { method: "DELETE" }),
 }
 
