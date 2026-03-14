@@ -1,6 +1,6 @@
 import { pgTable, uuid, varchar, text, timestamp, integer, index } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
-import { providerConnections } from "./provider-connections.js"
+import { providerConnections } from "./provider-connections"
 
 export const syncJobs = pgTable(
   "sync_jobs",

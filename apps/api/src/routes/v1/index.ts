@@ -16,7 +16,6 @@ import inboundRoutes from "./inbound.js"
 export async function registerV1Routes(app: FastifyInstance): Promise<void> {
   await app.register(
     async (v1) => {
-      // Provider catalog (public — auth plugin still skips nothing, but these are safe to browse)
       await v1.register(providersRoutes, { prefix: "/providers" })
 
       // OAuth flows (skipped by auth plugin for /v1/oauth prefix)

@@ -10,7 +10,7 @@ import {
   index,
 } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
-import { workspaces } from "./workspaces.js"
+import { workspaces } from "./workspaces"
 
 export const webhooks = pgTable(
   "webhooks",

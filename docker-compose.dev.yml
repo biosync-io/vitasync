@@ -26,12 +26,11 @@ services:
       HOST: "0.0.0.0"
       LOG_LEVEL: debug
       JWT_SECRET: dev-jwt-secret-at-least-32-chars-long
-      ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
       CORS_ORIGINS: "http://localhost:3000"
       OAUTH_REDIRECT_BASE_URL: "http://localhost:3001"
     volumes:
       - ./apps/api/src:/repo/apps/api/src:ro
-      - ./packages:/repo/packages:ro
     ports:
       - "3001:3001"
 
@@ -43,11 +42,10 @@ services:
       NODE_ENV: development
       DATABASE_URL: postgresql://vitasync:changeme@postgres:5432/vitasync
       REDIS_URL: redis://redis:6379
-      ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
       LOG_LEVEL: debug
     volumes:
       - ./apps/worker/src:/repo/apps/worker/src:ro
-      - ./packages:/repo/packages:ro
 
   web:
     build:

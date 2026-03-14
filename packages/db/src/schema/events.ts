@@ -10,8 +10,8 @@ import {
   text,
 } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
-import { users } from "./users.js"
-import { providerConnections } from "./provider-connections.js"
+import { users } from "./users"
+import { providerConnections } from "./provider-connections"
 
 /**
  * Event records — structured events such as workouts, runs, yoga sessions, sleep cycles.

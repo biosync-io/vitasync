@@ -2,7 +2,7 @@ import { defineConfig } from "drizzle-kit"
 
 export default defineConfig({
   dialect: "postgresql",
-  schema: "./src/schema/index.ts",
+  schema: "./src/schema/*.ts",
   out: "./src/migrations",
   dbCredentials: {
     url: process.env["DATABASE_URL"] ?? "postgresql://vitasync:vitasync@localhost:5432/vitasync",

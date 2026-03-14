@@ -8,7 +8,7 @@ import {
   unique,
 } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
-import { users } from "./users.js"
+import { users } from "./users"
 
 /**
  * Personal records — best-ever value per (user, metric type).

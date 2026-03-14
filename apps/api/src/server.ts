@@ -6,6 +6,7 @@ import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
 import { config } from "./config.js"
 import { bullBoardPlugin } from "./plugins/bull-board.js"
+import { registerV1Routes } from "./routes/v1/index.js"
 
 export async function buildServer() {
   const app = Fastify({
@@ -108,7 +109,7 @@ export async function buildServer() {
   })
 
   // ── Routes ───────────────────────────────────────────────────
-  await app.register(import("./routes/v1/index.js"), { prefix: "/v1" })
+  await app.register(registerV1Routes)
 
   // ── Bull Board queue dashboard ───────────────────────────────
   await app.register(bullBoardPlugin)

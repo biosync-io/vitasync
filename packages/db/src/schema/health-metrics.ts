@@ -9,8 +9,8 @@ import {
   unique,
 } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
-import { users } from "./users.js"
-import { providerConnections } from "./provider-connections.js"
+import { users } from "./users"
+import { providerConnections } from "./provider-connections"
 
 /**
  * Normalized health metrics — the core data store.
