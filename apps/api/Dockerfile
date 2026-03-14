@@ -30,14 +30,14 @@ COPY packages/providers/whoop ./packages/providers/whoop
 COPY apps/api ./apps/api
 
 # Build all workspace dependencies then the api
-RUN pnpm --filter @vitasync/types build
-RUN pnpm --filter @vitasync/db build
-RUN pnpm --filter @vitasync/provider-core build
-RUN pnpm --filter @vitasync/provider-fitbit build
-RUN pnpm --filter @vitasync/provider-garmin build
-RUN pnpm --filter @vitasync/provider-strava build
-RUN pnpm --filter @vitasync/provider-whoop build
-RUN pnpm --filter @vitasync/api build
+RUN pnpm --filter @biosync-io/types build
+RUN pnpm --filter @biosync-io/db build
+RUN pnpm --filter @biosync-io/provider-core build
+RUN pnpm --filter @biosync-io/provider-fitbit build
+RUN pnpm --filter @biosync-io/provider-garmin build
+RUN pnpm --filter @biosync-io/provider-strava build
+RUN pnpm --filter @biosync-io/provider-whoop build
+RUN pnpm --filter @biosync-io/api build
 
 # ─── Stage 2: Runtime ────────────────────────────────────────────────────────
 FROM node:22-alpine AS runtime

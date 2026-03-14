@@ -26,12 +26,12 @@ COPY packages/types ./packages/types
 COPY apps/web ./apps/web
 
 # Build types first so Next.js can import them
-RUN pnpm --filter @vitasync/types build
+RUN pnpm --filter @biosync-io/types build
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-RUN pnpm --filter @vitasync/web build
+RUN pnpm --filter @biosync-io/web build
 
 # ─── Stage 3: Runtime ────────────────────────────────────────────────────────
 FROM node:22-alpine AS runtime
