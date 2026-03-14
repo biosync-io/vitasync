@@ -32,13 +32,13 @@ jobs:
 
       - name: Build packages (types, db, providers)
         run: |
-          pnpm --filter @vitasync/types build
-          pnpm --filter @vitasync/db build
-          pnpm --filter @vitasync/provider-core build
-          pnpm --filter @vitasync/provider-fitbit build
-          pnpm --filter @vitasync/provider-garmin build
-          pnpm --filter @vitasync/provider-strava build
-          pnpm --filter @vitasync/provider-whoop build
+          pnpm --filter @biosync-io/types build
+          pnpm --filter @biosync-io/db build
+          pnpm --filter @biosync-io/provider-core build
+          pnpm --filter @biosync-io/provider-fitbit build
+          pnpm --filter @biosync-io/provider-garmin build
+          pnpm --filter @biosync-io/provider-strava build
+          pnpm --filter @biosync-io/provider-whoop build
 
       - name: Lint (Biome)
         run: pnpm exec biome ci .
@@ -97,16 +97,16 @@ jobs:
 
       - name: Build packages
         run: |
-          pnpm --filter @vitasync/types build
-          pnpm --filter @vitasync/db build
-          pnpm --filter @vitasync/provider-core build
-          pnpm --filter @vitasync/provider-fitbit build
-          pnpm --filter @vitasync/provider-garmin build
-          pnpm --filter @vitasync/provider-strava build
-          pnpm --filter @vitasync/provider-whoop build
+          pnpm --filter @biosync-io/types build
+          pnpm --filter @biosync-io/db build
+          pnpm --filter @biosync-io/provider-core build
+          pnpm --filter @biosync-io/provider-fitbit build
+          pnpm --filter @biosync-io/provider-garmin build
+          pnpm --filter @biosync-io/provider-strava build
+          pnpm --filter @biosync-io/provider-whoop build
 
       - name: Run migrations
-        run: pnpm --filter @vitasync/db run db:migrate
+        run: pnpm --filter @biosync-io/db run db:migrate
 
       - name: Run tests
         run: pnpm run test -- --reporter=verbose

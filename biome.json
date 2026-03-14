@@ -30,7 +30,7 @@
     "rules": {
       "recommended": true,
       "security": {
-        "noEval": "error"
+        "noGlobalEval": "error"
       },
       "suspicious": {
         "noConsoleLog": "warn"
