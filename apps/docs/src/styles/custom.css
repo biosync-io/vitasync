@@ -18,3 +18,256 @@
   position: relative;
   z-index: 1;
 }
+
+/* ── Cinematic scroll-reveal animations (Apple-style) ───────────────────── */
+
+/*
+  Shared Apple easing: quick start → slow graceful settle.
+  Duration 0.9 s for most items, longer for hero & code blocks.
+*/
+:root {
+  --reveal-ease: cubic-bezier(0.22, 0.03, 0.26, 1);
+  --reveal-dur:  0.9s;
+}
+
+/* ── Generic block elements (paragraphs, lists, tables …) ── */
+.reveal-item {
+  opacity: 0;
+  transform: translateY(50px) scale(0.97);
+  filter: blur(6px);
+  transition:
+    opacity  var(--reveal-dur) var(--reveal-ease),
+    transform var(--reveal-dur) var(--reveal-ease),
+    filter   var(--reveal-dur) var(--reveal-ease);
+  will-change: opacity, transform, filter;
+}
+.reveal-item.reveal-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}
+
+/* ── Headings — shorter travel, no blur, strong scale ── */
+.reveal-heading {
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity  0.75s var(--reveal-ease),
+    transform 0.75s var(--reveal-ease);
+  will-change: opacity, transform;
+}
+.reveal-heading.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Code blocks and tables — come from slightly lower, no blur ── */
+.reveal-code {
+  opacity: 0;
+  transform: translateY(40px);
+  transition:
+    opacity  1s var(--reveal-ease),
+    transform 1s var(--reveal-ease);
+  will-change: opacity, transform;
+}
+.reveal-code.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Cards — scale + rise, stagger set by JS ── */
+.reveal-card {
+  opacity: 0;
+  transform: translateY(40px) scale(0.95);
+  filter: blur(4px);
+  transition:
+    opacity  0.85s var(--reveal-ease),
+    transform 0.85s var(--reveal-ease),
+    filter   0.85s var(--reveal-ease);
+  will-change: opacity, transform, filter;
+}
+.reveal-card.reveal-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}
+
+/* ── Hero — pure fade (parallax handled by JS) ── */
+.reveal-fade {
+  opacity: 0;
+  transition: opacity 1.1s var(--reveal-ease);
+  will-change: opacity;
+}
+.reveal-fade.reveal-visible {
+  opacity: 1;
+}
+
+/* ── Respect reduced-motion preference ── */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-item,
+  .reveal-heading,
+  .reveal-code,
+  .reveal-card,
+  .reveal-fade {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+}
+
+/* ── Key Features section ───────────────────────────────────────────────── */
+
+/* Animated gradient on the "Key Features" heading */
+.sl-markdown-content h2:has(+ .sl-card-grid),
+.sl-markdown-content h2:has(+ * + .sl-card-grid) {
+  background: linear-gradient(
+    135deg,
+    var(--sl-color-accent-high) 0%,
+    var(--sl-color-accent) 40%,
+    #a78bfa 70%,
+    var(--sl-color-accent-high) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-pan 4s linear infinite;
+}
+
+@keyframes gradient-pan {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Card grid: spotlight — dim siblings when one is hovered */
+.sl-card-grid:has(.sl-card:hover) .sl-card:not(:hover) {
+  opacity: 0.5;
+  transform: scale(0.97);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+/* Card base — smooth hover lift */
+.sl-card {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.4s cubic-bezier(0.22, 0.03, 0.26, 1),
+    box-shadow 0.4s cubic-bezier(0.22, 0.03, 0.26, 1),
+    opacity    0.35s ease;
+  cursor: default;
+}
+
+/* Animated gradient border via pseudo-element */
+.sl-card::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    var(--sl-color-accent) 50%,
+    #a78bfa 100%
+  );
+  background-size: 300% 300%;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease, background-position 1.5s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Shimmer sweep — a highlight that moves across on hover */
+.sl-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.07) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s cubic-bezier(0.22, 0.03, 0.26, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sl-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow:
+    0 20px 40px -12px rgba(37, 99, 235, 0.35),
+    0 8px 16px -8px rgba(167, 139, 250, 0.25);
+}
+
+.sl-card:hover::before {
+  opacity: 1;
+  background-position: 100% 100%;
+}
+
+.sl-card:hover::after {
+  transform: translateX(100%);
+}
+
+/* Icon float animation on card hover */
+.sl-card:hover .sl-card-icon,
+.sl-card:hover svg:first-child,
+.sl-card:hover [class*="icon"] {
+  animation: icon-float 1.8s ease-in-out infinite;
+}
+
+@keyframes icon-float {
+  0%, 100% { transform: translateY(0);    }
+  50%       { transform: translateY(-5px); }
+}
+
+/* Glow pulse behind the icon */
+.sl-card:hover .sl-card-icon::after,
+.sl-card:hover svg:first-child::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.3) 0%, transparent 70%);
+  animation: icon-glow 1.8s ease-in-out infinite;
+}
+
+@keyframes icon-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1);    }
+  50%       { opacity: 1;   transform: scale(1.3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-card,
+  .sl-card::before,
+  .sl-card::after {
+    transition: none;
+    animation: none;
+  }
+  .sl-card-grid:has(.sl-card:hover) .sl-card:not(:hover) {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Sticky header ──────────────────────────────────────────────────────── */
+/* Sticky header */
+header.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}

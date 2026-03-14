@@ -9,6 +9,7 @@ export default defineConfig({
         "Self-hosted wearable health data aggregation platform — one API for Fitbit, Garmin, Whoop, Strava and more.",
       head: [
         { tag: "script", attrs: { src: "/particles.js", defer: true } },
+        { tag: "script", attrs: { src: "/scroll-reveal.js", defer: true } },
       ],
       logo: {
         dark: "./src/assets/logo-dark.svg",
