@@ -18,6 +18,8 @@ jobs:
   lint-and-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - uses: actions/checkout@v4
 
@@ -77,6 +79,7 @@ jobs:
           --health-retries 5
 
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       DATABASE_URL: postgresql://vitasync:testpassword@localhost:5432/vitasync_test
       REDIS_URL: redis://localhost:6379
       JWT_SECRET: test-jwt-secret-at-least-32-characters-long
