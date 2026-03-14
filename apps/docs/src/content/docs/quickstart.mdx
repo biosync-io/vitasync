@@ -1,174 +1,260 @@
 ---
 title: Quickstart
-description: Get VitaSync running locally and make your first API call in minutes.
+description: Go from zero to querying real health data in under 10 minutes.
 ---
 
-import { Steps, Tabs, TabItem, Aside, Code } from '@astrojs/starlight/components';
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+This guide takes you from a fresh VitaSync installation to your first health data query. By the end you will have:
+
+- VitaSync running locally with Docker
+- A user created and connected to a wearable provider
+- Real health metrics in the database and queryable via the API
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) + Docker Compose **or** Node.js 22+ and pnpm 10+
-- PostgreSQL 16 and Redis 7 (provided automatically via Docker Compose)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) installed
+- A wearable device account (Fitbit, Garmin, WHOOP, or Strava) with some historical data
+- An OAuth developer app for one of the providers (see below)
 
----
+## Step 1 — Create Provider OAuth Credentials
 
-## Run with Docker Compose
+Before you can connect a wearable, you need OAuth credentials from the provider's developer portal.
 
-<Steps>
+<Tabs>
+  <TabItem label="Fitbit">
+    1. Go to [dev.fitbit.com/apps/new](https://dev.fitbit.com/apps/new)
+    2. Fill in the form:
+       - **Application Type:** Personal
+       - **OAuth 2.0 Application Type:** Server
+       - **Callback URL:** `http://localhost:3001/v1/oauth/fitbit/callback`
+    3. After creation, copy the **OAuth 2.0 Client ID** and **Client Secret**
+  </TabItem>
+  <TabItem label="Garmin">
+    1. Go to [developer.garmin.com/gc-developer-program/overview/](https://developer.garmin.com/gc-developer-program/overview/)
+    2. Apply for API access (may take 1-2 business days for approval)
+    3. Once approved, create an app and note the **Consumer Key** and **Consumer Secret**
+    4. Set the **OAuth Callback URL** to: `http://localhost:3001/v1/oauth/garmin/callback`
+  </TabItem>
+  <TabItem label="WHOOP">
+    1. Go to [developer.whoop.com](https://developer.whoop.com)
+    2. Create a new application
+    3. Set the **Redirect URI** to: `http://localhost:3001/v1/oauth/whoop/callback`
+    4. Copy the **Client ID** and **Client Secret**
+  </TabItem>
+  <TabItem label="Strava">
+    1. Go to [strava.com/settings/api](https://www.strava.com/settings/api)
+    2. Create a new application
+    3. Set **Authorization Callback Domain** to `localhost`
+    4. Copy the **Client ID** and **Client Secret**
+  </TabItem>
+</Tabs>
 
-1. **Clone the repository**
+## Step 2 — Configure Your Environment
 
-   ```bash
-   git clone https://github.com/your-org/vitasync.git
-   cd vitasync
-   ```
+Clone the repository and create your environment file:
 
-2. **Configure environment variables**
+```bash
+git clone https://github.com/your-org/vitasync.git
+cd vitasync
+cp .env.example .env
+```
 
-   ```bash
-   cp .env.example .env
-   ```
+Edit `.env` with your credentials:
 
-   Open `.env` and set the required secrets:
+```bash
+# Required: generate a 64-character hex string for token encryption
+ENCRYPTION_KEY=your-64-hex-chars-here
 
-   | Variable | How to generate |
-   |----------|----------------|
-   | `JWT_SECRET` | `openssl rand -base64 32` |
-   | `ENCRYPTION_KEY` | `openssl rand -hex 32` |
-   | `OAUTH_REDIRECT_BASE_URL` | Public base URL, e.g. `http://localhost:3001` |
+# Required: your admin API key (prefix must be vs_live_)
+ADMIN_API_KEY=vs_live_changeme_replace_in_production
 
-   Provider credentials (Fitbit, Garmin, etc.) are **optional** for the first boot — add them when ready.
+# Required: workspace identifier
+ADMIN_WORKSPACE_SLUG=my-workspace
 
-   :::tip
-   The `ADMIN_API_KEY` from `.env` is auto-created on first boot. Use it to authenticate every API call during development.
-   :::
+# OAuth redirect base URL
+OAUTH_CALLBACK_URL=http://localhost:3000/connections/callback
 
-3. **Start all services**
+# Add the provider you created credentials for:
+FITBIT_CLIENT_ID=your_fitbit_client_id
+FITBIT_CLIENT_SECRET=your_fitbit_client_secret
 
-   ```bash
-   docker compose up -d
-   ```
+# GARMIN_CONSUMER_KEY=your_garmin_consumer_key
+# GARMIN_CONSUMER_SECRET=your_garmin_consumer_secret
 
-   This starts the API, BullMQ worker, Next.js dashboard, PostgreSQL, and Redis.
+# WHOOP_CLIENT_ID=your_whoop_client_id
+# WHOOP_CLIENT_SECRET=your_whoop_client_secret
 
-   ```bash
-   docker compose logs -f api worker   # follow logs
-   ```
+# STRAVA_CLIENT_ID=your_strava_client_id
+# STRAVA_CLIENT_SECRET=your_strava_client_secret
+```
 
-4. **Verify the API is healthy**
+Generate the encryption key with:
 
-   ```bash
-   curl http://localhost:3001/health
-   # → {"status":"ok"}
-   ```
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
 
-</Steps>
+## Step 3 — Start VitaSync
 
----
+```bash
+docker compose up -d
+```
 
-## Run locally (without Docker)
+This starts PostgreSQL, Redis, the API server, background worker, and web dashboard. Wait about 15 seconds for everything to be ready, then verify:
 
-<Steps>
+```bash
+curl http://localhost:3001/health
+# {"status":"ok"}
+```
 
-1. **Install dependencies**
+<Aside type="tip">
+  The API runs on port `3001`, the web dashboard on port `3000`. View logs with `docker compose logs -f api`.
+</Aside>
 
-   ```bash
-   pnpm install
-   ```
+## Step 4 — Create Your First User
 
-2. **Configure and migrate**
+```bash
+export API_KEY=vs_live_changeme_replace_in_production
 
-   ```bash
-   cp .env.example .env
-   # Set DATABASE_URL and REDIS_URL, then:
-   pnpm db:migrate
-   ```
+curl -X POST http://localhost:3001/v1/users \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"externalId": "user-001", "displayName": "Test User"}'
+```
 
-3. **Start all dev servers**
+**Response:**
 
-   ```bash
-   pnpm dev
-   ```
+```json
+{
+  "id": "01JA4MNPQR8STUVWXYZ00001",
+  "externalId": "user-001",
+  "displayName": "Test User",
+  "metadata": {},
+  "createdAt": "2025-06-01T10:00:00.000Z"
+}
+```
 
-   All apps start in watch mode with hot reload.
+Save the `id` — you will need it in the next steps.
 
-</Steps>
+```bash
+export USER_ID=01JA4MNPQR8STUVWXYZ00001
+```
 
----
+## Step 5 — Connect a Wearable
 
-## Access Points
+Open this URL in your browser (replace `fitbit` with your provider if needed):
 
-| Service | URL |
-|---------|-----|
-| Web dashboard | http://localhost:3000 |
-| REST API | http://localhost:3001 |
-| OpenAPI / Swagger UI | http://localhost:3001/docs |
+```
+http://localhost:3001/v1/oauth/fitbit/authorize?userId=01JA4MNPQR8STUVWXYZ00001
+```
 
----
+You will be redirected to the provider's login page. After granting access, you will be redirected back and see something like:
 
-## Your First API Call
+```
+http://localhost:3000/connections/callback?connectionId=01JA4MNPQR8STUVWXYZ00002&providerId=fitbit
+```
 
-<Steps>
+Save the connection ID:
 
-1. **Create a workspace user**
+```bash
+export CONNECTION_ID=01JA4MNPQR8STUVWXYZ00002
+```
 
-   ```bash
-   export API_KEY=vs_live_changeme_for_production
+## Step 6 — Trigger the First Sync
 
-   curl -X POST http://localhost:3001/v1/users \
-     -H "Authorization: Bearer $API_KEY" \
-     -H "Content-Type: application/json" \
-     -d '{"externalId":"user_123","email":"jane@example.com"}'
-   ```
+```bash
+curl -X POST \
+  "http://localhost:3001/v1/users/$USER_ID/connections/$CONNECTION_ID/sync" \
+  -H "Authorization: Bearer $API_KEY"
+```
 
-   ```json
-   {
-     "id": "01HXYZ...",
-     "externalId": "user_123",
-     "email": "jane@example.com",
-     "createdAt": "2026-03-13T00:00:00.000Z"
-   }
-   ```
+**Response:**
 
-2. **Start an OAuth flow**
+```json
+{"jobId": "sync-job-01JA4...", "status": "queued"}
+```
 
-   Open this URL in a browser (replace `<user_id>` with the `id` returned above):
+The sync runs asynchronously and pulls the last 30 days of data. It typically completes in a few seconds to a minute. Watch progress in the worker logs:
 
-   ```
-   http://localhost:3001/v1/oauth/fitbit/authorize?userId=<user_id>
-   ```
+```bash
+docker compose logs -f worker
+```
 
-   After the user grants access, VitaSync stores the tokens and enqueues an initial sync automatically.
+## Step 7 — Query Your Health Data
 
-3. **Query health metrics**
+Once the sync completes, query your data:
 
-   ```bash
-   curl "http://localhost:3001/v1/users/<user_id>/health?metricType=STEPS&limit=30" \
-     -H "Authorization: Bearer $API_KEY"
-   ```
+```bash
+# Steps for the last 7 days
+curl "http://localhost:3001/v1/users/$USER_ID/health?metricType=steps&limit=7" \
+  -H "Authorization: Bearer $API_KEY"
+```
 
-   ```json
-   {
-     "data": [
-       {
-         "metricType": "STEPS",
-         "value": 8432,
-         "unit": "count",
-         "recordedAt": "2026-03-12T00:00:00.000Z",
-         "provider": "fitbit"
-       }
-     ],
-     "total": 30
-   }
-   ```
+**Response:**
 
-</Steps>
+```json
+{
+  "data": [
+    {
+      "id": "01JA4...",
+      "metricType": "steps",
+      "value": 9823,
+      "unit": "count",
+      "recordedAt": "2025-06-06T00:00:00.000Z",
+      "providerId": "fitbit"
+    }
+  ],
+  "total": 7,
+  "limit": 7,
+  "offset": 0
+}
+```
 
----
+Try other queries:
+
+```bash
+# Summary: how many data points per metric type?
+curl "http://localhost:3001/v1/users/$USER_ID/health/summary" \
+  -H "Authorization: Bearer $API_KEY"
+
+# Timeseries: average heart rate by day for June
+curl "http://localhost:3001/v1/users/$USER_ID/health/timeseries?metricType=heart_rate&from=2025-06-01&to=2025-06-30&bucket=day" \
+  -H "Authorization: Bearer $API_KEY"
+
+# Daily summary: steps + calories + resting HR for last week
+curl "http://localhost:3001/v1/users/$USER_ID/health/daily-summaries?from=2025-06-01&to=2025-06-07&metricTypes=steps,calories,resting_heart_rate" \
+  -H "Authorization: Bearer $API_KEY"
+
+# Recent workouts
+curl "http://localhost:3001/v1/users/$USER_ID/events?eventType=workout&limit=5" \
+  -H "Authorization: Bearer $API_KEY"
+
+# Personal records
+curl "http://localhost:3001/v1/users/$USER_ID/personal-records" \
+  -H "Authorization: Bearer $API_KEY"
+```
+
+## What Is Available
+
+After the first sync, data is available depending on which provider you connected:
+
+| Metric | Fitbit | Garmin | WHOOP | Strava |
+|--------|--------|--------|-------|--------|
+| Steps | Yes | Yes | — | — |
+| Heart rate | Yes | Yes | Yes | Yes |
+| Sleep | Yes | Yes | Yes | — |
+| HRV | Yes | Yes | Yes | — |
+| Workouts | — | Yes | Yes | Yes |
+| Recovery score | — | — | Yes | — |
+| SpO2 | Yes | Yes | Yes | — |
+| Body weight | Yes | — | — | — |
+
+See the [Providers](/providers/supported) section for full coverage tables.
 
 ## Next Steps
 
-- [Architecture overview](/architecture/overview/) — understand how the API, worker, and providers fit together
-- [Supported providers](/providers/supported/) — see which wearable platforms are available
-- [API reference](/api-reference/introduction/) — full endpoint docs
-- [Add a provider](/dev-guides/adding-a-provider/) — integrate a new wearable brand
+- [Connect multiple users](/api-reference/guides/connect-a-user) — the flow scales to millions of users
+- [Set up webhooks](/api-reference/guides/webhooks) — get notified when syncs complete
+- [Deploy to production](/deployment/docker) — Docker and Kubernetes deployment guides
+- [Add a new provider](/dev-guides/adding-a-provider) — extend VitaSync with a provider not yet supported

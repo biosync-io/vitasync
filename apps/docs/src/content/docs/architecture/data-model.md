@@ -1,91 +1,341 @@
 ---
 title: Data Model
-description: The core database tables and TypeScript types that underpin VitaSync.
+description: How VitaSync stores users, providers, health metrics, events, and personal records.
 ---
 
-VitaSync uses **PostgreSQL 16** with **Drizzle ORM** for type-safe queries. All schema files live in `packages/db/src/schema/`.
+import { Aside } from '@astrojs/starlight/components';
 
-## Core Tables
+VitaSync stores all health data in PostgreSQL using [Drizzle ORM](https://orm.drizzle.team). This reference explains every table, the relationships between them, and the JSON shapes used for complex metrics.
+
+## Entity Relationships
+
+```
+workspaces
+    |
+    +-- users (many per workspace)
+          |
+          +-- provider_connections (one per provider per user)
+          |         |
+          |         +-- sync_jobs
+          |         +-- health_metrics (via userId + providerId)
+          |         +-- events (via userId + providerId)
+          |
+          +-- personal_records (one per metricType+category per user)
+
+workspaces
+    |
+    +-- api_keys
+    +-- webhooks
+          |
+          +-- webhook_deliveries
+```
+
+## Tables
 
 ### `workspaces`
 
-Isolates all data for a tenant.
+Top-level tenant. All data is isolated per workspace.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| `id` | `uuid` | Primary key |
-| `slug` | `text` | URL-safe identifier, unique |
-| `createdAt` | `timestamptz` | |
-
-### `api_keys`
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | `uuid` | |
-| `workspaceId` | `uuid` | FK → `workspaces` |
-| `keyHash` | `text` | SHA-256 of the raw key — never stored in plain text |
-| `label` | `text` | Human-readable name |
-| `createdAt` | `timestamptz` | |
+| `id` | ULID | Primary key |
+| `name` | text | Display name |
+| `slug` | text | URL-safe unique identifier |
+| `createdAt` | timestamptz | |
+| `updatedAt` | timestamptz | |
 
 ### `users`
 
-Users are workspace-scoped and identified by a developer-supplied `externalId`.
+A user corresponds to one person with one or more wearable devices.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| `id` | `uuid` | |
-| `workspaceId` | `uuid` | FK → `workspaces` |
-| `externalId` | `text` | Your own user identifier |
-| `email` | `text` | Optional |
-| `createdAt` | `timestamptz` | |
+| `id` | ULID | Primary key |
+| `workspaceId` | ULID | FK → `workspaces.id` |
+| `externalId` | text | Your system's user ID. Unique per workspace |
+| `email` | text | Optional |
+| `displayName` | text | Optional |
+| `metadata` | jsonb | Arbitrary key-value data you want to store alongside the user |
+| `createdAt` | timestamptz | |
+| `updatedAt` | timestamptz | |
 
-### `connections`
+Unique constraint: `(workspaceId, externalId)`
 
-One row per (user, provider) pair that has been OAuth-authorised.
+### `api_keys`
+
+Workspace-level API keys used to authenticate all API requests.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| `id` | `uuid` | |
-| `userId` | `uuid` | FK → `users` |
-| `providerId` | `text` | e.g. `"fitbit"`, `"garmin"` |
-| `accessToken` | `text` | AES-256-GCM encrypted |
-| `refreshToken` | `text` | AES-256-GCM encrypted |
-| `tokenExpiresAt` | `timestamptz` | |
-| `lastSyncedAt` | `timestamptz` | |
+| `id` | ULID | Primary key |
+| `workspaceId` | ULID | FK → `workspaces.id` |
+| `name` | text | Human-readable label |
+| `keyHash` | text | SHA-256 hash of the raw key — raw key never stored |
+| `keyPrefix` | text | First 8 characters of the raw key (for identification in logs) |
+| `scopes` | text[] | Array of: `read`, `write`, `admin` |
+| `expiresAt` | timestamptz | Null = never expires |
+| `lastUsedAt` | timestamptz | Updated on every authenticated request |
+| `createdAt` | timestamptz | |
+
+### `provider_connections`
+
+Stores OAuth tokens for each user-provider pair. Tokens are encrypted before storage.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | ULID | Primary key |
+| `userId` | ULID | FK → `users.id` |
+| `providerId` | text | `fitbit`, `garmin`, `whoop`, `strava` |
+| `encryptedTokens` | text | AES-256-GCM encrypted JSON (accessToken, refreshToken, expiresAt) |
+| `status` | text | `active`, `error`, `disconnected` |
+| `lastSyncedAt` | timestamptz | Null until first sync completes |
+| `connectedAt` | timestamptz | When OAuth was completed |
+| `createdAt` | timestamptz | |
+| `updatedAt` | timestamptz | |
+
+Unique constraint: `(userId, providerId)` — one connection per provider per user.
+
+<Aside type="note">
+  Tokens are encrypted with AES-256-GCM using the `ENCRYPTION_KEY` environment variable. Set `ENCRYPTION_KEY` to a 64-character hex string (32 random bytes). Losing this key means all stored tokens become unreadable — all users would need to reconnect.
+</Aside>
 
 ### `health_metrics`
 
-The central fact table. Unique on `(userId, providerId, metricType, recordedAt)`.
+Stores individual health data points from provider syncs.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| `id` | `uuid` | |
-| `userId` | `uuid` | FK → `users` |
-| `providerId` | `text` | Source provider |
-| `metricType` | `text` | Enum — see below |
-| `value` | `numeric` | |
-| `unit` | `text` | e.g. `"count"`, `"bpm"`, `"kg"` |
-| `recordedAt` | `timestamptz` | When the device recorded the measurement |
-| `metadata` | `jsonb` | Provider-specific extra fields |
-| `createdAt` | `timestamptz` | When VitaSync ingested the row |
+| `id` | ULID | Primary key |
+| `userId` | ULID | FK → `users.id` |
+| `providerId` | text | Which provider supplied this data point |
+| `metricType` | text | See [Metric Types](#metric-types) below |
+| `value` | numeric | Scalar value for simple metrics (null for complex metrics) |
+| `unit` | text | Unit string, e.g. `count`, `bpm`, `kg`, `meters` |
+| `data` | jsonb | Structured data for complex metrics (sleep stages, etc.) — null for scalar metrics |
+| `source` | text | `user` (device-measured), `manual`, or `computed` |
+| `recordedAt` | timestamptz | When the device recorded the measurement |
+| `createdAt` | timestamptz | When VitaSync ingested it |
+
+Unique constraint: `(userId, providerId, metricType, recordedAt)` — prevents duplicate ingestion across multiple syncs.
+
+### `events`
+
+Structured events such as workout sessions and sleep sessions. These are richer than scalar metrics and stored separately.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | ULID | Primary key |
+| `userId` | ULID | FK → `users.id` |
+| `providerId` | text | |
+| `providerEventId` | text | Provider-assigned event ID (for deduplication) |
+| `eventType` | text | `workout`, `sleep`, `activity` |
+| `activityType` | text | For workouts: `running`, `cycling`, `swimming`, `strength_training`, etc. |
+| `startedAt` | timestamptz | Event start time |
+| `endedAt` | timestamptz | Event end time |
+| `durationSeconds` | integer | Duration in seconds |
+| `distanceMeters` | numeric | Distance for movement-based activities |
+| `caloriesKcal` | numeric | Calories burned |
+| `avgHeartRate` | integer | Average heart rate (bpm) |
+| `maxHeartRate` | integer | Maximum heart rate (bpm) |
+| `data` | jsonb | Provider-specific extended data (laps, elevation, sleep stages, etc.) |
+| `createdAt` | timestamptz | |
+
+Unique constraint: `(userId, providerId, providerEventId)`.
+
+### `personal_records`
+
+Tracks lifetime bests per metric type for each user. Automatically updated after every successful sync.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | ULID | Primary key |
+| `userId` | ULID | FK → `users.id` |
+| `metricType` | text | See Metric Types below |
+| `category` | text | e.g. `daily_max`, `daily_min`, `all_time_max` |
+| `value` | numeric | The record value |
+| `unit` | text | |
+| `recordedAt` | timestamptz | When the record was set |
+| `providerId` | text | Which provider's data set this record |
+| `updatedAt` | timestamptz | |
+
+Unique constraint: `(userId, metricType, category)`.
+
+### `webhooks`
+
+Registered HTTP endpoints for event delivery.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | ULID | Primary key |
+| `workspaceId` | ULID | FK → `workspaces.id` |
+| `url` | text | Your HTTPS endpoint |
+| `secretHash` | text | HMAC signing secret, hashed for storage |
+| `events` | text[] | Subscribed event types |
+| `isActive` | boolean | If false, no deliveries are made |
+| `description` | text | Optional label |
+| `createdAt` | timestamptz | |
+
+### `webhook_deliveries`
+
+Delivery log for every attempted webhook event delivery.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | ULID | Primary key |
+| `webhookId` | ULID | FK → `webhooks.id` |
+| `event` | text | Event type string |
+| `payload` | jsonb | Full request body that was sent |
+| `status` | text | `pending`, `delivered`, `failed` |
+| `statusCode` | integer | HTTP response code from your server |
+| `attemptCount` | integer | Number of delivery attempts so far |
+| `deliveredAt` | timestamptz | Null until successfully delivered |
+| `createdAt` | timestamptz | |
+
+### `sync_jobs`
+
+Tracks the state of each background sync execution.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | ULID | Primary key |
+| `connectionId` | ULID | FK → `provider_connections.id` |
+| `status` | text | `pending`, `running`, `completed`, `failed` |
+| `metricsSynced` | integer | Number of data points written |
+| `error` | text | Error message if status is `failed` |
+| `startedAt` | timestamptz | |
+| `completedAt` | timestamptz | |
+| `createdAt` | timestamptz | |
+
+---
 
 ## Metric Types
 
-Defined in `packages/types/src/index.ts` as `HealthMetricType`:
+### Activity
 
-| Value | Unit | Description |
-|-------|------|-------------|
-| `STEPS` | `count` | Step count |
-| `HEART_RATE` | `bpm` | Heart rate |
-| `RESTING_HEART_RATE` | `bpm` | Resting heart rate |
-| `HRV` | `ms` | Heart rate variability (RMSSD) |
-| `SLEEP_DURATION` | `minutes` | Total sleep time |
-| `CALORIES` | `kcal` | Active calories burned |
-| `DISTANCE` | `meters` | Distance covered |
-| `ACTIVE_MINUTES` | `minutes` | Time in active zone |
-| `SPO2` | `percent` | Blood oxygen saturation |
-| `SKIN_TEMP` | `celsius` | Skin temperature |
-| `RECOVERY_SCORE` | `score` | Provider recovery score (0–100) |
-| `STRAIN` | `score` | Provider strain/exertion score |
-| `WEIGHT` | `kg` | Body weight |
-| `BODY_FAT` | `percent` | Body fat percentage |
+| Type | Unit | Description |
+|------|------|-------------|
+| `steps` | `count` | Step count |
+| `distance` | `meters` | Distance traveled |
+| `calories` | `kcal` | Active calories burned |
+| `active_minutes` | `minutes` | Time in moderate+ intensity zones |
+| `floors` | `count` | Floors climbed (Fitbit) |
+
+### Cardiovascular
+
+| Type | Unit | Description |
+|------|------|-------------|
+| `heart_rate` | `bpm` | Instantaneous or average heart rate |
+| `resting_heart_rate` | `bpm` | Daily resting heart rate |
+| `heart_rate_variability` | `ms` | RMSSD-based HRV (overnight) |
+
+### Sleep
+
+| Type | Unit | Description |
+|------|------|-------------|
+| `sleep` | `hours` | Sleep duration; stage breakdown in `data` |
+| `sleep_score` | `score` | Composite sleep quality score (0–100) |
+
+### Body Composition
+
+| Type | Unit | Description |
+|------|------|-------------|
+| `weight` | `kg` | Body weight |
+| `body_fat` | `percent` | Body fat percentage |
+| `bmi` | `index` | Body mass index |
+| `blood_oxygen` | `percent` | Blood oxygen via pulse oximetry |
+| `blood_pressure` | `mmHg` | Systolic/diastolic in `data.systolic`/`data.diastolic` |
+| `temperature` | `celsius` | Skin or core temperature |
+| `blood_glucose` | `mmol_l` | Blood glucose |
+
+### Recovery
+
+| Type | Unit | Description |
+|------|------|-------------|
+| `stress` | `score` | Stress score (Garmin: 0–100) |
+| `hrv_status` | `status` | HRV band: `poor`, `balanced`, `good`, `optimal` |
+| `recovery_score` | `percent` | WHOOP recovery (0–100%) |
+| `readiness_score` | `score` | Daily readiness (0–100) |
+| `strain_score` | `score` | WHOOP daily strain (0–21) |
+
+### Breathing
+
+| Type | Unit | Description |
+|------|------|-------------|
+| `respiratory_rate` | `breaths_per_min` | Breaths per minute (overnight average) |
+| `spo2` | `percent` | SpO2 from pulse oximetry |
+
+### Workouts
+
+| Type | Description |
+|------|-------------|
+| `workout` | Workout session marker; full data in the Events API |
+
+---
+
+## Complex Metric Data Structures
+
+### Sleep (`data` field)
+
+```json
+{
+  "stages": {
+    "deep": 95,
+    "light": 220,
+    "rem": 110,
+    "awake": 20
+  },
+  "efficiency": 88,
+  "consistency": 74,
+  "startTime": "2025-06-05T23:15:00.000Z",
+  "endTime": "2025-06-06T07:00:00.000Z",
+  "score": 82
+}
+```
+
+### Blood Pressure (`data` field)
+
+```json
+{
+  "systolic": 118,
+  "diastolic": 76,
+  "pulse": 68
+}
+```
+
+### Heart Rate (intraday, `data` field)
+
+```json
+{
+  "min": 46,
+  "max": 148,
+  "resting": 56,
+  "zones": {
+    "fat_burn": 42,
+    "cardio": 28,
+    "peak": 8
+  }
+}
+```
+
+### Workout Event (`data` field)
+
+```json
+{
+  "sport": "running",
+  "elevationGain": 85,
+  "elevationLoss": 82,
+  "avgPace": "6:15",
+  "avgCadence": 168,
+  "avgPower": null,
+  "laps": [
+    { "lapNumber": 1, "distance": 1000, "time": 375, "avgHR": 152 }
+  ],
+  "hrZones": {
+    "zone1": 180,
+    "zone2": 420,
+    "zone3": 810,
+    "zone4": 1080,
+    "zone5": 210
+  }
+}
+```

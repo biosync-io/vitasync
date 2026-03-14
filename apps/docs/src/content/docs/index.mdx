@@ -1,46 +1,108 @@
 ---
-title: Welcome to VitaSync
-description: Self-hosted wearable health data aggregation — one API for Fitbit, Garmin, Whoop, Strava and more.
+title: VitaSync
+description: Open-source health data API — connect wearables and fitness devices to your application in minutes.
 template: splash
 hero:
-  tagline: Connect every wearable to a single API you fully control.
+  tagline: One API to access health data from Fitbit, Garmin, WHOOP, Strava, and more.
   actions:
-    - text: Get started
-      link: /quickstart/
-      icon: right-arrow
+    - text: Quickstart
+      link: /quickstart
+      icon: right-caret
       variant: primary
-    - text: View on GitHub
-      link: https://github.com/your-org/vitasync
-      icon: external
+    - text: API Reference
+      link: /api-reference/introduction
+      icon: open-book
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid, Aside } from '@astrojs/starlight/components';
 
 ## What is VitaSync?
 
-VitaSync is a fully TypeScript monorepo that gives you a **production-ready, multi-tenant platform** for collecting and querying health data from wearable devices.
+VitaSync is an open-source platform that aggregates health and fitness data from wearable devices and fitness services. Instead of implementing OAuth flows, data normalization, and sync scheduling for each provider separately, you connect once to VitaSync and get a unified API.
 
-Create users with your own IDs, connect their devices via OAuth, then query their health metrics through a clean REST API — all on your own infrastructure.
+```bash
+# Query a user's last 7 days of health data across all connected devices
+curl "https://api.yourdomain.com/v1/users/{userId}/health?from=2024-01-01&to=2024-01-07" \
+  -H "Authorization: Bearer vs_live_..."
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "01HX...",
+      "metricType": "steps",
+      "value": 9842,
+      "unit": "steps",
+      "recordedAt": "2024-01-07T00:00:00.000Z",
+      "source": "fitbit"
+    },
+    {
+      "id": "01HX...",
+      "metricType": "resting_heart_rate",
+      "value": 52,
+      "unit": "bpm",
+      "recordedAt": "2024-01-07T00:00:00.000Z",
+      "source": "whoop"
+    }
+  ],
+  "pagination": { "limit": 100, "offset": 0, "hasMore": true }
+}
+```
 
 ## Key Features
 
-<CardGrid stagger>
-  <Card title="Plugin provider system" icon="puzzle">
-    Add a new wearable brand by implementing one abstract class and calling `register()` — no core changes required.
+<CardGrid>
+  <Card title="Unified Data Model" icon="list-format">
+    Every metric from every provider maps to the same normalized schema. Steps are steps whether they come from Fitbit or Garmin.
   </Card>
-  <Card title="Multi-tenant by design" icon="random">
-    Workspaces isolate data. API keys are scoped per workspace, making it safe to embed in a SaaS product.
+  <Card title="OAuth Managed" icon="approve-check">
+    VitaSync handles the OAuth flows for each provider. Your app directs users to a single authorization URL and receives a webhook when the connection is established.
   </Card>
-  <Card title="Async-first syncs" icon="rocket">
-    BullMQ workers handle sync and webhook delivery. `syncData` streams via `AsyncGenerator` so large datasets stay memory-safe.
+  <Card title="Automatic Sync" icon="rocket">
+    Connected providers are synced automatically on configurable schedules. Trigger a manual sync any time with a single API call.
   </Card>
-  <Card title="Idempotent by default" icon="approve-check-circle">
-    Composite unique index on `(userId, providerId, metricType, recordedAt)` — re-running a sync is always safe.
+  <Card title="Webhook Delivery" icon="forward-slash">
+    Subscribe to events like `sync.completed`, `connection.created`, and `user.deleted`. Receive real-time notifications with HMAC-verified payloads.
   </Card>
-  <Card title="AES-256-GCM token storage" icon="seti:lock">
-    OAuth tokens encrypted at rest. API keys stored as SHA-256 hashes only — never in plain text.
+  <Card title="Multi-tenant" icon="bars">
+    Built for platforms. Each API key belongs to a workspace and manages its own set of users, connections, and webhooks.
   </Card>
-  <Card title="OpenAPI / Swagger UI" icon="open-book">
-    Interactive API docs auto-generated at `/docs` whenever the API server is running.
+  <Card title="Self-hosted" icon="laptop">
+    Run anywhere with Docker Compose. You own your infrastructure and your users' data never leaves your environment.
   </Card>
 </CardGrid>
+
+## Supported Providers
+
+| Provider | Auth | Metrics | Sync |
+|----------|------|---------|------|
+| [Fitbit](/providers/fitbit) | OAuth 2.0 + PKCE | Steps, heart rate, sleep, body composition, SpO₂ | Every 15 min |
+| [Garmin](/providers/garmin) | OAuth 1.0a | Steps, GPS workouts, HRV, stress, body battery | Push (real-time) |
+| [WHOOP](/providers/whoop) | OAuth 2.0 | Recovery, strain, HRV, sleep performance | Every 15 min |
+| [Strava](/providers/strava) | OAuth 2.0 | Workouts, distance, calories, GPS routes | On-demand |
+
+See [Supported Providers](/providers/supported) for a full metric-by-metric comparison.
+
+## Get Started in 5 Minutes
+
+1. **Deploy** — `docker compose up -d`
+2. **Create an API key** — `POST /v1/api-keys`
+3. **Create a user** — `POST /v1/users` with your internal user ID
+4. **Connect a device** — redirect the user to `GET /v1/oauth/{provider}/authorize?userId={id}`
+5. **Query data** — `GET /v1/users/{userId}/health`
+
+The [Quickstart guide](/quickstart) walks through each step in detail with copy-pasteable curl commands.
+
+## API Design
+
+- **REST** — standard HTTP verbs and status codes
+- **Bearer token auth** — `Authorization: Bearer vs_live_<key>`
+- **ULID identifiers** — lexicographically sortable, globally unique
+- **Cursor and offset pagination** — both supported depending on the endpoint
+- **ISO 8601 timestamps** — all times in UTC
+- **Versioned** — all endpoints under `/v1/`
+
+<Aside>
+  VitaSync is open source under the MIT license. Contributions are welcome — see the [Contributing guide](https://github.com/your-org/vitasync/blob/main/CONTRIBUTING.md) to get started.
+</Aside>
