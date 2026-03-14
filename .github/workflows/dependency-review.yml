@@ -8,6 +8,9 @@ permissions:
   contents: read
   pull-requests: write  # Required to post review comments
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   dependency-review:
     name: Dependency Review
