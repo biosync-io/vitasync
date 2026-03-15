@@ -100,7 +100,7 @@ Always set a strong `GRAFANA_PASSWORD` before exposing Grafana on the public int
 
 ## Dashboard Details
 
-### 01 · Platform Overview (`vs-platform`)
+### 01 · Platform Overview (`vs-platform-overview`)
 
 **Time range:** last 30 days
 **Key panels:** total users, active connections, metrics ingested, events logged, provider distribution pie, daily sync volume timeseries, sync success/failure rate.
