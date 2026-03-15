@@ -88,6 +88,8 @@ export default defineConfig({
             },
             { label: "API Keys", slug: "dev-guides/api-keys" },
             { label: "Webhooks", slug: "dev-guides/webhooks" },
+            { label: "MCP Server", slug: "dev-guides/mcp" },
+            { label: "Grafana Dashboards", slug: "dev-guides/grafana-dashboards" },
           ],
         },
         {
