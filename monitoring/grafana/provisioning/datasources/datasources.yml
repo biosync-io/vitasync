@@ -13,7 +13,7 @@ datasources:
       password: ${PG_PASSWORD}
     jsonData:
       sslmode: disable
-      postgresVersion: 1400
+      postgresVersion: 1600
       timescaledb: false
       maxOpenConns: 10
       maxIdleConns: 5
