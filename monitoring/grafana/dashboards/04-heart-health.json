@@ -1,0 +1,276 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Cardiovascular health — resting heart rate, HRV, blood oxygen, and exercise HR zones.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "title": "Platform Overview", "url": "/d/vs-platform",        "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Workouts",          "url": "/d/vs-workouts",         "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Sleep",             "url": "/d/vs-sleep",            "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Body Metrics",      "url": "/d/vs-body-metrics",     "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Daily Activity",    "url": "/d/vs-daily-activity",   "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Personal Records",  "url": "/d/vs-personal-records", "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Provider Health",   "url": "/d/vs-provider-health",  "type": "link", "icon": "external link", "targetBlank": false }
+  ],
+  "panels": [
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 100, "title": "Cardiovascular KPIs", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] },
+          "unit": "bpm",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(AVG(value)::numeric,0)::float AS \"Resting HR (bpm)\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('resting_heart_rate','resting_hr')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "title": "Avg Resting Heart Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 50 }, { "color": "green", "value": 70 } ] },
+          "unit": "ms",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(AVG(value)::numeric,0)::float AS \"HRV (ms)\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('hrv','heart_rate_variability')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "title": "Avg HRV",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 60 }, { "color": "red", "value": 75 }] },
+          "unit": "bpm",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["min"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(MIN(value)::numeric,0)::float AS \"Lowest Resting HR\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('resting_heart_rate','resting_hr')\n  AND value > 30\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "title": "Lowest Resting HR",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 185 }, { "color": "red", "value": 200 }] },
+          "unit": "bpm",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(MAX(max_heart_rate)::numeric,0)::float AS \"Peak HR (bpm)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND max_heart_rate IS NOT NULL\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "title": "Peak HR (Period)",
+      "type": "stat"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 }, "id": 101, "title": "Resting Heart Rate & HRV Trends", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 15, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": true },
+          "unit": "bpm",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "7-day Avg" }, "properties": [{ "id": "custom.lineWidth", "value": 3 }, { "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 6 },
+      "id": 5,
+      "options": { "legend": { "calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+        "editorMode": "code",
+        "format": "time_series",
+        "rawQuery": true,
+        "rawSql": "WITH daily AS (\n  SELECT\n    DATE_TRUNC('day', recorded_at) AS day,\n    AVG(value) AS rhr\n  FROM health_metrics\n  WHERE $__timeFilter(recorded_at)\n    AND metric_type IN ('resting_heart_rate','resting_hr')\n    AND value BETWEEN 30 AND 120\n    AND ('$userId' = 'all' OR user_id::text = '$userId')\n  GROUP BY 1\n)\nSELECT\n  day AS \"time\",\n  ROUND(rhr::numeric,1)::float AS \"Resting HR (bpm)\",\n  ROUND((AVG(rhr) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW))::numeric,1)::float AS \"7-day Avg\"\nFROM daily\nORDER BY day",
+        "refId": "A"
+      }],
+      "title": "Resting Heart Rate Trend",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 15, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": true },
+          "unit": "ms",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 50 }, { "color": "green", "value": 70 }] }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "7-day Avg" }, "properties": [{ "id": "custom.lineWidth", "value": 3 }, { "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 6 },
+      "id": 6,
+      "options": { "legend": { "calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+        "editorMode": "code",
+        "format": "time_series",
+        "rawQuery": true,
+        "rawSql": "WITH daily AS (\n  SELECT\n    DATE_TRUNC('day', recorded_at) AS day,\n    AVG(value) AS hrv\n  FROM health_metrics\n  WHERE $__timeFilter(recorded_at)\n    AND metric_type IN ('hrv','heart_rate_variability')\n    AND ('$userId' = 'all' OR user_id::text = '$userId')\n  GROUP BY 1\n)\nSELECT\n  day AS \"time\",\n  ROUND(hrv::numeric,1)::float AS \"HRV (ms)\",\n  ROUND((AVG(hrv) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW))::numeric,1)::float AS \"7-day Avg\"\nFROM daily\nORDER BY day",
+        "refId": "A"
+      }],
+      "title": "HRV (Heart Rate Variability) Trend",
+      "type": "timeseries"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 }, "id": 102, "title": "Exercise Heart Rate", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 20, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 4, "showPoints": "auto", "spanNulls": true },
+          "unit": "bpm"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 7,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "targets": [
+        { "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(started_at,$__interval),\n  AVG(avg_heart_rate) AS \"Avg Workout HR\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND avg_heart_rate IS NOT NULL\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" },
+        { "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(started_at,$__interval),\n  MAX(max_heart_rate) AS \"Peak Workout HR\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND max_heart_rate IS NOT NULL\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "B" }
+      ],
+      "title": "Workout Heart Rate (Avg & Peak)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 20, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 4, "showPoints": "auto", "spanNulls": true },
+          "unit": "percent",
+          "min": 90,
+          "max": 100,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 94 }, { "color": "green", "value": 96 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 8,
+      "options": { "legend": { "calcs": ["mean", "min"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  AVG(value) AS \"SpO2 (%)\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('spo2','blood_oxygen','oxygen_saturation')\n  AND value BETWEEN 85 AND 100\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" }],
+      "title": "Blood Oxygen Saturation (SpO2)",
+      "type": "timeseries"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 }, "id": 103, "title": "Heart Rate Distribution", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 80, "gradientMode": "none", "lineWidth": 1 },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 25 },
+      "id": 9,
+      "options": { "barRadius": 0.05, "groupWidth": 0.7, "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" }, "xTickLabelRotation": 0 },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT\n  CASE\n    WHEN value < 50 THEN '< 50'\n    WHEN value < 60 THEN '50-59'\n    WHEN value < 70 THEN '60-69'\n    WHEN value < 80 THEN '70-79'\n    WHEN value < 90 THEN '80-89'\n    ELSE '90+'\n  END AS \"HR Range (bpm)\",\n  COUNT(*) AS \"Readings\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('resting_heart_rate','resting_hr')\n  AND value BETWEEN 30 AND 120\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY MIN(value)", "refId": "A" }],
+      "title": "Resting HR Distribution",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 4, "showPoints": "auto", "spanNulls": true },
+          "unit": "short",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 25 },
+      "id": 10,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  AVG(value) AS \"VO2 Max (mL/kg/min)\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('vo2_max','vo2max')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" }],
+      "title": "VO2 Max Trend",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 38,
+  "tags": ["vitasync", "health", "heart"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": true, "text": "All", "value": "all" },
+        "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+        "definition": "SELECT COALESCE(display_name, email, external_id, id::text) AS __text, id::text AS __value FROM users ORDER BY 1",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": "all",
+        "label": "User",
+        "multi": false,
+        "name": "userId",
+        "options": [],
+        "query": "SELECT COALESCE(display_name, email, external_id, id::text) AS __text, id::text AS __value FROM users ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-30d", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Heart Health",
+  "uid": "vs-heart-health",
+  "version": 1
+}

@@ -1,0 +1,243 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Provider connection health — sync status, error rates, staleness and data ingestion per provider.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "title": "Platform Overview", "url": "/d/vs-platform",        "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Workouts",          "url": "/d/vs-workouts",         "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Sleep",             "url": "/d/vs-sleep",            "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Heart Health",      "url": "/d/vs-heart-health",     "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Body Metrics",      "url": "/d/vs-body-metrics",     "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Daily Activity",    "url": "/d/vs-daily-activity",   "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Personal Records",  "url": "/d/vs-personal-records", "type": "link", "icon": "external link", "targetBlank": false }
+  ],
+  "panels": [
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 100, "title": "Connection Status Overview", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*)::bigint AS \"Total Connections\"\nFROM provider_connections", "refId": "A" }],
+      "title": "Total Connections",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*)::bigint AS \"Active\"\nFROM provider_connections\nWHERE status = 'active'", "refId": "A" }],
+      "title": "Active Connections",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*)::bigint AS \"Error / Disconnected\"\nFROM provider_connections\nWHERE status NOT IN ('active')", "refId": "A" }],
+      "title": "Error / Disconnected",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 6 }, { "color": "red", "value": 24 }] },
+          "unit": "h",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (NOW() - last_synced_at))/3600.0)::numeric,1)::float AS \"Avg Sync Lag (h)\"\nFROM provider_connections\nWHERE last_synced_at IS NOT NULL\n  AND status = 'active'", "refId": "A" }],
+      "title": "Avg Sync Lag",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 5,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*)::bigint AS \"Stale (> 24h)\"\nFROM provider_connections\nWHERE status = 'active'\n  AND (last_synced_at IS NULL OR last_synced_at < NOW() - INTERVAL '24 hours')", "refId": "A" }],
+      "title": "Stale Connections (>24h)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 6,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(DISTINCT provider_id)::bigint AS \"Distinct Providers\"\nFROM provider_connections\nWHERE status = 'active'", "refId": "A" }],
+      "title": "Active Providers",
+      "type": "stat"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 }, "id": 101, "title": "Connections Table", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false },
+          "mappings": [
+            { "type": "value", "options": { "active": { "text": "Active", "color": "green", "index": 0 } } },
+            { "type": "value", "options": { "error": { "text": "Error", "color": "red", "index": 1 } } },
+            { "type": "value", "options": { "disconnected": { "text": "Disconnected", "color": "orange", "index": 2 } } },
+            { "type": "value", "options": { "revoked": { "text": "Revoked", "color": "grey", "index": 3 } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Status" }, "properties": [{ "id": "custom.cellOptions", "value": { "type": "color-text" } }, { "id": "custom.width", "value": 100 }] },
+          { "matcher": { "id": "byName", "options": "Provider" }, "properties": [{ "id": "custom.width", "value": 100 }] },
+          { "matcher": { "id": "byName", "options": "Sync Lag (h)" }, "properties": [{ "id": "unit", "value": "h" }, { "id": "decimals", "value": 1 }, { "id": "custom.width", "value": 120 }] }
+        ]
+      },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 6 },
+      "id": 7,
+      "options": { "frameIndex": 0, "showHeader": true, "sortBy": [{ "desc": false, "displayName": "Status" }] },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT\n  pc.provider_id AS \"Provider\",\n  pc.status AS \"Status\",\n  COALESCE(u.display_name, u.email, u.external_id, pc.user_id::text) AS \"User\",\n  pc.last_synced_at AS \"Last Synced\",\n  CASE\n    WHEN pc.last_synced_at IS NULL THEN NULL\n    ELSE ROUND((EXTRACT(EPOCH FROM (NOW() - pc.last_synced_at))/3600.0)::numeric,1)::float\n  END AS \"Sync Lag (h)\",\n  pc.created_at AS \"Connected Since\"\nFROM provider_connections pc\nJOIN users u ON u.id = pc.user_id\nORDER BY pc.status, pc.last_synced_at ASC NULLS FIRST", "refId": "A" }],
+      "title": "All Provider Connections",
+      "type": "table"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 }, "id": 102, "title": "Ingestion by Provider", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 19 },
+      "id": 8,
+      "options": { "displayLabels": ["name", "percent"], "legend": { "calcs": ["value"], "displayMode": "table", "placement": "right", "showLegend": true }, "pieType": "donut", "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT\n  provider_id AS \"Provider\",\n  COUNT(*) AS \"Metrics\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\nGROUP BY provider_id\nORDER BY 2 DESC", "refId": "A" }],
+      "title": "Health Metrics by Provider",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 19 },
+      "id": 9,
+      "options": { "displayLabels": ["name", "percent"], "legend": { "calcs": ["value"], "displayMode": "table", "placement": "right", "showLegend": true }, "pieType": "donut", "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT\n  provider_id AS \"Provider\",\n  COUNT(*) AS \"Events\"\nFROM events\nWHERE $__timeFilter(started_at)\nGROUP BY provider_id\nORDER BY 2 DESC", "refId": "A" }],
+      "title": "Events by Provider",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 19 },
+      "id": 10,
+      "options": { "displayLabels": ["name", "percent"], "legend": { "calcs": ["value"], "displayMode": "table", "placement": "right", "showLegend": true }, "pieType": "donut", "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT\n  status AS \"Status\",\n  COUNT(*) AS \"Count\"\nFROM provider_connections\nGROUP BY status\nORDER BY 2 DESC", "refId": "A" }],
+      "title": "Connection Status Distribution",
+      "type": "piechart"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 }, "id": 103, "title": "Ingestion Volume Over Time", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 70, "gradientMode": "none", "lineWidth": 1, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "normal" } },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 28 },
+      "id": 11,
+      "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,$__interval),\n  provider_id,\n  COUNT(*) AS \"Records\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\nGROUP BY 1, 2\nORDER BY 1", "refId": "A" }],
+      "title": "Health Metrics Ingestion per Provider (Stacked)",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 38,
+  "tags": ["vitasync", "providers", "infra"],
+  "templating": { "list": [] },
+  "time": { "from": "now-7d", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Provider Health",
+  "uid": "vs-provider-health",
+  "version": 1
+}

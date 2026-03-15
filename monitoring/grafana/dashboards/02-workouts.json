@@ -1,0 +1,305 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Workout & activity analytics — distance, calories, heart rate, pace and session breakdown.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "title": "Platform Overview", "url": "/d/vs-platform",        "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Sleep",             "url": "/d/vs-sleep",           "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Heart Health",      "url": "/d/vs-heart-health",    "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Body Metrics",      "url": "/d/vs-body-metrics",    "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Daily Activity",    "url": "/d/vs-daily-activity",  "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Personal Records",  "url": "/d/vs-personal-records","type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Provider Health",   "url": "/d/vs-provider-health", "type": "link", "icon": "external link", "targetBlank": false }
+  ],
+  "panels": [
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 100, "title": "Performance KPIs", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*)::bigint AS \"Total Workouts\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "title": "Total Workouts",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "yellow", "value": null }, { "color": "green", "value": 50 }, { "color": "super-light-green", "value": 200 }] },
+          "unit": "lengthkm",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND((COALESCE(SUM(distance_meters),0)/1000.0)::numeric,1)::float AS \"Distance (km)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "title": "Total Distance",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 5000 }] },
+          "unit": "kcal",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(COALESCE(SUM(calories_kcal),0)::numeric,0)::float AS \"Calories (kcal)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "title": "Total Calories Burned",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }, { "color": "green", "value": 10 }] },
+          "unit": "h",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND((COALESCE(SUM(duration_seconds),0)/3600.0)::numeric,1)::float AS \"Training Time (h)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "title": "Total Training Time",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 140 }, { "color": "red", "value": 170 }] },
+          "unit": "bpm"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 5,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(AVG(avg_heart_rate)::numeric,0)::float AS \"Avg HR (bpm)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND avg_heart_rate IS NOT NULL\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "title": "Avg Heart Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }, { "color": "super-light-blue", "value": 500 }] },
+          "unit": "lengthm",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 6,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(COALESCE(SUM(elevation_gain_meters),0)::numeric,0)::float AS \"Elevation (m)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "title": "Total Elevation Gain",
+      "type": "stat"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 }, "id": 101, "title": "Training Trends", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 70, "gradientMode": "none", "lineWidth": 1, "pointSize": 5, "showPoints": "never", "spanNulls": false, "lineInterpolation": "linear" },
+          "unit": "lengthkm",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 7,
+      "options": { "legend": { "calcs": ["sum", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(started_at,$__interval),\n  SUM(distance_meters)/1000.0 AS \"Distance (km)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND distance_meters IS NOT NULL\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" }],
+      "title": "Distance Per Day",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 70, "gradientMode": "none", "lineWidth": 1, "pointSize": 5, "showPoints": "never", "spanNulls": false },
+          "unit": "kcal"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 8,
+      "options": { "legend": { "calcs": ["sum", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(started_at,$__interval),\n  SUM(calories_kcal) AS \"Calories (kcal)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND calories_kcal IS NOT NULL\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" }],
+      "title": "Calories Burned Per Day",
+      "type": "timeseries"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 }, "id": 102, "title": "Activity Breakdown", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 9, "w": 8, "x": 0, "y": 15 },
+      "id": 9,
+      "options": { "displayLabels": ["name", "percent"], "legend": { "calcs": ["value"], "displayMode": "table", "placement": "right", "showLegend": true }, "pieType": "donut", "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT\n  COALESCE(activity_type, 'unknown') AS \"Activity\",\n  COUNT(*) AS \"Count\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY activity_type\nORDER BY 2 DESC\nLIMIT 12", "refId": "A" }],
+      "title": "Activity Type Distribution",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 80, "gradientMode": "none", "lineWidth": 1 },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 16, "x": 8, "y": 15 },
+      "id": 10,
+      "options": { "barRadius": 0.05, "groupWidth": 0.7, "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" }, "xTickLabelRotation": 0 },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  DATE_TRUNC('week', started_at) AS \"time\",\n  COUNT(*) AS \"Workouts\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" }],
+      "title": "Weekly Workout Frequency",
+      "type": "barchart"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 }, "id": 103, "title": "Performance Metrics", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 15, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": true },
+          "unit": "bpm",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 130 }, { "color": "red", "value": 160 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 25 },
+      "id": 11,
+      "options": { "legend": { "calcs": ["mean", "max", "min"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "targets": [
+        { "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(started_at,$__interval),\n  AVG(avg_heart_rate) AS \"Avg HR (bpm)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND avg_heart_rate IS NOT NULL\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" },
+        { "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(started_at,$__interval),\n  MAX(max_heart_rate) AS \"Max HR (bpm)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND max_heart_rate IS NOT NULL\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "B" }
+      ],
+      "title": "Heart Rate During Workouts",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 15, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": true },
+          "unit": "velocityms",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 25 },
+      "id": 12,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(started_at,$__interval),\n  AVG(avg_speed_mps) AS \"Avg Speed (m/s)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND avg_speed_mps IS NOT NULL\n  AND avg_speed_mps > 0\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" }],
+      "title": "Avg Speed Over Time",
+      "type": "timeseries"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 33 }, "id": 104, "title": "Recent Workouts", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Distance (km)" }, "properties": [{ "id": "unit", "value": "lengthkm" }, { "id": "decimals", "value": 2 }] },
+          { "matcher": { "id": "byName", "options": "Calories (kcal)" }, "properties": [{ "id": "unit", "value": "kcal" }] },
+          { "matcher": { "id": "byName", "options": "Duration (min)" }, "properties": [{ "id": "unit", "value": "m" }] },
+          { "matcher": { "id": "byName", "options": "Avg HR" }, "properties": [{ "id": "unit", "value": "bpm" }] }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 34 },
+      "id": 13,
+      "options": { "frameIndex": 0, "showHeader": true, "sortBy": [{ "desc": true, "displayName": "Date" }] },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT\n  started_at AS \"Date\",\n  COALESCE(title, activity_type, 'Workout') AS \"Title\",\n  COALESCE(activity_type, '-') AS \"Activity Type\",\n  ROUND((COALESCE(duration_seconds,0)/60.0)::numeric,0)::int AS \"Duration (min)\",\n  ROUND((COALESCE(distance_meters,0)/1000.0)::numeric,2)::float AS \"Distance (km)\",\n  ROUND(COALESCE(calories_kcal,0)::numeric,0)::int AS \"Calories (kcal)\",\n  COALESCE(avg_heart_rate::text, '-') AS \"Avg HR\",\n  COALESCE(max_heart_rate::text, '-') AS \"Max HR\",\n  ROUND(COALESCE(elevation_gain_meters,0)::numeric,0)::int AS \"Elevation (m)\",\n  provider_id AS \"Provider\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'workout'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nORDER BY started_at DESC\nLIMIT 100", "refId": "A" }],
+      "title": "Workout Log",
+      "type": "table"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 38,
+  "tags": ["vitasync", "health", "workouts"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": true, "text": "All", "value": "all" },
+        "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+        "definition": "SELECT COALESCE(display_name, email, external_id, id::text) AS __text, id::text AS __value FROM users ORDER BY 1",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": "all",
+        "label": "User",
+        "multi": false,
+        "name": "userId",
+        "options": [],
+        "query": "SELECT COALESCE(display_name, email, external_id, id::text) AS __text, id::text AS __value FROM users ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-90d", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Workouts & Activity",
+  "uid": "vs-workouts",
+  "version": 1
+}

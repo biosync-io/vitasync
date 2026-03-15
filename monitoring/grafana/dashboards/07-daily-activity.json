@@ -1,0 +1,273 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Daily activity metrics — steps, active minutes, floors climbed, calories and distance.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "title": "Platform Overview", "url": "/d/vs-platform",        "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Workouts",          "url": "/d/vs-workouts",         "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Sleep",             "url": "/d/vs-sleep",            "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Heart Health",      "url": "/d/vs-heart-health",     "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Body Metrics",      "url": "/d/vs-body-metrics",     "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Personal Records",  "url": "/d/vs-personal-records", "type": "link", "icon": "external link", "targetBlank": false },
+    { "title": "Provider Health",   "url": "/d/vs-provider-health",  "type": "link", "icon": "external link", "targetBlank": false }
+  ],
+  "panels": [
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 100, "title": "Activity KPIs", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 5000 }, { "color": "green", "value": 8000 }, { "color": "super-light-green", "value": 12000 }] },
+          "unit": "locale",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["mean"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(AVG(value)::numeric,0)::float AS \"Avg Daily Steps\"\nFROM (\n  SELECT DATE_TRUNC('day', recorded_at), SUM(value) AS value\n  FROM health_metrics\n  WHERE $__timeFilter(recorded_at)\n    AND metric_type = 'steps'\n    AND ('$userId' = 'all' OR user_id::text = '$userId')\n  GROUP BY 1\n) AS daily", "refId": "A" }],
+      "title": "Avg Daily Steps",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "super-light-green", "value": 15000 }] },
+          "unit": "locale",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(MAX(daily_steps)::numeric,0)::float AS \"Best Day Steps\"\nFROM (\n  SELECT DATE_TRUNC('day', recorded_at), SUM(value) AS daily_steps\n  FROM health_metrics\n  WHERE $__timeFilter(recorded_at)\n    AND metric_type = 'steps'\n    AND ('$userId' = 'all' OR user_id::text = '$userId')\n  GROUP BY 1\n) t", "refId": "A" }],
+      "title": "Best Single Day Steps",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 20 }, { "color": "green", "value": 30 } ] },
+          "unit": "m",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["mean"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(AVG(value)::numeric,0)::float AS \"Avg Active Minutes\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('active_minutes','very_active_minutes','lightly_active_minutes')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "title": "Avg Active Minutes",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }, { "color": "green", "value": 5 }] },
+          "unit": "lengthkm",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["mean"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND((AVG(value)/1000.0)::numeric,1)::float AS \"Avg Daily Distance (km)\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('distance','daily_distance')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "title": "Avg Daily Distance",
+      "type": "stat"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 }, "id": 101, "title": "Steps Trend", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 65, "gradientMode": "none", "lineWidth": 1, "pointSize": 5, "showPoints": "never", "spanNulls": false },
+          "unit": "locale",
+          "decimals": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 5000 }, { "color": "green", "value": 8000 }] }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "7-day Avg" }, "properties": [{ "id": "custom.drawStyle", "value": "line" }, { "id": "custom.fillOpacity", "value": 0 }, { "id": "custom.lineWidth", "value": 3 }, { "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 6 },
+      "id": 5,
+      "options": { "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+        "editorMode": "code",
+        "format": "time_series",
+        "rawQuery": true,
+        "rawSql": "WITH daily AS (\n  SELECT\n    DATE_TRUNC('day', recorded_at) AS day,\n    SUM(value) AS steps\n  FROM health_metrics\n  WHERE $__timeFilter(recorded_at)\n    AND metric_type = 'steps'\n    AND ('$userId' = 'all' OR user_id::text = '$userId')\n  GROUP BY 1\n)\nSELECT\n  day AS \"time\",\n  ROUND(steps::numeric,0)::bigint AS \"Daily Steps\",\n  ROUND((AVG(steps) OVER (ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW))::numeric,0)::bigint AS \"7-day Avg\"\nFROM daily\nORDER BY day",
+        "refId": "A"
+      }],
+      "title": "Daily Steps — Bar & 7-day Average",
+      "type": "timeseries"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 }, "id": 102, "title": "Activity Patterns", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 70, "gradientMode": "none", "lineWidth": 1 },
+          "unit": "locale",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 6,
+      "options": { "barRadius": 0.05, "groupWidth": 0.7, "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" }, "xTickLabelRotation": 0 },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT\n  TO_CHAR(day, 'Dy') AS \"Day of Week\",\n  ROUND(AVG(daily_steps)::numeric,0)::bigint AS \"Avg Steps\"\nFROM (\n  SELECT DATE_TRUNC('day', recorded_at) AS day, SUM(value) AS daily_steps\n  FROM health_metrics\n  WHERE $__timeFilter(recorded_at)\n    AND metric_type = 'steps'\n    AND ('$userId' = 'all' OR user_id::text = '$userId')\n  GROUP BY 1\n) t\nGROUP BY EXTRACT(DOW FROM day), TO_CHAR(day, 'Dy')\nORDER BY EXTRACT(DOW FROM day)", "refId": "A" }],
+      "title": "Avg Steps by Day of Week",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 20, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 4, "showPoints": "auto", "spanNulls": true },
+          "unit": "m"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 7,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "targets": [
+        { "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  SUM(value) AS \"Active Minutes\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('active_minutes','very_active_minutes')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" },
+        { "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  SUM(value) AS \"Lightly Active Min\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type = 'lightly_active_minutes'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "B" }
+      ],
+      "title": "Active Minutes per Day",
+      "type": "timeseries"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 }, "id": 103, "title": "Distance & Floors", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 65, "gradientMode": "none", "lineWidth": 1, "showPoints": "never", "spanNulls": false },
+          "unit": "lengthkm",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 25 },
+      "id": 8,
+      "options": { "legend": { "calcs": ["sum", "mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  SUM(value)/1000.0 AS \"Distance (km)\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('distance','daily_distance')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" }],
+      "title": "Daily Distance",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 65, "gradientMode": "none", "lineWidth": 1, "showPoints": "never", "spanNulls": false },
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 25 },
+      "id": 9,
+      "options": { "legend": { "calcs": ["sum", "mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  SUM(value) AS \"Floors Climbed\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('floors','floors_climbed')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" }],
+      "title": "Floors Climbed per Day",
+      "type": "timeseries"
+    },
+
+    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 33 }, "id": 104, "title": "Calorie Burn", "type": "row" },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 20, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 4, "showPoints": "auto", "spanNulls": true, "stacking": { "group": "A", "mode": "normal" } },
+          "unit": "kcal",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 34 },
+      "id": 10,
+      "options": { "legend": { "calcs": ["sum", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  SUM(value) AS \"Active Calories\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('calories_active','active_calories')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" },
+        { "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  SUM(value) AS \"Total Calories\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('calories','calories_out','total_calories')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "B" }
+      ],
+      "title": "Daily Calorie Expenditure",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 38,
+  "tags": ["vitasync", "health", "activity", "steps"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": true, "text": "All", "value": "all" },
+        "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+        "definition": "SELECT COALESCE(display_name, email, external_id, id::text) AS __text, id::text AS __value FROM users ORDER BY 1",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": "all",
+        "label": "User",
+        "multi": false,
+        "name": "userId",
+        "options": [],
+        "query": "SELECT COALESCE(display_name, email, external_id, id::text) AS __text, id::text AS __value FROM users ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-30d", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Daily Activity",
+  "uid": "vs-daily-activity",
+  "version": 1
+}

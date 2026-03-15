@@ -1,0 +1,30 @@
+{
+  "name": "@biosync-io/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VitaSync MCP server — expose health data to AI assistants via the Model Context Protocol",
+  "type": "module",
+  "bin": {
+    "vitasync-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsup src/index.ts --format esm --out-dir dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@biosync-io/types": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
