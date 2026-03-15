@@ -1,8 +1,8 @@
-import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify"
-import fp from "fastify-plugin"
 import { createHash, timingSafeEqual } from "node:crypto"
-import { getDb, apiKeys } from "@biosync-io/db"
+import { apiKeys, getDb } from "@biosync-io/db"
 import { eq } from "drizzle-orm"
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify"
+import fp from "fastify-plugin"
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -26,7 +26,7 @@ const authPlugin: FastifyPluginAsync = async (app) => {
     const skipPaths = ["/docs", "/health", "/v1/oauth", "/v1/inbound"]
     if (skipPaths.some((p) => request.url.startsWith(p))) return
 
-    const authHeader = request.headers["authorization"]
+    const authHeader = request.headers.authorization
     if (!authHeader?.startsWith("Bearer ")) {
       return reply.status(401).send({
         code: "UNAUTHORIZED",
@@ -44,11 +44,7 @@ const authPlugin: FastifyPluginAsync = async (app) => {
 
     // Look up by hash (index on keyHash makes this fast)
     const db = getDb()
-    const [key] = await db
-      .select()
-      .from(apiKeys)
-      .where(eq(apiKeys.keyHash, incomingHash))
-      .limit(1)
+    const [key] = await db.select().from(apiKeys).where(eq(apiKeys.keyHash, incomingHash)).limit(1)
 
     if (!key) {
       return reply.status(401).send({ code: "UNAUTHORIZED", message: "Invalid API key" })

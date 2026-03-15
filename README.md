@@ -28,8 +28,8 @@ VitaSync is a fully TypeScript monorepo that gives you a production-ready, multi
 | **Async-first** | BullMQ workers handle sync + webhook delivery; `syncData` streams via `AsyncGenerator` |
 | **Idempotent syncs** | Composite unique index on `(userId, providerId, metricType, recordedAt)` — re-running a sync is safe |
 | **Secure by default** | OAuth tokens encrypted with AES-256-GCM; API keys stored as SHA-256 hashes only |
-| **OpenAPI docs** | Swagger UI auto-generated at `/docs` |
-| **Helm chart** | Production-ready chart with HPA, PDB, ingress, migration Job, and secret management |
+| **OpenAPI docs** | Swagger UI auto-generated at `/docs` || **MCP server** | Exposes health data to AI assistants (Claude, Cursor, VS Code Copilot) via the Model Context Protocol |
+| **Grafana dashboards** | 8 pre-built health dashboards auto-provisioned from `monitoring/grafana/dashboards/` || **Helm chart** | Production-ready chart with HPA, PDB, ingress, migration Job, and secret management |
 
 ---
 
@@ -40,7 +40,8 @@ vitasync/
 ├── apps/
 │   ├── api/        # Fastify 5 REST API — routes, services, auth plugin
 │   ├── worker/     # BullMQ worker — sync processor, webhook dispatcher
-│   └── web/        # Next.js 15 App Router dashboard
+│   ├── web/        # Next.js 15 App Router dashboard
+│   └── mcp/        # MCP server — expose health data to AI assistants
 ├── packages/
 │   ├── types/      # Shared TypeScript types (HealthMetric, ProviderDefinition…)
 │   ├── db/         # Drizzle ORM schemas + postgres.js client
@@ -48,6 +49,10 @@ vitasync/
 │       ├── core/   # Abstract OAuth2Provider / OAuth1Provider + ProviderRegistry
 │       ├── fitbit/ # Fitbit Connect implementation
 │       └── garmin/ # Garmin Connect implementation
+├── monitoring/
+│   ├── docker-compose.monitoring.yml   # Grafana + Prometheus + exporters
+│   ├── grafana/dashboards/             # 8 pre-built health dashboards
+│   └── grafana/provisioning/           # Auto-provisioned datasource + folder
 └── helm/vitasync/  # Helm chart for Kubernetes deployment
 ```
 
@@ -184,8 +189,6 @@ curl "http://localhost:3001/v1/users/<user_id>/health?metricType=STEPS&limit=30"
   -H "Authorization: Bearer $API_KEY"
 ```
 
----
-
 ## Adding a provider
 
 1. Create `packages/providers/<name>/`:
@@ -223,6 +226,65 @@ export function registerMyDeviceProvider() {
 2. Call `registerMyDeviceProvider()` in `apps/api/src/index.ts` and `apps/worker/src/index.ts`.
 
 3. Add credentials to `.env.example` and the Helm `values.yaml`.
+
+---
+
+## MCP Server
+
+The `apps/mcp` package is a [Model Context Protocol](https://modelcontextprotocol.io) server that lets AI assistants query your VitaSync health data directly.
+
+### Build
+
+```bash
+pnpm --filter @biosync-io/mcp build
+```
+
+### Connect to Claude Desktop
+
+Add to `~/.config/claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "vitasync": {
+      "command": "node",
+      "args": ["/path/to/vitasync/apps/mcp/dist/index.js"],
+      "env": {
+        "DATABASE_URL": "postgresql://vitasync:changeme@localhost:5432/vitasync"
+      }
+    }
+  }
+}
+```
+
+The server exposes these tools: `query_health_metrics`, `list_users`, `list_connections`, `get_events`, `get_personal_records`.
+
+---
+
+## Grafana Dashboards
+
+A monitoring stack with 8 pre-built health dashboards is included in `monitoring/`.
+
+```bash
+# Start alongside the main stack
+docker compose \
+  -f docker-compose.yml \
+  -f monitoring/docker-compose.monitoring.yml \
+  up -d
+```
+
+Open **http://localhost:3030** (admin / admin) and navigate to **Dashboards → VitaSync Health**.
+
+| Dashboard | What it shows |
+|-----------|---------------|
+| Platform Overview | Users, connections, sync volume |
+| Workouts | Distance, calories, HR, speed, workout log |
+| Sleep | Duration, stages, score, awakenings |
+| Heart Health | Resting HR, HRV, SpO₂, VO₂ max |
+| Body Metrics | Weight, BMI, body fat %, muscle mass |
+| Personal Records | All-time bests across all metric types |
+| Daily Activity | Steps, active minutes, floors, calories |
+| Provider Health | Connection status, sync lag, ingestion volume |
 
 ---
 
@@ -285,6 +347,8 @@ pnpm db:studio      # Open Drizzle Studio
 | Database | PostgreSQL 16 |
 | Queue | BullMQ 5 + Redis 7 |
 | Dashboard | Next.js 15 App Router + Tailwind CSS |
+| MCP | @modelcontextprotocol/sdk 1.x |
+| Observability | Grafana 10.4 + Prometheus 2.51 |
 | Monorepo | pnpm workspaces + Turborepo |
 | Lint/format | Biome |
 | Testing | Vitest |

@@ -1,7 +1,7 @@
-import { z } from "zod"
-import type { OAuthTokens, SyncOptions, SyncDataPoint, ProviderDefinition } from "@biosync-io/types"
+import { OAuth2Provider, defaultSyncWindow, providerRegistry } from "@biosync-io/provider-core"
+import type { OAuthTokens, ProviderDefinition, SyncDataPoint, SyncOptions } from "@biosync-io/types"
 import { HealthMetricType, MetricUnit } from "@biosync-io/types"
-import { OAuth2Provider, providerRegistry, defaultSyncWindow } from "@biosync-io/provider-core"
+import { z } from "zod"
 
 // ── Whoop API response schemas ────────────────────────────────
 
@@ -192,8 +192,7 @@ const WHOOP_SPORT_NAMES: Record<number, string> = {
 const WHOOP_DEFINITION: ProviderDefinition = {
   id: "whoop",
   name: "WHOOP",
-  description:
-    "Sync recovery scores, HRV, sleep, strain, and workouts from your WHOOP strap.",
+  description: "Sync recovery scores, HRV, sleep, strain, and workouts from your WHOOP strap.",
   logoUrl: "https://vitasync.dev/provider-logos/whoop.svg",
   docsUrl: "https://developer.whoop.com/api/",
   capabilities: {
@@ -317,26 +316,14 @@ export class WhoopProvider extends OAuth2Provider {
 
   // ── Private sync helpers ──────────────────────────────────
 
-  async *#syncSleep(
-    tokens: OAuthTokens,
-    start: Date,
-    end: Date,
-  ): AsyncGenerator<SyncDataPoint> {
-    for await (const sleep of this.#paginate(
-      tokens,
-      "/activity/sleep",
-      WhoopSleep,
-      start,
-      end,
-    )) {
+  async *#syncSleep(tokens: OAuthTokens, start: Date, end: Date): AsyncGenerator<SyncDataPoint> {
+    for await (const sleep of this.#paginate(tokens, "/activity/sleep", WhoopSleep, start, end)) {
       if (sleep.score_state !== "SCORED" || !sleep.score) continue
 
       const recordedAt = new Date(sleep.start)
       const stages = sleep.score.stage_summary
       const durationMinutes = stages
-        ? Math.round(
-            (stages.total_in_bed_time_milli - stages.total_awake_time_milli) / 60000,
-          )
+        ? Math.round((stages.total_in_bed_time_milli - stages.total_awake_time_milli) / 60000)
         : undefined
 
       // Full structured sleep record
@@ -358,9 +345,7 @@ export class WhoopProvider extends OAuth2Provider {
           remSleepMinutes: stages
             ? Math.round(stages.total_rem_sleep_time_milli / 60000)
             : undefined,
-          awakeMinutes: stages
-            ? Math.round(stages.total_awake_time_milli / 60000)
-            : undefined,
+          awakeMinutes: stages ? Math.round(stages.total_awake_time_milli / 60000) : undefined,
           disturbanceCount: stages?.disturbance_count,
           sleepCycleCount: stages?.sleep_cycle_count,
           sleepEfficiency: sleep.score.sleep_efficiency_percentage,
@@ -393,11 +378,7 @@ export class WhoopProvider extends OAuth2Provider {
     }
   }
 
-  async *#syncWorkouts(
-    tokens: OAuthTokens,
-    start: Date,
-    end: Date,
-  ): AsyncGenerator<SyncDataPoint> {
+  async *#syncWorkouts(tokens: OAuthTokens, start: Date, end: Date): AsyncGenerator<SyncDataPoint> {
     for await (const workout of this.#paginate(
       tokens,
       "/activity/workout",
@@ -468,18 +449,8 @@ export class WhoopProvider extends OAuth2Provider {
     }
   }
 
-  async *#syncCycles(
-    tokens: OAuthTokens,
-    start: Date,
-    end: Date,
-  ): AsyncGenerator<SyncDataPoint> {
-    for await (const cycle of this.#paginate(
-      tokens,
-      "/cycle",
-      WhoopCycle,
-      start,
-      end,
-    )) {
+  async *#syncCycles(tokens: OAuthTokens, start: Date, end: Date): AsyncGenerator<SyncDataPoint> {
+    for await (const cycle of this.#paginate(tokens, "/cycle", WhoopCycle, start, end)) {
       if (cycle.score_state !== "SCORED" || !cycle.score) continue
 
       const recordedAt = new Date(cycle.start)
@@ -634,9 +605,9 @@ export class WhoopProvider extends OAuth2Provider {
 // ── Auto-registration ─────────────────────────────────────────
 
 export function registerWhoopProvider() {
-  const clientId = process.env["WHOOP_CLIENT_ID"]
-  const clientSecret = process.env["WHOOP_CLIENT_SECRET"]
-  const redirectBase = process.env["OAUTH_REDIRECT_BASE_URL"]
+  const clientId = process.env.WHOOP_CLIENT_ID
+  const clientSecret = process.env.WHOOP_CLIENT_SECRET
+  const redirectBase = process.env.OAUTH_REDIRECT_BASE_URL
 
   if (!clientId || !clientSecret) {
     console.warn("[WhoopProvider] Skipping registration: WHOOP_CLIENT_ID/SECRET not set.")

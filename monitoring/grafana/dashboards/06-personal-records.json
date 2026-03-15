@@ -1,0 +1,462 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "All-time personal bests — longest run, most steps, best VO2 max, and every other record broken.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "Platform Overview",
+      "url": "/d/vs-platform",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    },
+    {
+      "title": "Workouts",
+      "url": "/d/vs-workouts",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    },
+    {
+      "title": "Sleep",
+      "url": "/d/vs-sleep",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    },
+    {
+      "title": "Heart Health",
+      "url": "/d/vs-heart-health",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    },
+    {
+      "title": "Body Metrics",
+      "url": "/d/vs-body-metrics",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    },
+    {
+      "title": "Daily Activity",
+      "url": "/d/vs-daily-activity",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    },
+    {
+      "title": "Provider Health",
+      "url": "/d/vs-provider-health",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "All-Time Bests",
+      "type": "row"
+    },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "gold", "value": null }] },
+          "unit": "lengthkm",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND((value/1000.0)::numeric,2)::float AS \"Longest Run (km)\"\nFROM personal_records\nWHERE metric_type = 'distance'\n  AND category IN ('running','run')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nORDER BY value DESC\nLIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Longest Run",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "gold", "value": null }] },
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(value::numeric,0)::bigint AS \"Most Steps (day)\"\nFROM personal_records\nWHERE metric_type = 'steps'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nORDER BY value DESC\nLIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Most Steps in a Day",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "gold", "value": null }] },
+          "unit": "short",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(value::numeric,1)::float AS \"Best VO2 Max\"\nFROM personal_records\nWHERE metric_type IN ('vo2_max','vo2max')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nORDER BY value DESC\nLIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Best VO2 Max",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "gold", "value": null }] },
+          "unit": "bpm",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(MIN(value)::numeric,0)::float AS \"Lowest Resting HR\"\nFROM personal_records\nWHERE metric_type IN ('resting_heart_rate','resting_hr')\n  AND value > 30\n  AND ('$userId' = 'all' OR user_id::text = '$userId')",
+          "refId": "A"
+        }
+      ],
+      "title": "Lowest Resting HR",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "gold", "value": null }] },
+          "unit": "kcal",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(value::numeric,0)::float AS \"Most Calories Burned\"\nFROM personal_records\nWHERE metric_type IN ('calories','calories_burned','calories_active')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nORDER BY value DESC\nLIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Most Calories (Session)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "gold", "value": null }] },
+          "unit": "ms",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(MAX(value)::numeric,0)::float AS \"Best HRV (ms)\"\nFROM personal_records\nWHERE metric_type IN ('hrv','heart_rate_variability')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')",
+          "refId": "A"
+        }
+      ],
+      "title": "Best HRV",
+      "type": "stat"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "Personal Records Table",
+      "type": "row"
+    },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Value" },
+            "properties": [{ "id": "custom.width", "value": 120 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Metric Type" },
+            "properties": [{ "id": "custom.width", "value": 180 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Category" },
+            "properties": [{ "id": "custom.width", "value": 150 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Set On" },
+            "properties": [{ "id": "custom.width", "value": 180 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Provider" },
+            "properties": [{ "id": "custom.width", "value": 100 }]
+          }
+        ]
+      },
+      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 6 },
+      "id": 7,
+      "options": {
+        "frameIndex": 0,
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "Set On" }]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  u.display_name AS \"User\",\n  pr.metric_type AS \"Metric Type\",\n  COALESCE(pr.category, '-') AS \"Category\",\n  ROUND(pr.value::numeric, 2)::float AS \"Value\",\n  COALESCE(pr.unit, '-') AS \"Unit\",\n  pr.provider_id AS \"Provider\",\n  pr.recorded_at AS \"Set On\",\n  pr.updated_at AS \"Updated\"\nFROM personal_records pr\nJOIN users u ON u.id = pr.user_id\nWHERE ('$userId' = 'all' OR pr.user_id::text = '$userId')\nORDER BY pr.recorded_at DESC\nLIMIT 200",
+          "refId": "A"
+        }
+      ],
+      "title": "All Personal Records",
+      "type": "table"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "id": 102,
+      "title": "Records by Category",
+      "type": "row"
+    },
+
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 70, "gradientMode": "none", "lineWidth": 1 },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 21 },
+      "id": 8,
+      "options": {
+        "barRadius": 0.05,
+        "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xTickLabelRotation": -30
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  metric_type AS \"Metric\",\n  COUNT(*) AS \"Records\"\nFROM personal_records\nWHERE ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY metric_type\nORDER BY 2 DESC\nLIMIT 20",
+          "refId": "A"
+        }
+      ],
+      "title": "Records Count by Metric Type",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "gradientMode": "none",
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": ["sum"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,$__interval),\n  COUNT(*) AS \"PRs Set\"\nFROM personal_records\nWHERE $__timeFilter(recorded_at)\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "PRs Set Over Time",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 38,
+  "tags": ["vitasync", "health", "records"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": true, "text": "All", "value": "all" },
+        "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+        "definition": "SELECT COALESCE(display_name, email, external_id, id::text) AS __text, id::text AS __value FROM users ORDER BY 1",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": "all",
+        "label": "User",
+        "multi": false,
+        "name": "userId",
+        "options": [],
+        "query": "SELECT COALESCE(display_name, email, external_id, id::text) AS __text, id::text AS __value FROM users ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-1y", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Personal Records",
+  "uid": "vs-personal-records",
+  "version": 1
+}

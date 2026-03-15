@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { usersApi, eventsApi, type WorkoutEvent } from "../../../lib/api"
+import { useState } from "react"
+import { type WorkoutEvent, eventsApi, usersApi } from "../../../lib/api"
 
 const EVENT_TYPE_COLORS: Record<string, string> = {
   workout: "bg-orange-100 text-orange-700",
@@ -77,8 +77,11 @@ export default function ActivityPage() {
         <h2 className="mb-4 text-sm font-semibold text-gray-900">Filters</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700">User</label>
+            <label htmlFor="activity-user" className="block text-xs font-medium text-gray-700">
+              User
+            </label>
             <select
+              id="activity-user"
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={selectedUserId}
               onChange={(e) => {
@@ -95,8 +98,14 @@ export default function ActivityPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700">Event Type</label>
+            <label
+              htmlFor="activity-event-type"
+              className="block text-xs font-medium text-gray-700"
+            >
+              Event Type
+            </label>
             <select
+              id="activity-event-type"
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={eventType}
               onChange={(e) => {
@@ -112,8 +121,11 @@ export default function ActivityPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700">From</label>
+            <label htmlFor="activity-from" className="block text-xs font-medium text-gray-700">
+              From
+            </label>
             <input
+              id="activity-from"
               type="date"
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={from}
@@ -124,8 +136,11 @@ export default function ActivityPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700">To</label>
+            <label htmlFor="activity-to" className="block text-xs font-medium text-gray-700">
+              To
+            </label>
             <input
+              id="activity-to"
               type="date"
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={to}
@@ -165,7 +180,9 @@ export default function ActivityPage() {
             <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
               <p className="text-sm font-medium text-gray-900">{events.length} events</p>
               {eventType && (
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${EVENT_TYPE_COLORS[eventType] ?? "bg-gray-100 text-gray-600"}`}>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${EVENT_TYPE_COLORS[eventType] ?? "bg-gray-100 text-gray-600"}`}
+                >
                   {eventType}
                 </span>
               )}
@@ -174,7 +191,17 @@ export default function ActivityPage() {
               <table className="min-w-full divide-y divide-gray-200 text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    {["Type", "Activity", "Title", "Duration", "Distance", "Calories", "Avg HR", "Provider", "Date"].map((h) => (
+                    {[
+                      "Type",
+                      "Activity",
+                      "Title",
+                      "Duration",
+                      "Distance",
+                      "Calories",
+                      "Avg HR",
+                      "Provider",
+                      "Date",
+                    ].map((h) => (
                       <th
                         key={h}
                         className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
@@ -196,6 +223,7 @@ export default function ActivityPage() {
           {eventsResult?.hasMore && (
             <div className="mt-4 text-center">
               <button
+                type="button"
                 onClick={() => setCursor(eventsResult.nextCursor)}
                 disabled={isLoading}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -225,9 +253,7 @@ function EventRow({ event: ev }: { event: WorkoutEvent }) {
       <td className="px-4 py-3 text-gray-600 capitalize whitespace-nowrap">
         {ev.activityType?.replace(/_/g, " ") ?? "—"}
       </td>
-      <td className="px-4 py-3 text-gray-900 max-w-[180px] truncate">
-        {ev.title ?? "—"}
-      </td>
+      <td className="px-4 py-3 text-gray-900 max-w-[180px] truncate">{ev.title ?? "—"}</td>
       <td className="px-4 py-3 text-gray-600 tabular-nums whitespace-nowrap">
         {formatDuration(ev.durationSeconds)}
       </td>

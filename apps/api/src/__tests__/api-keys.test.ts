@@ -1,8 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
-import { buildTestApp, TEST_WORKSPACE_ID, TEST_API_KEY_ID } from "./helpers.js"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { ApiKeyService } from "../services/api-key.service.js"
+import { TEST_API_KEY_ID, TEST_WORKSPACE_ID, buildTestApp } from "./helpers.js"
 
-vi.mock("../services/api-key.service.js")
+vi.mock("../services/api-key.service.js", () => {
+  const ApiKeyService = vi.fn()
+  ApiKeyService.prototype.create = vi.fn()
+  ApiKeyService.prototype.list = vi.fn()
+  ApiKeyService.prototype.revoke = vi.fn()
+  ApiKeyService.prototype.rotate = vi.fn()
+  return { ApiKeyService }
+})
 
 const mockKey = {
   id: TEST_API_KEY_ID,
@@ -70,7 +77,7 @@ describe("API keys routes", () => {
       const res = await app.inject({ method: "GET", url: "/v1/api-keys" })
 
       expect(res.statusCode).toBe(200)
-      const body = res.json() as typeof mockKey[]
+      const body = res.json() as (typeof mockKey)[]
       expect(body).toHaveLength(1)
       expect(body[0]).not.toHaveProperty("rawKey")
     })

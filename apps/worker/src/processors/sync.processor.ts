@@ -1,10 +1,10 @@
-import type { Job } from "bullmq"
-import { getDb, providerConnections, syncJobs, healthMetrics } from "@biosync-io/db"
-import { eq } from "drizzle-orm"
+import { getDb, healthMetrics, providerConnections, syncJobs } from "@biosync-io/db"
 import { providerRegistry } from "@biosync-io/provider-core"
-import { decrypt } from "../lib/crypto.js"
-import { getConfig } from "../config.js"
 import type { ProviderTokens, SyncDataPoint } from "@biosync-io/types"
+import type { Job } from "bullmq"
+import { eq } from "drizzle-orm"
+import { getConfig } from "../config.js"
+import { decrypt } from "../lib/crypto.js"
 import { enqueueAllActiveConnections } from "../schedulers/periodic-sync.js"
 
 export interface SyncJobData {
@@ -63,27 +63,37 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
     .values({ connectionId, status: "running", startedAt: new Date() })
     .returning()
 
-  const jobId = syncJob!.id
+  const jobId = syncJob?.id
 
   try {
     // Decrypt and parse tokens
-    let tokens: ProviderTokens = JSON.parse(decrypt(connection.encryptedTokens, config.ENCRYPTION_KEY))
+    let tokens: ProviderTokens = JSON.parse(
+      decrypt(connection.encryptedTokens, config.ENCRYPTION_KEY),
+    )
 
     // Get the provider instance
     const provider = providerRegistry.resolve(connection.providerId)
 
     // Refresh token if expired (OAuth2 providers)
     if ("refreshTokens" in provider && "accessToken" in tokens) {
-      const oauth2Tokens = tokens as { accessToken: string; refreshToken?: string; expiresAt?: number }
+      const oauth2Tokens = tokens as {
+        accessToken: string
+        refreshToken?: string
+        expiresAt?: number
+      }
       const bufferMs = 5 * 60 * 1000 // refresh 5 minutes before expiry
       if (oauth2Tokens.expiresAt && oauth2Tokens.expiresAt - bufferMs < Date.now()) {
-        if (!oauth2Tokens.refreshToken) throw new Error("Token expired and no refresh token available")
+        if (!oauth2Tokens.refreshToken)
+          throw new Error("Token expired and no refresh token available")
         tokens = await provider.refreshTokens(oauth2Tokens.refreshToken)
         // Re-encrypt and persist refreshed tokens
         const { encrypt } = await import("../lib/crypto.js")
         await db
           .update(providerConnections)
-          .set({ encryptedTokens: encrypt(JSON.stringify(tokens), config.ENCRYPTION_KEY), updatedAt: new Date() })
+          .set({
+            encryptedTokens: encrypt(JSON.stringify(tokens), config.ENCRYPTION_KEY),
+            updatedAt: new Date(),
+          })
           .where(eq(providerConnections.id, connectionId))
       }
     }
@@ -115,7 +125,11 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
 
     const flush = async () => {
       if (batch.length === 0) return
-      const result = await db.insert(healthMetrics).values(batch).onConflictDoNothing().returning({ id: healthMetrics.id })
+      const result = await db
+        .insert(healthMetrics)
+        .values(batch)
+        .onConflictDoNothing()
+        .returning({ id: healthMetrics.id })
       totalInserted += result.length
       batch.length = 0
       await job.updateProgress(totalInserted)

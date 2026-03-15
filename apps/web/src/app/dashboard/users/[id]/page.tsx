@@ -1,10 +1,19 @@
 "use client"
 
-import { useState } from "react"
-import { useParams } from "next/navigation"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { usersApi, connectionsApi, healthApi, eventsApi, personalRecordsApi, type User, type WorkoutEvent, type PersonalRecord } from "../../../../lib/api"
+import { useParams } from "next/navigation"
+import { useState } from "react"
+import {
+  type PersonalRecord,
+  type User,
+  type WorkoutEvent,
+  connectionsApi,
+  eventsApi,
+  healthApi,
+  personalRecordsApi,
+  usersApi,
+} from "../../../../lib/api"
 import type { HealthSummary } from "../../../../lib/api"
 
 const METRIC_LABELS: Record<string, string> = {
@@ -104,7 +113,10 @@ export default function UserDetailPage() {
     return (
       <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-20 text-center">
         <p className="text-sm text-gray-500">User not found.</p>
-        <Link href="/dashboard/users" className="mt-3 inline-block text-sm text-indigo-600 hover:text-indigo-800">
+        <Link
+          href="/dashboard/users"
+          className="mt-3 inline-block text-sm text-indigo-600 hover:text-indigo-800"
+        >
           ← Back to Users
         </Link>
       </div>
@@ -132,6 +144,7 @@ export default function UserDetailPage() {
           </p>
         </div>
         <button
+          type="button"
           onClick={() => {
             setEditForm({ email: user.email ?? "", displayName: user.displayName ?? "" })
             setEditing(true)
@@ -149,16 +162,25 @@ export default function UserDetailPage() {
           {editError && <p className="mb-3 text-sm text-red-600">{editError}</p>}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-medium text-gray-700">Email</label>
+              <label htmlFor="edit-user-email" className="block text-xs font-medium text-gray-700">
+                Email
+              </label>
               <input
+                id="edit-user-email"
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 value={editForm.email}
                 onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700">Display Name</label>
+              <label
+                htmlFor="edit-user-displayname"
+                className="block text-xs font-medium text-gray-700"
+              >
+                Display Name
+              </label>
               <input
+                id="edit-user-displayname"
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 value={editForm.displayName}
                 onChange={(e) => setEditForm((f) => ({ ...f, displayName: e.target.value }))}
@@ -167,6 +189,7 @@ export default function UserDetailPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <button
+              type="button"
               onClick={() => {
                 const payload: { email?: string; displayName?: string } = {}
                 if (editForm.email) payload.email = editForm.email
@@ -179,7 +202,11 @@ export default function UserDetailPage() {
               {updateMutation.isPending ? "Saving…" : "Save"}
             </button>
             <button
-              onClick={() => { setEditing(false); setEditError("") }}
+              type="button"
+              onClick={() => {
+                setEditing(false)
+                setEditError("")
+              }}
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Cancel
@@ -223,13 +250,18 @@ export default function UserDetailPage() {
         ) : (
           <div className="divide-y divide-gray-100">
             {connections.map((conn) => (
-              <div key={conn.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+              <div
+                key={conn.id}
+                className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+              >
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 uppercase">
                     {conn.providerId[0]}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900 capitalize">{conn.providerId}</p>
+                    <p className="text-sm font-medium text-gray-900 capitalize">
+                      {conn.providerId}
+                    </p>
                     <p className="text-xs text-gray-400">
                       {conn.lastSyncedAt
                         ? `Last sync: ${new Date(conn.lastSyncedAt).toLocaleString()}`
@@ -246,6 +278,7 @@ export default function UserDetailPage() {
                     {conn.status}
                   </span>
                   <button
+                    type="button"
                     onClick={() => syncMutation.mutate(conn.id)}
                     disabled={syncMutation.isPending}
                     className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -253,6 +286,7 @@ export default function UserDetailPage() {
                     {syncMutation.isPending ? "Syncing…" : "Sync"}
                   </button>
                   <button
+                    type="button"
                     onClick={() => disconnectMutation.mutate(conn.id)}
                     disabled={disconnectMutation.isPending}
                     className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
@@ -284,10 +318,7 @@ export default function UserDetailPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {summary.map((s) => (
-              <div
-                key={s.metricType}
-                className="rounded-lg border border-gray-100 bg-gray-50 p-4"
-              >
+              <div key={s.metricType} className="rounded-lg border border-gray-100 bg-gray-50 p-4">
                 <p className="truncate text-xs font-medium text-gray-500">
                   {METRIC_LABELS[s.metricType] ?? s.metricType}
                 </p>
@@ -317,7 +348,10 @@ export default function UserDetailPage() {
         ) : (
           <div className="divide-y divide-gray-100">
             {recentEvents.map((ev) => (
-              <div key={ev.id} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
+              <div
+                key={ev.id}
+                className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0"
+              >
                 <div className="flex items-center gap-3">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -334,16 +368,16 @@ export default function UserDetailPage() {
                     <p className="text-sm text-gray-900">
                       {ev.title ?? ev.activityType?.replace(/_/g, " ") ?? ev.eventType}
                     </p>
-                    <p className="text-xs text-gray-400">{new Date(ev.startedAt).toLocaleString()}</p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(ev.startedAt).toLocaleString()}
+                    </p>
                   </div>
                 </div>
                 <div className="text-right text-xs text-gray-500 tabular-nums space-x-2">
                   {ev.durationSeconds != null && (
                     <span>{Math.floor(ev.durationSeconds / 60)}m</span>
                   )}
-                  {ev.caloriesKcal != null && (
-                    <span>{Math.round(ev.caloriesKcal)} kcal</span>
-                  )}
+                  {ev.caloriesKcal != null && <span>{Math.round(ev.caloriesKcal)} kcal</span>}
                 </div>
               </div>
             ))}
@@ -366,9 +400,13 @@ export default function UserDetailPage() {
                 </p>
                 <p className="mt-1 text-xl font-bold text-gray-900">
                   {pr.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                  {pr.unit && <span className="ml-1 text-sm font-normal text-gray-500">{pr.unit}</span>}
+                  {pr.unit && (
+                    <span className="ml-1 text-sm font-normal text-gray-500">{pr.unit}</span>
+                  )}
                 </p>
-                <p className="mt-1 text-xs text-gray-400">{new Date(pr.recordedAt).toLocaleDateString()}</p>
+                <p className="mt-1 text-xs text-gray-400">
+                  {new Date(pr.recordedAt).toLocaleDateString()}
+                </p>
               </div>
             ))}
           </div>

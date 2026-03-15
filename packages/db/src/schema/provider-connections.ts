@@ -1,15 +1,15 @@
+import { sql } from "drizzle-orm"
 import {
+  boolean,
+  index,
+  jsonb,
   pgTable,
-  uuid,
-  varchar,
   text,
   timestamp,
-  boolean,
-  jsonb,
-  index,
   unique,
+  uuid,
+  varchar,
 } from "drizzle-orm/pg-core"
-import { sql } from "drizzle-orm"
 import { users } from "./users"
 
 /**
@@ -19,9 +19,7 @@ import { users } from "./users"
 export const providerConnections = pgTable(
   "provider_connections",
   {
-    id: uuid("id")
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),

@@ -1,7 +1,7 @@
-import { Queue } from "bullmq"
-import type { Redis } from "ioredis"
 import { getDb, providerConnections, users } from "@biosync-io/db"
+import type { Queue } from "bullmq"
 import { eq } from "drizzle-orm"
+import type { Redis } from "ioredis"
 
 /**
  * Periodic sync scheduler — enqueues sync jobs for all active connections.
@@ -15,9 +15,12 @@ import { eq } from "drizzle-orm"
  * - Jobs are deduplicated via `jobId` based on connectionId to avoid pile-up
  */
 
-const SYNC_INTERVAL_MS = parseInt(process.env["SYNC_INTERVAL_MS"] ?? "900000", 10) // default 15 minutes
+const SYNC_INTERVAL_MS = Number.parseInt(process.env.SYNC_INTERVAL_MS ?? "900000", 10) // default 15 minutes
 
-export async function startPeriodicScheduler(syncQueue: Queue, connection: Redis): Promise<() => Promise<void>> {
+export async function startPeriodicScheduler(
+  syncQueue: Queue,
+  connection: Redis,
+): Promise<() => Promise<void>> {
   // Also set up a BullMQ repeatable job as a fallback scheduler
   // This ensures scheduling continues even if the worker restarts
   await syncQueue.add(
@@ -44,7 +47,11 @@ export async function startPeriodicScheduler(syncQueue: Queue, connection: Redis
   return async () => {
     clearInterval(timer)
     // Remove the repeatable job on shutdown
-    await syncQueue.removeRepeatable("schedule-all-syncs", { every: SYNC_INTERVAL_MS }, "periodic-sync-sweep")
+    await syncQueue.removeRepeatable(
+      "schedule-all-syncs",
+      { every: SYNC_INTERVAL_MS },
+      "periodic-sync-sweep",
+    )
   }
 }
 
@@ -90,4 +97,3 @@ export async function enqueueAllActiveConnections(syncQueue: Queue): Promise<voi
     ),
   )
 }
-

@@ -1,8 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
-import { buildTestApp, TEST_USER_ID, TEST_WORKSPACE_ID } from "./helpers.js"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { UserService } from "../services/user.service.js"
+import { TEST_USER_ID, TEST_WORKSPACE_ID, buildTestApp } from "./helpers.js"
 
-vi.mock("../services/user.service.js")
+vi.mock("../services/user.service.js", () => {
+  const UserService = vi.fn()
+  UserService.prototype.findOrCreate = vi.fn()
+  UserService.prototype.findById = vi.fn()
+  UserService.prototype.list = vi.fn()
+  UserService.prototype.update = vi.fn()
+  UserService.prototype.delete = vi.fn()
+  return { UserService }
+})
 
 const mockUser = {
   id: TEST_USER_ID,

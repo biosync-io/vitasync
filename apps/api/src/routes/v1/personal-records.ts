@@ -18,9 +18,7 @@ const personalRecordsRoutes: FastifyPluginAsync = async (app) => {
       .object({ userId: z.string().uuid(), metricType: z.string() })
       .parse(request.params)
 
-    const category = z
-      .object({ category: z.string().optional() })
-      .parse(request.query).category
+    const category = z.object({ category: z.string().optional() }).parse(request.query).category
 
     const record = await personalRecordService.findByType(userId, metricType, category)
     if (!record) {

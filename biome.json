@@ -13,7 +13,8 @@
       ".next",
       "coverage",
       "*.d.ts",
-      "packages/db/src/migrations/**"
+      "packages/db/src/migrations/**",
+      "apps/docs/public/**"
     ]
   },
   "formatter": {
@@ -33,7 +34,8 @@
         "noGlobalEval": "error"
       },
       "suspicious": {
-        "noConsoleLog": "warn"
+        "noConsoleLog": "warn",
+        "noArrayIndexKey": "warn"
       },
       "style": {
         "noNonNullAssertion": "warn",

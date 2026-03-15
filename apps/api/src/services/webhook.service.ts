@@ -1,7 +1,7 @@
-import { getDb, webhooks, webhookDeliveries } from "@biosync-io/db"
-import { eq, and, desc } from "drizzle-orm"
 import { createHmac } from "node:crypto"
+import { getDb, webhookDeliveries, webhooks } from "@biosync-io/db"
 import type { Webhook, WebhookDelivery, WebhookEvent } from "@biosync-io/types"
+import { and, desc, eq } from "drizzle-orm"
 
 export class WebhookService {
   private get db() {
@@ -93,6 +93,6 @@ export class WebhookService {
    * Consumers can verify deliveries by recomputing this signature.
    */
   static buildSignature(payload: string, secret: string): string {
-    return "sha256=" + createHmac("sha256", secret).update(payload).digest("hex")
+    return `sha256=${createHmac("sha256", secret).update(payload).digest("hex")}`
   }
 }

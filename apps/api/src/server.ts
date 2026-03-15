@@ -1,9 +1,9 @@
-import Fastify from "fastify"
 import cors from "@fastify/cors"
 import helmet from "@fastify/helmet"
 import rateLimit from "@fastify/rate-limit"
 import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
+import Fastify from "fastify"
 import { config } from "./config.js"
 import { bullBoardPlugin } from "./plugins/bull-board.js"
 import { registerV1Routes } from "./routes/v1/index.js"
@@ -80,7 +80,8 @@ export async function buildServer() {
             type: "apiKey",
             in: "header",
             name: "Authorization",
-            description: `Bearer token with your VitaSync API key.\n\nFormat: \`Authorization: Bearer vs_live_...\``,
+            description:
+              "Bearer token with your VitaSync API key.\n\nFormat: `Authorization: Bearer vs_live_...`",
           },
         },
       },

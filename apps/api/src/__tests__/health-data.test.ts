@@ -1,8 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
-import { buildTestApp, TEST_USER_ID } from "./helpers.js"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { HealthDataService } from "../services/health-data.service.js"
+import { TEST_USER_ID, buildTestApp } from "./helpers.js"
 
-vi.mock("../services/health-data.service.js")
+vi.mock("../services/health-data.service.js", () => {
+  const HealthDataService = vi.fn()
+  HealthDataService.prototype.query = vi.fn()
+  HealthDataService.prototype.summary = vi.fn()
+  HealthDataService.prototype.timeseries = vi.fn()
+  return { HealthDataService }
+})
 
 const mockMetric = {
   id: "00000000-0000-0000-0000-000000000020",
@@ -54,9 +60,7 @@ describe("Health data routes", () => {
         url: `/v1/users/${TEST_USER_ID}/health?metricType=steps&from=2025-01-01T00:00:00.000Z&to=2025-12-31T23:59:59.000Z`,
       })
 
-      expect(spy).toHaveBeenCalledWith(
-        expect.objectContaining({ metricType: "steps" }),
-      )
+      expect(spy).toHaveBeenCalledWith(expect.objectContaining({ metricType: "steps" }))
     })
 
     it("rejects limit > 1000", async () => {

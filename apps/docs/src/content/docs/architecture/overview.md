@@ -14,7 +14,8 @@ vitasync/
 ├── apps/
 │   ├── api/        # Fastify 5 REST API
 │   ├── worker/     # BullMQ background worker
-│   └── web/        # Next.js 15 App Router dashboard
+│   ├── web/        # Next.js 15 App Router dashboard
+│   └── mcp/        # MCP server — expose health data to AI assistants
 ├── packages/
 │   ├── types/      # Shared TypeScript types
 │   ├── db/         # Drizzle ORM schemas + postgres.js client
@@ -24,6 +25,12 @@ vitasync/
 │       ├── garmin/
 │       ├── strava/
 │       └── whoop/
+├── monitoring/
+│   ├── docker-compose.monitoring.yml   # Grafana + Prometheus + exporters
+│   ├── grafana/
+│   │   ├── dashboards/                 # 8 pre-built health dashboards (JSON)
+│   │   └── provisioning/               # Auto-provisioned datasource + folder
+│   └── prometheus/                     # Scrape config + alerting rules
 └── helm/vitasync/  # Production Helm chart
 ```
 
@@ -53,6 +60,16 @@ API (Fastify 5)
       ├─ streams data via provider.syncData() → AsyncGenerator
       ├─ bulk-inserts to health_metrics (idempotent)
       └─ enqueues webhook delivery job
+
+AI Assistant (Claude, GPT, Cursor…)
+  │ MCP protocol (stdio or HTTP/SSE)
+  ▼
+MCP Server (apps/mcp)
+  ├─ tool: query_health_metrics  → SELECT from health_metrics
+  ├─ tool: list_users            → SELECT from users
+  ├─ tool: list_connections      → SELECT from provider_connections
+  ├─ tool: get_personal_records  → SELECT from personal_records
+  └─ tool: get_events            → SELECT from events (workouts, sleep…)
 ```
 
 ## Key Design Decisions
@@ -72,3 +89,37 @@ Health metrics are inserted with a composite unique index on `(userId, providerI
 ### Multi-Tenancy via Workspaces
 
 Every resource (users, connections, metrics, webhooks, API keys) belongs to a **workspace**. API keys are scoped to a workspace and hashed before storage. This makes VitaSync safe to use as a backend for multi-tenant SaaS products.
+
+## MCP Server
+
+`apps/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server built with the official `@modelcontextprotocol/sdk`. It connects directly to the VitaSync PostgreSQL database (read-only) and exposes health data as **MCP tools** that any MCP-compatible AI assistant can call.
+
+This means you can ask an AI assistant things like _"How have my resting heart rate and HRV trended over the last 3 months?"_ or _"Show me my top 10 personal records"_ and it will fetch live data from your VitaSync instance.
+
+See the [MCP Server guide](/dev-guides/mcp) for setup instructions.
+
+## Monitoring Stack
+
+`monitoring/` contains a production-grade observability stack:
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| **Grafana** | `3030` | Health data dashboards + platform metrics |
+| **Prometheus** | `9090` | Metrics collection |
+| **postgres-exporter** | `9187` | PostgreSQL metrics for Prometheus |
+| **redis-exporter** | `9121` | Redis metrics for Prometheus |
+
+Eight pre-built Grafana dashboards are provisioned automatically:
+
+| Dashboard | UID |
+|-----------|-----|
+| Platform Overview | `vs-platform-overview` |
+| Workouts & Activity | `vs-workouts` |
+| Sleep | `vs-sleep` |
+| Heart Health | `vs-heart-health` |
+| Body Metrics | `vs-body-metrics` |
+| Personal Records | `vs-personal-records` |
+| Daily Activity | `vs-daily-activity` |
+| Provider Health | `vs-provider-health` |
+
+See the [Grafana Dashboards guide](/dev-guides/grafana-dashboards) for setup instructions.

@@ -1,13 +1,11 @@
-import { pgTable, uuid, varchar, text, timestamp, integer, index } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
+import { index, integer, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
 import { providerConnections } from "./provider-connections"
 
 export const syncJobs = pgTable(
   "sync_jobs",
   {
-    id: uuid("id")
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
     connectionId: uuid("connection_id")
       .notNull()
       .references(() => providerConnections.id, { onDelete: "cascade" }),

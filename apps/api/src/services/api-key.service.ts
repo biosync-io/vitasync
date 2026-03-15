@@ -1,7 +1,7 @@
-import { getDb, apiKeys, workspaces } from "@biosync-io/db"
-import { eq, and } from "drizzle-orm"
-import { generateApiKey } from "../lib/api-key.js"
+import { apiKeys, getDb, workspaces } from "@biosync-io/db"
 import type { ApiKey, ApiKeyScope } from "@biosync-io/types"
+import { and, eq } from "drizzle-orm"
+import { generateApiKey } from "../lib/api-key.js"
 
 export class ApiKeyService {
   private get db() {
@@ -58,7 +58,10 @@ export class ApiKeyService {
    * metadata (name, scopes, expiry). The old raw key is immediately invalidated.
    * The new raw key is returned once and must never be stored.
    */
-  async rotate(id: string, workspaceId: string): Promise<{ apiKey: ApiKey; rawKey: string } | null> {
+  async rotate(
+    id: string,
+    workspaceId: string,
+  ): Promise<{ apiKey: ApiKey; rawKey: string } | null> {
     const { raw, hash, prefix } = generateApiKey()
 
     const [updated] = await this.db
