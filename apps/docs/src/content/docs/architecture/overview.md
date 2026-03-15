@@ -113,7 +113,7 @@ Eight pre-built Grafana dashboards are provisioned automatically:
 
 | Dashboard | UID |
 |-----------|-----|
-| Platform Overview | `vs-platform` |
+| Platform Overview | `vs-platform-overview` |
 | Workouts & Activity | `vs-workouts` |
 | Sleep | `vs-sleep` |
 | Heart Health | `vs-heart-health` |
