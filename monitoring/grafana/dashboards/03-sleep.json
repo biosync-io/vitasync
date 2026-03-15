@@ -18,16 +18,64 @@
   "graphTooltip": 1,
   "id": null,
   "links": [
-    { "title": "Platform Overview", "url": "/d/vs-platform",        "type": "link", "icon": "external link", "targetBlank": false },
-    { "title": "Workouts",          "url": "/d/vs-workouts",         "type": "link", "icon": "external link", "targetBlank": false },
-    { "title": "Heart Health",      "url": "/d/vs-heart-health",     "type": "link", "icon": "external link", "targetBlank": false },
-    { "title": "Body Metrics",      "url": "/d/vs-body-metrics",     "type": "link", "icon": "external link", "targetBlank": false },
-    { "title": "Daily Activity",    "url": "/d/vs-daily-activity",   "type": "link", "icon": "external link", "targetBlank": false },
-    { "title": "Personal Records",  "url": "/d/vs-personal-records", "type": "link", "icon": "external link", "targetBlank": false },
-    { "title": "Provider Health",   "url": "/d/vs-provider-health",  "type": "link", "icon": "external link", "targetBlank": false }
+    {
+      "title": "Platform Overview",
+      "url": "/d/vs-platform",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    },
+    {
+      "title": "Workouts",
+      "url": "/d/vs-workouts",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    },
+    {
+      "title": "Heart Health",
+      "url": "/d/vs-heart-health",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    },
+    {
+      "title": "Body Metrics",
+      "url": "/d/vs-body-metrics",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    },
+    {
+      "title": "Daily Activity",
+      "url": "/d/vs-daily-activity",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    },
+    {
+      "title": "Personal Records",
+      "url": "/d/vs-personal-records",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    },
+    {
+      "title": "Provider Health",
+      "url": "/d/vs-provider-health",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false
+    }
   ],
   "panels": [
-    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 100, "title": "Sleep Summary", "type": "row" },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Sleep Summary",
+      "type": "row"
+    },
 
     {
       "datasource": { "type": "postgres", "uid": "vitasync-pg" },
@@ -35,7 +83,15 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 6 }, { "color": "green", "value": 7 }, { "color": "super-light-blue", "value": 9 }] },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 6 },
+              { "color": "green", "value": 7 },
+              { "color": "super-light-blue", "value": 9 }
+            ]
+          },
           "unit": "h",
           "decimals": 1
         },
@@ -43,8 +99,24 @@
       },
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
       "id": 1,
-      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["mean"], "fields": "", "values": false }, "textMode": "auto" },
-      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND((AVG(duration_seconds)/3600.0)::numeric,1)::float AS \"Avg Sleep (h)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'sleep'\n  AND duration_seconds IS NOT NULL\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["mean"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND((AVG(duration_seconds)/3600.0)::numeric,1)::float AS \"Avg Sleep (h)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'sleep'\n  AND duration_seconds IS NOT NULL\n  AND ('$userId' = 'all' OR user_id::text = '$userId')",
+          "refId": "A"
+        }
+      ],
       "title": "Avg Sleep Duration",
       "type": "stat"
     },
@@ -54,7 +126,14 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 60 }, { "color": "green", "value": 80 }] },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "green", "value": 80 }
+            ]
+          },
           "unit": "short",
           "decimals": 0
         },
@@ -62,8 +141,24 @@
       },
       "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
       "id": 2,
-      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["mean"], "fields": "", "values": false }, "textMode": "auto" },
-      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(AVG(value)::numeric,0)::float AS \"Avg Sleep Score\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type = 'sleep_score'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["mean"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(AVG(value)::numeric,0)::float AS \"Avg Sleep Score\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type = 'sleep_score'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')",
+          "refId": "A"
+        }
+      ],
       "title": "Avg Sleep Score",
       "type": "stat"
     },
@@ -73,7 +168,10 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "super-light-blue", "value": null }] },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "super-light-blue", "value": null }]
+          },
           "unit": "short",
           "decimals": 0
         },
@@ -81,8 +179,24 @@
       },
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
       "id": 3,
-      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
-      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT COUNT(*)::bigint AS \"Sleep Sessions\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'sleep'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::bigint AS \"Sleep Sessions\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'sleep'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')",
+          "refId": "A"
+        }
+      ],
       "title": "Total Sleep Sessions",
       "type": "stat"
     },
@@ -92,7 +206,14 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [],
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 60 }, { "color": "green", "value": 80 }] },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "green", "value": 80 }
+            ]
+          },
           "unit": "short",
           "decimals": 0
         },
@@ -100,31 +221,83 @@
       },
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
       "id": 4,
-      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["max"], "fields": "", "values": false }, "textMode": "auto" },
-      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT ROUND(MAX(value)::numeric,0)::float AS \"Best Sleep Score\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type = 'sleep_score'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')", "refId": "A" }],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["max"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(MAX(value)::numeric,0)::float AS \"Best Sleep Score\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type = 'sleep_score'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')",
+          "refId": "A"
+        }
+      ],
       "title": "Best Sleep Score",
       "type": "stat"
     },
 
-    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 }, "id": 101, "title": "Sleep Duration Trends", "type": "row" },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "Sleep Duration Trends",
+      "type": "row"
+    },
 
     {
       "datasource": { "type": "postgres", "uid": "vitasync-pg" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": { "drawStyle": "line", "fillOpacity": 20, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": true },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": true
+          },
           "unit": "h",
           "decimals": 1,
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 6 }, { "color": "green", "value": 7 }] }
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 6 },
+              { "color": "green", "value": 7 }
+            ]
+          }
         },
         "overrides": [
-          { "matcher": { "id": "byName", "options": "7-day Avg (h)" }, "properties": [{ "id": "custom.lineWidth", "value": 3 }, { "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] }
+          {
+            "matcher": { "id": "byName", "options": "7-day Avg (h)" },
+            "properties": [
+              { "id": "custom.lineWidth", "value": 3 },
+              { "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }
+            ]
+          }
         ]
       },
       "gridPos": { "h": 9, "w": 24, "x": 0, "y": 6 },
       "id": 5,
-      "options": { "legend": { "calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "options": {
+        "legend": {
+          "calcs": ["mean", "min", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
       "targets": [
         {
           "datasource": { "type": "postgres", "uid": "vitasync-pg" },
@@ -139,14 +312,29 @@
       "type": "timeseries"
     },
 
-    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 }, "id": 102, "title": "Sleep Quality & Score", "type": "row" },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 15 },
+      "id": 102,
+      "title": "Sleep Quality & Score",
+      "type": "row"
+    },
 
     {
       "datasource": { "type": "postgres", "uid": "vitasync-pg" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": { "drawStyle": "line", "fillOpacity": 25, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": true },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": true
+          },
           "unit": "short",
           "min": 0,
           "max": 100
@@ -155,8 +343,25 @@
       },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
       "id": 6,
-      "options": { "legend": { "calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
-      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  AVG(value) AS \"Sleep Score\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type = 'sleep_score'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" }],
+      "options": {
+        "legend": {
+          "calcs": ["mean", "min", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  AVG(value) AS \"Sleep Score\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type = 'sleep_score'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1",
+          "refId": "A"
+        }
+      ],
       "title": "Sleep Score Trend",
       "type": "timeseries"
     },
@@ -165,24 +370,67 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": { "drawStyle": "bars", "fillOpacity": 80, "gradientMode": "none", "lineWidth": 1, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "normal" } },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "lineWidth": 1,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" }
+          },
           "unit": "m"
         },
         "overrides": []
       },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
       "id": 7,
-      "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "options": {
+        "legend": {
+          "calcs": ["sum"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
       "targets": [
-        { "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  AVG(value) AS \"Deep Sleep (min)\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type = 'deep_sleep'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" },
-        { "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  AVG(value) AS \"REM Sleep (min)\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('rem_sleep','sleep_rem')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "B" },
-        { "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  AVG(value) AS \"Light Sleep (min)\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('light_sleep','sleep_light')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "C" }
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  AVG(value) AS \"Deep Sleep (min)\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type = 'deep_sleep'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  AVG(value) AS \"REM Sleep (min)\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('rem_sleep','sleep_rem')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  AVG(value) AS \"Light Sleep (min)\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('light_sleep','sleep_light')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1",
+          "refId": "C"
+        }
       ],
       "title": "Sleep Stages Breakdown",
       "type": "timeseries"
     },
 
-    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 }, "id": 103, "title": "Sleep Patterns", "type": "row" },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+      "id": 103,
+      "title": "Sleep Patterns",
+      "type": "row"
+    },
 
     {
       "datasource": { "type": "postgres", "uid": "vitasync-pg" },
@@ -197,8 +445,28 @@
       },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 25 },
       "id": 8,
-      "options": { "barRadius": 0.05, "groupWidth": 0.7, "legend": { "calcs": ["mean"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" }, "xTickLabelRotation": 0 },
-      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT\n  TO_CHAR(started_at, 'Dy') AS \"Day of Week\",\n  ROUND((AVG(duration_seconds)/3600.0)::numeric,1)::float AS \"Avg Sleep (h)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'sleep'\n  AND duration_seconds IS NOT NULL\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY\n  EXTRACT(DOW FROM started_at),\n  TO_CHAR(started_at, 'Dy')\nORDER BY EXTRACT(DOW FROM started_at)", "refId": "A" }],
+      "options": {
+        "barRadius": 0.05,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": ["mean"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xTickLabelRotation": 0
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  TO_CHAR(started_at, 'Dy') AS \"Day of Week\",\n  ROUND((AVG(duration_seconds)/3600.0)::numeric,1)::float AS \"Avg Sleep (h)\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'sleep'\n  AND duration_seconds IS NOT NULL\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY\n  EXTRACT(DOW FROM started_at),\n  TO_CHAR(started_at, 'Dy')\nORDER BY EXTRACT(DOW FROM started_at)",
+          "refId": "A"
+        }
+      ],
       "title": "Avg Sleep by Day of Week",
       "type": "barchart"
     },
@@ -207,7 +475,16 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": { "drawStyle": "line", "fillOpacity": 15, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": true },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": true
+          },
           "unit": "short",
           "min": 0
         },
@@ -215,27 +492,71 @@
       },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 25 },
       "id": 9,
-      "options": { "legend": { "calcs": ["mean", "min", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
-      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "time_series", "rawQuery": true, "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  AVG(value) AS \"Awakenings\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('sleep_awakenings','awakenings')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1", "refId": "A" }],
+      "options": {
+        "legend": {
+          "calcs": ["mean", "min", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(recorded_at,'1d'),\n  AVG(value) AS \"Awakenings\"\nFROM health_metrics\nWHERE $__timeFilter(recorded_at)\n  AND metric_type IN ('sleep_awakenings','awakenings')\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nGROUP BY 1\nORDER BY 1",
+          "refId": "A"
+        }
+      ],
       "title": "Nightly Awakenings",
       "type": "timeseries"
     },
 
-    { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 33 }, "id": 104, "title": "Sleep Log", "type": "row" },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 33 },
+      "id": 104,
+      "title": "Sleep Log",
+      "type": "row"
+    },
 
     {
       "datasource": { "type": "postgres", "uid": "vitasync-pg" },
       "fieldConfig": {
-        "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false } },
+        "defaults": {
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }
+        },
         "overrides": [
-          { "matcher": { "id": "byName", "options": "Duration (h)" }, "properties": [{ "id": "unit", "value": "h" }, { "id": "decimals", "value": 2 }] },
-          { "matcher": { "id": "byName", "options": "Calories" }, "properties": [{ "id": "unit", "value": "kcal" }] }
+          {
+            "matcher": { "id": "byName", "options": "Duration (h)" },
+            "properties": [{ "id": "unit", "value": "h" }, { "id": "decimals", "value": 2 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Calories" },
+            "properties": [{ "id": "unit", "value": "kcal" }]
+          }
         ]
       },
       "gridPos": { "h": 10, "w": 24, "x": 0, "y": 34 },
       "id": 10,
-      "options": { "frameIndex": 0, "showHeader": true, "sortBy": [{ "desc": true, "displayName": "Bedtime" }] },
-      "targets": [{ "datasource": { "type": "postgres", "uid": "vitasync-pg" }, "editorMode": "code", "format": "table", "rawQuery": true, "rawSql": "SELECT\n  started_at AS \"Bedtime\",\n  ended_at AS \"Wake Time\",\n  ROUND((COALESCE(duration_seconds,0)/3600.0)::numeric,2)::float AS \"Duration (h)\",\n  ROUND(COALESCE(calories_kcal,0)::numeric,0)::int AS \"Calories\",\n  provider_id AS \"Provider\",\n  COALESCE(notes, '-') AS \"Notes\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'sleep'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nORDER BY started_at DESC\nLIMIT 60", "refId": "A" }],
+      "options": {
+        "frameIndex": 0,
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "Bedtime" }]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "vitasync-pg" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  started_at AS \"Bedtime\",\n  ended_at AS \"Wake Time\",\n  ROUND((COALESCE(duration_seconds,0)/3600.0)::numeric,2)::float AS \"Duration (h)\",\n  ROUND(COALESCE(calories_kcal,0)::numeric,0)::int AS \"Calories\",\n  provider_id AS \"Provider\",\n  COALESCE(notes, '-') AS \"Notes\"\nFROM events\nWHERE $__timeFilter(started_at)\n  AND event_type = 'sleep'\n  AND ('$userId' = 'all' OR user_id::text = '$userId')\nORDER BY started_at DESC\nLIMIT 60",
+          "refId": "A"
+        }
+      ],
       "title": "Sleep Session Log",
       "type": "table"
     }

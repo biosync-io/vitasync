@@ -5,7 +5,7 @@ export default defineConfig({
   schema: "./src/schema/*.ts",
   out: "./src/migrations",
   dbCredentials: {
-    url: process.env["DATABASE_URL"] ?? "postgresql://vitasync:vitasync@localhost:5432/vitasync",
+    url: process.env.DATABASE_URL ?? "postgresql://vitasync:vitasync@localhost:5432/vitasync",
   },
   migrations: {
     table: "_vitasync_migrations",

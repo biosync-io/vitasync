@@ -3,6 +3,7 @@
  * allowing route tests to run without a real DB connection.
  */
 import Fastify from "fastify"
+import { ZodError } from "zod"
 import { registerV1Routes } from "../routes/v1/index.js"
 
 export const TEST_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001"
@@ -21,6 +22,21 @@ export async function buildTestApp(scopes: string[] = ["read", "write", "admin"]
     req.workspaceId = TEST_WORKSPACE_ID
     req.apiKeyId = TEST_API_KEY_ID
     req.apiKeyScopes = scopes
+  })
+
+  // Convert Zod validation errors to 400 (mirrors production error handler)
+  app.setErrorHandler(async (error, _req, reply) => {
+    if (error instanceof ZodError) {
+      return reply.status(400).send({
+        code: "VALIDATION_ERROR",
+        message: "Validation failed",
+        errors: error.errors.map((e) => ({ path: e.path.join("."), message: e.message })),
+      })
+    }
+    return reply.status(error.statusCode ?? 500).send({
+      code: error.code ?? "INTERNAL_ERROR",
+      message: error.message,
+    })
   })
 
   await registerV1Routes(app)

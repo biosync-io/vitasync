@@ -1,7 +1,7 @@
-import type { Job } from "bullmq"
-import { getDb, webhooks, webhookDeliveries } from "@biosync-io/db"
-import { eq } from "drizzle-orm"
 import { createHmac } from "node:crypto"
+import { getDb, webhookDeliveries, webhooks } from "@biosync-io/db"
+import type { Job } from "bullmq"
+import { eq } from "drizzle-orm"
 
 export interface WebhookJobData {
   webhookId: string
@@ -19,11 +19,7 @@ export async function processWebhookJob(job: Job<WebhookJobData>): Promise<void>
   const { webhookId, eventType, payload } = job.data
   const db = getDb()
 
-  const [webhook] = await db
-    .select()
-    .from(webhooks)
-    .where(eq(webhooks.id, webhookId))
-    .limit(1)
+  const [webhook] = await db.select().from(webhooks).where(eq(webhooks.id, webhookId)).limit(1)
 
   if (!webhook) {
     job.log(`Webhook ${webhookId} not found — skipping`)
@@ -35,8 +31,12 @@ export async function processWebhookJob(job: Job<WebhookJobData>): Promise<void>
     return
   }
 
-  const body = JSON.stringify({ event: eventType, timestamp: new Date().toISOString(), data: payload })
-  const signature = "sha256=" + createHmac("sha256", webhook.secret).update(body).digest("hex")
+  const body = JSON.stringify({
+    event: eventType,
+    timestamp: new Date().toISOString(),
+    data: payload,
+  })
+  const signature = `sha256=${createHmac("sha256", webhook.secret).update(body).digest("hex")}`
 
   // Create delivery record
   const [delivery] = await db
@@ -50,7 +50,7 @@ export async function processWebhookJob(job: Job<WebhookJobData>): Promise<void>
     })
     .returning()
 
-  const deliveryId = delivery!.id
+  const deliveryId = delivery?.id
   let responseStatus: number | null = null
 
   try {
@@ -77,7 +77,7 @@ export async function processWebhookJob(job: Job<WebhookJobData>): Promise<void>
       .update(webhookDeliveries)
       .set({
         status: "delivered",
-        attempts: (delivery!.attempts ?? 0) + 1,
+        attempts: (delivery?.attempts ?? 0) + 1,
         lastAttemptedAt: new Date(),
         responseStatus,
       })
@@ -89,7 +89,7 @@ export async function processWebhookJob(job: Job<WebhookJobData>): Promise<void>
       .update(webhookDeliveries)
       .set({
         status: job.attemptsMade >= (job.opts.attempts ?? 1) - 1 ? "failed" : "pending",
-        attempts: (delivery!.attempts ?? 0) + 1,
+        attempts: (delivery?.attempts ?? 0) + 1,
         lastAttemptedAt: new Date(),
         responseStatus,
       })

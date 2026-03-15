@@ -1,7 +1,12 @@
-import { z } from "zod"
-import type { OAuthTokens, SyncOptions, SyncDataPoint, ProviderDefinition } from "@biosync-io/types"
+import {
+  OAuth2Provider,
+  defaultSyncWindow,
+  providerRegistry,
+  verifyHmacSignature,
+} from "@biosync-io/provider-core"
+import type { OAuthTokens, ProviderDefinition, SyncDataPoint, SyncOptions } from "@biosync-io/types"
 import { HealthMetricType, MetricUnit } from "@biosync-io/types"
-import { OAuth2Provider, providerRegistry, defaultSyncWindow, verifyHmacSignature } from "@biosync-io/provider-core"
+import { z } from "zod"
 
 // ── Strava API response schemas ───────────────────────────────
 
@@ -187,9 +192,7 @@ export class StravaProvider extends OAuth2Provider {
     return []
   }
 
-  async *#normalizeActivity(
-    raw: z.infer<typeof StravaActivity>,
-  ): AsyncGenerator<SyncDataPoint> {
+  async *#normalizeActivity(raw: z.infer<typeof StravaActivity>): AsyncGenerator<SyncDataPoint> {
     const recordedAt = new Date(raw.start_date)
     const durationMinutes = Math.round(raw.moving_time / 60)
     const sportType = raw.sport_type ?? raw.type
@@ -290,9 +293,9 @@ export class StravaProvider extends OAuth2Provider {
 // ── Auto-registration ─────────────────────────────────────────
 
 export function registerStravaProvider() {
-  const clientId = process.env["STRAVA_CLIENT_ID"]
-  const clientSecret = process.env["STRAVA_CLIENT_SECRET"]
-  const redirectBase = process.env["OAUTH_REDIRECT_BASE_URL"]
+  const clientId = process.env.STRAVA_CLIENT_ID
+  const clientSecret = process.env.STRAVA_CLIENT_SECRET
+  const redirectBase = process.env.OAUTH_REDIRECT_BASE_URL
 
   if (!clientId || !clientSecret) {
     console.warn("[StravaProvider] Skipping registration: STRAVA_CLIENT_ID/SECRET not set.")

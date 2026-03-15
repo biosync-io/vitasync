@@ -1,4 +1,4 @@
-import { randomBytes, createHash } from "node:crypto"
+import { createHash, randomBytes } from "node:crypto"
 
 const BASE62_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 const KEY_BODY_LENGTH = 32
@@ -29,7 +29,7 @@ export interface GeneratedApiKey {
 export function generateApiKey(): GeneratedApiKey {
   const bodyBytes = randomBytes(KEY_BODY_LENGTH)
   const body = toBase62(bodyBytes)
-  const env = process.env["NODE_ENV"] === "production" ? "live" : "test"
+  const env = process.env.NODE_ENV === "production" ? "live" : "test"
   const raw = `vs_${env}_${body}`
 
   const hash = createHash("sha256").update(raw).digest("hex")

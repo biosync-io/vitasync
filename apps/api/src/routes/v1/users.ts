@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
-import { UserService } from "../../services/user.service.js"
 import { requireScope } from "../../plugins/auth.js"
+import { UserService } from "../../services/user.service.js"
 
 const userService = new UserService()
 
@@ -20,22 +20,20 @@ const UpdateUserBody = z.object({
 
 const usersRoutes: FastifyPluginAsync = async (app) => {
   // POST /v1/users — create or find existing user
-  app.post(
-    "/",
-    { preHandler: [requireScope("write")] },
-    async (request, reply) => {
-      const body = CreateUserBody.parse(request.body)
-      const user = await userService.findOrCreate({
-        workspaceId: request.workspaceId,
-        ...body,
-      })
-      return reply.status(201).send(user)
-    },
-  )
+  app.post("/", { preHandler: [requireScope("write")] }, async (request, reply) => {
+    const body = CreateUserBody.parse(request.body)
+    const user = await userService.findOrCreate({
+      workspaceId: request.workspaceId,
+      ...body,
+    })
+    return reply.status(201).send(user)
+  })
 
   // GET /v1/users — list users in workspace
   app.get("/", async (request, reply) => {
-    const query = z.object({ limit: z.coerce.number().default(50), offset: z.coerce.number().default(0) }).parse(request.query)
+    const query = z
+      .object({ limit: z.coerce.number().default(50), offset: z.coerce.number().default(0) })
+      .parse(request.query)
     const result = await userService.list(request.workspaceId, query)
     return reply.send(result)
   })
@@ -49,29 +47,21 @@ const usersRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // PATCH /v1/users/:userId
-  app.patch(
-    "/:userId",
-    { preHandler: [requireScope("write")] },
-    async (request, reply) => {
-      const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
-      const body = UpdateUserBody.parse(request.body)
-      const user = await userService.update(userId, request.workspaceId, body)
-      if (!user) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
-      return reply.send(user)
-    },
-  )
+  app.patch("/:userId", { preHandler: [requireScope("write")] }, async (request, reply) => {
+    const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
+    const body = UpdateUserBody.parse(request.body)
+    const user = await userService.update(userId, request.workspaceId, body)
+    if (!user) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
+    return reply.send(user)
+  })
 
   // DELETE /v1/users/:userId
-  app.delete(
-    "/:userId",
-    { preHandler: [requireScope("admin")] },
-    async (request, reply) => {
-      const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
-      const deleted = await userService.delete(userId, request.workspaceId)
-      if (!deleted) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
-      return reply.status(204).send()
-    },
-  )
+  app.delete("/:userId", { preHandler: [requireScope("admin")] }, async (request, reply) => {
+    const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
+    const deleted = await userService.delete(userId, request.workspaceId)
+    if (!deleted) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
+    return reply.status(204).send()
+  })
 }
 
 export default usersRoutes

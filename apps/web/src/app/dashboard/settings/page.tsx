@@ -1,15 +1,26 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { apiKeysApi, type ApiKey } from "../../../lib/api"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useEffect, useState } from "react"
+import { type ApiKey, apiKeysApi } from "../../../lib/api"
 
 const STORAGE_KEY = "vitasync_api_key"
 
 function KeyIcon() {
   return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 0 1 21.75 8.25Z" />
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 0 1 21.75 8.25Z"
+      />
     </svg>
   )
 }
@@ -25,6 +36,7 @@ function CopyButton({ text }: { text: string }) {
 
   return (
     <button
+      type="button"
       onClick={handleCopy}
       className="rounded px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
     >
@@ -41,7 +53,9 @@ function ScopeTag({ scope }: { scope: string }) {
   }
   const base = scope.split(":")[0] ?? scope
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[base] ?? "bg-gray-100 text-gray-600"}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[base] ?? "bg-gray-100 text-gray-600"}`}
+    >
       {scope}
     </span>
   )
@@ -88,7 +102,11 @@ export default function SettingsPage() {
   // Create key form
   const [createOpen, setCreateOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState("")
-  const [newKeyScopes, setNewKeyScopes] = useState<string[]>(["read:users", "read:health", "read:events"])
+  const [newKeyScopes, setNewKeyScopes] = useState<string[]>([
+    "read:users",
+    "read:health",
+    "read:events",
+  ])
   const [newKeyExpiry, setNewKeyExpiry] = useState("")
   const [createdRawKey, setCreatedRawKey] = useState<string | null>(null)
 
@@ -128,7 +146,9 @@ export default function SettingsPage() {
     <div className="max-w-3xl space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-500">Configure your workspace API access and preferences.</p>
+        <p className="mt-1 text-sm text-gray-500">
+          Configure your workspace API access and preferences.
+        </p>
       </div>
 
       {/* ── Active API key ───────────────────────────────────────────────────── */}
@@ -136,7 +156,8 @@ export default function SettingsPage() {
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="text-sm font-semibold text-gray-900">Active API Key</h2>
           <p className="mt-0.5 text-xs text-gray-500">
-            Stored in <code className="rounded bg-gray-100 px-1">localStorage</code>. All dashboard requests are authenticated with this key.
+            Stored in <code className="rounded bg-gray-100 px-1">localStorage</code>. All dashboard
+            requests are authenticated with this key.
           </p>
         </div>
         <div className="px-6 py-5 space-y-3">
@@ -158,6 +179,7 @@ export default function SettingsPage() {
               </button>
             </div>
             <button
+              type="button"
               onClick={() => saveActiveKey(activeKey)}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
             >
@@ -165,6 +187,7 @@ export default function SettingsPage() {
             </button>
             {activeKey && (
               <button
+                type="button"
                 onClick={() => saveActiveKey("")}
                 className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
               >
@@ -179,7 +202,8 @@ export default function SettingsPage() {
           )}
           {!activeKey && (
             <p className="text-xs text-amber-600">
-              No key set — unauthenticated requests may be rejected depending on your API configuration.
+              No key set — unauthenticated requests may be rejected depending on your API
+              configuration.
             </p>
           )}
         </div>
@@ -190,10 +214,16 @@ export default function SettingsPage() {
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-gray-900">API Keys</h2>
-            <p className="mt-0.5 text-xs text-gray-500">Manage credentials for programmatic access.</p>
+            <p className="mt-0.5 text-xs text-gray-500">
+              Manage credentials for programmatic access.
+            </p>
           </div>
           <button
-            onClick={() => { setCreateOpen(true); setCreatedRawKey(null) }}
+            type="button"
+            onClick={() => {
+              setCreateOpen(true)
+              setCreatedRawKey(null)
+            }}
             className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
           >
             <KeyIcon />
@@ -210,18 +240,29 @@ export default function SettingsPage() {
                   ✓ Key created — copy it now, it won&apos;t be shown again.
                 </p>
                 <div className="flex items-center gap-2 rounded bg-white border border-green-200 px-3 py-2">
-                  <code className="flex-1 break-all font-mono text-xs text-gray-900">{createdRawKey}</code>
+                  <code className="flex-1 break-all font-mono text-xs text-gray-900">
+                    {createdRawKey}
+                  </code>
                   <CopyButton text={createdRawKey} />
                 </div>
                 <div className="mt-3 flex gap-2">
                   <button
-                    onClick={() => { saveActiveKey(createdRawKey); setCreatedRawKey(null); setCreateOpen(false) }}
+                    type="button"
+                    onClick={() => {
+                      saveActiveKey(createdRawKey)
+                      setCreatedRawKey(null)
+                      setCreateOpen(false)
+                    }}
                     className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
                   >
                     Use as active key
                   </button>
                   <button
-                    onClick={() => { setCreatedRawKey(null); setCreateOpen(false) }}
+                    type="button"
+                    onClick={() => {
+                      setCreatedRawKey(null)
+                      setCreateOpen(false)
+                    }}
                     className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-white"
                   >
                     Done
@@ -232,8 +273,14 @@ export default function SettingsPage() {
               <>
                 <h3 className="text-sm font-semibold text-gray-900">Create new API key</h3>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">Name</label>
+                  <label
+                    htmlFor="settings-key-name"
+                    className="mb-1 block text-xs font-medium text-gray-600"
+                  >
+                    Name
+                  </label>
                   <input
+                    id="settings-key-name"
                     type="text"
                     placeholder="e.g. CI pipeline, Mobile app…"
                     value={newKeyName}
@@ -242,7 +289,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-gray-600">Scopes</label>
+                  <p className="mb-2 block text-xs font-medium text-gray-600">Scopes</p>
                   <div className="flex flex-wrap gap-2">
                     {ALL_SCOPES.map(({ value, label }) => (
                       <button
@@ -261,8 +308,14 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">Expires (optional)</label>
+                  <label
+                    htmlFor="settings-key-expires"
+                    className="mb-1 block text-xs font-medium text-gray-600"
+                  >
+                    Expires (optional)
+                  </label>
                   <input
+                    id="settings-key-expires"
                     type="date"
                     value={newKeyExpiry}
                     onChange={(e) => setNewKeyExpiry(e.target.value)}
@@ -271,6 +324,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
+                    type="button"
                     onClick={() => createMutation.mutate()}
                     disabled={!newKeyName || newKeyScopes.length === 0 || createMutation.isPending}
                     className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
@@ -278,13 +332,16 @@ export default function SettingsPage() {
                     {createMutation.isPending ? "Creating…" : "Create key"}
                   </button>
                   <button
+                    type="button"
                     onClick={() => setCreateOpen(false)}
                     className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white"
                   >
                     Cancel
                   </button>
                   {createMutation.isError && (
-                    <p className="text-xs text-red-600">{(createMutation.error as Error).message}</p>
+                    <p className="text-xs text-red-600">
+                      {(createMutation.error as Error).message}
+                    </p>
                   )}
                 </div>
               </>
@@ -298,7 +355,9 @@ export default function SettingsPage() {
         ) : keys.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <p className="text-sm text-gray-400">No API keys yet.</p>
-            <p className="mt-1 text-xs text-gray-400">Create one above to start making authenticated requests.</p>
+            <p className="mt-1 text-xs text-gray-400">
+              Create one above to start making authenticated requests.
+            </p>
           </div>
         ) : (
           <ul className="divide-y divide-gray-100">
@@ -307,9 +366,13 @@ export default function SettingsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium text-gray-900">{key.name}</span>
-                    <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500 font-mono">{key.keyPrefix}…</code>
+                    <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500 font-mono">
+                      {key.keyPrefix}…
+                    </code>
                     {isExpired(key) && (
-                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Expired</span>
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                        Expired
+                      </span>
                     )}
                     {key.expiresAt && !isExpired(key) && (
                       <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
@@ -324,10 +387,12 @@ export default function SettingsPage() {
                   </div>
                   <p className="mt-1.5 text-xs text-gray-400">
                     Created {new Date(key.createdAt).toLocaleDateString()}
-                    {key.lastUsedAt && ` · Last used ${new Date(key.lastUsedAt).toLocaleDateString()}`}
+                    {key.lastUsedAt &&
+                      ` · Last used ${new Date(key.lastUsedAt).toLocaleDateString()}`}
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => revokeMutation.mutate(key.id)}
                   disabled={revokeMutation.isPending}
                   className="shrink-0 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"

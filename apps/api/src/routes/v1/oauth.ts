@@ -1,8 +1,8 @@
+import { providerRegistry } from "@biosync-io/provider-core"
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
-import { providerRegistry } from "@biosync-io/provider-core"
-import { ConnectionService } from "../../services/connection.service.js"
 import { config } from "../../config.js"
+import { ConnectionService } from "../../services/connection.service.js"
 
 const connectionService = new ConnectionService()
 
@@ -15,7 +15,7 @@ function cleanExpiredState() {
   const now = Date.now()
   for (const [key, _] of stateStore) {
     const timestamp = Number(key.split("_")[0])
-    if (!isNaN(timestamp) && now - timestamp > TEN_MIN) stateStore.delete(key)
+    if (!Number.isNaN(timestamp) && now - timestamp > TEN_MIN) stateStore.delete(key)
   }
 }
 
@@ -31,7 +31,9 @@ const oauthRoutes: FastifyPluginAsync = async (app) => {
       .parse(request.query)
 
     if (!providerRegistry.isRegistered(providerId)) {
-      return reply.status(404).send({ code: "NOT_FOUND", message: `Provider '${providerId}' is not available` })
+      return reply
+        .status(404)
+        .send({ code: "NOT_FOUND", message: `Provider '${providerId}' is not available` })
     }
 
     cleanExpiredState()
@@ -39,7 +41,11 @@ const oauthRoutes: FastifyPluginAsync = async (app) => {
     const state = `${Date.now()}_${Math.random().toString(36).slice(2)}`
     const redirectUri = `${config.OAUTH_REDIRECT_BASE_URL}/v1/oauth/${providerId}/callback`
 
-    const { url, codeVerifier } = await connectionService.getAuthorizationUrl(providerId, redirectUri, state)
+    const { url, codeVerifier } = await connectionService.getAuthorizationUrl(
+      providerId,
+      redirectUri,
+      state,
+    )
 
     stateStore.set(state, { userId, workspaceId: request.workspaceId, codeVerifier })
 
@@ -67,12 +73,16 @@ const oauthRoutes: FastifyPluginAsync = async (app) => {
     }
 
     if (!code || !state) {
-      return reply.status(400).send({ code: "OAUTH_ERROR", message: "Missing code or state parameter" })
+      return reply
+        .status(400)
+        .send({ code: "OAUTH_ERROR", message: "Missing code or state parameter" })
     }
 
     const stored = stateStore.get(state)
     if (!stored) {
-      return reply.status(400).send({ code: "OAUTH_STATE_MISMATCH", message: "Invalid or expired state parameter" })
+      return reply
+        .status(400)
+        .send({ code: "OAUTH_STATE_MISMATCH", message: "Invalid or expired state parameter" })
     }
 
     stateStore.delete(state)
@@ -88,7 +98,11 @@ const oauthRoutes: FastifyPluginAsync = async (app) => {
       codeVerifier: stored.codeVerifier,
     })
 
-    return reply.send({ message: "Connected successfully", connectionId: connection.id, providerId })
+    return reply.send({
+      message: "Connected successfully",
+      connectionId: connection.id,
+      providerId,
+    })
   })
 }
 

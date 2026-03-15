@@ -1,5 +1,5 @@
-import { defineConfig } from "astro/config";
-import starlight from "@astrojs/starlight";
+import starlight from "@astrojs/starlight"
+import { defineConfig } from "astro/config"
 
 export default defineConfig({
   site: "https://biosync-io.github.io",
@@ -18,12 +18,9 @@ export default defineConfig({
         alt: "VitaSync",
         replacesTitle: true,
       },
-      social: [
-        { icon: "github", label: "GitHub", href: "https://github.com/your-org/vitasync" },
-      ],
+      social: [{ icon: "github", label: "GitHub", href: "https://github.com/your-org/vitasync" }],
       editLink: {
-        baseUrl:
-          "https://github.com/your-org/vitasync/edit/main/apps/docs/",
+        baseUrl: "https://github.com/your-org/vitasync/edit/main/apps/docs/",
       },
       sidebar: [
         {
@@ -103,4 +100,4 @@ export default defineConfig({
       customCss: ["./src/styles/custom.css"],
     }),
   ],
-});
+})

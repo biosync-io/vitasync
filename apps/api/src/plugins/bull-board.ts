@@ -1,8 +1,8 @@
-import fp from "fastify-plugin"
-import type { FastifyInstance } from "fastify"
 import { createBullBoard } from "@bull-board/api"
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter"
 import { FastifyAdapter } from "@bull-board/fastify"
+import type { FastifyInstance } from "fastify"
+import fp from "fastify-plugin"
 import { getSyncQueue, getWebhookQueue } from "../queues/sync.js"
 
 /**

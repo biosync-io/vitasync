@@ -1,7 +1,7 @@
 import { getDb, healthMetrics } from "@biosync-io/db"
-import { eq, and, gte, lte, desc, lt, sql } from "drizzle-orm"
 import type { HealthMetric, HealthMetricType, SyncDataPoint } from "@biosync-io/types"
-import { encodeCursor, decodeCursor } from "../lib/cursor.js"
+import { and, desc, eq, gte, lt, lte, sql } from "drizzle-orm"
+import { decodeCursor, encodeCursor } from "../lib/cursor.js"
 
 export type TimeseriesBucket = "minute" | "hour" | "day" | "week" | "month"
 
@@ -46,7 +46,9 @@ export class HealthDataService {
     return getDb()
   }
 
-  async query(params: HealthDataQuery): Promise<{ data: HealthMetric[]; nextCursor?: string; hasMore: boolean }> {
+  async query(
+    params: HealthDataQuery,
+  ): Promise<{ data: HealthMetric[]; nextCursor?: string; hasMore: boolean }> {
     const { userId, metricType, from, to, limit = 100, offset = 0 } = params
 
     const conditions = [eq(healthMetrics.userId, userId)]
@@ -200,7 +202,12 @@ export class HealthDataService {
       lte(healthMetrics.recordedAt, to),
     ]
     if (metricTypes && metricTypes.length > 0) {
-      conditions.push(sql`${healthMetrics.metricType} = ANY(ARRAY[${sql.join(metricTypes.map((t) => sql`${t}`), sql`, `)}]::text[])`)
+      conditions.push(
+        sql`${healthMetrics.metricType} = ANY(ARRAY[${sql.join(
+          metricTypes.map((t) => sql`${t}`),
+          sql`, `,
+        )}]::text[])`,
+      )
     }
 
     const rows = await this.db

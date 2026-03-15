@@ -1,8 +1,8 @@
 "use client"
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { apiKeysApi, type ApiKey } from "../../../lib/api"
+import { type ApiKey, apiKeysApi } from "../../../lib/api"
 
 const SCOPES = ["read", "write", "admin"] as const
 
@@ -50,7 +50,11 @@ export default function ApiKeysPage() {
           </p>
         </div>
         <button
-          onClick={() => { setShowCreate(true); setNewKey(null) }}
+          type="button"
+          onClick={() => {
+            setShowCreate(true)
+            setNewKey(null)
+          }}
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
         >
           + New Key
@@ -66,6 +70,7 @@ export default function ApiKeysPage() {
             {newKey}
           </code>
           <button
+            type="button"
             onClick={() => navigator.clipboard.writeText(newKey)}
             className="mt-2 text-xs text-green-700 hover:text-green-900 underline"
           >
@@ -80,8 +85,11 @@ export default function ApiKeysPage() {
           {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700">Name *</label>
+              <label htmlFor="apikey-name" className="block text-xs font-medium text-gray-700">
+                Name *
+              </label>
               <input
+                id="apikey-name"
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 placeholder="Production backend"
                 value={form.name}
@@ -89,7 +97,7 @@ export default function ApiKeysPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Scopes *</label>
+              <p className="block text-xs font-medium text-gray-700 mb-1">Scopes *</p>
               <div className="flex gap-2">
                 {SCOPES.map((scope) => (
                   <button
@@ -108,8 +116,11 @@ export default function ApiKeysPage() {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700">Expires At (optional)</label>
+              <label htmlFor="apikey-expires" className="block text-xs font-medium text-gray-700">
+                Expires At (optional)
+              </label>
               <input
+                id="apikey-expires"
                 type="datetime-local"
                 className="mt-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 value={form.expiresAt}
@@ -119,8 +130,11 @@ export default function ApiKeysPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <button
+              type="button"
               onClick={() => {
-                const expiresAt = form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined
+                const expiresAt = form.expiresAt
+                  ? new Date(form.expiresAt).toISOString()
+                  : undefined
                 createMutation.mutate({
                   name: form.name,
                   scopes: form.scopes,
@@ -133,7 +147,11 @@ export default function ApiKeysPage() {
               {createMutation.isPending ? "Creating…" : "Create"}
             </button>
             <button
-              onClick={() => { setShowCreate(false); setError("") }}
+              type="button"
+              onClick={() => {
+                setShowCreate(false)
+                setError("")
+              }}
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700"
             >
               Cancel
@@ -154,7 +172,10 @@ export default function ApiKeysPage() {
             <thead className="bg-gray-50">
               <tr>
                 {["Name", "Prefix", "Scopes", "Last Used", "Expires", ""].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th
+                    key={h}
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  >
                     {h}
                   </th>
                 ))}
@@ -168,7 +189,10 @@ export default function ApiKeysPage() {
                   <td className="px-4 py-3">
                     <div className="flex gap-1 flex-wrap">
                       {key.scopes.map((s) => (
-                        <span key={s} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                        <span
+                          key={s}
+                          className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                        >
                           {s}
                         </span>
                       ))}
@@ -182,6 +206,7 @@ export default function ApiKeysPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button
+                      type="button"
                       onClick={() => revokeMutation.mutate(key.id)}
                       className="text-xs text-red-500 hover:text-red-700"
                     >

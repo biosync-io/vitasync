@@ -1,6 +1,6 @@
+import { providerRegistry } from "@biosync-io/provider-core"
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
-import { providerRegistry } from "@biosync-io/provider-core"
 import { ConnectionService } from "../../services/connection.service.js"
 import { HealthDataService } from "../../services/health-data.service.js"
 
@@ -62,7 +62,9 @@ const inboundRoutes: FastifyPluginAsync = async (app) => {
         const valid = provider.verifyWebhookSignature(rawBody, signature, webhookSecret)
         if (!valid) {
           app.log.warn({ providerId }, "Inbound webhook signature verification failed")
-          return reply.status(401).send({ code: "INVALID_SIGNATURE", message: "Webhook signature mismatch" })
+          return reply
+            .status(401)
+            .send({ code: "INVALID_SIGNATURE", message: "Webhook signature mismatch" })
         }
       }
 

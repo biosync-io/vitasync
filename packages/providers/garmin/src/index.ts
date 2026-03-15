@@ -1,7 +1,12 @@
-import { OAuth } from "oauth"
-import type { OAuth1Tokens, SyncOptions, SyncDataPoint, ProviderDefinition } from "@biosync-io/types"
+import { OAuth1Provider, defaultSyncWindow, providerRegistry } from "@biosync-io/provider-core"
+import type {
+  OAuth1Tokens,
+  ProviderDefinition,
+  SyncDataPoint,
+  SyncOptions,
+} from "@biosync-io/types"
 import { HealthMetricType, MetricUnit } from "@biosync-io/types"
-import { OAuth1Provider, providerRegistry, defaultSyncWindow } from "@biosync-io/provider-core"
+import { OAuth } from "oauth"
 
 // ── Provider definition ───────────────────────────────────────
 
@@ -99,7 +104,7 @@ export class GarminProvider extends OAuth1Provider {
           if (err) {
             reject(new Error(`Garmin access token failed: ${JSON.stringify(err)}`))
           } else {
-            const garminUserId = (results as Record<string, unknown>)?.["xoauth_garmin_userid"] as
+            const garminUserId = (results as Record<string, unknown>)?.xoauth_garmin_userid as
               | string
               | undefined
             resolve({
@@ -134,7 +139,7 @@ export class GarminProvider extends OAuth1Provider {
       `/dailies?uploadStartTimeInSeconds=${startSeconds}&uploadEndTimeInSeconds=${endSeconds}`,
     )
 
-    const summaries = (data as Record<string, unknown>)["dailies"] as Array<{
+    const summaries = (data as Record<string, unknown>).dailies as Array<{
       calendarDate: string
       totalSteps?: number
       totalDistanceInMeters?: number
@@ -204,7 +209,7 @@ export class GarminProvider extends OAuth1Provider {
       `/epochs/sleeps?uploadStartTimeInSeconds=${startSeconds}&uploadEndTimeInSeconds=${endSeconds}`,
     )
 
-    const sessions = (data as Record<string, unknown>)["sleeps"] as Array<{
+    const sessions = (data as Record<string, unknown>).sleeps as Array<{
       startTimeInSeconds: number
       durationInSeconds: number
       overallSleepScore?: { value: number }
@@ -269,9 +274,9 @@ export class GarminProvider extends OAuth1Provider {
 // ── Auto-registration ─────────────────────────────────────────
 
 export function registerGarminProvider() {
-  const consumerKey = process.env["GARMIN_CONSUMER_KEY"]
-  const consumerSecret = process.env["GARMIN_CONSUMER_SECRET"]
-  const redirectBase = process.env["OAUTH_REDIRECT_BASE_URL"]
+  const consumerKey = process.env.GARMIN_CONSUMER_KEY
+  const consumerSecret = process.env.GARMIN_CONSUMER_SECRET
+  const redirectBase = process.env.OAUTH_REDIRECT_BASE_URL
 
   if (!consumerKey || !consumerSecret) {
     console.warn("[GarminProvider] Skipping registration: GARMIN_CONSUMER_KEY/SECRET not set.")

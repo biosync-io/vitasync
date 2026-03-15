@@ -1,13 +1,11 @@
-import { pgTable, uuid, varchar, text, timestamp, jsonb, index, unique } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
+import { index, jsonb, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core"
 import { workspaces } from "./workspaces"
 
 export const users = pgTable(
   "users",
   {
-    id: uuid("id")
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
     workspaceId: uuid("workspace_id")
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),

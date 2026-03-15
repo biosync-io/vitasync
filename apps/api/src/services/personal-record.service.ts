@@ -1,6 +1,6 @@
 import { getDb, personalRecords } from "@biosync-io/db"
-import { eq, and } from "drizzle-orm"
-import type { PersonalRecordRow, PersonalRecordInsert } from "@biosync-io/db"
+import type { PersonalRecordInsert, PersonalRecordRow } from "@biosync-io/db"
+import { and, eq } from "drizzle-orm"
 
 export class PersonalRecordService {
   private get db() {
@@ -15,8 +15,15 @@ export class PersonalRecordService {
       .orderBy(personalRecords.metricType)
   }
 
-  async findByType(userId: string, metricType: string, category?: string): Promise<PersonalRecordRow | null> {
-    const conditions = [eq(personalRecords.userId, userId), eq(personalRecords.metricType, metricType)]
+  async findByType(
+    userId: string,
+    metricType: string,
+    category?: string,
+  ): Promise<PersonalRecordRow | null> {
+    const conditions = [
+      eq(personalRecords.userId, userId),
+      eq(personalRecords.metricType, metricType),
+    ]
     if (category !== undefined) {
       conditions.push(eq(personalRecords.category, category))
     }

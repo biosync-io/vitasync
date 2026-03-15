@@ -27,7 +27,7 @@
 */
 :root {
   --reveal-ease: cubic-bezier(0.22, 0.03, 0.26, 1);
-  --reveal-dur:  0.9s;
+  --reveal-dur: 0.9s;
 }
 
 /* ── Generic block elements (paragraphs, lists, tables …) ── */
@@ -35,10 +35,8 @@
   opacity: 0;
   transform: translateY(50px) scale(0.97);
   filter: blur(6px);
-  transition:
-    opacity  var(--reveal-dur) var(--reveal-ease),
-    transform var(--reveal-dur) var(--reveal-ease),
-    filter   var(--reveal-dur) var(--reveal-ease);
+  transition: opacity var(--reveal-dur) var(--reveal-ease), transform var(--reveal-dur)
+    var(--reveal-ease), filter var(--reveal-dur) var(--reveal-ease);
   will-change: opacity, transform, filter;
 }
 .reveal-item.reveal-visible {
@@ -51,9 +49,7 @@
 .reveal-heading {
   opacity: 0;
   transform: translateY(30px);
-  transition:
-    opacity  0.75s var(--reveal-ease),
-    transform 0.75s var(--reveal-ease);
+  transition: opacity 0.75s var(--reveal-ease), transform 0.75s var(--reveal-ease);
   will-change: opacity, transform;
 }
 .reveal-heading.reveal-visible {
@@ -65,9 +61,7 @@
 .reveal-code {
   opacity: 0;
   transform: translateY(40px);
-  transition:
-    opacity  1s var(--reveal-ease),
-    transform 1s var(--reveal-ease);
+  transition: opacity 1s var(--reveal-ease), transform 1s var(--reveal-ease);
   will-change: opacity, transform;
 }
 .reveal-code.reveal-visible {
@@ -80,10 +74,8 @@
   opacity: 0;
   transform: translateY(40px) scale(0.95);
   filter: blur(4px);
-  transition:
-    opacity  0.85s var(--reveal-ease),
-    transform 0.85s var(--reveal-ease),
-    filter   0.85s var(--reveal-ease);
+  transition: opacity 0.85s var(--reveal-ease), transform 0.85s var(--reveal-ease), filter 0.85s
+    var(--reveal-ease);
   will-change: opacity, transform, filter;
 }
 .reveal-card.reveal-visible {
@@ -136,27 +128,27 @@
 }
 
 @keyframes gradient-pan {
-  0%   { background-position: 0% center; }
-  100% { background-position: 200% center; }
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
 }
 
 /* Card grid: spotlight — dim siblings when one is hovered */
 .sl-card-grid:has(.sl-card:hover) .sl-card:not(:hover) {
   opacity: 0.5;
   transform: scale(0.97);
-  transition:
-    opacity 0.35s ease,
-    transform 0.35s ease;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
 /* Card base — smooth hover lift */
 .sl-card {
   position: relative;
   overflow: hidden;
-  transition:
-    transform 0.4s cubic-bezier(0.22, 0.03, 0.26, 1),
-    box-shadow 0.4s cubic-bezier(0.22, 0.03, 0.26, 1),
-    opacity    0.35s ease;
+  transition: transform 0.4s cubic-bezier(0.22, 0.03, 0.26, 1), box-shadow 0.4s
+    cubic-bezier(0.22, 0.03, 0.26, 1), opacity 0.35s ease;
   cursor: default;
 }
 
@@ -167,19 +159,10 @@
   inset: -2px;
   border-radius: inherit;
   padding: 2px;
-  background: linear-gradient(
-    135deg,
-    transparent 0%,
-    var(--sl-color-accent) 50%,
-    #a78bfa 100%
-  );
+  background: linear-gradient(135deg, transparent 0%, var(--sl-color-accent) 50%, #a78bfa 100%);
   background-size: 300% 300%;
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   opacity: 0;
@@ -207,9 +190,7 @@
 
 .sl-card:hover {
   transform: translateY(-6px) scale(1.02);
-  box-shadow:
-    0 20px 40px -12px rgba(37, 99, 235, 0.35),
-    0 8px 16px -8px rgba(167, 139, 250, 0.25);
+  box-shadow: 0 20px 40px -12px rgba(37, 99, 235, 0.35), 0 8px 16px -8px rgba(167, 139, 250, 0.25);
 }
 
 .sl-card:hover::before {
@@ -229,8 +210,13 @@
 }
 
 @keyframes icon-float {
-  0%, 100% { transform: translateY(0);    }
-  50%       { transform: translateY(-5px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
 }
 
 /* Glow pulse behind the icon */
@@ -245,8 +231,15 @@
 }
 
 @keyframes icon-glow {
-  0%, 100% { opacity: 0.5; transform: scale(1);    }
-  50%       { opacity: 1;   transform: scale(1.3); }
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

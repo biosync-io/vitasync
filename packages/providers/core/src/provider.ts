@@ -1,9 +1,9 @@
 import type {
-  OAuthTokens,
   OAuth1Tokens,
+  OAuthTokens,
   ProviderDefinition,
-  SyncOptions,
   SyncDataPoint,
+  SyncOptions,
 } from "@biosync-io/types"
 
 // ── OAuth 2.0 Provider ────────────────────────────────────────
@@ -22,11 +22,13 @@ export interface OAuth2Config {
 export abstract class OAuth2Provider {
   abstract readonly definition: ProviderDefinition
 
-  constructor(protected readonly config: {
-    clientId: string
-    clientSecret: string
-    redirectUri: string
-  }) {}
+  constructor(
+    protected readonly config: {
+      clientId: string
+      clientSecret: string
+      redirectUri: string
+    },
+  ) {}
 
   /**
    * Build the authorization URL to redirect the user to.
@@ -76,11 +78,13 @@ export abstract class OAuth2Provider {
 export abstract class OAuth1Provider {
   abstract readonly definition: ProviderDefinition
 
-  constructor(protected readonly config: {
-    consumerKey: string
-    consumerSecret: string
-    redirectUri: string
-  }) {}
+  constructor(
+    protected readonly config: {
+      consumerKey: string
+      consumerSecret: string
+      redirectUri: string
+    },
+  ) {}
 
   abstract getRequestToken(): Promise<{ requestToken: string; requestTokenSecret: string }>
   abstract getAuthorizationUrl(requestToken: string): URL

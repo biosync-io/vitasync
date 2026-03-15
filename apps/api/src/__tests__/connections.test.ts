@@ -1,8 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
-import { buildTestApp, TEST_USER_ID, TEST_WORKSPACE_ID } from "./helpers.js"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { ConnectionService } from "../services/connection.service.js"
+import { TEST_USER_ID, TEST_WORKSPACE_ID, buildTestApp } from "./helpers.js"
 
-vi.mock("../services/connection.service.js")
+vi.mock("../services/connection.service.js", () => {
+  const ConnectionService = vi.fn()
+  ConnectionService.prototype.list = vi.fn()
+  ConnectionService.prototype.disconnect = vi.fn()
+  return { ConnectionService }
+})
 
 const TEST_CONNECTION_ID = "00000000-0000-0000-0000-000000000010"
 

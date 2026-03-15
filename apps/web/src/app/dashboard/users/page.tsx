@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { Route } from "next"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { usersApi, type User } from "../../../lib/api"
+import Link from "next/link"
+import { useState } from "react"
+import { type User, usersApi } from "../../../lib/api"
 
 export default function UsersPage() {
   const qc = useQueryClient()
@@ -43,6 +43,7 @@ export default function UsersPage() {
           </p>
         </div>
         <button
+          type="button"
           onClick={() => setShowCreate(true)}
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
         >
@@ -56,8 +57,11 @@ export default function UsersPage() {
           {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700">External ID *</label>
+              <label htmlFor="user-external-id" className="block text-xs font-medium text-gray-700">
+                External ID *
+              </label>
               <input
+                id="user-external-id"
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 placeholder="user_123"
                 value={form.externalId}
@@ -65,8 +69,11 @@ export default function UsersPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700">Email</label>
+              <label htmlFor="user-email" className="block text-xs font-medium text-gray-700">
+                Email
+              </label>
               <input
+                id="user-email"
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 placeholder="user@example.com"
                 value={form.email}
@@ -74,8 +81,14 @@ export default function UsersPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700">Display Name</label>
+              <label
+                htmlFor="user-display-name"
+                className="block text-xs font-medium text-gray-700"
+              >
+                Display Name
+              </label>
               <input
+                id="user-display-name"
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 placeholder="Jane Smith"
                 value={form.displayName}
@@ -85,6 +98,7 @@ export default function UsersPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <button
+              type="button"
               onClick={() => createMutation.mutate(form)}
               disabled={!form.externalId || createMutation.isPending}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
@@ -92,7 +106,11 @@ export default function UsersPage() {
               {createMutation.isPending ? "Creating…" : "Create"}
             </button>
             <button
-              onClick={() => { setShowCreate(false); setError("") }}
+              type="button"
+              onClick={() => {
+                setShowCreate(false)
+                setError("")
+              }}
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Cancel
@@ -117,7 +135,10 @@ export default function UsersPage() {
             <thead className="bg-gray-50">
               <tr>
                 {["External ID", "Email", "Name", "Created", ""].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    key={h}
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     {h}
                   </th>
                 ))}
@@ -140,6 +161,7 @@ export default function UsersPage() {
                       View
                     </Link>
                     <button
+                      type="button"
                       onClick={() => deleteMutation.mutate(user.id)}
                       className="text-red-500 hover:text-red-700 text-xs"
                     >

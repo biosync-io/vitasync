@@ -1,8 +1,8 @@
 "use client"
 
+import type { Route } from "next"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import type { Route } from "next"
 
 const navItems: Array<{ href: Route<string>; label: string; icon: string }> = [
   { href: "/dashboard", label: "Overview", icon: "⬡" },

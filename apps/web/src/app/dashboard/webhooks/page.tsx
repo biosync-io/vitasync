@@ -1,8 +1,8 @@
 "use client"
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { webhooksApi, type Webhook } from "../../../lib/api"
+import { type Webhook, webhooksApi } from "../../../lib/api"
 
 const ALL_EVENTS = [
   "sync.completed",
@@ -17,7 +17,12 @@ export default function WebhooksPage() {
   const qc = useQueryClient()
   const [showCreate, setShowCreate] = useState(false)
   const [error, setError] = useState("")
-  const [form, setForm] = useState({ url: "", secret: "", events: ["sync.completed"] as string[], description: "" })
+  const [form, setForm] = useState({
+    url: "",
+    secret: "",
+    events: ["sync.completed"] as string[],
+    description: "",
+  })
 
   const { data: hooks = [], isLoading } = useQuery<Webhook[]>({
     queryKey: ["webhooks"],
@@ -26,12 +31,16 @@ export default function WebhooksPage() {
 
   const createMutation = useMutation({
     mutationFn: webhooksApi.create,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["webhooks"] }); setShowCreate(false) },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["webhooks"] })
+      setShowCreate(false)
+    },
     onError: (e: Error) => setError(e.message),
   })
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => webhooksApi.toggle(id, isActive),
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      webhooksApi.toggle(id, isActive),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["webhooks"] }),
   })
 
@@ -57,6 +66,7 @@ export default function WebhooksPage() {
           </p>
         </div>
         <button
+          type="button"
           onClick={() => setShowCreate(true)}
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
         >
@@ -70,8 +80,11 @@ export default function WebhooksPage() {
           {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700">Endpoint URL *</label>
+              <label htmlFor="webhook-url" className="block text-xs font-medium text-gray-700">
+                Endpoint URL *
+              </label>
               <input
+                id="webhook-url"
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 placeholder="https://your-server.com/vitasync/webhook"
                 value={form.url}
@@ -79,10 +92,11 @@ export default function WebhooksPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700">
+              <label htmlFor="webhook-secret" className="block text-xs font-medium text-gray-700">
                 Secret (min 16 chars) *
               </label>
               <input
+                id="webhook-secret"
                 type="password"
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 placeholder="A random secret to verify delivery signatures"
@@ -91,7 +105,7 @@ export default function WebhooksPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Events *</label>
+              <p className="block text-xs font-medium text-gray-700 mb-1">Events *</p>
               <div className="flex flex-wrap gap-2">
                 {ALL_EVENTS.map((ev) => (
                   <button
@@ -110,8 +124,11 @@ export default function WebhooksPage() {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700">Description</label>
+              <label htmlFor="webhook-desc" className="block text-xs font-medium text-gray-700">
+                Description
+              </label>
               <input
+                id="webhook-desc"
                 className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 placeholder="Optional description"
                 value={form.description}
@@ -120,6 +137,7 @@ export default function WebhooksPage() {
             </div>
             <div className="flex gap-2 pt-1">
               <button
+                type="button"
                 onClick={() => createMutation.mutate(form)}
                 disabled={createMutation.isPending}
                 className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
@@ -127,6 +145,7 @@ export default function WebhooksPage() {
                 {createMutation.isPending ? "Saving…" : "Create Webhook"}
               </button>
               <button
+                type="button"
                 onClick={() => setShowCreate(false)}
                 className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
               >
@@ -141,7 +160,9 @@ export default function WebhooksPage() {
         <p className="text-sm text-gray-400">Loading…</p>
       ) : hooks.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-gray-200 py-12 text-center">
-          <p className="text-sm text-gray-400">No webhooks yet. Add one to receive event notifications.</p>
+          <p className="text-sm text-gray-400">
+            No webhooks yet. Add one to receive event notifications.
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -152,7 +173,10 @@ export default function WebhooksPage() {
                   <p className="font-mono text-sm text-gray-900 truncate">{hook.url}</p>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {(hook.events as string[]).map((ev) => (
-                      <span key={ev} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                      <span
+                        key={ev}
+                        className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                      >
                         {ev}
                       </span>
                     ))}
@@ -164,20 +188,20 @@ export default function WebhooksPage() {
                 <div className="ml-4 flex items-center gap-2 flex-shrink-0">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      hook.isActive
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-500"
+                      hook.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
                     }`}
                   >
                     {hook.isActive ? "active" : "paused"}
                   </span>
                   <button
+                    type="button"
                     onClick={() => toggleMutation.mutate({ id: hook.id, isActive: !hook.isActive })}
                     className="text-xs text-indigo-600 hover:text-indigo-800"
                   >
                     {hook.isActive ? "Pause" : "Enable"}
                   </button>
                   <button
+                    type="button"
                     onClick={() => deleteMutation.mutate(hook.id)}
                     className="text-xs text-red-500 hover:text-red-700"
                   >

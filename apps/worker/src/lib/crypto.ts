@@ -1,4 +1,4 @@
-import { createHash, createCipheriv, createDecipheriv, randomBytes } from "node:crypto"
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto"
 import { getConfig } from "../config.js"
 
 const ALGORITHM = "aes-256-gcm"
@@ -19,7 +19,9 @@ export function decrypt(ciphertext: string, keyHex: string): string {
   const parts = ciphertext.split(":")
   if (parts.length !== 3) throw new Error("Invalid ciphertext format")
   const [ivHex, authTagHex, dataHex] = parts as [string, string, string]
-  const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(ivHex, "hex"), { authTagLength: AUTH_TAG_LENGTH })
+  const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(ivHex, "hex"), {
+    authTagLength: AUTH_TAG_LENGTH,
+  })
   decipher.setAuthTag(Buffer.from(authTagHex, "hex"))
   return decipher.update(Buffer.from(dataHex, "hex")).toString("utf8") + decipher.final("utf8")
 }

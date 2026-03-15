@@ -25,8 +25,8 @@ export function decodeCursor(cursor: string): CursorPayload {
     if (
       typeof parsed !== "object" ||
       parsed === null ||
-      typeof (parsed as Record<string, unknown>)["id"] !== "string" ||
-      typeof (parsed as Record<string, unknown>)["ts"] !== "string"
+      typeof (parsed as Record<string, unknown>).id !== "string" ||
+      typeof (parsed as Record<string, unknown>).ts !== "string"
     ) {
       throw new Error("Invalid cursor shape")
     }
