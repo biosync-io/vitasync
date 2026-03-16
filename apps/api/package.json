@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsup src/index.ts src/migrate.ts --format esm --out-dir dist && node -e \"require('fs').cpSync('../../packages/db/src/migrations', 'dist/migrations', {recursive:true})\"",
+    "build": "tsup src/index.ts src/migrate.ts --format esm --out-dir dist && node -e \"const{cpSync,existsSync,mkdirSync}=require('fs');const src='../../packages/db/src/migrations';existsSync(src)?cpSync(src,'dist/migrations',{recursive:true}):mkdirSync('dist/migrations',{recursive:true})\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
