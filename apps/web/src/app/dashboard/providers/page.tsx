@@ -23,6 +23,7 @@ export default function ProvidersPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 4 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton loader — items have no stable identity
             <div key={i} className="h-40 rounded-xl bg-gray-100 animate-pulse" />
           ))}
         </div>

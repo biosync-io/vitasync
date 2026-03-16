@@ -122,6 +122,7 @@ export default function UsersPage() {
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton loader — items have no stable identity
             <div key={i} className="h-16 rounded-xl bg-gray-100 animate-pulse" />
           ))}
         </div>

@@ -166,9 +166,9 @@ server.tool(
           ${
             search
               ? sql`AND (
-                  email ILIKE ${"%" + search + "%"}
-                  OR display_name ILIKE ${"%" + search + "%"}
-                  OR external_id ILIKE ${"%" + search + "%"}
+                  email ILIKE ${`%${search}%`}
+                  OR display_name ILIKE ${`%${search}%`}
+                  OR external_id ILIKE ${`%${search}%`}
                 )`
               : sql``
           }
@@ -198,11 +198,7 @@ server.tool(
   "list_connections",
   "List provider connections for a user or across all users. Shows which wearable providers are connected and their sync status.",
   {
-    userId: z
-      .string()
-      .uuid()
-      .optional()
-      .describe("Filter connections for a specific user ID"),
+    userId: z.string().uuid().optional().describe("Filter connections for a specific user ID"),
     providerId: z
       .string()
       .optional()

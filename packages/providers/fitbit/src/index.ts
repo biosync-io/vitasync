@@ -214,8 +214,8 @@ export class FitbitProvider extends OAuth2Provider {
     const { startDate, endDate } = defaultSyncWindow(options)
 
     // Fitbit's daily summary endpoints take "YYYY-MM-DD" date ranges
-    const start = startDate.toISOString().split("T")[0]!
-    const end = endDate.toISOString().split("T")[0]!
+    const start = startDate.toISOString().substring(0, 10)
+    const end = endDate.toISOString().substring(0, 10)
 
     yield* this.#syncActivitySummary(tokens, start, end)
     yield* this.#syncHeartRate(tokens, start, end)

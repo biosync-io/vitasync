@@ -78,8 +78,8 @@ export class HealthDataService {
     const data = rows.slice(0, Math.min(limit, 1000)) as HealthMetric[]
 
     let nextCursor: string | undefined
-    if (hasMore && data.length > 0) {
-      const last = data[data.length - 1]!
+    const last = data.at(-1)
+    if (hasMore && last) {
       nextCursor = encodeCursor(last.id, new Date(last.recordedAt))
     }
 
