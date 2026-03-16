@@ -4,7 +4,9 @@
  * are set in one place.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
+// Relative prefix — browser calls /api/v1/... which the Next.js route handler
+// proxies to INTERNAL_API_URL (vitasync-api:3001 in K8s, localhost:3001 in dev).
+const API_URL = "/api"
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const apiKey =
