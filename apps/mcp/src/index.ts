@@ -32,7 +32,7 @@ const sql = postgres(DATABASE_URL, {
   idle_timeout: 30,
   connect_timeout: 10,
   // Read-only: ensure no writes slip through
-  connection: { default_transaction_read_only: "on" },
+  connection: { default_transaction_read_only: true },
 })
 
 // ── MCP Server ────────────────────────────────────────────────────────────────
