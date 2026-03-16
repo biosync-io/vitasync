@@ -163,6 +163,7 @@ export default function HealthDataPage() {
       ) : loadingMetrics ? (
         <div className="space-y-2">
           {Array.from({ length: 8 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton loader — items have no stable identity
             <div key={i} className="h-10 rounded-lg bg-gray-100 animate-pulse" />
           ))}
         </div>

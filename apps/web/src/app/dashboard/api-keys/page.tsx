@@ -163,6 +163,7 @@ export default function ApiKeysPage() {
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton loader — items have no stable identity
             <div key={i} className="h-14 rounded-xl bg-gray-100 animate-pulse" />
           ))}
         </div>
