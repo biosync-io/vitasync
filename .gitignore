@@ -54,4 +54,4 @@ Thumbs.db
 *.tsbuildinfo
 
 # Drizzle
-packages/db/src/migrations/*.sql
+# Migration SQL files are intentionally committed — they are the schema change history.
