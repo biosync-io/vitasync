@@ -1,0 +1,158 @@
+# VitaSync Monitoring Stack
+#
+# Run alongside the main stack:
+#   docker compose -f docker-compose.yml -f monitoring/docker-compose.monitoring.yml up
+#
+# Or standalone against a running VitaSync stack:
+#   cd monitoring && docker compose -f docker-compose.monitoring.yml up
+#
+# Services:
+#   ┌─────────────────────────────────────────────────────┐
+#   │  Grafana         → http://localhost:3030  admin/admin│
+#   │  Prometheus      → http://localhost:9090             │
+#   │  postgres-exporter → http://localhost:9187/metrics   │
+#   │  redis-exporter    → http://localhost:9121/metrics   │
+#   │  node-exporter     → http://localhost:9100/metrics   │
+#   └─────────────────────────────────────────────────────┘
+
+name: vitasync-monitoring
+
+networks:
+  monitoring:
+    driver: bridge
+  # Attach to the main vitasync internal network so we can reach
+  # postgres, redis, api and worker services.
+  vitasync_internal:
+    external: true
+    name: vitasync_internal
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+services:
+
+  # ── Prometheus ─────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=90d
+      - --storage.tsdb.retention.size=20GB
+      - --web.enable-lifecycle
+      - --web.enable-admin-api
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+      - vitasync_internal
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── Grafana ────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.2
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3030}
+      GF_SERVER_SERVE_FROM_SUB_PATH: "false"
+      GF_FEATURE_TOGGLES_ENABLE: "publicDashboards,newVizTooltips,timeSeriesTable"
+      GF_INSTALL_PLUGINS: "grafana-piechart-panel,grafana-clock-panel,natel-discrete-panel,marcusolsson-treemap-panel"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/dashboards/01-platform-overview.json
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_UNIFIED_ALERTING_ENABLED: "true"
+      GF_DATE_FORMATS_USE_BROWSER_LOCALE: "true"
+      # Passed through to provisioning for PostgreSQL connection
+      PG_HOST: ${POSTGRES_HOST:-postgres}
+      PG_PORT: ${POSTGRES_PORT:-5432}
+      PG_USER: ${POSTGRES_USER:-vitasync}
+      PG_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      PG_DATABASE: ${POSTGRES_DB:-vitasync}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+    ports:
+      - "3030:3000"
+    networks:
+      - monitoring
+      - vitasync_internal
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── PostgreSQL Exporter ────────────────────────────────────────────────────
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-vitasync}:${POSTGRES_PASSWORD:-changeme}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-vitasync}?sslmode=disable"
+      PG_EXPORTER_EXTEND_QUERY_PATH: /etc/postgres_exporter/queries.yml
+      PG_EXPORTER_AUTO_DISCOVER_DATABASES: "false"
+    volumes:
+      - ./prometheus/postgres-queries.yml:/etc/postgres_exporter/queries.yml:ro
+    ports:
+      - "9187:9187"
+    networks:
+      - monitoring
+      - vitasync_internal
+
+  # ── Redis Exporter ─────────────────────────────────────────────────────────
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.59.0
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: "redis://${REDIS_HOST:-redis}:6379"
+      REDIS_EXPORTER_LOG_FORMAT: json
+    ports:
+      - "9121:9121"
+    networks:
+      - monitoring
+      - vitasync_internal
+
+  # ── Node Exporter (host metrics — Linux only) ──────────────────────────────
+  node-exporter:
+    image: prom/node-exporter:v1.8.0
+    restart: unless-stopped
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+      - --collector.disable-defaults
+      - --collector.cpu
+      - --collector.meminfo
+      - --collector.diskstats
+      - --collector.filesystem
+      - --collector.netdev
+      - --collector.loadavg
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring
+    pid: host

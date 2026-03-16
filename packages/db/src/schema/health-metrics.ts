@@ -1,16 +1,16 @@
+import { sql } from "drizzle-orm"
 import {
+  doublePrecision,
+  index,
+  jsonb,
   pgTable,
+  timestamp,
+  unique,
   uuid,
   varchar,
-  timestamp,
-  doublePrecision,
-  jsonb,
-  index,
-  unique,
 } from "drizzle-orm/pg-core"
-import { sql } from "drizzle-orm"
-import { users } from "./users"
 import { providerConnections } from "./provider-connections"
+import { users } from "./users"
 
 /**
  * Normalized health metrics — the core data store.
@@ -23,9 +23,7 @@ import { providerConnections } from "./provider-connections"
 export const healthMetrics = pgTable(
   "health_metrics",
   {
-    id: uuid("id")
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),

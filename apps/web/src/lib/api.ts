@@ -4,13 +4,11 @@
  * are set in one place.
  */
 
-const API_URL = process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001"
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const apiKey =
-    typeof window !== "undefined"
-      ? (localStorage.getItem("vitasync_api_key") ?? "")
-      : ""
+    typeof window !== "undefined" ? (localStorage.getItem("vitasync_api_key") ?? "") : ""
 
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
@@ -72,8 +70,7 @@ export const healthApi = {
     if (opts?.offset) params.set("offset", String(opts.offset))
     return request<{ data: HealthMetric[]; count: number }>(`/v1/users/${userId}/health?${params}`)
   },
-  summary: (userId: string) =>
-    request<HealthSummary[]>(`/v1/users/${userId}/health/summary`),
+  summary: (userId: string) => request<HealthSummary[]>(`/v1/users/${userId}/health/summary`),
 }
 
 // ---- API Keys ----

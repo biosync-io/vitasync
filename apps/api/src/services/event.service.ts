@@ -1,7 +1,7 @@
-import { getDb, events } from "@biosync-io/db"
-import { eq, and, gte, lte, desc, sql } from "drizzle-orm"
-import { encodeCursor, decodeCursor } from "../lib/cursor.js"
-import type { EventRow, EventInsert } from "@biosync-io/db"
+import { events, getDb } from "@biosync-io/db"
+import type { EventInsert, EventRow } from "@biosync-io/db"
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm"
+import { decodeCursor, encodeCursor } from "../lib/cursor.js"
 
 export interface EventQuery {
   userId: string
@@ -19,7 +19,9 @@ export class EventService {
     return getDb()
   }
 
-  async query(params: EventQuery): Promise<{ data: EventRow[]; nextCursor?: string; hasMore: boolean }> {
+  async query(
+    params: EventQuery,
+  ): Promise<{ data: EventRow[]; nextCursor?: string; hasMore: boolean }> {
     const { userId, eventType, activityType, from, to, limit = 50 } = params
 
     const conditions = [eq(events.userId, userId)]

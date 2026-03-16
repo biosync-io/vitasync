@@ -1,8 +1,8 @@
+import { providerRegistry } from "@biosync-io/provider-core"
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
-import { providerRegistry } from "@biosync-io/provider-core"
-import { ConnectionService } from "../../services/connection.service.js"
 import { requireScope } from "../../plugins/auth.js"
+import { ConnectionService } from "../../services/connection.service.js"
 
 const connectionService = new ConnectionService()
 
@@ -40,11 +40,15 @@ const connectionsRoutes: FastifyPluginAsync = async (app) => {
 
       // Late import to avoid circular deps - worker queue publish
       const { syncQueue } = await import("../../queues/sync.js")
-      await syncQueue.add("sync", { connectionId, userId, workspaceId: request.workspaceId }, {
-        jobId: `sync:${connectionId}:${Date.now()}`,
-        attempts: 3,
-        backoff: { type: "exponential", delay: 5000 },
-      })
+      await syncQueue.add(
+        "sync",
+        { connectionId, userId, workspaceId: request.workspaceId },
+        {
+          jobId: `sync:${connectionId}:${Date.now()}`,
+          attempts: 3,
+          backoff: { type: "exponential", delay: 5000 },
+        },
+      )
 
       return reply.status(202).send({ message: "Sync job enqueued", connectionId })
     },

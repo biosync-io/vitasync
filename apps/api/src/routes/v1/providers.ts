@@ -1,5 +1,5 @@
-import type { FastifyPluginAsync } from "fastify"
 import { providerRegistry } from "@biosync-io/provider-core"
+import type { FastifyPluginAsync } from "fastify"
 
 const providersRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/providers — list all registered provider definitions
@@ -21,7 +21,9 @@ const providersRoutes: FastifyPluginAsync = async (app) => {
     const { providerId } = request.params as { providerId: string }
     const def = providerRegistry.getDefinition(providerId)
     if (!def) {
-      return reply.status(404).send({ code: "NOT_FOUND", message: `Provider '${providerId}' is not registered` })
+      return reply
+        .status(404)
+        .send({ code: "NOT_FOUND", message: `Provider '${providerId}' is not registered` })
     }
 
     return reply.send({

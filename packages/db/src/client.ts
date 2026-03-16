@@ -1,5 +1,5 @@
-import postgres from "postgres"
 import { drizzle } from "drizzle-orm/postgres-js"
+import postgres from "postgres"
 import * as schema from "./schema/index"
 
 let _db: ReturnType<typeof drizzle<typeof schema>> | null = null
@@ -7,13 +7,13 @@ let _sql: postgres.Sql | null = null
 
 export function createDbClient(connectionUrl: string) {
   const sql = postgres(connectionUrl, {
-    max: Number(process.env["DATABASE_POOL_MAX"] ?? 20),
+    max: Number(process.env.DATABASE_POOL_MAX ?? 20),
     idle_timeout: 30,
     connect_timeout: 10,
     onnotice: () => {}, // suppress NOTICE messages
   })
 
-  const db = drizzle(sql, { schema, logger: process.env["NODE_ENV"] === "development" })
+  const db = drizzle(sql, { schema, logger: process.env.NODE_ENV === "development" })
   return { db, sql }
 }
 

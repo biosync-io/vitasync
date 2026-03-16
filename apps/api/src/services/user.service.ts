@@ -1,6 +1,6 @@
-import { getDb, users, providerConnections } from "@biosync-io/db"
-import { eq, and } from "drizzle-orm"
+import { getDb, providerConnections, users } from "@biosync-io/db"
 import type { User } from "@biosync-io/types"
+import { and, eq } from "drizzle-orm"
 
 export class UserService {
   private get db() {
@@ -17,7 +17,9 @@ export class UserService {
     const existing = await this.db
       .select()
       .from(users)
-      .where(and(eq(users.workspaceId, params.workspaceId), eq(users.externalId, params.externalId)))
+      .where(
+        and(eq(users.workspaceId, params.workspaceId), eq(users.externalId, params.externalId)),
+      )
       .limit(1)
 
     if (existing[0]) return existing[0] as User

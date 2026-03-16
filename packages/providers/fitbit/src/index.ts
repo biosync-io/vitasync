@@ -1,7 +1,7 @@
-import { z } from "zod"
-import type { OAuthTokens, SyncOptions, SyncDataPoint, ProviderDefinition } from "@biosync-io/types"
+import { OAuth2Provider, defaultSyncWindow, providerRegistry } from "@biosync-io/provider-core"
+import type { OAuthTokens, ProviderDefinition, SyncDataPoint, SyncOptions } from "@biosync-io/types"
 import { HealthMetricType, MetricUnit } from "@biosync-io/types"
-import { OAuth2Provider, providerRegistry, defaultSyncWindow } from "@biosync-io/provider-core"
+import { z } from "zod"
 
 // ── Fitbit API response schemas ───────────────────────────────
 
@@ -144,9 +144,9 @@ export class FitbitProvider extends OAuth2Provider {
   }
 
   async exchangeCode(code: string): Promise<OAuthTokens> {
-    const credentials = Buffer.from(
-      `${this.config.clientId}:${this.config.clientSecret}`,
-    ).toString("base64")
+    const credentials = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString(
+      "base64",
+    )
 
     const response = await fetch(FitbitProvider.TOKEN_URL, {
       method: "POST",
@@ -179,9 +179,9 @@ export class FitbitProvider extends OAuth2Provider {
   async refreshTokens(tokens: OAuthTokens): Promise<OAuthTokens> {
     if (!tokens.refreshToken) throw new Error("No refresh token available")
 
-    const credentials = Buffer.from(
-      `${this.config.clientId}:${this.config.clientSecret}`,
-    ).toString("base64")
+    const credentials = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString(
+      "base64",
+    )
 
     const response = await fetch(FitbitProvider.TOKEN_URL, {
       method: "POST",
@@ -276,8 +276,7 @@ export class FitbitProvider extends OAuth2Provider {
       }
     }
 
-    const activeMinutes =
-      (summary.fairlyActiveMinutes ?? 0) + (summary.veryActiveMinutes ?? 0)
+    const activeMinutes = (summary.fairlyActiveMinutes ?? 0) + (summary.veryActiveMinutes ?? 0)
     if (activeMinutes > 0) {
       yield {
         providerId: "fitbit",
@@ -294,10 +293,7 @@ export class FitbitProvider extends OAuth2Provider {
     start: string,
     end: string,
   ): AsyncGenerator<SyncDataPoint> {
-    const res = await this.#get(
-      tokens,
-      `/1/user/-/activities/heart/date/${start}/${end}.json`,
-    )
+    const res = await this.#get(tokens, `/1/user/-/activities/heart/date/${start}/${end}.json`)
     const parsed = FitbitHeartRateResponse.safeParse(res)
     if (!parsed.success) return
 
@@ -375,9 +371,9 @@ export class FitbitProvider extends OAuth2Provider {
  * The provider will only be registered if the required env vars are present.
  */
 export function registerFitbitProvider() {
-  const clientId = process.env["FITBIT_CLIENT_ID"]
-  const clientSecret = process.env["FITBIT_CLIENT_SECRET"]
-  const redirectBase = process.env["OAUTH_REDIRECT_BASE_URL"]
+  const clientId = process.env.FITBIT_CLIENT_ID
+  const clientSecret = process.env.FITBIT_CLIENT_SECRET
+  const redirectBase = process.env.OAUTH_REDIRECT_BASE_URL
 
   if (!clientId || !clientSecret) {
     console.warn("[FitbitProvider] Skipping registration: FITBIT_CLIENT_ID/SECRET not set.")

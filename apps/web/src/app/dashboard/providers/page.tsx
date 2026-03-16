@@ -1,9 +1,9 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { providersApi, type ProviderDef } from "../../../lib/api"
+import { type ProviderDef, providersApi } from "../../../lib/api"
 
-const API_URL = process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001"
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
 
 export default function ProvidersPage() {
   const { data: providers = [], isLoading } = useQuery<ProviderDef[]>({

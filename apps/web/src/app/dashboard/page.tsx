@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { providersApi, usersApi, apiKeysApi, webhooksApi } from "../../lib/api"
+import { apiKeysApi, providersApi, usersApi, webhooksApi } from "../../lib/api"
 
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
@@ -15,7 +15,10 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 
 export default function DashboardPage() {
   const { data: providers = [] } = useQuery({ queryKey: ["providers"], queryFn: providersApi.list })
-  const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: () => usersApi.list({ limit: 1 }) })
+  const { data: users = [] } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => usersApi.list({ limit: 1 }),
+  })
   const { data: keys = [] } = useQuery({ queryKey: ["api-keys"], queryFn: apiKeysApi.list })
   const { data: webhooks = [] } = useQuery({ queryKey: ["webhooks"], queryFn: webhooksApi.list })
 
@@ -23,9 +26,7 @@ export default function DashboardPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Overview</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Your VitaSync workspace at a glance.
-        </p>
+        <p className="mt-1 text-sm text-gray-500">Your VitaSync workspace at a glance.</p>
       </div>
 
       {/* Stats grid */}
@@ -40,7 +41,9 @@ export default function DashboardPage() {
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm mb-6">
         <h2 className="mb-4 text-sm font-semibold text-gray-900">Available Providers</h2>
         {providers.length === 0 ? (
-          <p className="text-sm text-gray-400">No providers registered. Set provider credentials in your environment.</p>
+          <p className="text-sm text-gray-400">
+            No providers registered. Set provider credentials in your environment.
+          </p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {providers.map((p) => (
@@ -65,10 +68,26 @@ export default function DashboardPage() {
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-gray-900">Quick Start</h2>
         <ol className="space-y-2 text-sm text-gray-600 list-decimal list-inside">
-          <li>Create a <span className="font-medium text-gray-900">User</span> with an external ID from your system.</li>
-          <li>Start an <span className="font-medium text-gray-900">OAuth flow</span> via <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">GET /v1/oauth/:provider/authorize?userId=&lt;id&gt;</code></li>
-          <li>Trigger a <span className="font-medium text-gray-900">sync</span> or wait for the scheduled worker to pull data.</li>
-          <li>Query <span className="font-medium text-gray-900">health metrics</span> via <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">GET /v1/users/:id/health</code></li>
+          <li>
+            Create a <span className="font-medium text-gray-900">User</span> with an external ID
+            from your system.
+          </li>
+          <li>
+            Start an <span className="font-medium text-gray-900">OAuth flow</span> via{" "}
+            <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">
+              GET /v1/oauth/:provider/authorize?userId=&lt;id&gt;
+            </code>
+          </li>
+          <li>
+            Trigger a <span className="font-medium text-gray-900">sync</span> or wait for the
+            scheduled worker to pull data.
+          </li>
+          <li>
+            Query <span className="font-medium text-gray-900">health metrics</span> via{" "}
+            <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">
+              GET /v1/users/:id/health
+            </code>
+          </li>
         </ol>
       </div>
     </div>

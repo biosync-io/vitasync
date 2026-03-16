@@ -1,17 +1,17 @@
+import { sql } from "drizzle-orm"
 import {
+  doublePrecision,
+  index,
+  integer,
+  jsonb,
   pgTable,
+  text,
+  timestamp,
   uuid,
   varchar,
-  timestamp,
-  integer,
-  doublePrecision,
-  jsonb,
-  index,
-  text,
 } from "drizzle-orm/pg-core"
-import { sql } from "drizzle-orm"
-import { users } from "./users"
 import { providerConnections } from "./provider-connections"
+import { users } from "./users"
 
 /**
  * Event records — structured events such as workouts, runs, yoga sessions, sleep cycles.
@@ -22,9 +22,7 @@ import { providerConnections } from "./provider-connections"
 export const events = pgTable(
   "events",
   {
-    id: uuid("id")
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),

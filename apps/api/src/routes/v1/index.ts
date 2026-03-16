@@ -1,14 +1,14 @@
 import type { FastifyInstance } from "fastify"
-import usersRoutes from "./users.js"
-import connectionsRoutes from "./connections.js"
-import healthDataRoutes from "./health-data.js"
-import eventsRoutes from "./events.js"
-import personalRecordsRoutes from "./personal-records.js"
 import apiKeysRoutes from "./api-keys.js"
-import webhooksRoutes from "./webhooks.js"
-import oauthRoutes from "./oauth.js"
-import providersRoutes from "./providers.js"
+import connectionsRoutes from "./connections.js"
+import eventsRoutes from "./events.js"
+import healthDataRoutes from "./health-data.js"
 import inboundRoutes from "./inbound.js"
+import oauthRoutes from "./oauth.js"
+import personalRecordsRoutes from "./personal-records.js"
+import providersRoutes from "./providers.js"
+import usersRoutes from "./users.js"
+import webhooksRoutes from "./webhooks.js"
 
 /**
  * Registers all v1 API routes under the `/v1` prefix.

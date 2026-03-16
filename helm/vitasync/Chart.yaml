@@ -4,9 +4,9 @@ description: A Helm chart for deploying VitaSync — a self-hosted wearable heal
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
-home: https://github.com/your-org/vitasync
+home: https://github.com/biosync-io/vitasync
 sources:
-  - https://github.com/your-org/vitasync
+  - https://github.com/biosync-io/vitasync
 keywords:
   - health
   - wearables

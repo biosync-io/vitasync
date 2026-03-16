@@ -1,4 +1,4 @@
-import { initDb, closeDb } from "@biosync-io/db"
+import { closeDb, initDb } from "@biosync-io/db"
 import { registerFitbitProvider } from "@biosync-io/provider-fitbit"
 import { registerGarminProvider } from "@biosync-io/provider-garmin"
 import { registerStravaProvider } from "@biosync-io/provider-strava"
@@ -39,12 +39,8 @@ async function main() {
   // ── Start listening ───────────────────────────────────────────
   await app.listen({ port: config.PORT, host: config.HOST })
 
-  app.log.info(
-    `🚀 VitaSync API running at http://${config.HOST}:${config.PORT}`,
-  )
-  app.log.info(
-    `📖 API docs available at http://${config.HOST}:${config.PORT}/docs`,
-  )
+  app.log.info(`🚀 VitaSync API running at http://${config.HOST}:${config.PORT}`)
+  app.log.info(`📖 API docs available at http://${config.HOST}:${config.PORT}/docs`)
 }
 
 main().catch((err) => {

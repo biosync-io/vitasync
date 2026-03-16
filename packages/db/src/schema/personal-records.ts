@@ -1,13 +1,13 @@
+import { sql } from "drizzle-orm"
 import {
-  pgTable,
-  uuid,
-  varchar,
-  timestamp,
   doublePrecision,
   index,
+  pgTable,
+  timestamp,
   unique,
+  uuid,
+  varchar,
 } from "drizzle-orm/pg-core"
-import { sql } from "drizzle-orm"
 import { users } from "./users"
 
 /**
@@ -19,9 +19,7 @@ import { users } from "./users"
 export const personalRecords = pgTable(
   "personal_records",
   {
-    id: uuid("id")
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { usersApi, healthApi, type HealthMetric, type HealthSummary } from "../../../lib/api"
+import { useState } from "react"
+import { type HealthMetric, type HealthSummary, healthApi, usersApi } from "../../../lib/api"
 
 const METRIC_LABELS: Record<string, string> = {
   steps: "Steps",
@@ -65,11 +65,17 @@ export default function HealthDataPage() {
         <h2 className="mb-4 text-sm font-semibold text-gray-900">Filters</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700">User</label>
+            <label htmlFor="health-user" className="block text-xs font-medium text-gray-700">
+              User
+            </label>
             <select
+              id="health-user"
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={selectedUserId}
-              onChange={(e) => { setSelectedUserId(e.target.value); setMetricType("") }}
+              onChange={(e) => {
+                setSelectedUserId(e.target.value)
+                setMetricType("")
+              }}
             >
               <option value="">Select a user…</option>
               {users.map((u) => (
@@ -80,8 +86,11 @@ export default function HealthDataPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700">Metric Type</label>
+            <label htmlFor="health-metric-type" className="block text-xs font-medium text-gray-700">
+              Metric Type
+            </label>
             <select
+              id="health-metric-type"
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={metricType}
               onChange={(e) => setMetricType(e.target.value)}
@@ -96,8 +105,11 @@ export default function HealthDataPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700">From</label>
+            <label htmlFor="health-from" className="block text-xs font-medium text-gray-700">
+              From
+            </label>
             <input
+              id="health-from"
               type="date"
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={from}
@@ -105,8 +117,11 @@ export default function HealthDataPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700">To</label>
+            <label htmlFor="health-to" className="block text-xs font-medium text-gray-700">
+              To
+            </label>
             <input
+              id="health-to"
               type="date"
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={to}
@@ -121,6 +136,7 @@ export default function HealthDataPage() {
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {summary.map((s) => (
             <button
+              type="button"
               key={s.metricType}
               onClick={() => setMetricType(s.metricType === metricType ? "" : s.metricType)}
               className={`rounded-xl border p-4 text-left transition-colors ${
@@ -152,9 +168,14 @@ export default function HealthDataPage() {
         </div>
       ) : metrics.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-16 text-center">
-          <p className="text-sm text-gray-500">No health data found for this user with the current filters.</p>
+          <p className="text-sm text-gray-500">
+            No health data found for this user with the current filters.
+          </p>
           <p className="mt-2 text-xs text-gray-400">
-            Trigger a sync via the Users page or <code className="rounded bg-gray-100 px-1">POST /v1/users/:id/connections/:cid/sync</code>
+            Trigger a sync via the Users page or{" "}
+            <code className="rounded bg-gray-100 px-1">
+              POST /v1/users/:id/connections/:cid/sync
+            </code>
           </p>
         </div>
       ) : (
@@ -201,12 +222,12 @@ function MetricRow({ metric }: { metric: HealthMetric }) {
         {METRIC_LABELS[metric.metricType] ?? metric.metricType}
       </td>
       <td className="px-4 py-3 text-gray-700 tabular-nums">
-        {typeof metric.value === "number" ? metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : metric.value}
+        {typeof metric.value === "number"
+          ? metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+          : metric.value}
       </td>
       <td className="px-4 py-3 text-gray-500">{metric.unit ?? "—"}</td>
-      <td className="px-4 py-3 text-gray-500">
-        {new Date(metric.recordedAt).toLocaleString()}
-      </td>
+      <td className="px-4 py-3 text-gray-500">{new Date(metric.recordedAt).toLocaleString()}</td>
       <td className="px-4 py-3 text-gray-400 text-xs">—</td>
     </tr>
   )
