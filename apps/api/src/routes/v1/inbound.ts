@@ -58,7 +58,7 @@ const inboundRoutes: FastifyPluginAsync = async (app) => {
       const rawBody: Buffer =
         (request as typeof request & { rawBody?: Buffer }).rawBody ?? Buffer.from("")
 
-      if (provider.verifyWebhookSignature) {
+      if ("verifyWebhookSignature" in provider && provider.verifyWebhookSignature) {
         const valid = provider.verifyWebhookSignature(rawBody, signature, webhookSecret)
         if (!valid) {
           app.log.warn({ providerId }, "Inbound webhook signature verification failed")
@@ -85,7 +85,7 @@ const inboundRoutes: FastifyPluginAsync = async (app) => {
       }
 
       // ── Process data points ─────────────────────────────────
-      if (provider.processWebhook) {
+      if ("processWebhook" in provider && provider.processWebhook) {
         const dataPoints = await provider.processWebhook(request.body)
 
         if (dataPoints.length > 0) {

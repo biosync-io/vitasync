@@ -16,18 +16,19 @@ export class ConnectionService {
 
   /**
    * Returns the OAuth2 authorization URL for the given provider.
-   * A PKCE code_verifier is included if the provider supports it.
+   * PKCE codeVerifier is not yet supported by the current provider implementations.
    */
   async getAuthorizationUrl(
     providerId: string,
-    redirectUri: string,
+    _redirectUri: string,
     state: string,
   ): Promise<{ url: string; codeVerifier?: string }> {
     const provider = providerRegistry.resolve(providerId)
     if (!("getAuthorizationUrl" in provider)) {
       throw new Error(`Provider '${providerId}' does not support OAuth2`)
     }
-    return provider.getAuthorizationUrl(redirectUri, state)
+    const url = provider.getAuthorizationUrl(state)
+    return { url: url.toString() }
   }
 
   /**
@@ -46,7 +47,7 @@ export class ConnectionService {
       throw new Error(`Provider '${params.providerId}' does not support OAuth2`)
     }
 
-    const tokens = await provider.exchangeCode(params.code, params.redirectUri, params.codeVerifier)
+    const tokens = await provider.exchangeCode(params.code)
     return this.upsertConnection(params.userId, params.workspaceId, params.providerId, tokens)
   }
 
@@ -62,18 +63,15 @@ export class ConnectionService {
       .insert(providerConnections)
       .values({
         userId,
-        workspaceId,
         providerId,
         encryptedTokens,
         status: "connected",
-        connectedAt: new Date(),
       })
       .onConflictDoUpdate({
         target: [providerConnections.userId, providerConnections.providerId],
         set: {
           encryptedTokens,
           status: "connected",
-          connectedAt: new Date(),
           updatedAt: new Date(),
         },
       })
@@ -90,46 +88,35 @@ export class ConnectionService {
       .limit(1)
 
     if (!conn) throw new Error(`Connection '${connectionId}' not found`)
+    if (!conn.encryptedTokens) throw new Error(`Connection '${connectionId}' has no stored tokens`)
 
     return JSON.parse(decrypt(conn.encryptedTokens, this.encryptionKey)) as ProviderTokens
   }
 
-  async list(userId: string, workspaceId: string): Promise<ProviderConnection[]> {
+  async list(userId: string, _workspaceId: string): Promise<ProviderConnection[]> {
     const rows = await this.db
       .select({
         id: providerConnections.id,
         userId: providerConnections.userId,
-        workspaceId: providerConnections.workspaceId,
         providerId: providerConnections.providerId,
         status: providerConnections.status,
         providerUserId: providerConnections.providerUserId,
         scopes: providerConnections.scopes,
-        connectedAt: providerConnections.connectedAt,
         lastSyncedAt: providerConnections.lastSyncedAt,
         createdAt: providerConnections.createdAt,
         updatedAt: providerConnections.updatedAt,
       })
       .from(providerConnections)
-      .where(
-        and(
-          eq(providerConnections.userId, userId),
-          eq(providerConnections.workspaceId, workspaceId),
-        ),
-      )
+      .where(eq(providerConnections.userId, userId))
 
     return rows as ProviderConnection[]
   }
 
-  async disconnect(connectionId: string, workspaceId: string): Promise<boolean> {
+  async disconnect(connectionId: string, _workspaceId: string): Promise<boolean> {
     const result = await this.db
       .update(providerConnections)
       .set({ status: "disconnected", updatedAt: new Date() })
-      .where(
-        and(
-          eq(providerConnections.id, connectionId),
-          eq(providerConnections.workspaceId, workspaceId),
-        ),
-      )
+      .where(eq(providerConnections.id, connectionId))
       .returning({ id: providerConnections.id })
 
     return result.length > 0

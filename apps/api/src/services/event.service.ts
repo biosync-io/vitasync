@@ -55,7 +55,7 @@ export class EventService {
       nextCursor = encodeCursor(last.id, new Date(last.startedAt))
     }
 
-    return { data, nextCursor, hasMore }
+    return { data, hasMore, ...(nextCursor !== undefined && { nextCursor }) }
   }
 
   async findById(id: string, userId: string): Promise<EventRow | null> {

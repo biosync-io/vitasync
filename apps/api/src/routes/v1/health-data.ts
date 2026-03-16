@@ -1,14 +1,19 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
+import { requireScope } from "../../plugins/auth.js"
 import { HealthDataService } from "../../services/health-data.service.js"
 import type { TimeseriesBucket } from "../../services/health-data.service.js"
+import { UserService } from "../../services/user.service.js"
 
 const healthDataService = new HealthDataService()
+const userService = new UserService()
 
 const healthDataRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/health — query health data with cursor-based pagination
   app.get("/:userId/health", async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
+    const owner = await userService.findById(userId, request.workspaceId)
+    if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
 
     const query = z
       .object({
@@ -24,12 +29,12 @@ const healthDataRoutes: FastifyPluginAsync = async (app) => {
     const result = await healthDataService.query({
       userId,
       workspaceId: request.workspaceId,
-      metricType: query.metricType as never,
-      from: query.from ? new Date(query.from) : undefined,
-      to: query.to ? new Date(query.to) : undefined,
       limit: query.limit,
       offset: query.cursor ? 0 : query.offset,
-      cursor: query.cursor,
+      ...(query.metricType !== undefined && { metricType: query.metricType as never }),
+      ...(query.from !== undefined && { from: new Date(query.from) }),
+      ...(query.to !== undefined && { to: new Date(query.to) }),
+      ...(query.cursor !== undefined && { cursor: query.cursor }),
     })
 
     return reply.send(result)
@@ -38,6 +43,8 @@ const healthDataRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/health/summary — counts per metric type
   app.get("/:userId/health/summary", async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
+    const owner = await userService.findById(userId, request.workspaceId)
+    if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
     const summary = await healthDataService.summary(userId)
     return reply.send(summary)
   })
@@ -45,6 +52,8 @@ const healthDataRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/health/timeseries — time-bucketed aggregation
   app.get("/:userId/health/timeseries", async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
+    const owner = await userService.findById(userId, request.workspaceId)
+    if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
 
     const query = z
       .object({
@@ -69,6 +78,8 @@ const healthDataRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/health/daily-summaries — per-day totals per metric
   app.get("/:userId/health/daily-summaries", async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
+    const owner = await userService.findById(userId, request.workspaceId)
+    if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
 
     const query = z
       .object({
@@ -83,17 +94,19 @@ const healthDataRoutes: FastifyPluginAsync = async (app) => {
 
     const summaries = await healthDataService.dailySummaries({
       userId,
-      metricTypes: query.metricTypes as never,
       from: new Date(query.from),
       to: new Date(query.to),
+      ...(query.metricTypes !== undefined && { metricTypes: query.metricTypes as never }),
     })
 
     return reply.send({ data: summaries })
   })
 
   // DELETE /v1/users/:userId/health — GDPR right-to-erasure
-  app.delete("/:userId/health", async (request, reply) => {
+  app.delete("/:userId/health", { preHandler: [requireScope("write")] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
+    const owner = await userService.findById(userId, request.workspaceId)
+    if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
     const count = await healthDataService.deleteForUser(userId, request.workspaceId)
     return reply.send({ deleted: count })
   })

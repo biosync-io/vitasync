@@ -22,7 +22,7 @@ const apiKeysRoutes: FastifyPluginAsync = async (app) => {
       workspaceId: request.workspaceId,
       name: body.name,
       scopes: body.scopes,
-      expiresAt: body.expiresAt ? new Date(body.expiresAt) : undefined,
+      ...(body.expiresAt !== undefined && { expiresAt: new Date(body.expiresAt) }),
     })
 
     // rawKey is only returned here — never stored, never shown again

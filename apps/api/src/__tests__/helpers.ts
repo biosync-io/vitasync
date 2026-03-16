@@ -2,7 +2,7 @@
  * Test helpers — build a lightweight Fastify instance with mocked auth,
  * allowing route tests to run without a real DB connection.
  */
-import Fastify from "fastify"
+import Fastify, { type FastifyError } from "fastify"
 import { ZodError } from "zod"
 import { registerV1Routes } from "../routes/v1/index.js"
 
@@ -25,7 +25,7 @@ export async function buildTestApp(scopes: string[] = ["read", "write", "admin"]
   })
 
   // Convert Zod validation errors to 400 (mirrors production error handler)
-  app.setErrorHandler(async (error, _req, reply) => {
+  app.setErrorHandler<FastifyError>(async (error, _req, reply) => {
     if (error instanceof ZodError) {
       return reply.status(400).send({
         code: "VALIDATION_ERROR",

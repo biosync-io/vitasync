@@ -22,11 +22,14 @@ const usersRoutes: FastifyPluginAsync = async (app) => {
   // POST /v1/users — create or find existing user
   app.post("/", { preHandler: [requireScope("write")] }, async (request, reply) => {
     const body = CreateUserBody.parse(request.body)
-    const user = await userService.findOrCreate({
+    const { user, created } = await userService.findOrCreate({
       workspaceId: request.workspaceId,
-      ...body,
+      externalId: body.externalId,
+      ...(body.email !== undefined && { email: body.email }),
+      ...(body.displayName !== undefined && { displayName: body.displayName }),
+      ...(body.metadata !== undefined && { metadata: body.metadata }),
     })
-    return reply.status(201).send(user)
+    return reply.status(created ? 201 : 200).send(user)
   })
 
   // GET /v1/users — list users in workspace
@@ -50,7 +53,11 @@ const usersRoutes: FastifyPluginAsync = async (app) => {
   app.patch("/:userId", { preHandler: [requireScope("write")] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const body = UpdateUserBody.parse(request.body)
-    const user = await userService.update(userId, request.workspaceId, body)
+    const user = await userService.update(userId, request.workspaceId, {
+      ...(body.email !== undefined && { email: body.email }),
+      ...(body.displayName !== undefined && { displayName: body.displayName }),
+      ...(body.metadata !== undefined && { metadata: body.metadata }),
+    })
     if (!user) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
     return reply.send(user)
   })

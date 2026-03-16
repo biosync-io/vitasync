@@ -8,7 +8,6 @@ const providersRoutes: FastifyPluginAsync = async (app) => {
       id: def.id,
       name: def.name,
       description: def.description,
-      authType: def.authType,
       capabilities: def.capabilities,
       logoUrl: def.logoUrl ?? null,
     }))
@@ -30,7 +29,6 @@ const providersRoutes: FastifyPluginAsync = async (app) => {
       id: def.id,
       name: def.name,
       description: def.description,
-      authType: def.authType,
       capabilities: def.capabilities,
       logoUrl: def.logoUrl ?? null,
     })

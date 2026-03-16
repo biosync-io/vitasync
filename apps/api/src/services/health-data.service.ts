@@ -32,6 +32,7 @@ export interface HealthDataQuery {
   to?: Date
   limit?: number
   offset?: number
+  cursor?: string
 }
 
 export interface HealthDataSummary {
@@ -83,7 +84,7 @@ export class HealthDataService {
       nextCursor = encodeCursor(last.id, new Date(last.recordedAt))
     }
 
-    return { data, nextCursor, hasMore }
+    return { data, hasMore, ...(nextCursor !== undefined && { nextCursor }) }
   }
 
   async summary(userId: string): Promise<HealthDataSummary[]> {
@@ -245,8 +246,8 @@ export class HealthDataService {
         metricType: dp.metricType,
         recordedAt: dp.recordedAt,
         value: dp.value ?? 0,
-        unit: dp.unit,
-        data: dp.data,
+        ...(dp.unit !== undefined && { unit: dp.unit }),
+        ...(dp.data !== undefined && { data: dp.data }),
       })),
     )
   }

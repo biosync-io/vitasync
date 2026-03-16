@@ -33,7 +33,9 @@ describe("Users routes", () => {
 
   describe("POST /v1/users", () => {
     it("creates a new user and returns 201", async () => {
-      vi.mocked(UserService.prototype.findOrCreate).mockResolvedValue(mockUser as never)
+      vi.mocked(UserService.prototype.findOrCreate).mockResolvedValue(
+        { user: mockUser, created: true } as never,
+      )
 
       const res = await app.inject({
         method: "POST",

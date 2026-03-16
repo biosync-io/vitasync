@@ -52,10 +52,12 @@ export interface Webhook {
 }
 
 export const WebhookEvent = {
-  DATA_SYNCED: "data.synced",
-  CONNECTION_CREATED: "connection.created",
-  CONNECTION_REVOKED: "connection.revoked",
+  SYNC_COMPLETED: "sync.completed",
   SYNC_FAILED: "sync.failed",
+  CONNECTION_CREATED: "connection.created",
+  CONNECTION_DISCONNECTED: "connection.disconnected",
+  USER_CREATED: "user.created",
+  USER_DELETED: "user.deleted",
 } as const
 export type WebhookEvent = (typeof WebhookEvent)[keyof typeof WebhookEvent]
 

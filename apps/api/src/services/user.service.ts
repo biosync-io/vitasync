@@ -13,7 +13,7 @@ export class UserService {
     email?: string
     displayName?: string
     metadata?: Record<string, unknown>
-  }): Promise<User> {
+  }): Promise<{ user: User; created: boolean }> {
     const existing = await this.db
       .select()
       .from(users)
@@ -22,7 +22,7 @@ export class UserService {
       )
       .limit(1)
 
-    if (existing[0]) return existing[0] as User
+    if (existing[0]) return { user: existing[0] as User, created: false }
 
     const [created] = await this.db
       .insert(users)
@@ -35,7 +35,7 @@ export class UserService {
       })
       .returning()
 
-    return created as User
+    return { user: created as User, created: true }
   }
 
   async findById(id: string, workspaceId: string): Promise<User | null> {

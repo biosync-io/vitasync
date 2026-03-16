@@ -1,13 +1,17 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { EventService } from "../../services/event.service.js"
+import { UserService } from "../../services/user.service.js"
 
 const eventService = new EventService()
+const userService = new UserService()
 
 const eventsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/events — list events with cursor-based pagination
   app.get("/:userId/events", async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
+    const owner = await userService.findById(userId, request.workspaceId)
+    if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
 
     const query = z
       .object({
@@ -23,12 +27,12 @@ const eventsRoutes: FastifyPluginAsync = async (app) => {
     const result = await eventService.query({
       userId,
       workspaceId: request.workspaceId,
-      eventType: query.eventType,
-      activityType: query.activityType,
-      from: query.from ? new Date(query.from) : undefined,
-      to: query.to ? new Date(query.to) : undefined,
       limit: query.limit,
-      cursor: query.cursor,
+      ...(query.eventType !== undefined && { eventType: query.eventType }),
+      ...(query.activityType !== undefined && { activityType: query.activityType }),
+      ...(query.from !== undefined && { from: new Date(query.from) }),
+      ...(query.to !== undefined && { to: new Date(query.to) }),
+      ...(query.cursor !== undefined && { cursor: query.cursor }),
     })
 
     return reply.send(result)
@@ -39,6 +43,8 @@ const eventsRoutes: FastifyPluginAsync = async (app) => {
     const { userId, eventId } = z
       .object({ userId: z.string().uuid(), eventId: z.string().uuid() })
       .parse(request.params)
+    const owner = await userService.findById(userId, request.workspaceId)
+    if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
 
     const event = await eventService.findById(eventId, userId)
     if (!event) {

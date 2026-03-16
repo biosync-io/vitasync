@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { type ApiKey, apiKeysApi } from "../../../lib/api"
 
 const STORAGE_KEY = "vitasync_api_key"
@@ -62,12 +63,8 @@ function ScopeTag({ scope }: { scope: string }) {
 }
 
 const ALL_SCOPES = [
-  { value: "read:users", label: "Read Users" },
-  { value: "write:users", label: "Write Users" },
-  { value: "read:health", label: "Read Health Data" },
-  { value: "read:events", label: "Read Events" },
-  { value: "read:providers", label: "Read Providers" },
-  { value: "write:connections", label: "Write Connections" },
+  { value: "read", label: "Read" },
+  { value: "write", label: "Write" },
   { value: "admin", label: "Admin (all)" },
 ]
 
@@ -102,11 +99,7 @@ export default function SettingsPage() {
   // Create key form
   const [createOpen, setCreateOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState("")
-  const [newKeyScopes, setNewKeyScopes] = useState<string[]>([
-    "read:users",
-    "read:health",
-    "read:events",
-  ])
+  const [newKeyScopes, setNewKeyScopes] = useState<string[]>(["read", "write"])
   const [newKeyExpiry, setNewKeyExpiry] = useState("")
   const [createdRawKey, setCreatedRawKey] = useState<string | null>(null)
 
@@ -120,7 +113,7 @@ export default function SettingsPage() {
     onSuccess: (data) => {
       setCreatedRawKey(data.rawKey)
       setNewKeyName("")
-      setNewKeyScopes(["read:users", "read:health", "read:events"])
+      setNewKeyScopes(["read", "write"])
       setNewKeyExpiry("")
       queryClient.invalidateQueries({ queryKey: ["api-keys"] })
     },
@@ -142,6 +135,9 @@ export default function SettingsPage() {
     return new Date(key.expiresAt) < new Date()
   }
 
+  const searchParams = useSearchParams()
+  const needsSetup = searchParams.get("setup") === "1" && !activeKey
+
   return (
     <div className="max-w-3xl space-y-8">
       <div>
@@ -151,7 +147,15 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* ── Active API key ───────────────────────────────────────────────────── */}
+      {/* ── Setup banner ─────────────────────────────────────────────────────── */}
+      {needsSetup && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <strong>API key required.</strong> Paste your key below and click <strong>Save</strong> to
+          start using the dashboard. Use the <strong>Bootstrap key</strong>{" "}
+          (<code className="rounded bg-amber-100 px-1 font-mono">vs_test_dev0…</code>) for local
+          development, or create a new one below.
+        </div>
+      )}
       <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="text-sm font-semibold text-gray-900">Active API Key</h2>

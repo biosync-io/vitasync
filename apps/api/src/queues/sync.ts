@@ -1,14 +1,14 @@
 import { Queue } from "bullmq"
-import IORedis from "ioredis"
+import { Redis } from "ioredis"
 import { config } from "../config.js"
 
-let _connection: IORedis | null = null
+let _connection: Redis | null = null
 let _syncQueue: Queue | null = null
 let _webhookQueue: Queue | null = null
 
-function getConnection(): IORedis {
+function getConnection(): Redis {
   if (!_connection) {
-    _connection = new IORedis(config.REDIS_URL, {
+    _connection = new Redis(config.REDIS_URL, {
       maxRetriesPerRequest: null, // Required by BullMQ
       enableReadyCheck: false,
     })
@@ -22,7 +22,7 @@ function getConnection(): IORedis {
  */
 export function getSyncQueue(): Queue {
   if (!_syncQueue) {
-    _syncQueue = new Queue("sync", { connection: getConnection() })
+    _syncQueue = new Queue("sync", { connection: getConnection() as never })
   }
   return _syncQueue
 }
@@ -33,7 +33,7 @@ export function getSyncQueue(): Queue {
  */
 export function getWebhookQueue(): Queue {
   if (!_webhookQueue) {
-    _webhookQueue = new Queue("webhooks", { connection: getConnection() })
+    _webhookQueue = new Queue("webhooks", { connection: getConnection() as never })
   }
   return _webhookQueue
 }
