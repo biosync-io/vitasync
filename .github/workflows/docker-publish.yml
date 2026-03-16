@@ -20,12 +20,11 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  # ── Auto-bump version on every push to main ───────────────────────────────
-  # Pushes made with GITHUB_TOKEN do NOT re-trigger workflows — no loop risk.
+  # ── Bump version & tag on workflow_dispatch ──────────────────────────────
   release:
     name: Bump Version & Tag
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
     outputs:
@@ -69,12 +68,9 @@ jobs:
             fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
           " "$version"
 
-      - name: Commit, tag and push
+      - name: Create and push tag
         run: |
-          git add package.json
-          git diff --staged --quiet || git commit -m "chore: release ${{ steps.bump.outputs.tag }} [skip ci]"
           git tag ${{ steps.bump.outputs.tag }}
-          git push origin HEAD:main
           git push origin ${{ steps.bump.outputs.tag }}
 
   # ── Build and push Docker images to GHCR ─────────────────────────────────
