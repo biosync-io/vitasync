@@ -20,11 +20,17 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  # ── Bump version & tag on workflow_dispatch ──────────────────────────────
+  # ── Bump version & tag on push to main or workflow_dispatch ─────────────
   release:
     name: Bump Version & Tag
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    # Skip on tag pushes and skip the bot's own "chore: bump version" commits
+    # to prevent an infinite loop.
+    if: |
+      (github.event_name == 'workflow_dispatch' ||
+       github.event_name == 'push') &&
+      !startsWith(github.ref, 'refs/tags/') &&
+      !contains(github.event.head_commit.message, 'chore: bump version')
     permissions:
       contents: write
     outputs:
@@ -68,10 +74,23 @@ jobs:
             fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
           " "$version"
 
+      - name: Commit version bump
+        run: |
+          # Only commit if package.json was actually modified
+          if ! git diff --quiet package.json; then
+            git add package.json
+            git commit -m "chore: bump version to ${{ steps.bump.outputs.version }}"
+            git push origin HEAD:main
+          fi
+
       - name: Create and push tag
         run: |
-          git tag ${{ steps.bump.outputs.tag }}
-          git push origin ${{ steps.bump.outputs.tag }}
+          if git rev-parse "${{ steps.bump.outputs.tag }}" >/dev/null 2>&1; then
+            echo "Tag ${{ steps.bump.outputs.tag }} already exists — skipping tag creation."
+          else
+            git tag ${{ steps.bump.outputs.tag }}
+            git push origin ${{ steps.bump.outputs.tag }}
+          fi
 
   # ── Build and push Docker images to GHCR ─────────────────────────────────
   build-and-push:
@@ -99,11 +118,14 @@ jobs:
         id: ver
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            # Manual tag push — use the tag itself
+            # Tag push — derive version from the tag
             echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          else
-            # Main push — use the version bumped by the release job
+          elif [[ -n "${{ needs.release.outputs.version }}" ]]; then
+            # workflow_dispatch — use the version the release job bumped to
             echo "version=${{ needs.release.outputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            # Plain push to main — read the current version from package.json
+            echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set up Docker Buildx
@@ -163,8 +185,10 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          else
+          elif [[ -n "${{ needs.release.outputs.version }}" ]]; then
             echo "version=${{ needs.release.outputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Install Helm
