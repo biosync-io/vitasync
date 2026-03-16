@@ -24,13 +24,11 @@ jobs:
   release:
     name: Bump Version & Tag
     runs-on: ubuntu-latest
-    # Skip on tag pushes and skip the bot's own "chore: bump version" commits
-    # to prevent an infinite loop.
+    # Skip on tag pushes — build-and-push handles those directly.
     if: |
       (github.event_name == 'workflow_dispatch' ||
        github.event_name == 'push') &&
-      !startsWith(github.ref, 'refs/tags/') &&
-      !contains(github.event.head_commit.message, 'chore: bump version')
+      !startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
     outputs:
@@ -62,35 +60,21 @@ jobs:
             minor) minor=$((minor+1)); patch=0 ;;
             *)     patch=$((patch+1)) ;;
           esac
+
+          # Keep incrementing patch until we find a tag that doesn't exist yet
+          while git rev-parse "v$major.$minor.$patch" >/dev/null 2>&1; do
+            echo "Tag v$major.$minor.$patch already exists, incrementing patch..."
+            patch=$((patch+1))
+          done
+
           version="$major.$minor.$patch"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=v$version" >> "$GITHUB_OUTPUT"
 
-          # Update root package.json version
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
-            pkg.version = process.argv[1];
-            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
-          " "$version"
-
-      - name: Commit version bump
-        run: |
-          # Only commit if package.json was actually modified
-          if ! git diff --quiet package.json; then
-            git add package.json
-            git commit -m "chore: bump version to ${{ steps.bump.outputs.version }}"
-            git push origin HEAD:main
-          fi
-
       - name: Create and push tag
         run: |
-          if git rev-parse "${{ steps.bump.outputs.tag }}" >/dev/null 2>&1; then
-            echo "Tag ${{ steps.bump.outputs.tag }} already exists — skipping tag creation."
-          else
-            git tag ${{ steps.bump.outputs.tag }}
-            git push origin ${{ steps.bump.outputs.tag }}
-          fi
+          git tag ${{ steps.bump.outputs.tag }}
+          git push origin ${{ steps.bump.outputs.tag }}
 
   # ── Build and push Docker images to GHCR ─────────────────────────────────
   build-and-push:
