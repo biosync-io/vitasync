@@ -745,35 +745,6 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
   )
 }
 
-
-const EVENT_TYPE_COLORS: Record<string, string> = {
-  workout: "bg-orange-100 text-orange-700",
-  sleep: "bg-blue-100 text-blue-700",
-  activity: "bg-green-100 text-green-700",
-}
-
-function formatDuration(seconds: number | null): string {
-  if (seconds == null) return "—"
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  if (h > 0) return `${h}h ${m}m`
-  return `${m}m`
-}
-
-function formatDistance(meters: number | null): string {
-  if (meters == null) return "—"
-  if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`
-  return `${Math.round(meters)} m`
-}
-
-export default function ActivityPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
-  const [eventType, setEventType] = useState("")
-  const [from, setFrom] = useState("")
-  const [to, setTo] = useState("")
-  const [cursor, setCursor] = useState<string | undefined>()
-  const [accumulatedEvents, setAccumulatedEvents] = useState<WorkoutEvent[]>([])
-
   const { data: users = [] } = useQuery({
     queryKey: ["users"],
     queryFn: () => usersApi.list({ limit: 100 }),
