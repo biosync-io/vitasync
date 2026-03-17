@@ -16,7 +16,7 @@ const WhoopTokenResponse = z.object({
 const WhoopPage = <T extends z.ZodTypeAny>(recordSchema: T) =>
   z.object({
     records: z.array(recordSchema),
-    next_token: z.string().optional(),
+    next_token: z.string().nullish(),
   })
 
 const WhoopCycle = z.object({
@@ -562,7 +562,7 @@ export class WhoopProvider extends OAuth2Provider {
     end: Date,
   ): AsyncGenerator<z.infer<T>> {
     const pageSchema = WhoopPage(schema)
-    let nextToken: string | undefined
+    let nextToken: string | null | undefined
 
     do {
       const url = new URL(`${WhoopProvider.BASE_URL}${path}`)
