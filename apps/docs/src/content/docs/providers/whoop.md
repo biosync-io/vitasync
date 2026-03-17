@@ -13,7 +13,7 @@ WHOOP uses **OAuth 2.0** with standard authorization code flow.
 
 - **Authorization URL:** `https://api.prod.whoop.com/oauth/oauth2/auth`
 - **Token URL:** `https://api.prod.whoop.com/oauth/oauth2/token`
-- **API Base URL:** `https://api.prod.whoop.com/developer/v1`
+- **API Base URL:** `https://api.prod.whoop.com/developer/v2`
 
 ## Setting Up WHOOP OAuth Credentials
 

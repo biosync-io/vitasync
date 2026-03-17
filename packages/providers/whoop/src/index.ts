@@ -52,7 +52,7 @@ const WhoopRecovery = z.object({
 })
 
 const WhoopSleep = z.object({
-  id: z.number(),
+  id: z.string(),
   user_id: z.number(),
   start: z.string(),
   end: z.string(),
@@ -80,7 +80,7 @@ const WhoopSleep = z.object({
 })
 
 const WhoopWorkout = z.object({
-  id: z.number(),
+  id: z.string(),
   user_id: z.number(),
   start: z.string(),
   end: z.string(),
@@ -95,7 +95,7 @@ const WhoopWorkout = z.object({
       distance_meter: z.number().optional(),
       altitude_gain_meter: z.number().optional(),
       percent_recorded: z.number().optional(),
-      zone_duration: z
+      zone_durations: z
         .object({
           zone_zero_milli: z.number().optional(),
           zone_one_milli: z.number().optional(),
@@ -222,7 +222,7 @@ const WHOOP_DEFINITION: ProviderDefinition = {
 export class WhoopProvider extends OAuth2Provider {
   readonly definition = WHOOP_DEFINITION
 
-  private static readonly BASE_URL = "https://api.prod.whoop.com/developer/v1"
+  private static readonly BASE_URL = "https://api.prod.whoop.com/developer/v2"
   private static readonly AUTH_URL = "https://api.prod.whoop.com/oauth/oauth2/auth"
   private static readonly TOKEN_URL = "https://api.prod.whoop.com/oauth/oauth2/token"
   private static readonly SCOPES = [
@@ -409,7 +409,7 @@ export class WhoopProvider extends OAuth2Provider {
           distanceMeters: score.distance_meter,
           altitudeGainMeters: score.altitude_gain_meter,
           percentRecorded: score.percent_recorded,
-          zoneDuration: score.zone_duration,
+          zoneDuration: score.zone_durations,
           whoopWorkoutId: workout.id,
         },
       }

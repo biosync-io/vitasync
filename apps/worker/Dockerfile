@@ -1,4 +1,5 @@
 # ─── Stage 1: Builder ────────────────────────────────────────────────────────
+# Build date: 2026-03-17
 FROM node:22-alpine AS builder
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
