@@ -104,10 +104,12 @@ export default function ActivityPage() {
   const [accumulated, setAccumulated] = useState<WorkoutEvent[]>([])
   const [view, setView] = useState<"table" | "charts">("table")
 
-  const { data: users = [] } = useQuery({
-    queryKey: ["users"],
+  const { data: usersResult } = useQuery({
+    queryKey: ["users", 0],
     queryFn: () => usersApi.list({ limit: 100 }),
   })
+
+  const users = usersResult?.data ?? []
 
   useEffect(() => {
     const first = users[0]

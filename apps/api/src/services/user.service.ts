@@ -1,6 +1,6 @@
 import { getDb, providerConnections, users } from "@biosync-io/db"
 import type { User } from "@biosync-io/types"
-import { and, eq } from "drizzle-orm"
+import { and, count, eq } from "drizzle-orm"
 
 export class UserService {
   private get db() {
@@ -48,16 +48,24 @@ export class UserService {
     return (user as User) ?? null
   }
 
-  async list(workspaceId: string, opts: { limit: number; offset: number }): Promise<User[]> {
-    const rows = await this.db
-      .select()
-      .from(users)
-      .where(eq(users.workspaceId, workspaceId))
-      .limit(opts.limit)
-      .offset(opts.offset)
-      .orderBy(users.createdAt)
-
-    return rows as User[]
+  async list(
+    workspaceId: string,
+    opts: { limit: number; offset: number },
+  ): Promise<{ data: User[]; total: number }> {
+    const [rows, countRows] = await Promise.all([
+      this.db
+        .select()
+        .from(users)
+        .where(eq(users.workspaceId, workspaceId))
+        .limit(opts.limit)
+        .offset(opts.offset)
+        .orderBy(users.createdAt),
+      this.db
+        .select({ total: count() })
+        .from(users)
+        .where(eq(users.workspaceId, workspaceId)),
+    ])
+    return { data: rows as User[], total: countRows[0]?.total ?? 0 }
   }
 
   async update(

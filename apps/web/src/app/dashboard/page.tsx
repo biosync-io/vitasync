@@ -15,8 +15,8 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 
 export default function DashboardPage() {
   const { data: providers = [] } = useQuery({ queryKey: ["providers"], queryFn: providersApi.list })
-  const { data: users = [] } = useQuery({
-    queryKey: ["users"],
+  const { data: usersResult } = useQuery({
+    queryKey: ["users", 0],
     queryFn: () => usersApi.list({ limit: 1 }),
   })
   const { data: keys = [] } = useQuery({ queryKey: ["api-keys"], queryFn: apiKeysApi.list })
@@ -32,7 +32,7 @@ export default function DashboardPage() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 mb-10">
         <StatCard label="Registered Providers" value={providers.length} sub="OAuth integrations" />
-        <StatCard label="Users" value={users.length > 0 ? "—" : 0} sub="Tracked individuals" />
+        <StatCard label="Users" value={usersResult?.total != null && usersResult.total > 0 ? "—" : 0} sub="Tracked individuals" />
         <StatCard label="API Keys" value={keys.length} sub="Active credentials" />
         <StatCard label="Webhooks" value={webhooks.length} sub="Event subscriptions" />
       </div>

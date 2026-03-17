@@ -3,20 +3,25 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { type ApiKey, apiKeysApi } from "../../../lib/api"
+import { Pagination } from "../../../lib/Pagination"
 
 const SCOPES = ["read", "write", "admin"] as const
+const PAGE_SIZE = 25
 
 export default function ApiKeysPage() {
   const qc = useQueryClient()
+  const [page, setPage] = useState(1)
   const [showCreate, setShowCreate] = useState(false)
   const [newKey, setNewKey] = useState<string | null>(null)
   const [form, setForm] = useState({ name: "", scopes: ["read"] as string[], expiresAt: "" })
   const [error, setError] = useState("")
 
-  const { data: keys = [], isLoading } = useQuery<ApiKey[]>({
+  const { data: allKeys = [], isLoading } = useQuery<ApiKey[]>({
     queryKey: ["api-keys"],
     queryFn: () => apiKeysApi.list(),
   })
+
+  const keys = allKeys.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const createMutation = useMutation({
     mutationFn: apiKeysApi.create,
@@ -168,57 +173,60 @@ export default function ApiKeysPage() {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                {["Name", "Prefix", "Scopes", "Last Used", "Expires", ""].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {keys.map((key) => (
-                <tr key={key.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{key.name}</td>
-                  <td className="px-4 py-3 text-sm font-mono text-gray-600">{key.keyPrefix}…</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-1 flex-wrap">
-                      {key.scopes.map((s) => (
-                        <span
-                          key={s}
-                          className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
-                        >
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-400">
-                    {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : "Never"}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-400">
-                    {key.expiresAt ? new Date(key.expiresAt).toLocaleDateString() : "Never"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => revokeMutation.mutate(key.id)}
-                      className="text-xs text-red-500 hover:text-red-700"
+        <>
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  {["Name", "Prefix", "Scopes", "Last Used", "Expires", ""].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                     >
-                      Revoke
-                    </button>
-                  </td>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {keys.map((key) => (
+                  <tr key={key.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{key.name}</td>
+                    <td className="px-4 py-3 text-sm font-mono text-gray-600">{key.keyPrefix}…</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1 flex-wrap">
+                        {key.scopes.map((s) => (
+                          <span
+                            key={s}
+                            className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                          >
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-400">
+                      {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : "Never"}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-400">
+                      {key.expiresAt ? new Date(key.expiresAt).toLocaleDateString() : "Never"}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => revokeMutation.mutate(key.id)}
+                        className="text-xs text-red-500 hover:text-red-700"
+                      >
+                        Revoke
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination page={page} pageSize={PAGE_SIZE} total={allKeys.length} onChange={setPage} />
+        </>
       )}
     </div>
   )
