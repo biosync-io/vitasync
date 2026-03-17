@@ -306,7 +306,7 @@ export function registerStravaProvider() {
     return new StravaProvider({
       clientId,
       clientSecret,
-      redirectUri: `${redirectBase}/v1/oauth/callback/strava`,
+      redirectUri: `${redirectBase}/v1/oauth/strava/callback`,
     })
   })
 }

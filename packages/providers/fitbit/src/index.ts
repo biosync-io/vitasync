@@ -384,7 +384,7 @@ export function registerFitbitProvider() {
     return new FitbitProvider({
       clientId,
       clientSecret,
-      redirectUri: `${redirectBase}/v1/oauth/callback/fitbit`,
+      redirectUri: `${redirectBase}/v1/oauth/fitbit/callback`,
     })
   })
 }
