@@ -1,6 +1,8 @@
 import { closeDb, initDb } from "@biosync-io/db"
 import { registerFitbitProvider } from "@biosync-io/provider-fitbit"
 import { registerGarminProvider } from "@biosync-io/provider-garmin"
+import { registerStravaProvider } from "@biosync-io/provider-strava"
+import { registerWhoopProvider } from "@biosync-io/provider-whoop"
 import { Queue, Worker } from "bullmq"
 import { Redis } from "ioredis"
 import { getConfig } from "./config.js"
@@ -14,6 +16,8 @@ async function main() {
   // Register data providers
   registerFitbitProvider()
   registerGarminProvider()
+  registerStravaProvider()
+  registerWhoopProvider()
 
   // Connect to the database
   await initDb(config.DATABASE_URL)
