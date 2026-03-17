@@ -115,13 +115,9 @@ export const apiKeysApi = {
   revoke: (id: string) => request<void>(`/v1/api-keys/${id}`, { method: "DELETE" }),
 }
 
-// ---- Sync Jobs ----
-export const syncJobsApi = {
-  list: () => request<{ jobs: SyncJob[] }>("/v1/sync-jobs"),
-}
-
 // ---- Webhooks ----
-export const webhooksApi = {  list: () => request<Webhook[]>("/v1/webhooks"),
+export const webhooksApi = {
+  list: () => request<Webhook[]>("/v1/webhooks"),
   create: (body: { url: string; secret: string; events: string[]; description?: string }) =>
     request<Webhook>("/v1/webhooks", { method: "POST", body: JSON.stringify(body) }),
   toggle: (id: string, isActive: boolean) =>
@@ -261,17 +257,4 @@ export interface PersonalRecord {
   recordedAt: string
   providerId: string
   updatedAt: string
-}
-
-export interface SyncJob {
-  id: string | undefined
-  state: "active" | "waiting" | "delayed" | "completed" | "failed"
-  name: string
-  data: { connectionId?: string; userId?: string; workspaceId?: string; type?: string }
-  progress: number | object
-  attemptsMade: number
-  failedReason: string | null
-  processedOn: number | null
-  finishedOn: number | null
-  timestamp: number
 }
