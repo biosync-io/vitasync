@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { type ApiKey, apiKeysApi, getRuntimeDefaultKey } from "../../../lib/api"
+import { type AccentTheme, ACCENT_THEMES, applyTheme, getStoredTheme } from "../../../lib/ThemeProvider"
 
 const STORAGE_KEY = "vitasync_api_key"
 
@@ -67,6 +68,15 @@ const ALL_SCOPES = [
   { value: "write", label: "Write" },
   { value: "admin", label: "Admin (all)" },
 ]
+
+// Static map used instead of inline styles to satisfy the no-inline-styles lint rule.
+const THEME_SWATCH_BG: Record<string, string> = {
+  indigo: "bg-[#4f46e5]",
+  blue:   "bg-[#2563eb]",
+  green:  "bg-[#16a34a]",
+  purple: "bg-[#9333ea]",
+  rose:   "bg-[#e11d48]",
+}
 
 function SetupBanner({ activeKey }: { activeKey: string }) {
   const searchParams = useSearchParams()
@@ -149,6 +159,21 @@ export default function SettingsPage() {
     mutationFn: (id: string) => apiKeysApi.revoke(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["api-keys"] }),
   })
+
+  // ── Appearance settings ────────────────────────────────────────────────
+  const [currentTheme, setCurrentTheme] = useState<AccentTheme>("indigo")
+  const [autoSync, setAutoSync] = useState(true)
+
+  useEffect(() => {
+    setCurrentTheme(getStoredTheme())
+    setAutoSync(localStorage.getItem("vitasync_auto_sync") !== "false")
+  }, [])
+
+  function toggleAutoSync() {
+    const next = !autoSync
+    setAutoSync(next)
+    localStorage.setItem("vitasync_auto_sync", String(next))
+  }
 
   function toggleScope(scope: string) {
     setNewKeyScopes((prev) =>
@@ -427,6 +452,79 @@ export default function SettingsPage() {
             ))}
           </ul>
         )}
+      </section>
+
+      {/* ── Appearance ───────────────────────────────────────────────────────── */}
+      <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h2 className="text-sm font-semibold text-gray-900">Appearance</h2>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Customise the dashboard accent colour and sync behaviour.
+          </p>
+        </div>
+        <div className="px-6 py-5 space-y-6">
+          {/* Accent colour picker */}
+          <div>
+            <p className="text-xs font-medium text-gray-700 mb-3">Accent colour</p>
+            <div className="flex flex-wrap gap-4">
+              {ACCENT_THEMES.map((theme) => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  title={theme.label}
+                  onClick={() => {
+                    applyTheme(theme.id)
+                    setCurrentTheme(theme.id)
+                  }}
+                  className="flex flex-col items-center gap-1.5"
+                >
+                  <span
+                    className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all ${THEME_SWATCH_BG[theme.id] ?? ""} ${
+                      currentTheme === theme.id
+                        ? "border-gray-800 scale-110 shadow-md"
+                        : "border-transparent hover:border-gray-300"
+                    }`}
+                  >
+                    {currentTheme === theme.id && (
+                      <span className="text-white text-xs font-bold">✓</span>
+                    )}
+                  </span>
+                  <span
+                    className={`text-xs ${
+                      currentTheme === theme.id ? "font-semibold text-gray-900" : "text-gray-500"
+                    }`}
+                  >
+                    {theme.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Auto-sync toggle */}
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-900">Auto-sync on connect</p>
+              <p className="mt-0.5 text-xs text-gray-500">
+                Automatically trigger a data sync when a provider is connected via OAuth.
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label={autoSync ? "Auto-sync is on — click to disable" : "Auto-sync is off — click to enable"}
+              onClick={toggleAutoSync}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                autoSync ? "bg-indigo-600" : "bg-gray-200"
+              }`}
+            >
+              <span
+                className={`h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                  autoSync ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
       </section>
 
       {/* ── API Reference link ───────────────────────────────────────────────── */}
