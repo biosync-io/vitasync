@@ -1,10 +1,30 @@
 name: Docker Publish
 
+# ─────────────────────────────────────────────────────────────────────────────
+# VERSION file is the single source of truth for the release version.
+#
+# How bump type is chosen (highest precedence wins):
+#   1. workflow_dispatch → user selects patch / minor / major
+#   2. Conventional Commit prefix in the PR title (automatic, no labels needed):
+#        feat!: / fix!: / <any>!: / "BREAKING CHANGE" in body → major
+#        feat: / feat(scope):                                  → minor
+#        fix: / chore: / docs: / refactor: / perf: / etc.     → patch
+#   3. Default → patch
+#
+# PR title convention (enforce via branch protection / repo ruleset):
+#   feat: add OAuth provider        → minor bump
+#   fix: correct token refresh      → patch bump
+#   feat!: redesign API responses   → major bump
+# ─────────────────────────────────────────────────────────────────────────────
+
 on:
   push:
-    branches: [main]
-    tags:
-      - "v*.*.*"
+    branches:
+      - main
+      - "feature/**"
+      - "fix/**"
+      - "alpha/**"
+      - "beta/**"
   workflow_dispatch:
     inputs:
       version_bump:
@@ -20,17 +40,19 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  # ── Bump version & tag on push to main or workflow_dispatch ─────────────
+  # ── Bump VERSION file & tag on push to main or workflow_dispatch ──────────
   release:
     name: Bump Version & Tag
     runs-on: ubuntu-latest
-    # Skip on tag pushes — build-and-push handles those directly.
+    # Only on main push or workflow_dispatch — feature/fix/alpha/beta branches
+    # skip this job and go straight to the pre-release build-and-push path.
     if: |
       (github.event_name == 'workflow_dispatch' ||
-       github.event_name == 'push') &&
+       (github.event_name == 'push' && github.ref == 'refs/heads/main')) &&
       !startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
+      pull-requests: read
     outputs:
       version: ${{ steps.bump.outputs.version }}
       tag: ${{ steps.bump.outputs.tag }}
@@ -47,40 +69,70 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Bump version
-        id: bump
+      - name: Detect bump type
+        id: bump_type
         env:
-          BUMP: ${{ inputs.version_bump || 'patch' }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          current=$(node -p "require('./package.json').version")
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "bump=${{ inputs.version_bump }}" >> "$GITHUB_OUTPUT"
+          else
+            # Fetch the PR title and body associated with this merge commit
+            PR_JSON=$(gh api \
+              repos/${{ github.repository }}/commits/${{ github.sha }}/pulls \
+              --jq '.[0] | {title: .title, body: (.body // "")}' 2>/dev/null || echo '{}')
+            TITLE=$(echo "$PR_JSON" | jq -r '.title // ""')
+            BODY=$(echo "$PR_JSON"  | jq -r '.body  // ""')
+            echo "PR title: $TITLE"
+
+            # Major: any type with ! before the colon, or BREAKING CHANGE in body
+            if echo "$TITLE" | grep -qP '^[a-z]+(\([^)]+\))?!:' || \
+               echo "$BODY"  | grep -qi 'BREAKING CHANGE'; then
+              echo "bump=major" >> "$GITHUB_OUTPUT"
+            # Minor: feat or feat(scope)
+            elif echo "$TITLE" | grep -qP '^feat(\([^)]+\))?:'; then
+              echo "bump=minor" >> "$GITHUB_OUTPUT"
+            # Patch: everything else (fix, chore, docs, refactor, perf, ci, …)
+            else
+              echo "bump=patch" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Bump VERSION file
+        id: bump
+        run: |
+          current=$(cat VERSION)
           IFS='.' read -ra v <<< "$current"
           major=${v[0]}; minor=${v[1]}; patch=${v[2]}
-          case "$BUMP" in
+          case "${{ steps.bump_type.outputs.bump }}" in
             major) major=$((major+1)); minor=0; patch=0 ;;
             minor) minor=$((minor+1)); patch=0 ;;
             *)     patch=$((patch+1)) ;;
           esac
 
-          # Keep incrementing patch until we find a tag that doesn't exist yet
+          # Skip past any tags that already exist
           while git rev-parse "v$major.$minor.$patch" >/dev/null 2>&1; do
-            echo "Tag v$major.$minor.$patch already exists, incrementing patch..."
+            echo "Tag v$major.$minor.$patch exists, skipping..."
             patch=$((patch+1))
           done
 
           version="$major.$minor.$patch"
+          echo "$version" > VERSION
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=v$version" >> "$GITHUB_OUTPUT"
 
-      - name: Create and push tag
+      - name: Commit VERSION & push tag
         run: |
+          git add VERSION
+          git commit -m "chore: release ${{ steps.bump.outputs.tag }}"
           git tag ${{ steps.bump.outputs.tag }}
-          git push origin ${{ steps.bump.outputs.tag }}
+          git push origin main --follow-tags
 
   # ── Build and push Docker images to GHCR ─────────────────────────────────
   build-and-push:
     name: Build & Push ${{ matrix.app }}
     runs-on: ubuntu-latest
-    # Run after release (main push) or directly on tag push / workflow_dispatch
+    # Runs after release (main/dispatch) or directly on pre-release branches
     needs: [release]
     if: |
       always() &&
@@ -98,18 +150,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Determine channel
+        id: channel
+        run: |
+          ref="${{ github.ref }}"
+          if [[ "$ref" == refs/heads/main ]]; then
+            echo "name=stable" >> "$GITHUB_OUTPUT"
+          elif [[ "$ref" == refs/heads/beta || "$ref" == refs/heads/beta/* ]]; then
+            echo "name=beta" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=alpha" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Resolve version
         id: ver
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            # Tag push — derive version from the tag
-            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          elif [[ -n "${{ needs.release.outputs.version }}" ]]; then
-            # workflow_dispatch — use the version the release job bumped to
+          channel="${{ steps.channel.outputs.name }}"
+          if [[ "$channel" == "stable" ]]; then
+            # Use the version the release job bumped to (single source of truth)
             echo "version=${{ needs.release.outputs.version }}" >> "$GITHUB_OUTPUT"
           else
-            # Plain push to main — read the current version from package.json
-            echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+            # Pre-release: current VERSION + channel + short SHA (no bump)
+            base=$(cat VERSION)
+            sha=$(echo "$GITHUB_SHA" | cut -c1-7)
+            echo "version=$base-$channel.$sha" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set up Docker Buildx
@@ -128,11 +192,19 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.app }}
           tags: |
-            type=raw,value=${{ steps.ver.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=v${{ steps.ver.outputs.version }}
-            type=semver,pattern={{major}},value=v${{ steps.ver.outputs.version }}
+            # ── Stable (main / workflow_dispatch) ──────────────────────────
+            type=raw,value=${{ steps.ver.outputs.version }},enable=${{ steps.channel.outputs.name == 'stable' }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ steps.ver.outputs.version }},enable=${{ steps.channel.outputs.name == 'stable' }}
+            type=semver,pattern={{major}},value=v${{ steps.ver.outputs.version }},enable=${{ steps.channel.outputs.name == 'stable' }}
+            type=raw,value=latest,enable=${{ steps.channel.outputs.name == 'stable' }}
+            # ── Alpha (feature/**, fix/**, alpha/**) ────────────────────────
+            type=raw,value=alpha,enable=${{ steps.channel.outputs.name == 'alpha' }}
+            type=sha,prefix=alpha-,format=short,enable=${{ steps.channel.outputs.name == 'alpha' }}
+            # ── Beta (beta/**) ──────────────────────────────────────────────
+            type=raw,value=beta,enable=${{ steps.channel.outputs.name == 'beta' }}
+            type=sha,prefix=beta-,format=short,enable=${{ steps.channel.outputs.name == 'beta' }}
+            # ── Every build gets a plain sha tag ───────────────────────────
             type=sha,prefix=sha-,format=short
-            type=raw,value=latest
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -142,8 +214,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.app }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+          cache-from: type=gha,scope=${{ steps.channel.outputs.name == 'stable' && matrix.app || format('{0}-{1}', matrix.app, steps.channel.outputs.name) }}
+          cache-to: type=gha,mode=max,scope=${{ steps.channel.outputs.name == 'stable' && matrix.app || format('{0}-{1}', matrix.app, steps.channel.outputs.name) }}
           provenance: true
           sbom: true
 
@@ -152,10 +224,11 @@ jobs:
     name: Package & Push Helm Chart
     runs-on: ubuntu-latest
     needs: [release, build-and-push]
+    # Only on stable releases — Helm chart versioning must stay in sync with images
     if: |
       always() &&
       needs.build-and-push.result == 'success' &&
-      (needs.release.result == 'success' || startsWith(github.ref, 'refs/tags/v'))
+      needs.release.result == 'success'
     permissions:
       contents: read
       packages: write
@@ -164,17 +237,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Resolve version
-        id: ver
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          elif [[ -n "${{ needs.release.outputs.version }}" ]]; then
-            echo "version=${{ needs.release.outputs.version }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Install Helm
         uses: azure/setup-helm@v4
 
@@ -182,7 +244,11 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.REGISTRY }} --username ${{ github.actor }} --password-stdin
 
       - name: Package Helm chart
-        run: helm package helm/vitasync --version ${{ steps.ver.outputs.version }} --app-version ${{ steps.ver.outputs.version }}
+        run: |
+          helm package helm/vitasync \
+            --version ${{ needs.release.outputs.version }} \
+            --app-version ${{ needs.release.outputs.version }}
 
       - name: Push Helm chart to GHCR
-        run: helm push vitasync-${{ steps.ver.outputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ github.repository_owner }}
+        run: helm push vitasync-${{ needs.release.outputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ github.repository_owner }}
+
