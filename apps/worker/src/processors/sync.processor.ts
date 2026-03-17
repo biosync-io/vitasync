@@ -1,6 +1,6 @@
 import { getDb, healthMetrics, providerConnections, syncJobs } from "@biosync-io/db"
 import { providerRegistry } from "@biosync-io/provider-core"
-import type { ProviderTokens, SyncDataPoint } from "@biosync-io/types"
+import type { OAuthTokens, ProviderTokens, SyncDataPoint } from "@biosync-io/types"
 import type { Job } from "bullmq"
 import { eq } from "drizzle-orm"
 import { getConfig } from "../config.js"
@@ -79,13 +79,17 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
       const oauth2Tokens = tokens as {
         accessToken: string
         refreshToken?: string
-        expiresAt?: number
+        // After JSON round-trip, expiresAt is an ISO string, not a Date or number
+        expiresAt?: string | number | Date
       }
       const bufferMs = 5 * 60 * 1000 // refresh 5 minutes before expiry
-      if (oauth2Tokens.expiresAt && oauth2Tokens.expiresAt - bufferMs < Date.now()) {
+      const expiresAtMs = oauth2Tokens.expiresAt
+        ? new Date(oauth2Tokens.expiresAt as string | number | Date).getTime()
+        : undefined
+      if (expiresAtMs && expiresAtMs - bufferMs < Date.now()) {
         if (!oauth2Tokens.refreshToken)
           throw new Error("Token expired and no refresh token available")
-        tokens = await provider.refreshTokens(oauth2Tokens.refreshToken)
+        tokens = await provider.refreshTokens(oauth2Tokens as OAuthTokens)
         // Re-encrypt and persist refreshed tokens
         const { encrypt } = await import("../lib/crypto.js")
         await db
