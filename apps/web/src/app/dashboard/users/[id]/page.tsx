@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   type PersonalRecord,
   type User,
@@ -98,6 +98,24 @@ export default function UserDetailPage() {
       qc.invalidateQueries({ queryKey: ["health-summary", id] })
     },
   })
+
+  // ── Auto-sync: fire a sync when a brand-new provider connection appears ──
+  const prevConnIdsRef = useRef<Set<string>>(new Set())
+  // biome-ignore lint/correctness/useExhaustiveDependencies: syncMutation.mutate is stable; adding it would cause infinite loops
+  useEffect(() => {
+    if (!connections.length) {
+      prevConnIdsRef.current = new Set()
+      return
+    }
+    const autoSyncEnabled = localStorage.getItem("vitasync_auto_sync") !== "false"
+    const prev = prevConnIdsRef.current
+    if (prev.size > 0 && autoSyncEnabled) {
+      for (const conn of connections.filter((c) => !prev.has(c.id))) {
+        syncMutation.mutate(conn.id)
+      }
+    }
+    prevConnIdsRef.current = new Set(connections.map((c) => c.id))
+  }, [connections])
 
   if (loadingUser) {
     return (
