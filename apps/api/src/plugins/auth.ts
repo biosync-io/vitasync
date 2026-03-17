@@ -25,8 +25,8 @@ const authPlugin: FastifyPluginAsync = async (app) => {
     // Skip auth for docs, health checks, and inbound provider webhooks
     const skipPaths = ["/docs", "/health", "/v1/inbound"]
     if (skipPaths.some((p) => request.url.startsWith(p))) return
-    // OAuth callbacks are browser redirects from the provider — no API key in this flow
-    if (/^\/v1\/oauth\/[^/]+\/callback(\?|$)/.test(request.url)) return
+    // OAuth authorize and callbacks are browser redirects — no API key in this flow
+    if (/^\/v1\/oauth\/[^/]+\/(authorize|callback)(\?|$)/.test(request.url)) return
 
     const authHeader = request.headers.authorization
     if (!authHeader?.startsWith("Bearer ")) {

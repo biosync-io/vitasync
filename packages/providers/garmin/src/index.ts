@@ -287,7 +287,7 @@ export function registerGarminProvider() {
     return new GarminProvider({
       consumerKey,
       consumerSecret,
-      redirectUri: `${redirectBase}/v1/oauth/callback/garmin`,
+      redirectUri: `${redirectBase}/v1/oauth/garmin/callback`,
     })
   })
 }
