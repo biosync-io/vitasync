@@ -10,7 +10,7 @@ import type { Redis } from "ioredis"
  * Uses BullMQ's built-in scheduler (QueueScheduler is not needed in BullMQ v5+).
  *
  * Strategy:
- * - Every `SYNC_INTERVAL_MS` milliseconds, query all active provider connections
+ * - Every `SYNC_INTERVAL_MS` milliseconds, query all connected provider connections
  * - For each connection, add a sync job if one isn't already queued or running
  * - Jobs are deduplicated via `jobId` based on connectionId to avoid pile-up
  */
@@ -58,7 +58,7 @@ export async function startPeriodicScheduler(
 }
 
 /**
- * Query all active connections and enqueue a sync job for each.
+ * Query all connected connections and enqueue a sync job for each.
  * Uses a per-connection jobId to deduplicate — BullMQ will skip if already queued.
  * Paginates through the DB in batches to avoid loading all connections into memory.
  */
@@ -78,7 +78,7 @@ export async function enqueueAllActiveConnections(syncQueue: Queue): Promise<voi
       .from(providerConnections)
       .where(
         and(
-          eq(providerConnections.status, "active"),
+          eq(providerConnections.status, "connected"),
           lastId ? gt(providerConnections.id, lastId) : undefined,
         ),
       )
