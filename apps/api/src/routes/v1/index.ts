@@ -7,7 +7,6 @@ import inboundRoutes from "./inbound.js"
 import oauthRoutes from "./oauth.js"
 import personalRecordsRoutes from "./personal-records.js"
 import providersRoutes from "./providers.js"
-import syncJobsRoutes from "./sync-jobs.js"
 import usersRoutes from "./users.js"
 import webhooksRoutes from "./webhooks.js"
 
@@ -45,9 +44,6 @@ export async function registerV1Routes(app: FastifyInstance): Promise<void> {
 
       // Inbound provider webhooks — /v1/inbound/:providerId/webhook
       await v1.register(inboundRoutes, { prefix: "/inbound" })
-
-      // Sync job status — /v1/sync-jobs
-      await v1.register(syncJobsRoutes, { prefix: "/sync-jobs" })
     },
     { prefix: "/v1" },
   )
