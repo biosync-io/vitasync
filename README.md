@@ -5,6 +5,7 @@
 **Self-hosted wearable health data aggregation platform**
 
 [![CI](https://github.com/your-org/vitasync/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/vitasync/actions/workflows/ci.yml)
+[![Docker](https://github.com/your-org/vitasync/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/your-org/vitasync/actions/workflows/docker-publish.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://typescriptlang.org)
@@ -29,7 +30,9 @@ VitaSync is a fully TypeScript monorepo that gives you a production-ready, multi
 | **Idempotent syncs** | Composite unique index on `(userId, providerId, metricType, recordedAt)` — re-running a sync is safe |
 | **Secure by default** | OAuth tokens encrypted with AES-256-GCM; API keys stored as SHA-256 hashes only |
 | **OpenAPI docs** | Swagger UI auto-generated at `/docs` || **MCP server** | Exposes health data to AI assistants (Claude, Cursor, VS Code Copilot) via the Model Context Protocol |
-| **Grafana dashboards** | 8 pre-built health dashboards auto-provisioned from `monitoring/grafana/dashboards/` || **Helm chart** | Production-ready chart with HPA, PDB, ingress, migration Job, and secret management |
+| **Grafana dashboards** | 8 pre-built health dashboards auto-provisioned from `monitoring/grafana/dashboards/` |
+| **Web dashboard** | Next.js dashboard with sync-job monitor, accent theme picker, and auto-sync on provider connect |
+| **Helm chart** | Production-ready chart with HPA, PDB, ingress, migration Job, and secret management |
 
 ---
 
@@ -320,6 +323,62 @@ helm install vitasync ./helm/vitasync \
 
 ---
 
+## Dashboard
+
+The `apps/web` Next.js dashboard is available at **http://localhost:3000** and provides:
+
+| Feature | Description |
+|---------|-------------|
+| **Sync Jobs** | Live table of BullMQ jobs — status badges (completed / failed / active / waiting), duration, last run time, and a manual refresh button. Auto-refreshes every 5 seconds. |
+| **Theme picker** | Five accent colours (Indigo, Blue, Green, Purple, Rose) saved in `localStorage`. All UI chrome (buttons, links, focus rings) updates instantly. |
+| **Auto-sync on connect** | When a user connects a new provider via OAuth the dashboard fires a sync automatically without any extra click. |
+| **Auto-sync toggle** | In **Settings → Appearance** you can disable the auto-sync behaviour. The preference is saved in `localStorage` (`vitasync_auto_sync`). |
+
+---
+
+## Releases & Versioning
+
+The canonical version is stored in the [`VERSION`](VERSION) file at the root of the repository. `package.json` files are **not** used for release versioning.
+
+### Release channels
+
+Docker images are published to `ghcr.io/your-org/vitasync-*` on every push:
+
+| Branch | Channel | Example tags |
+|--------|---------|-------------|
+| `main` | **stable** | `1.2.3`, `1.2`, `1`, `latest`, `sha-abc1234` |
+| `beta/**` | **beta** | `beta`, `beta-abc1234`, `sha-abc1234` |
+| `feature/**`, `fix/**`, `alpha/**` | **alpha** | `alpha`, `alpha-abc1234`, `sha-abc1234` |
+
+Pull a specific channel:
+
+```bash
+# latest stable release
+docker pull ghcr.io/your-org/vitasync-api:latest
+
+# latest beta
+docker pull ghcr.io/your-org/vitasync-api:beta
+
+# pinned alpha build
+docker pull ghcr.io/your-org/vitasync-api:alpha-abc1234
+```
+
+### Automatic version bumps (Conventional Commits)
+
+When a PR is merged to `main`, the `docker-publish` workflow reads the **PR title** and bumps the `VERSION` file automatically:
+
+| PR title prefix | Bump | Example |
+|-----------------|------|---------|
+| `feat!:` or `BREAKING CHANGE` | **major** | `1.0.0 → 2.0.0` |
+| `feat:` | **minor** | `1.0.0 → 1.1.0` |
+| `fix:`, `chore:`, anything else | **patch** | `1.0.0 → 1.0.1` |
+
+The workflow commits the bumped `VERSION` file back to `main` with a `chore: release vX.Y.Z` commit and a matching git tag (e.g. `v1.2.3`). **No manual label-setting or tag-pushing is needed.**
+
+See [Contributing](apps/docs/src/content/docs/dev-guides/contributing.md) for the full PR title convention.
+
+---
+
 ## Development commands
 
 ```bash
@@ -354,7 +413,7 @@ pnpm db:studio      # Open Drizzle Studio
 | Testing | Vitest |
 | Containers | Docker + docker compose |
 | Kubernetes | Helm 3 |
-| CI/CD | GitHub Actions |
+| CI/CD | GitHub Actions · Docker Publish (stable / beta / alpha channels) |
 
 ---
 

@@ -90,6 +90,53 @@ Health metrics are inserted with a composite unique index on `(userId, providerI
 
 Every resource (users, connections, metrics, webhooks, API keys) belongs to a **workspace**. API keys are scoped to a workspace and hashed before storage. This makes VitaSync safe to use as a backend for multi-tenant SaaS products.
 
+## CI/CD & Release Pipeline
+
+VitaSync uses GitHub Actions for all CI/CD. There are two key workflows:
+
+### `docker-publish.yml` — build, version, and publish
+
+Runs on every push to `main`, `feature/**`, `fix/**`, `alpha/**`, and `beta/**`.
+
+```
+Push to branch
+      │
+      ├─ (main only) release job
+      │     ├─ reads PR title via GitHub API
+      │     ├─ detects Conventional Commit type (feat / fix / feat! …)
+      │     ├─ bumps VERSION file (major / minor / patch)
+      │     └─ commits "chore: release vX.Y.Z" + git tag back to main
+      │
+      └─ build-and-push job
+            ├─ determines channel: main → stable, beta/** → beta, else → alpha
+            ├─ resolves version: stable uses bumped VERSION; pre-release appends channel+sha
+            ├─ builds Docker images for api / worker / web
+            └─ pushes to ghcr.io with channel-appropriate tags
+```
+
+**Stable tags** (main): `1.2.3`, `1.2`, `1`, `latest`, `sha-xxxxxxx`  
+**Beta tags** (beta/\*\*): `beta`, `beta-xxxxxxx`, `sha-xxxxxxx`  
+**Alpha tags** (everything else): `alpha`, `alpha-xxxxxxx`, `sha-xxxxxxx`
+
+The `helm-package` job runs only after a successful stable release and publishes the Helm chart to GHCR.
+
+### `pr-title-lint.yml` — enforce Conventional Commits
+
+Runs on every pull request event. Validates that the PR title matches the Conventional Commit pattern:
+
+```
+<type>[optional scope][optional !]: <description>
+```
+
+Valid types: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `revert`.  
+An empty or whitespace-only title fails immediately. See the [Contributing guide](/dev-guides/contributing) for examples.
+
+### Version source of truth
+
+The `VERSION` file at the repository root is the **single source of truth** for the release version. `package.json` files are not used for versioning. Only the `release` job (triggered on `main`) ever modifies `VERSION`.
+
+---
+
 ## MCP Server
 
 `apps/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server built with the official `@modelcontextprotocol/sdk`. It connects directly to the VitaSync PostgreSQL database (read-only) and exposes health data as **MCP tools** that any MCP-compatible AI assistant can call.
