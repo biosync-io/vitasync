@@ -225,6 +225,12 @@ importers:
       '@biosync-io/provider-garmin':
         specifier: workspace:*
         version: link:../../packages/providers/garmin
+      '@biosync-io/provider-strava':
+        specifier: workspace:*
+        version: link:../../packages/providers/strava
+      '@biosync-io/provider-whoop':
+        specifier: workspace:*
+        version: link:../../packages/providers/whoop
       '@biosync-io/types':
         specifier: workspace:*
         version: link:../../packages/types
