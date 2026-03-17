@@ -15,10 +15,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ""
 
   if (!apiKey) {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/dashboard/settings")) {
       window.location.href = "/dashboard/settings?setup=1"
     }
-    throw new Error("No API key configured. Redirecting to Settings…")
+    throw new Error("No API key configured.")
   }
 
   const res = await fetch(`${API_URL}${path}`, {
