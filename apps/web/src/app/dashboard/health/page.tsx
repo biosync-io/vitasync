@@ -70,7 +70,7 @@ export default function HealthDataPage() {
             </label>
             <select
               id="health-user"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
               value={selectedUserId}
               onChange={(e) => {
                 setSelectedUserId(e.target.value)
@@ -91,7 +91,7 @@ export default function HealthDataPage() {
             </label>
             <select
               id="health-metric-type"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
               value={metricType}
               onChange={(e) => setMetricType(e.target.value)}
               disabled={!selectedUserId}
@@ -111,7 +111,7 @@ export default function HealthDataPage() {
             <input
               id="health-from"
               type="date"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
             />
@@ -123,7 +123,7 @@ export default function HealthDataPage() {
             <input
               id="health-to"
               type="date"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
               value={to}
               onChange={(e) => setTo(e.target.value)}
             />
@@ -227,9 +227,9 @@ function MetricRow({ metric }: { metric: HealthMetric }) {
           ? metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 })
           : metric.value}
       </td>
-      <td className="px-4 py-3 text-gray-500">{metric.unit ?? "—"}</td>
-      <td className="px-4 py-3 text-gray-500">{new Date(metric.recordedAt).toLocaleString()}</td>
-      <td className="px-4 py-3 text-gray-400 text-xs">—</td>
+      <td className="px-4 py-3 text-gray-700">{metric.unit ?? "—"}</td>
+      <td className="px-4 py-3 text-gray-700">{new Date(metric.recordedAt).toLocaleString()}</td>
+      <td className="px-4 py-3 text-gray-500 text-xs">—</td>
     </tr>
   )
 }
