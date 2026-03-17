@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { type HealthMetric, type HealthSummary, healthApi, usersApi } from "../../../lib/api"
+import { Pagination } from "../../../lib/Pagination"
 
 const METRIC_LABELS: Record<string, string> = {
   steps: "Steps",
@@ -17,16 +18,25 @@ const METRIC_LABELS: Record<string, string> = {
   spo2_percent: "SpO2 (%)",
 }
 
+const PAGE_SIZE = 100
+
 export default function HealthDataPage() {
   const [selectedUserId, setSelectedUserId] = useState<string>("")
   const [metricType, setMetricType] = useState<string>("")
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
+  const [page, setPage] = useState(1)
 
-  const { data: users = [] } = useQuery({
-    queryKey: ["users"],
-    queryFn: () => usersApi.list({ limit: 100 }),
+  function resetPage() {
+    setPage(1)
+  }
+
+  const { data: usersResult } = useQuery({
+    queryKey: ["users", 0],
+    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
   })
+
+  const usersForSelect = usersResult?.data ?? []
 
   const { data: summary = [] } = useQuery<HealthSummary[]>({
     queryKey: ["health-summary", selectedUserId],
@@ -35,7 +45,7 @@ export default function HealthDataPage() {
   })
 
   const { data: metricsResult, isLoading: loadingMetrics } = useQuery({
-    queryKey: ["health-data", selectedUserId, metricType, from, to],
+    queryKey: ["health-data", selectedUserId, metricType, from, to, page],
     queryFn: () => {
       const fromIso = from ? new Date(from).toISOString() : undefined
       const toIso = to ? new Date(to).toISOString() : undefined
@@ -43,13 +53,15 @@ export default function HealthDataPage() {
         ...(metricType ? { metricType } : {}),
         ...(fromIso !== undefined ? { from: fromIso } : {}),
         ...(toIso !== undefined ? { to: toIso } : {}),
-        limit: 200,
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
       })
     },
     enabled: !!selectedUserId,
   })
 
   const metrics = metricsResult?.data ?? []
+  const totalMetrics = metricsResult?.count ?? 0
 
   return (
     <div>
@@ -75,10 +87,11 @@ export default function HealthDataPage() {
               onChange={(e) => {
                 setSelectedUserId(e.target.value)
                 setMetricType("")
+                resetPage()
               }}
             >
               <option value="">Select a user…</option>
-              {users.map((u) => (
+              {usersForSelect.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.displayName ?? u.email ?? u.externalId}
                 </option>
@@ -93,7 +106,7 @@ export default function HealthDataPage() {
               id="health-metric-type"
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
               value={metricType}
-              onChange={(e) => setMetricType(e.target.value)}
+              onChange={(e) => { setMetricType(e.target.value); resetPage() }}
               disabled={!selectedUserId}
             >
               <option value="">All metrics</option>
@@ -113,7 +126,7 @@ export default function HealthDataPage() {
               type="date"
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
               value={from}
-              onChange={(e) => setFrom(e.target.value)}
+              onChange={(e) => { setFrom(e.target.value); resetPage() }}
             />
           </div>
           <div>
@@ -125,7 +138,7 @@ export default function HealthDataPage() {
               type="date"
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white"
               value={to}
-              onChange={(e) => setTo(e.target.value)}
+              onChange={(e) => { setTo(e.target.value); resetPage() }}
             />
           </div>
         </div>
@@ -138,7 +151,7 @@ export default function HealthDataPage() {
             <button
               type="button"
               key={s.metricType}
-              onClick={() => setMetricType(s.metricType === metricType ? "" : s.metricType)}
+              onClick={() => { setMetricType(s.metricType === metricType ? "" : s.metricType); resetPage() }}
               className={`rounded-xl border p-4 text-left transition-colors ${
                 metricType === s.metricType
                   ? "border-indigo-300 bg-indigo-50"
@@ -180,10 +193,11 @@ export default function HealthDataPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <>
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
             <p className="text-sm font-medium text-gray-900">
-              {metrics.length} records
+              {totalMetrics.toLocaleString()} records
               {metricType && (
                 <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700">
                   {METRIC_LABELS[metricType] ?? metricType}
@@ -210,7 +224,9 @@ export default function HealthDataPage() {
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+          <Pagination page={page} pageSize={PAGE_SIZE} total={totalMetrics} onChange={setPage} />
+        </>
       )}
     </div>
   )

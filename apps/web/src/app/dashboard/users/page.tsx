@@ -5,22 +5,30 @@ import type { Route } from "next"
 import Link from "next/link"
 import { useState } from "react"
 import { type User, usersApi } from "../../../lib/api"
+import { Pagination } from "../../../lib/Pagination"
+
+const PAGE_SIZE = 25
 
 export default function UsersPage() {
   const qc = useQueryClient()
+  const [page, setPage] = useState(1)
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({ externalId: "", email: "", displayName: "" })
   const [error, setError] = useState("")
 
-  const { data: users = [], isLoading } = useQuery<User[]>({
-    queryKey: ["users"],
-    queryFn: () => usersApi.list(),
+  const { data, isLoading } = useQuery({
+    queryKey: ["users", page],
+    queryFn: () => usersApi.list({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
   })
+
+  const users: User[] = data?.data ?? []
+  const total = data?.total ?? 0
 
   const createMutation = useMutation({
     mutationFn: usersApi.create,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users"] })
+      setPage(1)
       setShowCreate(false)
       setForm({ externalId: "", email: "", displayName: "" })
       setError("")
@@ -40,6 +48,7 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold text-gray-900">Users</h1>
           <p className="mt-1 text-sm text-gray-500">
             Manage end-users in this workspace and their provider connections.
+            {total > 0 && <span className="ml-1 text-gray-400">({total.toLocaleString()} total)</span>}
           </p>
         </div>
         <button
@@ -131,7 +140,8 @@ export default function UsersPage() {
           <p className="text-sm text-gray-500">No users yet. Create one to get started.</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <>
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -173,7 +183,9 @@ export default function UsersPage() {
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+          <Pagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+        </>
       )}
     </div>
   )

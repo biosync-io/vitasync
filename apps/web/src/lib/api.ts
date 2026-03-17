@@ -67,7 +67,9 @@ export const providersApi = {
 // ---- Users ----
 export const usersApi = {
   list: (opts?: { limit?: number; offset?: number }) =>
-    request<User[]>(`/v1/users?limit=${opts?.limit ?? 50}&offset=${opts?.offset ?? 0}`),
+    request<{ data: User[]; total: number }>(
+      `/v1/users?limit=${opts?.limit ?? 50}&offset=${opts?.offset ?? 0}`,
+    ),
   get: (id: string) => request<User>(`/v1/users/${id}`),
   create: (body: { externalId: string; email?: string; displayName?: string }) =>
     request<User>("/v1/users", { method: "POST", body: JSON.stringify(body) }),

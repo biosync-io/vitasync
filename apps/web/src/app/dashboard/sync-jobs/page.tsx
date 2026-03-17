@@ -1,7 +1,11 @@
 "use client"
 
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useState } from "react"
 import { type SyncJob, syncJobsApi } from "../../../lib/api"
+import { Pagination } from "../../../lib/Pagination"
+
+const PAGE_SIZE = 25
 
 const STATE_STYLES: Record<SyncJob["state"], string> = {
   active: "bg-blue-100 text-blue-700",
@@ -33,6 +37,7 @@ function formatDuration(job: SyncJob): string {
 
 export default function SyncJobsPage() {
   const qc = useQueryClient()
+  const [page, setPage] = useState(1)
 
   const { data, isLoading, dataUpdatedAt } = useQuery({
     queryKey: ["sync-jobs"],
@@ -40,9 +45,10 @@ export default function SyncJobsPage() {
     refetchInterval: 5_000,
   })
 
-  const jobs = data?.jobs ?? []
+  const allJobs = data?.jobs ?? []
+  const jobs = allJobs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  const counts = jobs.reduce(
+  const counts = allJobs.reduce(
     (acc, j) => {
       acc[j.state] = (acc[j.state] ?? 0) + 1
       return acc
@@ -104,7 +110,8 @@ export default function SyncJobsPage() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <>
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -167,6 +174,8 @@ export default function SyncJobsPage() {
             </tbody>
           </table>
         </div>
+        <Pagination page={page} pageSize={PAGE_SIZE} total={allJobs.length} onChange={setPage} />
+        </>
       )}
     </div>
   )

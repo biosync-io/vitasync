@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { type Webhook, webhooksApi } from "../../../lib/api"
+import { Pagination } from "../../../lib/Pagination"
 
 const ALL_EVENTS = [
   "sync.completed",
@@ -13,8 +14,11 @@ const ALL_EVENTS = [
   "user.deleted",
 ]
 
+const PAGE_SIZE = 10
+
 export default function WebhooksPage() {
   const qc = useQueryClient()
+  const [page, setPage] = useState(1)
   const [showCreate, setShowCreate] = useState(false)
   const [error, setError] = useState("")
   const [form, setForm] = useState({
@@ -28,6 +32,8 @@ export default function WebhooksPage() {
     queryKey: ["webhooks"],
     queryFn: webhooksApi.list,
   })
+
+  const pagedHooks = hooks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const createMutation = useMutation({
     mutationFn: webhooksApi.create,
@@ -165,8 +171,9 @@ export default function WebhooksPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {hooks.map((hook) => (
+        <>
+          <div className="space-y-3">
+            {pagedHooks.map((hook) => (
             <div key={hook.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
@@ -211,7 +218,9 @@ export default function WebhooksPage() {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+          <Pagination page={page} pageSize={PAGE_SIZE} total={hooks.length} onChange={setPage} />
+        </>
       )}
     </div>
   )

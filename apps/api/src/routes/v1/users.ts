@@ -35,7 +35,7 @@ const usersRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users — list users in workspace
   app.get("/", async (request, reply) => {
     const query = z
-      .object({ limit: z.coerce.number().default(50), offset: z.coerce.number().default(0) })
+      .object({ limit: z.coerce.number().int().min(1).max(200).default(50), offset: z.coerce.number().int().min(0).default(0) })
       .parse(request.query)
     const result = await userService.list(request.workspaceId, query)
     return reply.send(result)
