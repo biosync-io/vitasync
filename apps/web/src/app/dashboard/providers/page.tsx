@@ -62,7 +62,7 @@ function ProviderCard({ provider }: { provider: ProviderDef }) {
         <span
           className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${authBadgeColor}`}
         >
-          {provider.authType.toUpperCase()}
+          {provider.authType?.toUpperCase() ?? "OAUTH2"}
         </span>
       </div>
       <div className="mt-4 flex flex-wrap gap-1.5">
