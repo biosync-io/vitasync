@@ -23,7 +23,7 @@ const WhoopCycle = z.object({
   id: z.number(),
   user_id: z.number(),
   start: z.string(),
-  end: z.string().optional(),
+  end: z.string().nullish(),
   score_state: z.enum(["SCORED", "PENDING_SCORE", "UNSCORABLE"]),
   score: z
     .object({

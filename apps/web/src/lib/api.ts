@@ -40,10 +40,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error("No API key configured.")
   }
 
+  const hasBody = init?.body != null
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
-      "Content-Type": "application/json",
+      ...(hasBody ? { "Content-Type": "application/json" } : {}),
       Authorization: `Bearer ${apiKey}`,
       ...init?.headers,
     },
