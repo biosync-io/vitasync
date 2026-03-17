@@ -57,7 +57,7 @@ export class WebhookService {
   ): Promise<Webhook | null> {
     const [updated] = await this.db
       .update(webhooks)
-      .set({ ...patch, updatedAt: new Date() })
+      .set(patch)
       .where(and(eq(webhooks.id, id), eq(webhooks.workspaceId, workspaceId)))
       .returning()
 

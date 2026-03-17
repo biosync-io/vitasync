@@ -3,8 +3,9 @@ import helmet from "@fastify/helmet"
 import rateLimit from "@fastify/rate-limit"
 import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
-import Fastify from "fastify"
+import Fastify, { type FastifyError } from "fastify"
 import { config } from "./config.js"
+import authPlugin from "./plugins/auth.js"
 import { bullBoardPlugin } from "./plugins/bull-board.js"
 import { registerV1Routes } from "./routes/v1/index.js"
 
@@ -110,6 +111,7 @@ export async function buildServer() {
   })
 
   // ── Routes ───────────────────────────────────────────────────
+  await app.register(authPlugin)
   await app.register(registerV1Routes)
 
   // ── Bull Board queue dashboard ───────────────────────────────
@@ -143,7 +145,7 @@ export async function buildServer() {
   )
 
   // ── Global error handler ─────────────────────────────────────
-  app.setErrorHandler(async (error, _req, reply) => {
+  app.setErrorHandler<FastifyError>(async (error, _req, reply) => {
     // Log 5xx errors at error level, 4xx at warn
     if (error.statusCode && error.statusCode < 500) {
       app.log.warn({ err: error }, "Client error")

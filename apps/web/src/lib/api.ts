@@ -10,7 +10,16 @@ const API_URL = "/api"
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const apiKey =
-    typeof window !== "undefined" ? (localStorage.getItem("vitasync_api_key") ?? "") : ""
+    (typeof window !== "undefined" ? localStorage.getItem("vitasync_api_key") : null) ??
+    process.env.NEXT_PUBLIC_DEFAULT_API_KEY ??
+    ""
+
+  if (!apiKey) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/dashboard/settings?setup=1"
+    }
+    throw new Error("No API key configured. Redirecting to Settings…")
+  }
 
   const res = await fetch(`${API_URL}${path}`, {
     ...init,

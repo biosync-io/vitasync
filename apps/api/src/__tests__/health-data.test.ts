@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { HealthDataService } from "../services/health-data.service.js"
-import { TEST_USER_ID, buildTestApp } from "./helpers.js"
+import { UserService } from "../services/user.service.js"
+import { TEST_USER_ID, TEST_WORKSPACE_ID, buildTestApp } from "./helpers.js"
+
+vi.mock("../services/user.service.js", () => {
+  const UserService = vi.fn()
+  UserService.prototype.findById = vi.fn()
+  return { UserService }
+})
 
 vi.mock("../services/health-data.service.js", () => {
   const HealthDataService = vi.fn()
@@ -23,11 +30,17 @@ const mockMetric = {
   createdAt: new Date("2025-06-01"),
 }
 
+const mockUser = {
+  id: TEST_USER_ID,
+  workspaceId: TEST_WORKSPACE_ID,
+}
+
 describe("Health data routes", () => {
   let app: Awaited<ReturnType<typeof buildTestApp>>
 
   beforeEach(async () => {
     vi.resetAllMocks()
+    vi.mocked(UserService.prototype.findById).mockResolvedValue(mockUser as never)
     app = await buildTestApp()
   })
 
@@ -36,7 +49,6 @@ describe("Health data routes", () => {
       vi.mocked(HealthDataService.prototype.query).mockResolvedValue({
         data: [mockMetric] as never,
         hasMore: false,
-        nextCursor: undefined,
       })
 
       const res = await app.inject({
