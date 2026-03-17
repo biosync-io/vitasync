@@ -22,8 +22,23 @@ async function proxy(req: NextRequest, params: Promise<{ path: string[] }>) {
   headers.delete("connection")
   headers.delete("transfer-encoding")
 
-  const body =
-    req.method === "GET" || req.method === "HEAD" ? undefined : req.body
+  // Determine whether there is a real body to forward.
+  // A POST/PATCH with content-length: 0 has no body — forwarding it as a
+  // stream causes Fastify's JSON body parser to receive an empty string and
+  // return 400. We strip content-type/content-length in this case so the
+  // upstream doesn't attempt JSON parsing on an empty body.
+  const hasBody =
+    req.method !== "GET" &&
+    req.method !== "HEAD" &&
+    req.headers.get("content-length") !== "0" &&
+    req.body !== null
+
+  const body = hasBody ? req.body : undefined
+
+  if (!hasBody) {
+    headers.delete("content-type")
+    headers.delete("content-length")
+  }
 
   let res: Response
   try {
