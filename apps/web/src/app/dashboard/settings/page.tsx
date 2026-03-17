@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import { type ApiKey, apiKeysApi } from "../../../lib/api"
+import { type ApiKey, apiKeysApi, getRuntimeDefaultKey } from "../../../lib/api"
 
 const STORAGE_KEY = "vitasync_api_key"
 
@@ -90,8 +90,18 @@ export default function SettingsPage() {
   const [showActiveKey, setShowActiveKey] = useState(false)
 
   useEffect(() => {
-    setActiveKey(localStorage.getItem(STORAGE_KEY) ?? "")
-  }, [])
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      setActiveKey(stored)
+    } else {
+      // Fall back to the runtime-configured default key (injected by Helm in K8s
+      // via DEFAULT_API_KEY, or baked in at build time via NEXT_PUBLIC_DEFAULT_API_KEY).
+      // Auto-save it so subsequent API calls work without any manual step.
+      getRuntimeDefaultKey().then((key) => {
+        if (key) saveActiveKey(key)
+      })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function saveActiveKey(key: string) {
     if (key) {
@@ -105,9 +115,11 @@ export default function SettingsPage() {
   }
 
   // ── API Keys management ────────────────────────────────────────────────────
+  // Guard: only fetch once an active key is available to authenticate the request.
   const { data: keys = [], isLoading: keysLoading } = useQuery({
     queryKey: ["api-keys"],
     queryFn: apiKeysApi.list,
+    enabled: !!activeKey,
   })
 
   // Create key form
@@ -230,11 +242,13 @@ export default function SettingsPage() {
           </div>
           <button
             type="button"
+            disabled={!activeKey}
             onClick={() => {
               setCreateOpen(true)
               setCreatedRawKey(null)
             }}
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+            title={!activeKey ? "Save an active API key first" : undefined}
+            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <KeyIcon />
             New Key

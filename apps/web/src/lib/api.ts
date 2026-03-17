@@ -8,11 +8,30 @@
 // proxies to INTERNAL_API_URL (vitasync-api:3001 in K8s, localhost:3001 in dev).
 const API_URL = "/api"
 
+// Cache for the runtime default key fetched from /api/config.
+// NEXT_PUBLIC_* vars are baked in at build time; the /api/config route
+// exposes the runtime DEFAULT_API_KEY env var injected by Helm in K8s.
+let _runtimeDefaultKey: string | null = null
+
+export async function getRuntimeDefaultKey(): Promise<string> {
+  // Fast path: build-time NEXT_PUBLIC_ var (works in dev / CI)
+  if (process.env.NEXT_PUBLIC_DEFAULT_API_KEY) return process.env.NEXT_PUBLIC_DEFAULT_API_KEY
+  // Cache after first fetch so every request doesn't hit /api/config
+  if (_runtimeDefaultKey !== null) return _runtimeDefaultKey
+  try {
+    const res = await fetch("/api/config")
+    const data = await res.json()
+    _runtimeDefaultKey = (data as { defaultApiKey?: string }).defaultApiKey ?? ""
+  } catch {
+    _runtimeDefaultKey = ""
+  }
+  return _runtimeDefaultKey
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const apiKey =
-    (typeof window !== "undefined" ? localStorage.getItem("vitasync_api_key") : null) ??
-    process.env.NEXT_PUBLIC_DEFAULT_API_KEY ??
-    ""
+  const localKey =
+    typeof window !== "undefined" ? localStorage.getItem("vitasync_api_key") : null
+  const apiKey = localKey ?? (await getRuntimeDefaultKey())
 
   if (!apiKey) {
     if (typeof window !== "undefined" && !window.location.pathname.startsWith("/dashboard/settings")) {
