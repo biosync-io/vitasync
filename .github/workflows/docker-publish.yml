@@ -101,7 +101,9 @@ jobs:
       - name: Bump VERSION file
         id: bump
         run: |
-          current=$(cat VERSION)
+          # Read from the latest git tag so no write-back commit to main is needed.
+          # Falls back to the VERSION file only when no tags exist yet.
+          current=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || cat VERSION)
           IFS='.' read -ra v <<< "$current"
           major=${v[0]}; minor=${v[1]}; patch=${v[2]}
           case "${{ steps.bump_type.outputs.bump }}" in
@@ -117,16 +119,14 @@ jobs:
           done
 
           version="$major.$minor.$patch"
-          echo "$version" > VERSION
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=v$version" >> "$GITHUB_OUTPUT"
 
-      - name: Commit VERSION & push tag
+      - name: Push tag
         run: |
-          git add VERSION
-          git commit -m "chore: release ${{ steps.bump.outputs.tag }}"
+          # Only push the tag — branch protection/merge queue rules do not apply to tags.
           git tag ${{ steps.bump.outputs.tag }}
-          git push origin main --follow-tags
+          git push origin ${{ steps.bump.outputs.tag }}
 
   # ── Build and push Docker images to GHCR ─────────────────────────────────
   build-and-push:
