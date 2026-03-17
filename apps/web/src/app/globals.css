@@ -26,6 +26,26 @@
   }
 }
 
+/* Class-based dark mode — applied by ThemeProvider when user picks dark or system=dark */
+html.dark {
+  color-scheme: dark;
+  --background: 224 71% 4%;
+  --foreground: 213 31% 91%;
+  --muted: 223 47% 11%;
+  --muted-foreground: 215.4 16.3% 56.9%;
+  --border: 216 34% 17%;
+  --ring: 216 34% 17%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 47.4% 1.2%;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  color: hsl(213 31% 91%);
+  color-scheme: dark;
+}
+
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
