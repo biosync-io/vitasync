@@ -55,7 +55,7 @@ const WhoopSleep = z.object({
   id: z.string(),
   user_id: z.number(),
   start: z.string(),
-  end: z.string(),
+  end: z.string().nullable(),
   nap: z.boolean(),
   score_state: z.enum(["SCORED", "PENDING_SCORE", "UNSCORABLE"]),
   score: z
@@ -83,7 +83,7 @@ const WhoopWorkout = z.object({
   id: z.string(),
   user_id: z.number(),
   start: z.string(),
-  end: z.string(),
+  end: z.string().nullable(),
   sport_id: z.number(),
   score_state: z.enum(["SCORED", "PENDING_SCORE", "UNSCORABLE"]),
   score: z
@@ -389,8 +389,9 @@ export class WhoopProvider extends OAuth2Provider {
       if (workout.score_state !== "SCORED" || !workout.score) continue
 
       const recordedAt = new Date(workout.start)
-      const endTime = new Date(workout.end)
-      const durationSeconds = Math.round((endTime.getTime() - recordedAt.getTime()) / 1000)
+      const durationSeconds = workout.end
+        ? Math.round((new Date(workout.end).getTime() - recordedAt.getTime()) / 1000)
+        : undefined
       const sportName = WHOOP_SPORT_NAMES[workout.sport_id] ?? "Activity"
       const score = workout.score
 
