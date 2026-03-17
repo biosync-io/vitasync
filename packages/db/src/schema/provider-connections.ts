@@ -25,7 +25,7 @@ export const providerConnections = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     /** Stable provider ID matching ProviderDefinition.id (e.g., "garmin") */
     providerId: varchar("provider_id", { length: 50 }).notNull(),
-    status: varchar("status", { length: 20 }).notNull().default("active"),
+    status: varchar("status", { length: 20 }).notNull().default("connected"),
     /** AES-256-GCM encrypted JSON containing OAuthTokens */
     encryptedTokens: text("encrypted_tokens"),
     /** Provider's own user/account ID */
