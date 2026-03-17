@@ -65,7 +65,6 @@ function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-/** Groups items by calendar date, returning sorted [{date, value, count}] */
 function groupByDate<T>(
   items: T[],
   getDate: (item: T) => string,
@@ -110,15 +109,14 @@ export default function ActivityPage() {
     queryFn: () => usersApi.list({ limit: 100 }),
   })
 
-  // Auto-select first user once users load
   useEffect(() => {
-    if (users.length > 0 && !autoSelectDone.current) {
+    const first = users[0]
+    if (first && !autoSelectDone.current) {
       autoSelectDone.current = true
-      setSelectedUserId(users[0].id)
+      setSelectedUserId(first.id)
     }
   }, [users])
 
-  // Table: paginated events
   const { data: tableResult, isLoading } = useQuery({
     queryKey: ["activity-table", selectedUserId, eventType, from, to, cursor],
     queryFn: async () => {
@@ -134,7 +132,6 @@ export default function ActivityPage() {
     enabled: !!selectedUserId,
   })
 
-  // Charts: larger non-paginated events fetch
   const { data: chartResult } = useQuery({
     queryKey: ["activity-chart", selectedUserId, eventType, from, to],
     queryFn: () => {
@@ -147,7 +144,6 @@ export default function ActivityPage() {
     enabled: !!selectedUserId && view === "charts",
   })
 
-  // Charts: health metrics (steps, resting HR, sleep score, etc.)
   const { data: healthResult } = useQuery({
     queryKey: ["activity-health", selectedUserId, from, to],
     queryFn: () =>
@@ -170,7 +166,6 @@ export default function ActivityPage() {
 
   return (
     <div>
-      {/* Page header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Activity</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -178,7 +173,6 @@ export default function ActivityPage() {
         </p>
       </div>
 
-      {/* Filters */}
       <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Filters</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -251,7 +245,6 @@ export default function ActivityPage() {
         <EmptyCard message="Select a user to browse their activity." />
       ) : (
         <>
-          {/* View toggle */}
           <div className="mb-5 flex items-center gap-1 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-1 w-fit shadow-sm">
             {(["table", "charts"] as const).map((v) => (
               <button
@@ -287,7 +280,7 @@ export default function ActivityPage() {
   )
 }
 
-// ── shared sub-components ──────────────────────────────────────────────────
+// ── shared ─────────────────────────────────────────────────────────────────
 
 function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -354,9 +347,7 @@ function TableView({ events, result, isLoading, cursor, setCursor, eventType }: 
         <div className="border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between">
           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{events.length} events</p>
           {eventType && (
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${EVENT_BADGE[eventType] ?? "bg-gray-100 text-gray-600"}`}
-            >
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${EVENT_BADGE[eventType] ?? "bg-gray-100 text-gray-600"}`}>
               {eventType}
             </span>
           )}
@@ -365,16 +356,11 @@ function TableView({ events, result, isLoading, cursor, setCursor, eventType }: 
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800/60">
               <tr>
-                {["Type", "Activity", "Title", "Duration", "Distance", "Calories", "Avg HR", "Provider", "Date"].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
-                    >
-                      {h}
-                    </th>
-                  ),
-                )}
+                {["Type", "Activity", "Title", "Duration", "Distance", "Calories", "Avg HR", "Provider", "Date"].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -406,9 +392,7 @@ function EventRow({ event: ev }: { event: WorkoutEvent }) {
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
       <td className="px-4 py-3 whitespace-nowrap">
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${EVENT_BADGE[ev.eventType] ?? "bg-gray-100 text-gray-600"}`}
-        >
+        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${EVENT_BADGE[ev.eventType] ?? "bg-gray-100 text-gray-600"}`}>
           {ev.eventType}
         </span>
       </td>
@@ -447,17 +431,7 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
   )
 }
 
-function StatCard({
-  label,
-  value,
-  sub,
-  color,
-}: {
-  label: string
-  value: string | number
-  sub?: string
-  color: string
-}) {
+function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color: string }) {
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
       <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</p>
@@ -482,45 +456,33 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
       ? Math.round(hrSamples.reduce((s, e) => s + (e.avgHeartRate ?? 0), 0) / hrSamples.length)
       : null
 
-  // Event type distribution
   const typeDistribution = (() => {
     const counts: Record<string, number> = {}
-    for (const ev of chartEvents) {
-      counts[ev.eventType] = (counts[ev.eventType] ?? 0) + 1
-    }
+    for (const ev of chartEvents) counts[ev.eventType] = (counts[ev.eventType] ?? 0) + 1
     return Object.entries(counts).map(([name, value]) => ({ name, value }))
   })()
 
-  // Duration per day (minutes, summed)
   const durationData = groupByDate(workouts, (e) => e.startedAt, (e) =>
     e.durationSeconds != null ? e.durationSeconds / 60 : null,
   )
-
-  // Calories per day (summed)
   const caloriesData = groupByDate(chartEvents, (e) => e.startedAt, (e) => e.caloriesKcal)
-
-  // Avg heart rate per day
   const hrData = groupByDate(
     chartEvents.filter((e) => e.avgHeartRate != null),
     (e) => e.startedAt,
     (e) => e.avgHeartRate,
     "avg",
   )
-
-  // Health metric charts
   const stepsData = groupByDate(
     healthMetrics.filter((m) => m.metricType === "steps"),
     (m) => m.recordedAt,
     (m) => m.value,
   )
-
   const restingHRData = groupByDate(
     healthMetrics.filter((m) => m.metricType === "resting_heart_rate"),
     (m) => m.recordedAt,
     (m) => m.value,
     "avg",
   )
-
   const sleepScoreData = groupByDate(
     healthMetrics.filter((m) => m.metricType === "sleep_score"),
     (m) => m.recordedAt,
@@ -535,9 +497,7 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
         hint={
           <>
             Trigger a sync on the{" "}
-            <a href="/dashboard/users" className="text-indigo-600 hover:underline">
-              Users
-            </a>{" "}
+            <a href="/dashboard/users" className="text-indigo-600 hover:underline">Users</a>{" "}
             page to pull data from connected providers.
           </>
         }
@@ -547,7 +507,6 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
 
   return (
     <div className="space-y-5">
-      {/* Summary stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Workouts" value={workouts.length} sub="total events" color="text-orange-500" />
         <StatCard label="Sleep Sessions" value={sleeps.length} sub="total events" color="text-blue-500" />
@@ -565,7 +524,6 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
         />
       </div>
 
-      {/* Row 1: Distribution + Duration */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {typeDistribution.length > 0 && (
           <ChartCard title="Activity Distribution">
@@ -598,26 +556,14 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
                 <CartesianGrid {...GRID_PROPS} />
                 <XAxis dataKey="date" tick={TICK_STYLE} axisLine={false} tickLine={false} />
                 <YAxis tick={TICK_STYLE} axisLine={false} tickLine={false} />
-                <Tooltip
-                  {...TOOLTIP_STYLE}
-                  formatter={(v: number) => [`${v} min`, "Duration"]}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  name="Duration"
-                  stroke={CHART_COLOR.workout}
-                  strokeWidth={2}
-                  fill="url(#durGrad)"
-                  dot={false}
-                />
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [`${v} min`, "Duration"]} />
+                <Area type="monotone" dataKey="value" name="Duration" stroke={CHART_COLOR.workout} strokeWidth={2} fill="url(#durGrad)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </ChartCard>
         )}
       </div>
 
-      {/* Row 2: Calories + Heart rate from events */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {caloriesData.length > 0 && (
           <ChartCard title="Calories Burned">
@@ -626,10 +572,7 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
                 <CartesianGrid {...GRID_PROPS} />
                 <XAxis dataKey="date" tick={TICK_STYLE} axisLine={false} tickLine={false} />
                 <YAxis tick={TICK_STYLE} axisLine={false} tickLine={false} />
-                <Tooltip
-                  {...TOOLTIP_STYLE}
-                  formatter={(v: number) => [`${v} kcal`, "Calories"]}
-                />
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [`${v} kcal`, "Calories"]} />
                 <Bar dataKey="value" name="Calories" fill={CHART_COLOR.calories} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -643,25 +586,14 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
                 <CartesianGrid {...GRID_PROPS} />
                 <XAxis dataKey="date" tick={TICK_STYLE} axisLine={false} tickLine={false} />
                 <YAxis tick={TICK_STYLE} axisLine={false} tickLine={false} domain={["auto", "auto"]} />
-                <Tooltip
-                  {...TOOLTIP_STYLE}
-                  formatter={(v: number) => [`${v} bpm`, "Avg HR"]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  name="Avg HR"
-                  stroke={CHART_COLOR.heartRate}
-                  strokeWidth={2}
-                  dot={false}
-                />
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [`${v} bpm`, "Avg HR"]} />
+                <Line type="monotone" dataKey="value" name="Avg HR" stroke={CHART_COLOR.heartRate} strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </ChartCard>
         )}
       </div>
 
-      {/* Steps from health metrics */}
       {stepsData.length > 0 && (
         <ChartCard title="Daily Steps">
           <ResponsiveContainer width="100%" height={220}>
@@ -680,25 +612,13 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
                 tickLine={false}
                 tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))}
               />
-              <Tooltip
-                {...TOOLTIP_STYLE}
-                formatter={(v: number) => [v.toLocaleString(), "Steps"]}
-              />
-              <Area
-                type="monotone"
-                dataKey="value"
-                name="Steps"
-                stroke={CHART_COLOR.steps}
-                strokeWidth={2}
-                fill="url(#stepsGrad)"
-                dot={false}
-              />
+              <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [v.toLocaleString(), "Steps"]} />
+              <Area type="monotone" dataKey="value" name="Steps" stroke={CHART_COLOR.steps} strokeWidth={2} fill="url(#stepsGrad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </ChartCard>
       )}
 
-      {/* Resting HR + Sleep score from health metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {restingHRData.length > 0 && (
           <ChartCard title="Resting Heart Rate (bpm)">
@@ -707,18 +627,8 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
                 <CartesianGrid {...GRID_PROPS} />
                 <XAxis dataKey="date" tick={TICK_STYLE} axisLine={false} tickLine={false} />
                 <YAxis tick={TICK_STYLE} axisLine={false} tickLine={false} domain={["auto", "auto"]} />
-                <Tooltip
-                  {...TOOLTIP_STYLE}
-                  formatter={(v: number) => [`${v} bpm`, "Resting HR"]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  name="Resting HR"
-                  stroke={CHART_COLOR.heartRate}
-                  strokeWidth={2}
-                  dot={{ fill: CHART_COLOR.heartRate, r: 3 }}
-                />
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [`${v} bpm`, "Resting HR"]} />
+                <Line type="monotone" dataKey="value" name="Resting HR" stroke={CHART_COLOR.heartRate} strokeWidth={2} dot={{ fill: CHART_COLOR.heartRate, r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </ChartCard>
@@ -731,10 +641,7 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
                 <CartesianGrid {...GRID_PROPS} />
                 <XAxis dataKey="date" tick={TICK_STYLE} axisLine={false} tickLine={false} />
                 <YAxis tick={TICK_STYLE} axisLine={false} tickLine={false} domain={[0, 100]} />
-                <Tooltip
-                  {...TOOLTIP_STYLE}
-                  formatter={(v: number) => [`${v}`, "Sleep Score"]}
-                />
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [`${v}`, "Sleep Score"]} />
                 <Bar dataKey="value" name="Sleep Score" fill={CHART_COLOR.sleep} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -742,277 +649,5 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
         )}
       </div>
     </div>
-  )
-}
-
-
-const EVENT_TYPE_COLORS: Record<string, string> = {
-  workout: "bg-orange-100 text-orange-700",
-  sleep: "bg-blue-100 text-blue-700",
-  activity: "bg-green-100 text-green-700",
-}
-
-function formatDuration(seconds: number | null): string {
-  if (seconds == null) return "—"
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  if (h > 0) return `${h}h ${m}m`
-  return `${m}m`
-}
-
-function formatDistance(meters: number | null): string {
-  if (meters == null) return "—"
-  if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`
-  return `${Math.round(meters)} m`
-}
-
-export default function ActivityPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
-  const [eventType, setEventType] = useState("")
-  const [from, setFrom] = useState("")
-  const [to, setTo] = useState("")
-  const [cursor, setCursor] = useState<string | undefined>()
-  const [accumulatedEvents, setAccumulatedEvents] = useState<WorkoutEvent[]>([])
-
-  const { data: users = [] } = useQuery({
-    queryKey: ["users"],
-    queryFn: () => usersApi.list({ limit: 100 }),
-  })
-
-  const { data: eventsResult, isLoading } = useQuery({
-    queryKey: ["activity", selectedUserId, eventType, from, to, cursor],
-    queryFn: async () => {
-      const params: Parameters<typeof eventsApi.list>[1] = { limit: 50 }
-      if (eventType) params.eventType = eventType
-      if (from) params.from = new Date(from).toISOString()
-      if (to) params.to = new Date(to).toISOString()
-      if (cursor) params.cursor = cursor
-      const result = await eventsApi.list(selectedUserId, params)
-      if (cursor) {
-        setAccumulatedEvents((prev) => [...prev, ...result.data])
-      } else {
-        setAccumulatedEvents(result.data)
-      }
-      return result
-    },
-    enabled: !!selectedUserId,
-  })
-
-  const events = cursor ? accumulatedEvents : (eventsResult?.data ?? [])
-
-  function resetFilters() {
-    setCursor(undefined)
-    setAccumulatedEvents([])
-  }
-
-  return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Activity</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Browse workouts, sleep sessions, and passive activities synced from wearables.
-        </p>
-      </div>
-
-      {/* Filters */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold text-gray-900">Filters</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label htmlFor="activity-user" className="block text-xs font-medium text-gray-700">
-              User
-            </label>
-            <select
-              id="activity-user"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              value={selectedUserId}
-              onChange={(e) => {
-                setSelectedUserId(e.target.value)
-                resetFilters()
-              }}
-            >
-              <option value="">Select a user…</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.displayName ?? u.email ?? u.externalId}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              htmlFor="activity-event-type"
-              className="block text-xs font-medium text-gray-700"
-            >
-              Event Type
-            </label>
-            <select
-              id="activity-event-type"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              value={eventType}
-              onChange={(e) => {
-                setEventType(e.target.value)
-                resetFilters()
-              }}
-              disabled={!selectedUserId}
-            >
-              <option value="">All types</option>
-              <option value="workout">Workout</option>
-              <option value="sleep">Sleep</option>
-              <option value="activity">Activity</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="activity-from" className="block text-xs font-medium text-gray-700">
-              From
-            </label>
-            <input
-              id="activity-from"
-              type="date"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              value={from}
-              onChange={(e) => {
-                setFrom(e.target.value)
-                resetFilters()
-              }}
-            />
-          </div>
-          <div>
-            <label htmlFor="activity-to" className="block text-xs font-medium text-gray-700">
-              To
-            </label>
-            <input
-              id="activity-to"
-              type="date"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              value={to}
-              onChange={(e) => {
-                setTo(e.target.value)
-                resetFilters()
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {!selectedUserId ? (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-20 text-center">
-          <p className="text-sm text-gray-500">Select a user to browse their activity.</p>
-        </div>
-      ) : isLoading && !cursor ? (
-        <div className="space-y-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton loader — items have no stable identity
-            <div key={i} className="h-12 rounded-xl bg-gray-100 animate-pulse" />
-          ))}
-        </div>
-      ) : events.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-16 text-center">
-          <p className="text-sm text-gray-500">No events found for the current filters.</p>
-          <p className="mt-2 text-xs text-gray-400">
-            Trigger a sync on the{" "}
-            <a href="/dashboard/users" className="text-indigo-600 hover:underline">
-              Users
-            </a>{" "}
-            page to pull data from connected providers.
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-900">{events.length} events</p>
-              {eventType && (
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${EVENT_TYPE_COLORS[eventType] ?? "bg-gray-100 text-gray-600"}`}
-                >
-                  {eventType}
-                </span>
-              )}
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    {[
-                      "Type",
-                      "Activity",
-                      "Title",
-                      "Duration",
-                      "Distance",
-                      "Calories",
-                      "Avg HR",
-                      "Provider",
-                      "Date",
-                    ].map((h) => (
-                      <th
-                        key={h}
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {events.map((ev) => (
-                    <EventRow key={ev.id} event={ev} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {eventsResult?.hasMore && (
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => setCursor(eventsResult.nextCursor)}
-                disabled={isLoading}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-              >
-                {isLoading ? "Loading…" : "Load more"}
-              </button>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  )
-}
-
-function EventRow({ event: ev }: { event: WorkoutEvent }) {
-  return (
-    <tr className="hover:bg-gray-50">
-      <td className="px-4 py-3 whitespace-nowrap">
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-            EVENT_TYPE_COLORS[ev.eventType] ?? "bg-gray-100 text-gray-600"
-          }`}
-        >
-          {ev.eventType}
-        </span>
-      </td>
-      <td className="px-4 py-3 text-gray-600 capitalize whitespace-nowrap">
-        {ev.activityType?.replace(/_/g, " ") ?? "—"}
-      </td>
-      <td className="px-4 py-3 text-gray-900 max-w-[180px] truncate">{ev.title ?? "—"}</td>
-      <td className="px-4 py-3 text-gray-600 tabular-nums whitespace-nowrap">
-        {formatDuration(ev.durationSeconds)}
-      </td>
-      <td className="px-4 py-3 text-gray-600 tabular-nums whitespace-nowrap">
-        {formatDistance(ev.distanceMeters)}
-      </td>
-      <td className="px-4 py-3 text-gray-600 tabular-nums whitespace-nowrap">
-        {ev.caloriesKcal != null ? `${Math.round(ev.caloriesKcal)} kcal` : "—"}
-      </td>
-      <td className="px-4 py-3 text-gray-600 tabular-nums whitespace-nowrap">
-        {ev.avgHeartRate != null ? `${ev.avgHeartRate} bpm` : "—"}
-      </td>
-      <td className="px-4 py-3 text-xs text-gray-400 capitalize">{ev.providerId}</td>
-      <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
-        {new Date(ev.startedAt).toLocaleString()}
-      </td>
-    </tr>
   )
 }

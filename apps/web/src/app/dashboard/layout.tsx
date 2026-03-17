@@ -45,7 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [])
 
   const cycleDarkMode = useCallback(() => {
-    const next = PREF_CYCLE[(PREF_CYCLE.indexOf(darkMode) + 1) % PREF_CYCLE.length]
+    const next = PREF_CYCLE[(PREF_CYCLE.indexOf(darkMode) + 1) % PREF_CYCLE.length] ?? "system"
     applyDarkMode(next)
     setDarkMode(next)
   }, [darkMode])
