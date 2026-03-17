@@ -32,6 +32,9 @@ export function generateApiKey(): GeneratedApiKey {
   const env = process.env.NODE_ENV === "production" ? "live" : "test"
   const raw = `vs_${env}_${body}`
 
+  // SHA-256 is intentional: API keys are high-entropy random tokens (not passwords).
+  // Deterministic hashing is required for O(1) DB lookup on every request.
+  // bcrypt/argon2 are non-deterministic and too slow for per-request auth. lgtm[js/insufficient-password-hash]
   const hash = createHash("sha256").update(raw).digest("hex")
   const prefix = raw.slice(0, 12)
 
@@ -43,5 +46,6 @@ export function generateApiKey(): GeneratedApiKey {
  * find the matching DB record from an incoming `Authorization` header.
  */
 export function hashApiKey(raw: string): string {
+  // lgtm[js/insufficient-password-hash] - API keys are random tokens; SHA-256 lookup is intentional
   return createHash("sha256").update(raw).digest("hex")
 }
