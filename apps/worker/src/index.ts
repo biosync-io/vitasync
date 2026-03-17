@@ -58,7 +58,13 @@ async function main() {
   console.info("VitaSync Worker started. Listening for jobs...")
 
   // Start periodic sync scheduler
-  const syncQueue = new Queue("sync", { connection })
+  const syncQueue = new Queue("sync", {
+    connection,
+    defaultJobOptions: {
+      removeOnComplete: { count: 100 },
+      removeOnFail: { count: 500 },
+    },
+  })
   const stopScheduler = await startPeriodicScheduler(syncQueue, connection)
 
   // Graceful shutdown

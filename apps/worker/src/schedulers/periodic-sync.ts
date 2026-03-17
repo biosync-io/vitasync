@@ -29,6 +29,8 @@ export async function startPeriodicScheduler(
     {
       repeat: { every: SYNC_INTERVAL_MS },
       jobId: "periodic-sync-sweep", // stable ID prevents duplicate repeatable jobs
+      removeOnComplete: { count: 50 },
+      removeOnFail: { count: 100 },
     },
   )
 
@@ -87,10 +89,15 @@ export async function enqueueAllActiveConnections(syncQueue: Queue): Promise<voi
             providerId: conn.providerId,
           },
           {
-            // Unique per connection: if job already exists in queue, skip
+            // Unique per connection: if job already exists in queue, skip.
+            // Time-bucket ensures one sync per connection per interval window.
             jobId: `sync-${conn.id}-${Math.floor(Date.now() / SYNC_INTERVAL_MS)}`,
             attempts: 3,
             backoff: { type: "exponential", delay: 30_000 },
+            // Must remove completed jobs so the jobId is freed each interval.
+            // Without this, completed jobs permanently block re-addition.
+            removeOnComplete: { count: 100 },
+            removeOnFail: { count: 500 },
           },
         )
         .catch((err) => console.error(`[scheduler] Failed to enqueue ${conn.id}:`, err)),
