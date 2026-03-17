@@ -618,7 +618,7 @@ export function registerWhoopProvider() {
     return new WhoopProvider({
       clientId,
       clientSecret,
-      redirectUri: `${redirectBase}/v1/oauth/callback/whoop`,
+      redirectUri: `${redirectBase}/v1/oauth/whoop/callback`,
     })
   })
 }
