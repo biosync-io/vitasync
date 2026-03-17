@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { type ApiKey, apiKeysApi } from "../../../lib/api"
 
@@ -67,6 +67,20 @@ const ALL_SCOPES = [
   { value: "write", label: "Write" },
   { value: "admin", label: "Admin (all)" },
 ]
+
+function SetupBanner({ activeKey }: { activeKey: string }) {
+  const searchParams = useSearchParams()
+  const needsSetup = searchParams.get("setup") === "1" && !activeKey
+  if (!needsSetup) return null
+  return (
+    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      <strong>API key required.</strong> Paste your key below and click <strong>Save</strong> to
+      start using the dashboard. Use the <strong>Bootstrap key</strong>{" "}
+      (<code className="rounded bg-amber-100 px-1 font-mono">vs_test_dev0…</code>) for local
+      development, or create a new one below.
+    </div>
+  )
+}
 
 export default function SettingsPage() {
   const queryClient = useQueryClient()
@@ -135,9 +149,6 @@ export default function SettingsPage() {
     return new Date(key.expiresAt) < new Date()
   }
 
-  const searchParams = useSearchParams()
-  const needsSetup = searchParams.get("setup") === "1" && !activeKey
-
   return (
     <div className="max-w-3xl space-y-8">
       <div>
@@ -148,14 +159,9 @@ export default function SettingsPage() {
       </div>
 
       {/* ── Setup banner ─────────────────────────────────────────────────────── */}
-      {needsSetup && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <strong>API key required.</strong> Paste your key below and click <strong>Save</strong> to
-          start using the dashboard. Use the <strong>Bootstrap key</strong>{" "}
-          (<code className="rounded bg-amber-100 px-1 font-mono">vs_test_dev0…</code>) for local
-          development, or create a new one below.
-        </div>
-      )}
+      <Suspense>
+        <SetupBanner activeKey={activeKey} />
+      </Suspense>
       <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="text-sm font-semibold text-gray-900">Active API Key</h2>

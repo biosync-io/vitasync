@@ -41,7 +41,9 @@ const authPlugin: FastifyPluginAsync = async (app) => {
       return reply.status(401).send({ code: "UNAUTHORIZED", message: "Empty API key" })
     }
 
-    // Hash the incoming key
+    // Hash the incoming key — SHA-256 is intentional for token lookup, not password storage.
+    // API keys have 192 bits of entropy; deterministic hashing is required for indexed DB lookup.
+    // lgtm[js/insufficient-password-hash]
     const incomingHash = createHash("sha256").update(rawKey).digest("hex")
 
     // Look up by hash (index on keyHash makes this fast)

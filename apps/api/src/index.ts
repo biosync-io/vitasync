@@ -40,6 +40,9 @@ async function bootstrap(log: { info: (msg: string) => void }) {
   if (!workspace) return // conflict race (shouldn't happen in single-instance)
 
   // Upsert the admin API key by its hash so this is fully idempotent
+  // SHA-256 is intentional: API keys are high-entropy random tokens (not passwords).
+  // Deterministic hashing is required for O(1) DB lookup on every request.
+  // bcrypt/argon2 are non-deterministic and too slow for per-request auth. lgtm[js/insufficient-password-hash]
   const keyHash = createHash("sha256").update(rawKey).digest("hex")
   const keyPrefix = rawKey.slice(0, 12)
 
