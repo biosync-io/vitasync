@@ -4,6 +4,7 @@ import connectionsRoutes from "./connections.js"
 import eventsRoutes from "./events.js"
 import healthDataRoutes from "./health-data.js"
 import inboundRoutes from "./inbound.js"
+import insightsRoutes from "./insights.js"
 import oauthRoutes from "./oauth.js"
 import personalRecordsRoutes from "./personal-records.js"
 import providersRoutes from "./providers.js"
@@ -48,6 +49,10 @@ export async function registerV1Routes(app: FastifyInstance): Promise<void> {
 
       // Sync job status — /v1/sync-jobs
       await v1.register(syncJobsRoutes, { prefix: "/sync-jobs" })
+
+      // Health insights — /v1/users/:userId/insights + /v1/insights/algorithms
+      await v1.register(insightsRoutes, { prefix: "/users" })
+      await v1.register(insightsRoutes, { prefix: "/insights" })
     },
     { prefix: "/v1" },
   )

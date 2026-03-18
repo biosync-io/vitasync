@@ -159,6 +159,20 @@ export const personalRecordsApi = {
     request<{ data: PersonalRecord[] }>(`/v1/users/${userId}/personal-records`),
 }
 
+// ---- Insights ----
+export const insightsApi = {
+  generate: (userId: string, opts?: { from?: string; to?: string }) => {
+    const params = new URLSearchParams()
+    if (opts?.from) params.set("from", opts.from)
+    if (opts?.to) params.set("to", opts.to)
+    return request<{ data: Insight[]; total: number }>(
+      `/v1/users/${userId}/insights?${params}`,
+    )
+  },
+  algorithms: () =>
+    request<{ data: InsightAlgorithm[]; total: number }>("/v1/insights/algorithms"),
+}
+
 // ---- Shared types (local to client, not re-exported from @biosync-io/types to avoid SSR issues) ----
 export interface ProviderDef {
   id: string
@@ -278,4 +292,38 @@ export interface SyncJob {
   processedOn: number | null
   finishedOn: number | null
   timestamp: number
+}
+
+export type InsightSeverity = "info" | "positive" | "warning" | "critical"
+export type InsightCategory =
+  | "cardio"
+  | "sleep"
+  | "activity"
+  | "body"
+  | "recovery"
+  | "respiratory"
+  | "metabolic"
+  | "workout"
+  | "trend"
+  | "anomaly"
+
+export interface Insight {
+  id: string
+  algorithmId: string
+  title: string
+  description: string
+  category: InsightCategory
+  severity: InsightSeverity
+  value: number | null
+  unit: string | null
+  referenceRange: { low: number; high: number } | null
+  metadata: Record<string, unknown>
+}
+
+export interface InsightAlgorithm {
+  id: string
+  name: string
+  description: string
+  category: InsightCategory
+  requiredMetrics: string[]
 }

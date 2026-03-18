@@ -15,6 +15,7 @@ const navItems: Array<{ href: Route<string>; label: string; icon: string }> = [
   { href: "/dashboard/providers", label: "Providers", icon: "⚡" },
   { href: "/dashboard/users", label: "Users", icon: "👤" },
   { href: "/dashboard/health", label: "Health Data", icon: "♥" },
+  { href: "/dashboard/insights", label: "Insights", icon: "🧠" },
   { href: "/dashboard/activity", label: "Activity", icon: "🏃" },
   { href: "/dashboard/sync-jobs", label: "Sync Jobs", icon: "⟳" },
   { href: "/dashboard/webhooks", label: "Webhooks", icon: "🔔" },
