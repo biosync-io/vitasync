@@ -18,15 +18,16 @@ function directionIcon(dir: string) {
 }
 
 function CorrelationBar({ coeff }: { coeff: number }) {
-  const abs = Math.abs(coeff)
+  const val = coeff ?? 0
+  const abs = Math.abs(val)
   const pct = Math.round(abs * 100)
-  const color = coeff >= 0 ? "bg-emerald-500" : "bg-red-500"
+  const color = val >= 0 ? "bg-emerald-500" : "bg-red-500"
   return (
     <div className="flex items-center gap-2">
       <div className="h-2 w-24 rounded-full bg-gray-200 dark:bg-gray-700">
         <div className={`h-2 rounded-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-mono text-gray-600 dark:text-gray-400">{coeff.toFixed(3)}</span>
+      <span className="text-xs font-mono text-gray-600 dark:text-gray-400">{val.toFixed(3)}</span>
     </div>
   )
 }
@@ -56,7 +57,7 @@ export default function CorrelationsPage() {
   })
 
   const strongCorrelations = correlations.filter((c) => c.strength === "strong")
-  const avgCoeff = correlations.length > 0 ? correlations.reduce((acc, c) => acc + Math.abs(c.coefficient), 0) / correlations.length : 0
+  const avgCoeff = correlations.length > 0 ? correlations.reduce((acc, c) => acc + Math.abs(c.coefficient ?? 0), 0) / correlations.length : 0
 
   return (
     <div>
@@ -113,8 +114,8 @@ export default function CorrelationsPage() {
                   <span className="mx-2 text-gray-400">{directionIcon(c.direction)}</span>
                   <span className="font-medium">{c.metricB}</span>
                 </span>
-                <span className={`font-mono font-medium ${c.coefficient >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                  {c.coefficient > 0 ? "+" : ""}{c.coefficient.toFixed(3)}
+                <span className={`font-mono font-medium ${(c.coefficient ?? 0) >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                  {(c.coefficient ?? 0) > 0 ? "+" : ""}{(c.coefficient ?? 0).toFixed(3)}
                 </span>
               </div>
             ))}
