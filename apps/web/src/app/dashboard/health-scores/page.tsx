@@ -70,7 +70,7 @@ export default function HealthScoresPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Health Score</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">Health Score</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Composite daily health score computed from sleep, activity, cardio, recovery, and body metrics.
           </p>
@@ -112,7 +112,7 @@ export default function HealthScoresPage() {
       )}
 
       {selectedUserId && !isLoading && latest && (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-3 stagger-grid">
           {/* Main score card */}
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-sm text-center">
             <div className="text-6xl font-bold text-gray-900 dark:text-gray-100">{latest.overallScore}</div>

@@ -63,7 +63,7 @@ export default function CorrelationsPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Metric Correlations</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">Metric Correlations</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Discover relationships between your health metrics using statistical analysis.</p>
         </div>
         {selectedUserId && (
@@ -86,7 +86,7 @@ export default function CorrelationsPage() {
 
       {/* Summary */}
       {selectedUserId && correlations.length > 0 && (
-        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <div className="mb-6 grid gap-4 sm:grid-cols-3 stagger-grid">
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400">Total Pairs</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{correlations.length}</p>

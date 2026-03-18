@@ -161,7 +161,7 @@ export default function ActivityPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Activity</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">Activity</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Browse workouts, sleep sessions, and passive activities synced from wearables.
         </p>
@@ -501,7 +501,7 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-grid">
         <StatCard label="Workouts" value={workouts.length} sub="total events" color="text-orange-500" />
         <StatCard label="Sleep Sessions" value={sleeps.length} sub="total events" color="text-blue-500" />
         <StatCard

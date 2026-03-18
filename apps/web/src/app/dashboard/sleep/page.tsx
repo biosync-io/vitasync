@@ -55,7 +55,7 @@ export default function SleepPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Sleep Analysis</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">Sleep Analysis</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Deep-dive into sleep debt, quality scores, and consistency patterns.</p>
       </div>
 
@@ -85,7 +85,7 @@ export default function SleepPage() {
               <option value={30}>30 days</option>
             </select>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger-grid">
             <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-4 text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Debt</p>
               <p className={`text-2xl font-bold ${debt.totalDebtHours > 5 ? "text-red-600" : debt.totalDebtHours > 2 ? "text-yellow-600" : "text-emerald-600"}`}>

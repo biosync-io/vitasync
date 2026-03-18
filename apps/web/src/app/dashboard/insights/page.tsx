@@ -176,6 +176,13 @@ export default function InsightsPage() {
 
   const users = usersResult?.data ?? []
 
+  // Determine selected user's sex to hide sex-specific categories
+  const selectedUser = users.find((u) => u.id === selectedUserId)
+  const SEX_GATED_CATEGORIES: InsightCategory[] = ["womens_health"]
+  const visibleCategories = selectedUser?.sex === "male"
+    ? ALL_CATEGORIES.filter((c) => !SEX_GATED_CATEGORIES.includes(c))
+    : ALL_CATEGORIES
+
   const rangeDays = { "7d": 7, "14d": 14, "30d": 30, "90d": 90 }[dateRange]
   const to = new Date()
   const from = new Date(to.getTime() - rangeDays * 24 * 60 * 60 * 1000)
@@ -237,10 +244,10 @@ export default function InsightsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Health Insights Engine</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">Health Insights Engine</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           {algorithms.length > 0
-            ? <><span className="font-semibold text-brand-600 dark:text-brand-400">{algorithms.length}</span> proprietary algorithms across {ALL_CATEGORIES.length} health dimensions — insights no other platform offers.</>
+            ? <><span className="font-semibold text-brand-600 dark:text-brand-400">{algorithms.length}</span> proprietary algorithms across {visibleCategories.length} health dimensions — insights no other platform offers.</>
             : "State-of-the-art algorithms analyzing your health data to generate actionable insights."}
         </p>
       </div>
@@ -298,7 +305,7 @@ export default function InsightsPage() {
               onChange={(e) => setCategoryFilter(e.target.value as InsightCategory | "")}
             >
               <option value="">All Categories</option>
-              {ALL_CATEGORIES.map((c) => (
+              {visibleCategories.map((c) => (
                 <option key={c} value={c}>
                   {CATEGORY_CONFIG[c].icon} {CATEGORY_CONFIG[c].label}
                   {catCounts.has(c) ? ` (${catCounts.get(c)})` : ""}
@@ -331,7 +338,7 @@ export default function InsightsPage() {
 
       {/* Summary cards */}
       {selectedUserId && allInsights.length > 0 && (
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 stagger-grid">
           {(["critical", "warning", "info", "positive"] as const).map((sev) => {
             const style = SEVERITY_STYLES[sev]
             return (
@@ -355,7 +362,7 @@ export default function InsightsPage() {
       {/* Category pills */}
       {selectedUserId && allInsights.length > 0 && (
         <div className="mb-6 flex flex-wrap gap-2">
-          {ALL_CATEGORIES.filter((c) => catCounts.has(c)).map((c) => {
+          {visibleCategories.filter((c) => catCounts.has(c)).map((c) => {
             const cfg = CATEGORY_CONFIG[c]
             const active = categoryFilter === c
             return (
@@ -375,7 +382,7 @@ export default function InsightsPage() {
 
       {/* Visualization Row: Radar + Donut + Top Scores */}
       {selectedUserId && allInsights.length > 0 && (
-        <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3 animate-fade-in">
+        <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3 stagger-grid">
           {/* Radar Chart */}
           <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 shadow-glass">
             <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-3">Health Dimensions</h3>
@@ -457,7 +464,7 @@ export default function InsightsPage() {
 
       {/* Insights list */}
       {sorted.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-3 stagger-list">
           {sorted.map((insight) => (
             <InsightCard key={insight.id} insight={insight} />
           ))}
@@ -496,7 +503,7 @@ function InsightCard({ insight }: { insight: Insight }) {
   const catCfg = CATEGORY_CONFIG[insight.category]
 
   return (
-    <div className={`rounded-xl border p-4 transition-all ${style.bg} ${style.border}`}>
+    <div className={`rounded-xl border p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${style.bg} ${style.border}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
