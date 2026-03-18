@@ -6,11 +6,11 @@ hero:
   tagline: One API to access health data from Fitbit, Garmin, WHOOP, Strava, and more.
   actions:
     - text: Quickstart
-      link: /quickstart
+      link: /vitasync/quickstart
       icon: right-caret
       variant: primary
     - text: API Reference
-      link: /api-reference/introduction
+      link: /vitasync/api-reference/introduction
       icon: open-book
 ---
 
@@ -104,12 +104,12 @@ curl "https://api.yourdomain.com/v1/users/{userId}/health?from=2024-01-01&to=202
 
 | Provider | Auth | Metrics | Sync |
 |----------|------|---------|------|
-| [Fitbit](/providers/fitbit) | OAuth 2.0 + PKCE | Steps, heart rate, sleep, body composition, SpO₂ | Every 15 min |
-| [Garmin](/providers/garmin) | OAuth 1.0a | Steps, GPS workouts, HRV, stress, body battery | Push (real-time) |
-| [WHOOP](/providers/whoop) | OAuth 2.0 | Recovery, strain, HRV, sleep performance | Every 15 min |
-| [Strava](/providers/strava) | OAuth 2.0 | Workouts, distance, calories, GPS routes | On-demand |
+| [Fitbit](/vitasync/providers/fitbit) | OAuth 2.0 + PKCE | Steps, heart rate, sleep, body composition, SpO₂ | Every 15 min |
+| [Garmin](/vitasync/providers/garmin) | OAuth 1.0a | Steps, GPS workouts, HRV, stress, body battery | Push (real-time) |
+| [WHOOP](/vitasync/providers/whoop) | OAuth 2.0 | Recovery, strain, HRV, sleep performance | Every 15 min |
+| [Strava](/vitasync/providers/strava) | OAuth 2.0 | Workouts, distance, calories, GPS routes | On-demand |
 
-See [Supported Providers](/providers/supported) for a full metric-by-metric comparison.
+See [Supported Providers](/vitasync/providers/supported) for a full metric-by-metric comparison.
 
 ## Get Started in 5 Minutes
 
@@ -119,7 +119,7 @@ See [Supported Providers](/providers/supported) for a full metric-by-metric comp
 4. **Connect a device** — redirect the user to `GET /v1/oauth/{provider}/authorize?userId={id}`
 5. **Query data** — `GET /v1/users/{userId}/health`
 
-The [Quickstart guide](/quickstart) walks through each step in detail with copy-pasteable curl commands.
+The [Quickstart guide](/vitasync/quickstart) walks through each step in detail with copy-pasteable curl commands.
 
 ## API Design
 

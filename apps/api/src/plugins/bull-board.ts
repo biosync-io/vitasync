@@ -3,7 +3,7 @@ import { BullMQAdapter } from "@bull-board/api/bullMQAdapter"
 import { FastifyAdapter } from "@bull-board/fastify"
 import type { FastifyInstance } from "fastify"
 import fp from "fastify-plugin"
-import { getSyncQueue, getWebhookQueue } from "../queues/sync.js"
+import { getNotificationQueue, getSyncQueue, getWebhookQueue } from "../queues/sync.js"
 
 /**
  * Bull Board queue monitoring UI.
@@ -19,7 +19,11 @@ export const bullBoardPlugin = fp(async (app: FastifyInstance) => {
   serverAdapter.setBasePath("/admin/queues")
 
   createBullBoard({
-    queues: [new BullMQAdapter(getSyncQueue()), new BullMQAdapter(getWebhookQueue())],
+    queues: [
+      new BullMQAdapter(getSyncQueue()),
+      new BullMQAdapter(getWebhookQueue()),
+      new BullMQAdapter(getNotificationQueue()),
+    ],
     serverAdapter,
   })
 

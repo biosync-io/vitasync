@@ -5,6 +5,7 @@ import { config } from "../config.js"
 let _connection: Redis | null = null
 let _syncQueue: Queue | null = null
 let _webhookQueue: Queue | null = null
+let _notificationQueue: Queue | null = null
 
 function getConnection(): Redis {
   if (!_connection) {
@@ -38,6 +39,17 @@ export function getWebhookQueue(): Queue {
   return _webhookQueue
 }
 
+/**
+ * Queue for notification deliveries (Discord, Slack, Teams, Email, etc.).
+ * Workers pull from this queue to dispatch user-configured alerts.
+ */
+export function getNotificationQueue(): Queue {
+  if (!_notificationQueue) {
+    _notificationQueue = new Queue("notifications", { connection: getConnection() as never })
+  }
+  return _notificationQueue
+}
+
 // Named export used by connections route
 export const syncQueue = {
   add: (...args: Parameters<Queue["add"]>) => getSyncQueue().add(...args),
@@ -48,5 +60,5 @@ export const webhookQueue = {
 }
 
 export async function closeQueues(): Promise<void> {
-  await Promise.all([_syncQueue?.close(), _webhookQueue?.close(), _connection?.quit()])
+  await Promise.all([_syncQueue?.close(), _webhookQueue?.close(), _notificationQueue?.close(), _connection?.quit()])
 }

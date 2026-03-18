@@ -11,10 +11,10 @@ VitaSync currently supports four health and fitness providers. Use this page to 
 
 | Provider | Auth Type | Min Sync Interval | Webhook Support | Setup Complexity |
 |----------|-----------|-------------------|-----------------|-----------------|
-| [Fitbit](/providers/fitbit) | OAuth 2.0 + PKCE | 15 min | No (polling) | Easy |
-| [Garmin](/providers/garmin) | OAuth 1.0a | 30 min | Yes (push) | Medium (approval required) |
-| [WHOOP](/providers/whoop) | OAuth 2.0 | 15 min | No (polling) | Easy |
-| [Strava](/providers/strava) | OAuth 2.0 | On-demand | No (polling) | Easy |
+| [Fitbit](/vitasync/providers/fitbit) | OAuth 2.0 + PKCE | 15 min | No (polling) | Easy |
+| [Garmin](/vitasync/providers/garmin) | OAuth 1.0a | 30 min | Yes (push) | Medium (approval required) |
+| [WHOOP](/vitasync/providers/whoop) | OAuth 2.0 | 15 min | No (polling) | Easy |
+| [Strava](/vitasync/providers/strava) | OAuth 2.0 | On-demand | No (polling) | Easy |
 
 ## Metric Coverage Matrix
 

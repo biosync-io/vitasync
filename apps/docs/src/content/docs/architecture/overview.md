@@ -165,7 +165,7 @@ Runs on every pull request event. Validates that the PR title matches the Conven
 ```
 
 Valid types: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `revert`.
-An empty or whitespace-only title fails immediately. See the [Contributing guide](/dev-guides/contributing) for examples.
+An empty or whitespace-only title fails immediately. See the [Contributing guide](/vitasync/dev-guides/contributing) for examples.
 
 ### Version source of truth
 
@@ -181,7 +181,7 @@ This means you can ask an AI assistant things like _"How have my resting heart r
 
 The server exposes 9 tools: `query_health_metrics`, `list_users`, `list_connections`, `get_events`, `get_personal_records`, `get_health_context`, `get_anomaly_alerts`, `get_correlations`, and `get_health_scores`.
 
-See the [MCP Server guide](/dev-guides/mcp) for setup instructions.
+See the [MCP Server guide](/vitasync/dev-guides/mcp) for setup instructions.
 
 ## Monitoring Stack
 
@@ -207,4 +207,4 @@ Eight pre-built Grafana dashboards are provisioned automatically:
 | Daily Activity | `vs-daily-activity` |
 | Provider Health | `vs-provider-health` |
 
-See the [Grafana Dashboards guide](/dev-guides/grafana-dashboards) for setup instructions.
+See the [Grafana Dashboards guide](/vitasync/dev-guides/grafana-dashboards) for setup instructions.

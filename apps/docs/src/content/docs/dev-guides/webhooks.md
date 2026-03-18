@@ -7,7 +7,7 @@ import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
 
 This guide covers the implementation side of webhook delivery — how to verify signatures, handle retries idempotently, and build reliable webhook processors.
 
-For webhook management (creating, updating, deleting webhooks), see the [Webhooks API guide](/api-reference/guides/webhooks).
+For webhook management (creating, updating, deleting webhooks), see the [Webhooks API guide](/vitasync/api-reference/guides/webhooks).
 
 ## Signature Verification
 
