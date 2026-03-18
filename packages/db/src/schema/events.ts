@@ -7,6 +7,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core"
@@ -75,7 +76,7 @@ export const events = pgTable(
   (t) => [
     index("idx_events_user_type_time").on(t.userId, t.eventType, t.startedAt),
     index("idx_events_connection").on(t.connectionId),
-    index("idx_events_provider_dedup").on(t.userId, t.providerId, t.providerEventId),
+    unique("uq_events_provider_dedup").on(t.userId, t.providerId, t.providerEventId),
   ],
 )
 

@@ -192,6 +192,8 @@ export interface HealthMetric {
   recordedAt: string
   value: number
   unit: string | null
+  source: string | null
+  providerId: string
 }
 
 export interface HealthSummary {
