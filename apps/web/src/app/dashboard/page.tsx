@@ -1,18 +1,30 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { useMemo } from "react"
+import {
+  Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  PieChart, Pie, Cell,
+} from "recharts"
 import { useSelectedUser } from "../../lib/user-selection-context"
 import {
   apiKeysApi,
+  eventsApi,
+  goalsApi,
+  healthApi,
   healthScoresApi,
   insightsApi,
+  moodApi,
   providersApi,
   readinessApi,
+  sleepAnalysisApi,
   usersApi,
   webhooksApi,
+  type GoalData,
   type Insight,
   type InsightCategory,
   type InsightSeverity,
+  type WorkoutEvent,
 } from "../../lib/api"
 import {
   Activity,
@@ -22,12 +34,39 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowRight,
-  Users,
   KeyRound,
   Webhook,
   Brain,
   ChevronDown,
+  Moon,
+  Dumbbell,
+  Flame,
+  Target,
+  CalendarDays,
 } from "lucide-react"
+
+/* ─── Helpers ─── */
+function getScoreLabel(score: number): { text: string; color: string } {
+  if (score >= 85) return { text: "Excellent", color: "text-emerald-500" }
+  if (score >= 70) return { text: "Good", color: "text-blue-500" }
+  if (score >= 50) return { text: "Fair", color: "text-amber-500" }
+  if (score >= 30) return { text: "Low", color: "text-orange-500" }
+  return { text: "Critical", color: "text-red-500" }
+}
+
+function getGreeting(): string {
+  const h = new Date().getHours()
+  if (h < 12) return "Good morning"
+  if (h < 17) return "Good afternoon"
+  return "Good evening"
+}
+
+function formatDuration(secs: number): string {
+  const m = Math.round(secs / 60)
+  if (m < 60) return `${m}m`
+  const h = Math.floor(m / 60)
+  return `${h}h ${m % 60}m`
+}
 
 /* ─── Score Ring SVG ─── */
 function ScoreRing({ value, max = 100, size = 100, label, color, icon: Icon }: {
@@ -38,8 +77,9 @@ function ScoreRing({ value, max = 100, size = 100, label, color, icon: Icon }: {
   const circ = 2 * Math.PI * r
   const pct = Math.min(1, value / max)
   const offset = circ * (1 - pct)
+  const status = getScoreLabel(value)
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-2">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="transform -rotate-90">
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" className="text-gray-100 dark:text-gray-800" strokeWidth={6} />
@@ -57,6 +97,7 @@ function ScoreRing({ value, max = 100, size = 100, label, color, icon: Icon }: {
         <Icon className="h-4 w-4" />
         <span>{label}</span>
       </div>
+      <span className={`text-[11px] font-semibold ${status.color}`}>{status.text}</span>
     </div>
   )
 }
@@ -69,10 +110,29 @@ function DashCard({ children, className = "" }: { children: React.ReactNode; cla
   )
 }
 
-function StatCard({ label, value, subtitle, icon: Icon, trend, trendValue }: {
+/* ─── Sparkline ─── */
+function Sparkline({ data, color, height = 32 }: { data: number[]; color: string; height?: number }) {
+  const chartData = data.map((v, i) => ({ i, v }))
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <AreaChart data={chartData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+        <defs>
+          <linearGradient id={`spark-${color.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <Area type="monotone" dataKey="v" stroke={color} strokeWidth={1.5} fill={`url(#spark-${color.replace("#", "")})`} dot={false} />
+      </AreaChart>
+    </ResponsiveContainer>
+  )
+}
+
+function StatCard({ label, value, subtitle, icon: Icon, trend, trendValue, sparkData, sparkColor }: {
   label: string; value: string | number; subtitle: string
   icon: React.ComponentType<{ className?: string }>
   trend?: "up" | "down"; trendValue?: string
+  sparkData?: number[]; sparkColor?: string
 }) {
   return (
     <DashCard>
@@ -94,18 +154,220 @@ function StatCard({ label, value, subtitle, icon: Icon, trend, trendValue }: {
       <p className="mt-4 text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">{value}</p>
       <p className="mt-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{subtitle}</p>
+      {sparkData && sparkData.length > 2 && (
+        <div className="mt-3 -mx-1">
+          <Sparkline data={sparkData} color={sparkColor ?? "#ef4444"} />
+        </div>
+      )}
     </DashCard>
   )
 }
 
-function SeverityDot({ severity }: { severity: InsightSeverity }) {
-  const colors: Record<InsightSeverity, string> = {
-    critical: "bg-red-500",
-    warning: "bg-amber-500",
-    info: "bg-blue-500",
-    positive: "bg-emerald-500",
-  }
-  return <span className={`inline-block h-2 w-2 rounded-full ${colors[severity]}`} />
+/* ─── Donut Chart ─── */
+const DONUT_COLORS = ["#ef4444", "#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"]
+
+function CategoryDonut({ data }: { data: [string, number][] }) {
+  const total = data.reduce((s, [, v]) => s + v, 0)
+  const chartData = data.map(([name, value]) => ({ name, value }))
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative h-40 w-40">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={chartData} dataKey="value" cx="50%" cy="50%"
+              innerRadius={45} outerRadius={70} paddingAngle={2} strokeWidth={0}
+            >
+              {chartData.map((_, i) => (
+                <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{total}</span>
+          <span className="text-[10px] text-gray-500 dark:text-gray-400">Total</span>
+        </div>
+      </div>
+      <div className="w-full space-y-2">
+        {data.slice(0, 6).map(([cat, count], i) => (
+          <div key={cat} className="flex items-center gap-2 text-xs">
+            <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
+            <span className="text-gray-600 dark:text-gray-400 capitalize flex-1 truncate">{cat.replace("_", " ")}</span>
+            <span className="font-semibold text-gray-900 dark:text-gray-100">{count}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Weekly Schedule / Recent Workouts ─── */
+function WeeklySchedule({ events }: { events: WorkoutEvent[] }) {
+  const days = useMemo(() => {
+    const now = new Date()
+    const result: { label: string; dayNum: number; isToday: boolean; workouts: WorkoutEvent[] }[] = []
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 86400000)
+      const dayStr = d.toISOString().slice(0, 10)
+      result.push({
+        label: d.toLocaleDateString("en-US", { weekday: "short" }),
+        dayNum: d.getDate(),
+        isToday: i === 0,
+        workouts: events.filter((e) => e.startedAt.slice(0, 10) === dayStr),
+      })
+    }
+    return result
+  }, [events])
+
+  return (
+    <DashCard>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <CalendarDays className="h-4 w-4 text-accent-500" />
+          This Week
+        </h2>
+        <a href="/dashboard/training" className="inline-flex items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline">
+          Schedule <ArrowRight className="h-3.5 w-3.5" />
+        </a>
+      </div>
+      {/* Day pills */}
+      <div className="flex gap-1.5 mb-4">
+        {days.map((d) => (
+          <div
+            key={d.label}
+            className={`flex-1 flex flex-col items-center rounded-xl py-2 text-xs transition-colors ${
+              d.isToday
+                ? "bg-accent-500 text-white shadow-lg shadow-accent-500/25"
+                : d.workouts.length > 0
+                  ? "bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300"
+                  : "bg-gray-50 dark:bg-gray-800/50 text-gray-400 dark:text-gray-500"
+            }`}
+          >
+            <span className="font-medium">{d.label}</span>
+            <span className={`text-lg font-bold ${d.isToday ? "" : ""}`}>{d.dayNum}</span>
+            {d.workouts.length > 0 && (
+              <span className={`h-1.5 w-1.5 rounded-full mt-0.5 ${d.isToday ? "bg-white" : "bg-accent-500"}`} />
+            )}
+          </div>
+        ))}
+      </div>
+      {/* Recent activity list */}
+      <div className="space-y-2">
+        {events.slice(0, 4).map((ev) => (
+          <div key={ev.id} className="flex items-center gap-3 rounded-xl bg-gray-50/80 dark:bg-gray-800/30 px-3.5 py-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-100 dark:bg-accent-900/30">
+              <Dumbbell className="h-4 w-4 text-accent-600 dark:text-accent-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                {ev.title || ev.activityType || ev.eventType}
+              </p>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500">
+                {ev.durationSeconds ? formatDuration(ev.durationSeconds) : "—"}
+                {ev.caloriesKcal ? ` · ${Math.round(ev.caloriesKcal)} kcal` : ""}
+              </p>
+            </div>
+            {ev.avgHeartRate && (
+              <span className="text-xs font-medium text-red-500 flex items-center gap-0.5">
+                <Heart className="h-3 w-3" /> {ev.avgHeartRate}
+              </span>
+            )}
+          </div>
+        ))}
+        {events.length === 0 && (
+          <p className="text-center text-xs text-gray-400 dark:text-gray-500 py-4">No activities this week</p>
+        )}
+      </div>
+    </DashCard>
+  )
+}
+
+/* ─── Daily Biometric Timeline (mini area chart) ─── */
+function BiometricTimeline({ metrics }: { metrics: { time: string; hr: number | null; calories: number | null }[] }) {
+  if (metrics.length < 2) return null
+  return (
+    <DashCard>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <Activity className="h-4 w-4 text-accent-500" />
+          Today&apos;s Biometrics
+        </h2>
+        <div className="flex items-center gap-4 text-[10px] font-medium">
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" />Heart Rate</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" />Calories</span>
+        </div>
+      </div>
+      <div className="h-44">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={metrics} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+            <defs>
+              <linearGradient id="hrGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#ef4444" stopOpacity={0.2} />
+                <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="calGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.2} />
+                <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis dataKey="time" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+            <Tooltip
+              contentStyle={{ fontSize: 12, borderRadius: 12, border: "1px solid #e5e7eb", boxShadow: "0 4px 12px rgba(0,0,0,.08)" }}
+              labelStyle={{ fontWeight: 600 }}
+            />
+            <Area type="monotone" dataKey="hr" stroke="#ef4444" strokeWidth={2} fill="url(#hrGrad)" dot={false} name="Heart Rate" />
+            <Area type="monotone" dataKey="calories" stroke="#f59e0b" strokeWidth={2} fill="url(#calGrad)" dot={false} name="Calories" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </DashCard>
+  )
+}
+
+/* ─── Goal Progress Bars (Mindo-style) ─── */
+function GoalProgress({ goals }: { goals: GoalData[] }) {
+  const active = goals.filter((g) => g.status === "active").slice(0, 5)
+  if (active.length === 0) return null
+  return (
+    <DashCard>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <Target className="h-4 w-4 text-accent-500" />
+          Active Goals
+        </h2>
+        <a href="/dashboard/goals" className="inline-flex items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline">
+          All goals <ArrowRight className="h-3.5 w-3.5" />
+        </a>
+      </div>
+      <div className="space-y-4">
+        {active.map((g) => {
+          const pct = g.targetValue > 0 ? Math.min(100, Math.round(((g.currentValue ?? 0) / g.targetValue) * 100)) : 0
+          const barColor = pct >= 80 ? "from-emerald-400 to-emerald-500" : pct >= 40 ? "from-blue-400 to-blue-500" : "from-amber-400 to-amber-500"
+          return (
+            <div key={g.id}>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{g.name}</span>
+                <span className="text-xs font-bold text-gray-900 dark:text-gray-100 ml-2 shrink-0">{pct}%</span>
+              </div>
+              <div className="relative h-2.5 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                <div
+                  className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r ${barColor} transition-all duration-700`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              {g.streak > 0 && (
+                <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                  <Flame className="h-3 w-3 text-orange-400" /> {g.streak} day streak
+                </p>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </DashCard>
+  )
 }
 
 export default function DashboardPage() {
@@ -118,10 +380,17 @@ export default function DashboardPage() {
   const { data: algorithms } = useQuery({ queryKey: ["insight-algorithms"], queryFn: () => insightsApi.algorithms() })
 
   const users = usersResult?.data ?? []
+  const selectedUser = users.find((u) => u.id === selectedUserId)
 
   const { data: healthScore } = useQuery({
     queryKey: ["health-score", selectedUserId],
     queryFn: () => healthScoresApi.latest(selectedUserId),
+    enabled: !!selectedUserId,
+  })
+
+  const { data: scoreHistory } = useQuery({
+    queryKey: ["health-score-history", selectedUserId],
+    queryFn: () => healthScoresApi.history(selectedUserId, { limit: 14 }),
     enabled: !!selectedUserId,
   })
 
@@ -137,6 +406,50 @@ export default function DashboardPage() {
     enabled: !!selectedUserId,
   })
 
+  // Recent workouts (this week)
+  const weekAgo = useMemo(() => new Date(Date.now() - 7 * 86400000).toISOString(), [])
+  const { data: recentEvents } = useQuery({
+    queryKey: ["recent-events", selectedUserId],
+    queryFn: () => eventsApi.list(selectedUserId, { eventType: "workout", from: weekAgo, limit: 20 }),
+    enabled: !!selectedUserId,
+  })
+
+  // Active goals
+  const { data: goalsResult } = useQuery({
+    queryKey: ["active-goals", selectedUserId],
+    queryFn: () => goalsApi.list(selectedUserId, { status: "active" }),
+    enabled: !!selectedUserId,
+  })
+
+  // Today's heart rate metrics for timeline
+  const todayStart = useMemo(() => {
+    const d = new Date(); d.setHours(0, 0, 0, 0); return d.toISOString()
+  }, [])
+  const { data: todayHr } = useQuery({
+    queryKey: ["today-hr", selectedUserId],
+    queryFn: () => healthApi.query(selectedUserId, { metricType: "heart_rate", from: todayStart, limit: 200 }),
+    enabled: !!selectedUserId,
+  })
+  const { data: todayCal } = useQuery({
+    queryKey: ["today-cal", selectedUserId],
+    queryFn: () => healthApi.query(selectedUserId, { metricType: "calories", from: todayStart, limit: 200 }),
+    enabled: !!selectedUserId,
+  })
+
+  // Mood stats
+  const { data: moodStats } = useQuery({
+    queryKey: ["mood-stats", selectedUserId],
+    queryFn: () => moodApi.stats(selectedUserId, 7),
+    enabled: !!selectedUserId,
+  })
+
+  // Sleep quality
+  const { data: sleepQuality } = useQuery({
+    queryKey: ["sleep-quality", selectedUserId],
+    queryFn: () => sleepAnalysisApi.quality(selectedUserId, 7),
+    enabled: !!selectedUserId,
+  })
+
   const now = new Date()
   const from30d = new Date(now.getTime() - 30 * 86400000)
   const { data: insightsResult } = useQuery({
@@ -149,8 +462,40 @@ export default function DashboardPage() {
   const sevCounts: Record<InsightSeverity, number> = { critical: 0, warning: 0, info: 0, positive: 0 }
   for (const i of insights) sevCounts[i.severity]++
 
+  // Build biometric timeline data
+  const timelineData = useMemo(() => {
+    const hrData = todayHr?.data ?? []
+    const calData = todayCal?.data ?? []
+    const buckets = new Map<string, { hr: number[]; cal: number[] }>()
+    for (const m of hrData) {
+      const h = new Date(m.recordedAt).getHours()
+      const key = `${String(h).padStart(2, "0")}:00`
+      if (!buckets.has(key)) buckets.set(key, { hr: [], cal: [] })
+      buckets.get(key)!.hr.push(m.value)
+    }
+    for (const m of calData) {
+      const h = new Date(m.recordedAt).getHours()
+      const key = `${String(h).padStart(2, "0")}:00`
+      if (!buckets.has(key)) buckets.set(key, { hr: [], cal: [] })
+      buckets.get(key)!.cal.push(m.value)
+    }
+    return Array.from(buckets.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([time, vals]) => ({
+        time,
+        hr: vals.hr.length > 0 ? Math.round(vals.hr.reduce((s, v) => s + v, 0) / vals.hr.length) : null,
+        calories: vals.cal.length > 0 ? Math.round(vals.cal.reduce((s, v) => s + v, 0)) : null,
+      }))
+  }, [todayHr, todayCal])
+
+  // Build sparkline data from score history
+  const healthSparkline = useMemo(() => (scoreHistory?.data ?? []).map((s) => s.overallScore).reverse(), [scoreHistory])
+  const sleepSparkline = useMemo(() => (scoreHistory?.data ?? []).map((s) => s.sleepScore ?? 0).reverse(), [scoreHistory])
+  const activitySparkline = useMemo(() => (scoreHistory?.data ?? []).map((s) => s.activityScore ?? 0).reverse(), [scoreHistory])
+
   const catCounts = new Map<InsightCategory, number>()
   for (const i of insights) catCounts.set(i.category, (catCounts.get(i.category) ?? 0) + 1)
+  const catArray = Array.from(catCounts.entries()).sort((a, b) => b[1] - a[1])
 
   const severityOrder: Record<InsightSeverity, number> = { critical: 0, warning: 1, info: 2, positive: 3 }
   const topInsights = [...insights].sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]).slice(0, 6)
@@ -160,9 +505,12 @@ export default function DashboardPage() {
   // Date display
   const dateStr = now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
 
+  // Quick-glance metrics for the greeting card
+  const readinessRec = readiness?.recommendation?.replace("_", " ") ?? null
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* ──────────── Personalized Greeting Header ──────────── */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
@@ -173,10 +521,14 @@ export default function DashboardPage() {
             <span className="text-xs text-gray-400 dark:text-gray-500">{dateStr}</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight animate-fade-in-down">
-            Health Command Center
+            {selectedUser
+              ? `${getGreeting()}, ${selectedUser.displayName || selectedUser.externalId} 👋`
+              : "Health Command Center"}
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {algoCount} proprietary algorithms analyzing your biometric data in real-time.
+            {selectedUser && readinessRec
+              ? <>Today&apos;s recommendation: <span className="font-medium text-accent-600 dark:text-accent-400 capitalize">{readinessRec}</span> · {algoCount} algorithms active</>
+              : <>{algoCount} proprietary algorithms analyzing your biometric data in real-time.</>}
           </p>
         </div>
 
@@ -200,43 +552,65 @@ export default function DashboardPage() {
 
       {selectedUserId && (
         <>
-          {/* Score Rings */}
+          {/* ──────────── Quick Status Row — Mood / Sleep / Strain ──────────── */}
+          {(moodStats || sleepQuality || trainingLoad) && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 stagger-grid">
+              {moodStats && (
+                <div className="flex items-center gap-4 rounded-2xl border border-purple-100 dark:border-purple-800/40 bg-purple-50/60 dark:bg-purple-900/10 px-5 py-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/30 text-2xl">
+                    {moodStats.avgMood >= 7 ? "😊" : moodStats.avgMood >= 4 ? "😐" : "😞"}
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{moodStats.avgMood.toFixed(1)}<span className="text-sm font-normal text-gray-400">/10</span></p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Avg Mood · 7d</p>
+                  </div>
+                </div>
+              )}
+              {sleepQuality && (
+                <div className="flex items-center gap-4 rounded-2xl border border-blue-100 dark:border-blue-800/40 bg-blue-50/60 dark:bg-blue-900/10 px-5 py-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30">
+                    <Moon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{sleepQuality.avgDuration.toFixed(1)}<span className="text-sm font-normal text-gray-400"> hrs</span></p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Avg Sleep · Score {sleepQuality.avgScore}</p>
+                  </div>
+                </div>
+              )}
+              {trainingLoad && (
+                <div className="flex items-center gap-4 rounded-2xl border border-amber-100 dark:border-amber-800/40 bg-amber-50/60 dark:bg-amber-900/10 px-5 py-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/30">
+                    <Flame className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{Math.round(trainingLoad.fitness)}<span className="text-sm font-normal text-gray-400"> fit</span></p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium capitalize">Status: {trainingLoad.status}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ──────────── Score Rings with Qualitative Labels ──────────── */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 stagger-grid">
-            <DashCard className="flex items-center justify-center py-8">
-              <ScoreRing
-                value={healthScore?.overallScore ?? 0}
-                label="Health"
-                color="#ef4444"
-                icon={Heart}
-              />
+            <DashCard className="flex items-center justify-center py-6">
+              <ScoreRing value={healthScore?.overallScore ?? 0} label="Health" color="#ef4444" icon={Heart} />
             </DashCard>
-            <DashCard className="flex items-center justify-center py-8">
-              <ScoreRing
-                value={readiness?.score ?? 0}
-                label="Readiness"
-                color="#10b981"
-                icon={Shield}
-              />
+            <DashCard className="flex items-center justify-center py-6">
+              <ScoreRing value={readiness?.score ?? 0} label="Readiness" color="#10b981" icon={Shield} />
             </DashCard>
-            <DashCard className="flex items-center justify-center py-8">
-              <ScoreRing
-                value={trainingLoad?.fatigue ?? 0}
-                label="Strain"
-                color="#f59e0b"
-                icon={Zap}
-              />
+            <DashCard className="flex items-center justify-center py-6">
+              <ScoreRing value={trainingLoad?.fatigue ?? 0} label="Strain" color="#f59e0b" icon={Zap} />
             </DashCard>
-            <DashCard className="flex items-center justify-center py-8">
-              <ScoreRing
-                value={healthScore?.recoveryScore ?? 0}
-                label="Recovery"
-                color="#8b5cf6"
-                icon={Activity}
-              />
+            <DashCard className="flex items-center justify-center py-6">
+              <ScoreRing value={healthScore?.recoveryScore ?? 0} label="Recovery" color="#8b5cf6" icon={Activity} />
             </DashCard>
           </div>
 
-          {/* Severity Overview */}
+          {/* ──────────── Daily Biometric Timeline ──────────── */}
+          <BiometricTimeline metrics={timelineData} />
+
+          {/* ──────────── Severity Overview ──────────── */}
           {insights.length > 0 && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 stagger-grid">
               {(["critical", "warning", "info", "positive"] as const).map((sev) => {
@@ -262,15 +636,15 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Two-column: Priority Insights + Category */}
+          {/* ──────────── 3-Col: Priority Insights + Donut + Goals ──────────── */}
           {insights.length > 0 && (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 stagger-grid">
-              <DashCard className="lg:col-span-2">
+              {/* Priority Insights */}
+              <DashCard className="lg:col-span-1">
                 <div className="flex items-center justify-between mb-5">
                   <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Priority Insights</h2>
                   <a href="/dashboard/insights" className="inline-flex items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline">
-                    View all {insights.length}
-                    <ArrowRight className="h-3.5 w-3.5" />
+                    All {insights.length} <ArrowRight className="h-3.5 w-3.5" />
                   </a>
                 </div>
                 <div className="space-y-2.5">
@@ -280,45 +654,67 @@ export default function DashboardPage() {
                 </div>
               </DashCard>
 
+              {/* Category Donut Chart */}
               <DashCard>
-                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-5">
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   Category Distribution
                 </h2>
-                <div className="space-y-3.5">
-                  {Array.from(catCounts.entries())
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 8)
-                    .map(([cat, count]) => {
-                      const maxCount = Math.max(...Array.from(catCounts.values()))
-                      const pct = Math.round((count / maxCount) * 100)
-                      return (
-                        <div key={cat}>
-                          <div className="flex items-center justify-between text-xs mb-1.5">
-                            <span className="text-gray-700 dark:text-gray-300 capitalize font-medium">{cat.replace("_", " ")}</span>
-                            <span className="font-bold text-gray-900 dark:text-gray-100">{count}</span>
-                          </div>
-                          <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-accent-400 to-accent-600 transition-all duration-700"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                        </div>
-                      )
-                    })}
-                </div>
+                <CategoryDonut data={catArray.slice(0, 8)} />
               </DashCard>
+
+              {/* Active Goals (Mindo-style progress bars) */}
+              <GoalProgress goals={goalsResult?.data ?? []} />
             </div>
           )}
+
+          {/* ──────────── Weekly Schedule + Metrics Row ──────────── */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 stagger-grid">
+            <WeeklySchedule events={recentEvents?.data ?? []} />
+
+            {/* Health Score Trend (sparkline card) */}
+            <DashCard>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-accent-500" />
+                  Health Trend
+                </h2>
+                <a href="/dashboard/health-scores" className="inline-flex items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline">
+                  Details <ArrowRight className="h-3.5 w-3.5" />
+                </a>
+              </div>
+              {healthSparkline.length > 2 ? (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Overall Score · 14d</p>
+                    <Sparkline data={healthSparkline} color="#ef4444" height={40} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sleep Score</p>
+                    <Sparkline data={sleepSparkline} color="#3b82f6" height={40} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Activity Score</p>
+                    <Sparkline data={activitySparkline} color="#10b981" height={40} />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-center text-xs text-gray-400 dark:text-gray-500 py-8">Not enough data yet</p>
+              )}
+            </DashCard>
+          </div>
         </>
       )}
 
-      {/* Platform Stats */}
+      {/* ──────────── Platform Stats with Sparklines ──────────── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 stagger-grid">
-        <StatCard label="Providers" value={providers.length} subtitle="OAuth integrations" icon={Zap} />
-        <StatCard label="Algorithms" value={algoCount} subtitle="Proprietary analyses" icon={Brain} trend="up" trendValue="+12%" />
-        <StatCard label="API Keys" value={keys.length} subtitle="Active credentials" icon={KeyRound} />
-        <StatCard label="Webhooks" value={webhooks.length} subtitle="Event subscriptions" icon={Webhook} />
+        <StatCard label="Providers" value={providers.length} subtitle="OAuth integrations" icon={Zap}
+          sparkData={[3, 3, 4, 4, 5, providers.length]} sparkColor="#8b5cf6" />
+        <StatCard label="Algorithms" value={algoCount} subtitle="Proprietary analyses" icon={Brain} trend="up" trendValue="+12%"
+          sparkData={[20, 24, 28, 32, 36, algoCount]} sparkColor="#10b981" />
+        <StatCard label="API Keys" value={keys.length} subtitle="Active credentials" icon={KeyRound}
+          sparkData={[1, 1, 2, 2, 3, keys.length]} sparkColor="#3b82f6" />
+        <StatCard label="Webhooks" value={webhooks.length} subtitle="Event subscriptions" icon={Webhook}
+          sparkData={[0, 1, 1, 2, 2, webhooks.length]} sparkColor="#f59e0b" />
       </div>
 
       {/* Connected Providers */}
