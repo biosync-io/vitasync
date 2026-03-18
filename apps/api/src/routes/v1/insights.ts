@@ -25,8 +25,8 @@ const insightsRoutes: FastifyPluginAsync = async (app) => {
       ...(query.to !== undefined && { to: new Date(query.to) }),
     })
 
-    // Filter out sex-specific categories based on user's biological sex
-    const filtered = owner.sex === "male"
+    // Filter out gender-specific categories
+    const filtered = owner.gender === "male"
       ? insights.filter((i) => i.category !== "womens_health")
       : insights
 

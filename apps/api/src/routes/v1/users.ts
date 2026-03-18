@@ -9,14 +9,14 @@ const CreateUserBody = z.object({
   externalId: z.string().min(1).max(255),
   email: z.string().email().optional(),
   displayName: z.string().max(255).optional(),
-  sex: z.enum(["male", "female", "other"]).optional(),
+  gender: z.enum(["male", "female", "other"]).optional(),
   metadata: z.record(z.unknown()).optional(),
 })
 
 const UpdateUserBody = z.object({
   email: z.string().email().optional(),
   displayName: z.string().max(255).optional(),
-  sex: z.enum(["male", "female", "other"]).nullish(),
+  gender: z.enum(["male", "female", "other"]).nullish(),
   metadata: z.record(z.unknown()).optional(),
 })
 
@@ -29,7 +29,7 @@ const usersRoutes: FastifyPluginAsync = async (app) => {
       externalId: body.externalId,
       ...(body.email !== undefined && { email: body.email }),
       ...(body.displayName !== undefined && { displayName: body.displayName }),
-      ...(body.sex !== undefined && { sex: body.sex }),
+      ...(body.gender !== undefined && { gender: body.gender }),
       ...(body.metadata !== undefined && { metadata: body.metadata }),
     })
     return reply.status(created ? 201 : 200).send(user)
@@ -59,7 +59,7 @@ const usersRoutes: FastifyPluginAsync = async (app) => {
     const user = await userService.update(userId, request.workspaceId, {
       ...(body.email !== undefined && { email: body.email }),
       ...(body.displayName !== undefined && { displayName: body.displayName }),
-      ...(body.sex !== undefined && { sex: body.sex ?? null }),
+      ...(body.gender !== undefined && { gender: body.gender ?? null }),
       ...(body.metadata !== undefined && { metadata: body.metadata }),
     })
     if (!user) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

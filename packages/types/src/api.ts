@@ -35,8 +35,8 @@ export interface User {
   externalId?: string
   email?: string
   displayName?: string
-  /** Biological sex – gates sex-specific insights (e.g. womens_health) */
-  sex?: string | null
+  /** Gender – gates gender-specific insights (e.g. womens_health) */
+  gender?: string | null
   metadata?: Record<string, unknown>
   createdAt: Date
   updatedAt: Date
