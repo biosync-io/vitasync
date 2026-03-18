@@ -245,7 +245,7 @@ function MetricRow({ metric }: { metric: HealthMetric }) {
       </td>
       <td className="px-4 py-3 text-gray-700">{metric.unit ?? "—"}</td>
       <td className="px-4 py-3 text-gray-700">{new Date(metric.recordedAt).toLocaleString()}</td>
-      <td className="px-4 py-3 text-gray-500 text-xs">—</td>
+      <td className="px-4 py-3 text-gray-500 text-xs">{metric.source ?? metric.providerId ?? "—"}</td>
     </tr>
   )
 }
