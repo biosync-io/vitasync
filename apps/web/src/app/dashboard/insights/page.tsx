@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import {
   type Insight,
   type InsightAlgorithm,
@@ -29,10 +29,137 @@ const CATEGORY_CONFIG: Record<InsightCategory, { label: string; icon: string; co
   workout: { label: "Workout", icon: "💪", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400" },
   trend: { label: "Trend", icon: "📈", color: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400" },
   anomaly: { label: "Anomaly", icon: "🔍", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400" },
+  longevity: { label: "Longevity", icon: "🧬", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400" },
+  immune: { label: "Immune", icon: "🛡️", color: "bg-lime-100 text-lime-700 dark:bg-lime-900/40 dark:text-lime-400" },
+  cognitive: { label: "Cognitive", icon: "🧠", color: "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-400" },
+  hormonal: { label: "Hormonal", icon: "⚗️", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" },
+  womens_health: { label: "Women's Health", icon: "♀️", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400" },
+  performance: { label: "Performance", icon: "🏅", color: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400" },
 }
 
-const ALL_CATEGORIES: InsightCategory[] = ["cardio", "sleep", "activity", "body", "recovery", "respiratory", "metabolic", "workout", "trend", "anomaly"]
+const ALL_CATEGORIES: InsightCategory[] = ["cardio", "sleep", "activity", "body", "recovery", "respiratory", "metabolic", "workout", "longevity", "immune", "cognitive", "hormonal", "womens_health", "performance", "trend", "anomaly"]
 const ALL_SEVERITIES: InsightSeverity[] = ["critical", "warning", "info", "positive"]
+
+/* ─── SVG Radar Chart ─── */
+function RadarChart({ data, size = 280 }: { data: { label: string; value: number; max: number }[]; size?: number }) {
+  const cx = size / 2
+  const cy = size / 2
+  const r = size / 2 - 40
+  const n = data.length
+  if (n < 3) return null
+  const angleStep = (2 * Math.PI) / n
+
+  const getPoint = (i: number, ratio: number) => ({
+    x: cx + r * ratio * Math.cos(angleStep * i - Math.PI / 2),
+    y: cy + r * ratio * Math.sin(angleStep * i - Math.PI / 2),
+  })
+
+  const rings = [0.25, 0.5, 0.75, 1]
+  const points = data.map((d, i) => getPoint(i, Math.min(1, d.value / (d.max || 1))))
+  const polygon = points.map((p) => `${p.x},${p.y}`).join(" ")
+
+  return (
+    <svg width={size} height={size} className="mx-auto">
+      {/* Grid rings */}
+      {rings.map((ring) => (
+        <polygon
+          key={ring}
+          points={Array.from({ length: n }, (_, i) => getPoint(i, ring)).map((p) => `${p.x},${p.y}`).join(" ")}
+          fill="none"
+          stroke="currentColor"
+          className="text-gray-200 dark:text-gray-700"
+          strokeWidth={0.5}
+        />
+      ))}
+      {/* Spokes */}
+      {data.map((_, i) => {
+        const p = getPoint(i, 1)
+        return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="currentColor" className="text-gray-200 dark:text-gray-700" strokeWidth={0.5} />
+      })}
+      {/* Data polygon */}
+      <polygon points={polygon} fill="rgba(99, 102, 241, 0.15)" stroke="#6366f1" strokeWidth={2} />
+      {/* Data points */}
+      {points.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={4} fill="#6366f1" stroke="white" strokeWidth={2} />
+      ))}
+      {/* Labels */}
+      {data.map((d, i) => {
+        const lp = getPoint(i, 1.2)
+        return (
+          <text
+            key={i}
+            x={lp.x}
+            y={lp.y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            className="fill-gray-600 dark:fill-gray-400 text-[10px]"
+          >
+            {d.label}
+          </text>
+        )
+      })}
+    </svg>
+  )
+}
+
+/* ─── Donut Chart ─── */
+function DonutChart({ segments, size = 180 }: { segments: { label: string; value: number; color: string }[]; size?: number }) {
+  const total = segments.reduce((a, s) => a + s.value, 0)
+  if (total === 0) return null
+  const r = (size - 20) / 2
+  const cx = size / 2
+  const cy = size / 2
+  const thickness = 24
+  const innerR = r - thickness
+
+  let cumAngle = -Math.PI / 2
+  const arcs = segments.filter((s) => s.value > 0).map((s) => {
+    const angle = (s.value / total) * 2 * Math.PI
+    const startAngle = cumAngle
+    cumAngle += angle
+    const endAngle = cumAngle
+    const largeArc = angle > Math.PI ? 1 : 0
+    const x1 = cx + r * Math.cos(startAngle)
+    const y1 = cy + r * Math.sin(startAngle)
+    const x2 = cx + r * Math.cos(endAngle)
+    const y2 = cy + r * Math.sin(endAngle)
+    const ix1 = cx + innerR * Math.cos(startAngle)
+    const iy1 = cy + innerR * Math.sin(startAngle)
+    const ix2 = cx + innerR * Math.cos(endAngle)
+    const iy2 = cy + innerR * Math.sin(endAngle)
+    const d = `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix1} ${iy1} Z`
+    return { ...s, d }
+  })
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg width={size} height={size}>
+        {arcs.map((a, i) => (
+          <path key={i} d={a.d} fill={a.color} className="transition-all hover:opacity-80" />
+        ))}
+      </svg>
+      <div className="absolute flex flex-col items-center">
+        <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{total}</span>
+        <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">insights</span>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Health Score Summary Bar ─── */
+function HealthBar({ label, value, max = 100 }: { label: string; value: number; max?: number }) {
+  const pct = Math.min(100, (value / max) * 100)
+  const color = pct >= 70 ? "bg-emerald-500" : pct >= 40 ? "bg-amber-500" : "bg-red-500"
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-xs w-20 text-gray-600 dark:text-gray-400 truncate">{label}</span>
+      <div className="flex-1 h-2.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+        <div className={`h-full rounded-full transition-all duration-700 ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs font-bold text-gray-900 dark:text-gray-100 w-8 text-right">{Math.round(value)}</span>
+    </div>
+  )
+}
 
 export default function InsightsPage() {
   const [selectedUserId, setSelectedUserId] = useState("")
@@ -88,13 +215,32 @@ export default function InsightsPage() {
   const catCounts = new Map<InsightCategory, number>()
   for (const i of allInsights) catCounts.set(i.category, (catCounts.get(i.category) ?? 0) + 1)
 
+  // Radar chart data: avg positive score per top category
+  const radarData = useMemo(() => {
+    const cats = Array.from(catCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8)
+    return cats.map(([cat, count]) => {
+      const catInsights = allInsights.filter((i) => i.category === cat)
+      const positiveRatio = catInsights.filter((i) => i.severity === "positive").length / Math.max(1, catInsights.length)
+      return { label: cat.replace("_", " ").slice(0, 10), value: Math.round(positiveRatio * 100), max: 100 }
+    })
+  }, [allInsights, catCounts])
+
+  // Donut chart segments
+  const donutSegments = useMemo(() => [
+    { label: "Positive", value: counts.positive, color: "#10b981" },
+    { label: "Info", value: counts.info, color: "#3b82f6" },
+    { label: "Warning", value: counts.warning, color: "#f59e0b" },
+    { label: "Critical", value: counts.critical, color: "#ef4444" },
+  ], [counts.positive, counts.info, counts.warning, counts.critical])
+
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Health Insights</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Health Insights Engine</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          State-of-the-art algorithms analyzing your health data to generate actionable insights.
-          {algorithms.length > 0 && ` ${algorithms.length} algorithms available.`}
+          {algorithms.length > 0
+            ? <><span className="font-semibold text-brand-600 dark:text-brand-400">{algorithms.length}</span> proprietary algorithms across {ALL_CATEGORIES.length} health dimensions — insights no other platform offers.</>
+            : "State-of-the-art algorithms analyzing your health data to generate actionable insights."}
         </p>
       </div>
 
@@ -223,6 +369,46 @@ export default function InsightsPage() {
               </button>
             )
           })}
+        </div>
+      )}
+
+      {/* Visualization Row: Radar + Donut + Top Scores */}
+      {selectedUserId && allInsights.length > 0 && (
+        <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3 animate-fade-in">
+          {/* Radar Chart */}
+          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 shadow-glass">
+            <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-3">Health Dimensions</h3>
+            <RadarChart data={radarData} size={260} />
+          </div>
+
+          {/* Donut Chart */}
+          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 shadow-glass">
+            <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-3">Distribution by Severity</h3>
+            <div className="flex items-center justify-center">
+              <DonutChart segments={donutSegments} size={200} />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {donutSegments.map((s) => (
+                <div key={s.label} className="flex items-center gap-2 text-xs">
+                  <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                  <span className="text-gray-600 dark:text-gray-400">{s.label}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100 ml-auto">{s.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Category Score Bars */}
+          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 shadow-glass">
+            <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-3">Category Coverage</h3>
+            <div className="space-y-2.5">
+              {Array.from(catCounts.entries())
+                .sort((a, b) => b[1] - a[1])
+                .map(([cat, count]) => (
+                  <HealthBar key={cat} label={cat.replace("_", " ")} value={count} max={Math.max(20, ...Array.from(catCounts.values()))} />
+                ))}
+            </div>
+          </div>
         </div>
       )}
 

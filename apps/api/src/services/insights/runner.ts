@@ -16,6 +16,12 @@ import { respiratoryRunners } from "./domains/respiratory.js"
 import { metabolicRunners } from "./domains/metabolic.js"
 import { workoutRunners } from "./domains/workout.js"
 import { compositeRunners } from "./domains/composite.js"
+import { longevityRunners } from "./domains/longevity.js"
+import { immuneRunners } from "./domains/immune.js"
+import { cognitiveRunners } from "./domains/cognitive.js"
+import { hormonalRunners } from "./domains/hormonal.js"
+import { womensHealthRunners } from "./domains/womens-health.js"
+import { performanceRunners } from "./domains/performance.js"
 
 // ── Algorithm Registry ──────────────────────────────────────────
 
@@ -30,6 +36,12 @@ const registry: ReadonlyMap<string, AlgorithmRunner> = new Map<string, Algorithm
     ...metabolicRunners,
     ...workoutRunners,
     ...compositeRunners,
+    ...longevityRunners,
+    ...immuneRunners,
+    ...cognitiveRunners,
+    ...hormonalRunners,
+    ...womensHealthRunners,
+    ...performanceRunners,
   }),
 )
 

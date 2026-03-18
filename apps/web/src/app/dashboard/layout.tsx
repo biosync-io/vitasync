@@ -10,35 +10,68 @@ import {
 } from "../../lib/ThemeProvider"
 import { CommandPalette } from "../../lib/CommandPalette"
 
-const navItems: Array<{ href: string; label: string; icon: string }> = [
-  { href: "/dashboard", label: "Overview", icon: "⬡" },
-  { href: "/dashboard/providers", label: "Providers", icon: "⚡" },
-  { href: "/dashboard/users", label: "Users", icon: "👤" },
-  { href: "/dashboard/health", label: "Health Data", icon: "♥" },
-  { href: "/dashboard/health-scores", label: "Health Score", icon: "📊" },
-  { href: "/dashboard/readiness", label: "Readiness", icon: "🔋" },
-  { href: "/dashboard/insights", label: "Insights", icon: "🧠" },
-  { href: "/dashboard/activity", label: "Activity", icon: "🏃" },
-  { href: "/dashboard/goals", label: "Goals", icon: "🎯" },
-  { href: "/dashboard/achievements", label: "Achievements", icon: "🏆" },
-  { href: "/dashboard/challenges", label: "Challenges", icon: "⚔️" },
-  { href: "/dashboard/mood", label: "Mood", icon: "😊" },
-  { href: "/dashboard/nutrition", label: "Nutrition", icon: "🥗" },
-  { href: "/dashboard/medications", label: "Medications", icon: "💊" },
-  { href: "/dashboard/symptoms", label: "Symptoms", icon: "🩺" },
-  { href: "/dashboard/sleep", label: "Sleep Analysis", icon: "😴" },
-  { href: "/dashboard/anomalies", label: "Anomalies", icon: "⚠️" },
-  { href: "/dashboard/correlations", label: "Correlations", icon: "🔗" },
-  { href: "/dashboard/training", label: "Training Plans", icon: "📋" },
-  { href: "/dashboard/reports", label: "Reports", icon: "📄" },
-  { href: "/dashboard/exports", label: "Data Export", icon: "📤" },
-  { href: "/dashboard/sync-jobs", label: "Sync Jobs", icon: "⟳" },
-  { href: "/dashboard/webhooks", label: "Webhooks", icon: "🔔" },
-  { href: "/dashboard/notifications", label: "Notifications", icon: "📣" },
-  { href: "/dashboard/notification-logs", label: "Notification Logs", icon: "📜" },
-  { href: "/dashboard/api-keys", label: "API Keys", icon: "🔑" },
-  { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
+const navSections: Array<{ title: string; items: Array<{ href: string; label: string; icon: string }> }> = [
+  {
+    title: "Overview",
+    items: [
+      { href: "/dashboard", label: "Command Center", icon: "⬡" },
+      { href: "/dashboard/health-scores", label: "Health Score", icon: "📊" },
+      { href: "/dashboard/readiness", label: "Readiness", icon: "🔋" },
+    ],
+  },
+  {
+    title: "Intelligence",
+    items: [
+      { href: "/dashboard/insights", label: "Insights Engine", icon: "🧠" },
+      { href: "/dashboard/reports", label: "Reports", icon: "📄" },
+      { href: "/dashboard/anomalies", label: "Anomalies", icon: "⚠️" },
+      { href: "/dashboard/correlations", label: "Correlations", icon: "🔗" },
+    ],
+  },
+  {
+    title: "Health Data",
+    items: [
+      { href: "/dashboard/health", label: "Health Data", icon: "♥" },
+      { href: "/dashboard/sleep", label: "Sleep Analysis", icon: "😴" },
+      { href: "/dashboard/activity", label: "Activity", icon: "🏃" },
+      { href: "/dashboard/nutrition", label: "Nutrition", icon: "🥗" },
+      { href: "/dashboard/mood", label: "Mood", icon: "😊" },
+      { href: "/dashboard/symptoms", label: "Symptoms", icon: "🩺" },
+      { href: "/dashboard/medications", label: "Medications", icon: "💊" },
+    ],
+  },
+  {
+    title: "Performance",
+    items: [
+      { href: "/dashboard/training", label: "Training Plans", icon: "📋" },
+      { href: "/dashboard/goals", label: "Goals", icon: "🎯" },
+      { href: "/dashboard/achievements", label: "Achievements", icon: "🏆" },
+      { href: "/dashboard/challenges", label: "Challenges", icon: "⚔️" },
+    ],
+  },
+  {
+    title: "Platform",
+    items: [
+      { href: "/dashboard/providers", label: "Providers", icon: "⚡" },
+      { href: "/dashboard/users", label: "Users", icon: "👤" },
+      { href: "/dashboard/sync-jobs", label: "Sync Jobs", icon: "⟳" },
+      { href: "/dashboard/exports", label: "Data Export", icon: "📤" },
+    ],
+  },
+  {
+    title: "Developer",
+    items: [
+      { href: "/dashboard/webhooks", label: "Webhooks", icon: "🔔" },
+      { href: "/dashboard/notifications", label: "Notifications", icon: "📣" },
+      { href: "/dashboard/notification-logs", label: "Notification Logs", icon: "📜" },
+      { href: "/dashboard/api-keys", label: "API Keys", icon: "🔑" },
+      { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
+    ],
+  },
 ]
+
+// Flat list for backward compatibility
+const navItems = navSections.flatMap(s => s.items)
 
 const DARK_ICONS: Record<DarkModePreference, string> = {
   light: "☀️",
@@ -146,33 +179,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-3">
-        <ul className="space-y-0.5">
-          {navItems.map((item) => {
-            const isActive =
-              item.href === "/dashboard"
-                ? pathname === "/dashboard"
-                : pathname.startsWith(item.href)
-            const collapsed = !isMobile && !sidebarOpen
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href as Parameters<typeof Link>[0]["href"]}
-                  title={collapsed ? item.label : undefined}
-                  className={`flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    collapsed ? "justify-center" : "gap-3"
-                  } ${
-                    isActive
-                      ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-                  }`}
-                >
-                  <span className="text-base shrink-0">{item.icon}</span>
-                  {!collapsed && <span className="truncate">{item.label}</span>}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
+        {navSections.map((section) => {
+          const collapsed = !isMobile && !sidebarOpen
+          return (
+            <div key={section.title} className="mb-3">
+              {!collapsed && (
+                <h3 className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  {section.title}
+                </h3>
+              )}
+              <ul className="space-y-0.5">
+                {section.items.map((item) => {
+                  const isActive =
+                    item.href === "/dashboard"
+                      ? pathname === "/dashboard"
+                      : pathname.startsWith(item.href)
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href as Parameters<typeof Link>[0]["href"]}
+                        title={collapsed ? item.label : undefined}
+                        className={`flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                          collapsed ? "justify-center" : "gap-3"
+                        } ${
+                          isActive
+                            ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
+                            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                        }`}
+                      >
+                        <span className="text-base shrink-0">{item.icon}</span>
+                        {!collapsed && <span className="truncate">{item.label}</span>}
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )
+        })}
       </nav>
 
       {/* Bottom bar */}
