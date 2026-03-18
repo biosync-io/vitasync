@@ -6,6 +6,8 @@ import { registerWhoopProvider } from "@biosync-io/provider-whoop"
 import { Queue, Worker } from "bullmq"
 import { Redis } from "ioredis"
 import { getConfig } from "./config.js"
+import { processAnalyticsJob } from "./processors/analytics.processor.js"
+import { processReportJob } from "./processors/report.processor.js"
 import { processSyncJob } from "./processors/sync.processor.js"
 import { processWebhookJob } from "./processors/webhook.processor.js"
 import { startPeriodicScheduler } from "./schedulers/periodic-sync.js"
@@ -39,6 +41,18 @@ async function main() {
     concurrency: 10,
   })
 
+  // Analytics worker — runs post-sync analytics (health scores, anomalies, achievements)
+  const analyticsWorker = new Worker("analytics", processAnalyticsJob, {
+    connection,
+    concurrency: 3,
+  })
+
+  // Report worker — generates periodic health reports and snapshots
+  const reportWorker = new Worker("reports", processReportJob, {
+    connection,
+    concurrency: 2,
+  })
+
   syncWorker.on("completed", (job) => {
     console.info(`[sync] Job ${job.id} completed`)
   })
@@ -53,6 +67,22 @@ async function main() {
 
   webhookWorker.on("failed", (job, err) => {
     console.error(`[webhook] Job ${job?.id} failed: ${err.message}`)
+  })
+
+  analyticsWorker.on("completed", (job) => {
+    console.info(`[analytics] Job ${job.id} completed`)
+  })
+
+  analyticsWorker.on("failed", (job, err) => {
+    console.error(`[analytics] Job ${job?.id} failed: ${err.message}`)
+  })
+
+  reportWorker.on("completed", (job) => {
+    console.info(`[report] Job ${job.id} completed`)
+  })
+
+  reportWorker.on("failed", (job, err) => {
+    console.error(`[report] Job ${job?.id} failed: ${err.message}`)
   })
 
   console.info("VitaSync Worker started. Listening for jobs...")
@@ -71,7 +101,7 @@ async function main() {
   async function shutdown(signal: string) {
     console.info(`Received ${signal}. Draining workers...`)
     await stopScheduler()
-    await Promise.all([syncWorker.close(), webhookWorker.close(), syncQueue.close()])
+    await Promise.all([syncWorker.close(), webhookWorker.close(), analyticsWorker.close(), reportWorker.close(), syncQueue.close()])
     await connection.quit()
     await closeDb()
     console.info("Worker shut down cleanly.")

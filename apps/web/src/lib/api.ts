@@ -173,6 +173,178 @@ export const insightsApi = {
     request<{ data: InsightAlgorithm[]; total: number }>("/v1/insights/algorithms"),
 }
 
+// ---- Health Scores ----
+export const healthScoresApi = {
+  latest: (userId: string) => request<HealthScoreData>(`/v1/users/${userId}/health-scores/latest`),
+  history: (userId: string, opts?: { from?: string; to?: string; limit?: number }) => {
+    const params = new URLSearchParams()
+    if (opts?.from) params.set("from", opts.from)
+    if (opts?.to) params.set("to", opts.to)
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    return request<{ data: HealthScoreData[] }>(`/v1/users/${userId}/health-scores?${params}`)
+  },
+  compute: (userId: string) =>
+    request<HealthScoreData>(`/v1/users/${userId}/health-scores/compute`, { method: "POST", body: JSON.stringify({}) }),
+}
+
+// ---- Goals ----
+export const goalsApi = {
+  list: (userId: string, opts?: { status?: string }) => {
+    const params = new URLSearchParams()
+    if (opts?.status) params.set("status", opts.status)
+    return request<{ data: GoalData[] }>(`/v1/users/${userId}/goals?${params}`)
+  },
+  create: (userId: string, body: Record<string, unknown>) =>
+    request<GoalData>(`/v1/users/${userId}/goals`, { method: "POST", body: JSON.stringify(body) }),
+  evaluate: (userId: string, goalId: string) =>
+    request<unknown>(`/v1/users/${userId}/goals/${goalId}/evaluate`, { method: "POST" }),
+  delete: (userId: string, goalId: string) =>
+    request<void>(`/v1/users/${userId}/goals/${goalId}`, { method: "DELETE" }),
+}
+
+// ---- Achievements ----
+export const achievementsApi = {
+  list: (userId: string) => request<{ data: AchievementData[] }>(`/v1/users/${userId}/achievements`),
+  definitions: () => request<{ data: AchievementDefData[] }>("/v1/achievements/definitions"),
+  check: (userId: string) =>
+    request<{ data: AchievementData[]; count: number }>(`/v1/users/${userId}/achievements/check`, { method: "POST" }),
+}
+
+// ---- Challenges ----
+export const challengesApi = {
+  list: (opts?: { status?: string }) => {
+    const params = new URLSearchParams()
+    if (opts?.status) params.set("status", opts.status)
+    return request<{ data: ChallengeData[] }>(`/v1/challenges?${params}`)
+  },
+  create: (body: Record<string, unknown>) =>
+    request<ChallengeData>("/v1/challenges", { method: "POST", body: JSON.stringify(body) }),
+  leaderboard: (challengeId: string) =>
+    request<{ data: LeaderboardEntry[] }>(`/v1/challenges/${challengeId}/leaderboard`),
+  join: (challengeId: string, userId: string) =>
+    request<unknown>(`/v1/challenges/${challengeId}/join`, { method: "POST", body: JSON.stringify({ userId }) }),
+}
+
+// ---- Mood ----
+export const moodApi = {
+  list: (userId: string, opts?: { from?: string; to?: string; limit?: number }) => {
+    const params = new URLSearchParams()
+    if (opts?.from) params.set("from", opts.from)
+    if (opts?.to) params.set("to", opts.to)
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    return request<{ data: MoodLogData[] }>(`/v1/users/${userId}/mood?${params}`)
+  },
+  create: (userId: string, body: Record<string, unknown>) =>
+    request<MoodLogData>(`/v1/users/${userId}/mood`, { method: "POST", body: JSON.stringify(body) }),
+  stats: (userId: string, days?: number) =>
+    request<MoodStats>(`/v1/users/${userId}/mood/stats?days=${days ?? 30}`),
+}
+
+// ---- Nutrition ----
+export const nutritionApi = {
+  list: (userId: string, opts?: { from?: string; to?: string; limit?: number }) => {
+    const params = new URLSearchParams()
+    if (opts?.from) params.set("from", opts.from)
+    if (opts?.to) params.set("to", opts.to)
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    return request<{ data: NutritionLogData[] }>(`/v1/users/${userId}/nutrition?${params}`)
+  },
+  create: (userId: string, body: Record<string, unknown>) =>
+    request<NutritionLogData>(`/v1/users/${userId}/nutrition`, { method: "POST", body: JSON.stringify(body) }),
+  dailySummary: (userId: string) =>
+    request<NutritionSummary>(`/v1/users/${userId}/nutrition/summary/daily`),
+  weeklyAvg: (userId: string) =>
+    request<NutritionWeeklyAvg>(`/v1/users/${userId}/nutrition/summary/weekly`),
+}
+
+// ---- Medications ----
+export const medicationsApi = {
+  list: (userId: string) => request<{ data: MedicationData[] }>(`/v1/users/${userId}/medications`),
+  create: (userId: string, body: Record<string, unknown>) =>
+    request<MedicationData>(`/v1/users/${userId}/medications`, { method: "POST", body: JSON.stringify(body) }),
+  log: (userId: string, medId: string, body: Record<string, unknown>) =>
+    request<unknown>(`/v1/users/${userId}/medications/${medId}/log`, { method: "POST", body: JSON.stringify(body) }),
+  stats: (userId: string, medId: string) =>
+    request<MedicationStats>(`/v1/users/${userId}/medications/${medId}/stats`),
+}
+
+// ---- Anomalies ----
+export const anomaliesApi = {
+  list: (userId: string, opts?: { severity?: string }) => {
+    const params = new URLSearchParams()
+    if (opts?.severity) params.set("severity", opts.severity)
+    return request<{ data: AnomalyData[] }>(`/v1/users/${userId}/anomalies?${params}`)
+  },
+  detect: (userId: string) =>
+    request<{ data: AnomalyData[]; count: number }>(`/v1/users/${userId}/anomalies/detect`, { method: "POST" }),
+  acknowledge: (userId: string, anomalyId: string) =>
+    request<AnomalyData>(`/v1/users/${userId}/anomalies/${anomalyId}/acknowledge`, { method: "POST" }),
+}
+
+// ---- Correlations ----
+export const correlationsApi = {
+  list: (userId: string) => request<{ data: CorrelationData[] }>(`/v1/users/${userId}/correlations`),
+  compute: (userId: string) =>
+    request<{ data: CorrelationData[]; count: number }>(`/v1/users/${userId}/correlations/compute`, { method: "POST" }),
+}
+
+// ---- Reports ----
+export const reportsApi = {
+  list: (userId: string) => request<{ data: ReportData[] }>(`/v1/users/${userId}/reports`),
+  get: (userId: string, reportId: string) => request<ReportData>(`/v1/users/${userId}/reports/${reportId}`),
+  generate: (userId: string, body: Record<string, unknown>) =>
+    request<ReportData>(`/v1/users/${userId}/reports/generate`, { method: "POST", body: JSON.stringify(body) }),
+}
+
+// ---- Exports ----
+export const exportsApi = {
+  list: (userId: string) => request<{ data: ExportData[] }>(`/v1/users/${userId}/exports`),
+  create: (userId: string, body: Record<string, unknown>) =>
+    request<ExportData>(`/v1/users/${userId}/exports`, { method: "POST", body: JSON.stringify(body) }),
+}
+
+// ---- Training Plans ----
+export const trainingPlansApi = {
+  list: (userId: string) => request<{ data: TrainingPlanData[] }>(`/v1/users/${userId}/training-plans`),
+  generate: (userId: string, body: Record<string, unknown>) =>
+    request<TrainingPlanData>(`/v1/users/${userId}/training-plans/generate`, { method: "POST", body: JSON.stringify(body) }),
+}
+
+// ---- Symptoms ----
+export const symptomsApi = {
+  list: (userId: string, opts?: { from?: string; to?: string; limit?: number }) => {
+    const params = new URLSearchParams()
+    if (opts?.from) params.set("from", opts.from)
+    if (opts?.to) params.set("to", opts.to)
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    return request<{ data: SymptomLogData[] }>(`/v1/users/${userId}/symptoms?${params}`)
+  },
+  create: (userId: string, body: Record<string, unknown>) =>
+    request<SymptomLogData>(`/v1/users/${userId}/symptoms`, { method: "POST", body: JSON.stringify(body) }),
+  top: (userId: string) => request<{ data: { symptom: string; count: number }[] }>(`/v1/users/${userId}/symptoms/top`),
+  patterns: (userId: string) => request<SymptomPatterns>(`/v1/users/${userId}/symptoms/patterns`),
+}
+
+// ---- Sleep Analysis ----
+export const sleepAnalysisApi = {
+  debt: (userId: string, days?: number) =>
+    request<SleepDebtData>(`/v1/users/${userId}/sleep-analysis/debt?days=${days ?? 14}`),
+  quality: (userId: string, days?: number) =>
+    request<SleepQualityData>(`/v1/users/${userId}/sleep-analysis/quality?days=${days ?? 30}`),
+}
+
+// ---- Snapshots ----
+export const snapshotsApi = {
+  list: (userId: string) => request<{ data: SnapshotData[] }>(`/v1/users/${userId}/snapshots`),
+}
+
+// ---- Baselines ----
+export const baselinesApi = {
+  list: (userId: string) => request<{ data: BaselineData[] }>(`/v1/users/${userId}/baselines`),
+  compute: (userId: string) =>
+    request<{ data: BaselineData[]; count: number }>(`/v1/users/${userId}/baselines/compute`, { method: "POST" }),
+}
+
 // ---- Shared types (local to client, not re-exported from @biosync-io/types to avoid SSR issues) ----
 export interface ProviderDef {
   id: string
@@ -326,4 +498,279 @@ export interface InsightAlgorithm {
   description: string
   category: InsightCategory
   requiredMetrics: string[]
+}
+
+// ---- New Feature Types ----
+
+export interface HealthScoreData {
+  id: string
+  userId: string
+  date: string
+  overallScore: number
+  grade: string
+  sleepScore: number | null
+  activityScore: number | null
+  cardioScore: number | null
+  recoveryScore: number | null
+  bodyScore: number | null
+  weeklyAvg: number | null
+  createdAt: string
+}
+
+export interface GoalData {
+  id: string
+  userId: string
+  name: string
+  metric: string
+  targetValue: number
+  currentValue: number | null
+  unit: string | null
+  goalType: string
+  status: string
+  startDate: string
+  endDate: string | null
+  streak: number
+  createdAt: string
+}
+
+export interface AchievementData {
+  id: string
+  userId: string
+  achievementId: string
+  name: string
+  description: string | null
+  icon: string | null
+  tier: string
+  category: string
+  unlockedAt: string
+}
+
+export interface AchievementDefData {
+  id: string
+  name: string
+  description: string
+  icon: string
+  tier: string
+  category: string
+  criteria: Record<string, unknown>
+}
+
+export interface ChallengeData {
+  id: string
+  name: string
+  description: string | null
+  metric: string
+  targetValue: number
+  challengeType: string
+  status: string
+  startDate: string
+  endDate: string
+  participantCount: number
+  createdAt: string
+}
+
+export interface LeaderboardEntry {
+  userId: string
+  userName: string | null
+  score: number
+  rank: number
+}
+
+export interface MoodLogData {
+  id: string
+  userId: string
+  mood: number
+  energy: number | null
+  stress: number | null
+  tags: string[]
+  factors: string[]
+  notes: string | null
+  loggedAt: string
+}
+
+export interface MoodStats {
+  avgMood: number
+  avgEnergy: number | null
+  avgStress: number | null
+  trend: string
+  distribution: Record<string, number>
+  topFactors: { factor: string; count: number }[]
+}
+
+export interface NutritionLogData {
+  id: string
+  userId: string
+  mealType: string
+  name: string
+  calories: number | null
+  proteinG: number | null
+  carbsG: number | null
+  fatG: number | null
+  fiberG: number | null
+  sugarG: number | null
+  sodiumMg: number | null
+  waterMl: number | null
+  loggedAt: string
+}
+
+export interface NutritionSummary {
+  date: string
+  totalCalories: number
+  totalProtein: number
+  totalCarbs: number
+  totalFat: number
+  totalWater: number
+  mealCount: number
+}
+
+export interface NutritionWeeklyAvg {
+  avgCalories: number
+  avgProtein: number
+  avgCarbs: number
+  avgFat: number
+  avgWater: number
+  days: number
+}
+
+export interface MedicationData {
+  id: string
+  userId: string
+  name: string
+  dosage: string | null
+  frequency: string | null
+  startDate: string | null
+  endDate: string | null
+  isActive: boolean
+  createdAt: string
+}
+
+export interface MedicationStats {
+  totalLogs: number
+  takenCount: number
+  missedCount: number
+  skippedCount: number
+  adherenceRate: number
+}
+
+export interface AnomalyData {
+  id: string
+  userId: string
+  metric: string
+  value: number
+  expectedValue: number
+  zScore: number
+  severity: string
+  status: string
+  detectionMethod: string
+  detectedAt: string
+}
+
+export interface CorrelationData {
+  id: string
+  userId: string
+  metricA: string
+  metricB: string
+  coefficient: number
+  strength: string
+  direction: string
+  sampleSize: number
+  description: string | null
+  computedAt: string
+}
+
+export interface ReportData {
+  id: string
+  userId: string
+  reportType: string
+  periodStart: string
+  periodEnd: string
+  highlights: string[]
+  recommendations: string[]
+  status: string
+  createdAt: string
+}
+
+export interface ExportData {
+  id: string
+  userId: string
+  format: string
+  status: string
+  fileUrl: string | null
+  requestedAt: string
+  completedAt: string | null
+}
+
+export interface TrainingPlanData {
+  id: string
+  userId: string
+  name: string
+  goal: string
+  fitnessLevel: string
+  weeklySchedule: Record<string, unknown>
+  durationWeeks: number
+  status: string
+  createdAt: string
+}
+
+export interface SymptomLogData {
+  id: string
+  userId: string
+  symptom: string
+  severity: number
+  bodyLocation: string | null
+  triggers: string[]
+  notes: string | null
+  loggedAt: string
+}
+
+export interface SymptomPatterns {
+  topSymptoms: { symptom: string; count: number }[]
+  topTriggers: { trigger: string; count: number }[]
+  topLocations: { location: string; count: number }[]
+  avgSeverity: number
+  severityTrend: string
+}
+
+export interface SleepDebtData {
+  totalDebtHours: number
+  dailyTarget: number
+  avgActualHours: number
+  days: number
+  trend: string
+}
+
+export interface SleepQualityData {
+  avgScore: number
+  consistencyScore: number
+  avgDuration: number
+  avgBedtime: string | null
+  avgWakeTime: string | null
+  weekdayAvg: number
+  weekendAvg: number
+  days: number
+}
+
+export interface SnapshotData {
+  id: string
+  userId: string
+  periodType: string
+  periodStart: string
+  periodEnd: string
+  metrics: Record<string, unknown>
+  createdAt: string
+}
+
+export interface BaselineData {
+  id: string
+  userId: string
+  metric: string
+  mean: number
+  stddev: number
+  min: number
+  max: number
+  p25: number | null
+  p50: number | null
+  p75: number | null
+  sampleSize: number
+  computedAt: string
 }
