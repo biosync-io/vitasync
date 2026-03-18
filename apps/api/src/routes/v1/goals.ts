@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
+import { defined } from "../../lib/strip-undefined.js"
 import { GoalService } from "../../services/goal.service.js"
 import { UserService } from "../../services/user.service.js"
 
@@ -21,7 +22,9 @@ const goalsRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.query)
 
-    const goals = await goalService.list(userId, query)
+    const goals = await goalService.list(userId, {
+      ...(query.category !== undefined && { category: query.category }),
+    })
     return reply.send({ data: goals })
   })
 
@@ -47,9 +50,12 @@ const goalsRoutes: FastifyPluginAsync = async (app) => {
 
     const goal = await goalService.create({
       userId,
-      ...body,
-      startDate: new Date(body.startDate),
-      endDate: body.endDate ? new Date(body.endDate) : null,
+      name: body.title,
+      category: body.category,
+      targetValue: body.targetValue,
+      cadence: body.cadence,
+      ...(body.description !== undefined && { description: body.description }),
+      ...(body.endDate ? { endDate: new Date(body.endDate) } : {}),
     })
     return reply.status(201).send(goal)
   })
@@ -84,7 +90,12 @@ const goalsRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.body)
 
-    const goal = await goalService.update(goalId, userId, body)
+    const goal = await goalService.update(goalId, userId, defined({
+      ...(body.title !== undefined && { name: body.title }),
+      ...(body.description !== undefined && { description: body.description }),
+      ...(body.targetValue !== undefined && { targetValue: body.targetValue }),
+      ...(body.status !== undefined && { status: body.status }),
+    }))
     if (!goal) return reply.status(404).send({ code: "NOT_FOUND", message: "Goal not found" })
     return reply.send(goal)
   })
@@ -110,7 +121,7 @@ const goalsRoutes: FastifyPluginAsync = async (app) => {
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
 
-    const progress = await goalService.evaluateProgress(goalId, userId)
+    const progress = await goalService.evaluateProgress(userId, new Date())
     if (!progress) return reply.status(404).send({ code: "NOT_FOUND", message: "Goal not found" })
     return reply.send(progress)
   })

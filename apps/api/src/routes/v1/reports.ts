@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
+import { defined } from "../../lib/strip-undefined.js"
 import { HealthReportService } from "../../services/health-report.service.js"
 import { UserService } from "../../services/user.service.js"
 
@@ -20,7 +21,7 @@ const reportsRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.query)
 
-    const reports = await reportService.list(userId, query)
+    const reports = await reportService.list(userId, defined(query))
     return reply.send({ data: reports })
   })
 

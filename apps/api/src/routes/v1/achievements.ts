@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
+import { defined } from "../../lib/strip-undefined.js"
 import { AchievementService } from "../../services/achievement.service.js"
 import { UserService } from "../../services/user.service.js"
 
@@ -20,7 +21,7 @@ const achievementsRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.query)
 
-    const achievements = await achievementService.list(userId, query)
+    const achievements = await achievementService.list(userId, defined(query))
     return reply.send({ data: achievements })
   })
 

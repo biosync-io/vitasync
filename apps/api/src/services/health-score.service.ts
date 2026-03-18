@@ -1,6 +1,7 @@
 import { getDb, healthScores, healthMetrics, events } from "@biosync-io/db"
 import type { HealthScoreInsert, HealthScoreRow } from "@biosync-io/db"
 import { and, avg, count, eq, gte, lte, desc, sql, asc } from "drizzle-orm"
+import { computeReadiness, computeBodyScore as computeBodyScoreEngine } from "@biosync-io/analytics"
 
 /**
  * Health Score Service — Feature #1
@@ -67,8 +68,21 @@ export class HealthScoreService {
     const sleepScore = this.computeSleepScore(byType)
     const activityScore = this.computeActivityScore(byType)
     const cardioScore = this.computeCardioScore(byType)
-    const recoveryScore = this.computeRecoveryScore(byType)
-    const bodyScore = this.computeBodyScore(byType)
+
+    // Use proprietary engines for recovery & body scores
+    let recoveryScore: number | null = null
+    let bodyScore: number | null = null
+    try {
+      const readiness = await computeReadiness(userId, date)
+      recoveryScore = readiness.score
+    } catch { /* fall back to basic if insufficient data */ }
+    if (recoveryScore == null) recoveryScore = this.computeRecoveryScore(byType)
+
+    try {
+      const body = await computeBodyScoreEngine(userId, date)
+      bodyScore = body.score
+    } catch { /* fall back to basic if insufficient data */ }
+    if (bodyScore == null) bodyScore = this.computeBodyScore(byType)
 
     const weights = { sleep: 0.25, activity: 0.25, cardio: 0.20, recovery: 0.15, body: 0.15 }
     let totalWeight = 0

@@ -68,6 +68,7 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
 
   try {
     // Decrypt and parse tokens
+    if (!connection.encryptedTokens) throw new Error(`Connection '${connectionId}' has no encrypted tokens`)
     let tokens: ProviderTokens = JSON.parse(
       decrypt(connection.encryptedTokens, config.ENCRYPTION_KEY),
     )
@@ -142,7 +143,8 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
       await job.updateProgress(totalInserted)
     }
 
-    for await (const point of provider.syncData(tokens, { from, to })) {
+    // biome-ignore lint: provider tokens type variance
+    for await (const point of (provider as any).syncData(tokens, { from, to })) {
       const p = point as SyncDataPoint
       batch.push({
         userId,
@@ -150,9 +152,9 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
         providerId: connection.providerId,
         metricType: p.metricType,
         recordedAt: p.recordedAt,
-        value: p.value,
-        unit: p.unit,
-        data: p.data,
+        value: p.value ?? 0,
+        ...(p.unit !== undefined && { unit: p.unit }),
+        ...(p.data !== undefined && { data: p.data }),
         source: connection.providerId,
       })
 
@@ -182,7 +184,7 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
     await db
       .update(syncJobs)
       .set({ status: "completed", completedAt: new Date(), metricsSynced: totalInserted })
-      .where(eq(syncJobs.id, jobId))
+      .where(eq(syncJobs.id, jobId!))
 
     job.log(`Sync complete: ${totalInserted} metrics inserted, ${eventBatch.length} events upserted for connection ${connectionId}`)
   } catch (err) {
@@ -199,7 +201,7 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
     await db
       .update(syncJobs)
       .set({ status: "failed", completedAt: new Date(), error: message })
-      .where(eq(syncJobs.id, jobId))
+      .where(eq(syncJobs.id, jobId!))
 
     throw err // Re-throw so BullMQ records the failure and retries
   }

@@ -1,0 +1,192 @@
+import type { InsightAlgorithm } from "./types.js"
+
+export const ALGORITHMS: InsightAlgorithm[] = [
+  // ── Cardio (1-10) ──
+  { id: "rhr-zone", name: "Resting Heart Rate Zone", description: "Classifies resting HR into clinical zones (athlete/excellent/good/above average/poor)", category: "cardio", requiredMetrics: ["resting_heart_rate"] },
+  { id: "rhr-trend", name: "Resting HR Trend", description: "Detects rising/falling RHR trends over the past 14 days", category: "cardio", requiredMetrics: ["resting_heart_rate"] },
+  { id: "hr-recovery", name: "Heart Rate Recovery", description: "Estimates cardiac recovery capacity from post-workout HR drop", category: "cardio", requiredMetrics: ["heart_rate", "workout"] },
+  { id: "hrv-baseline", name: "HRV Baseline Status", description: "Compares current HRV to 30-day rolling baseline (Bayesian deviation)", category: "cardio", requiredMetrics: ["heart_rate_variability"] },
+  { id: "hrv-trend", name: "HRV 14-Day Trend", description: "Tracks autonomic nervous system adaptation via HRV slope", category: "cardio", requiredMetrics: ["heart_rate_variability"] },
+  { id: "hrv-coherence", name: "HRV Coherence Score", description: "Measures the coefficient of variation of daily HRV — low CV = high coherence", category: "cardio", requiredMetrics: ["heart_rate_variability"] },
+  { id: "max-hr-estimate", name: "Estimated Max HR Utilization", description: "Percentage of age-predicted max HR reached during workouts", category: "cardio", requiredMetrics: ["heart_rate"] },
+  { id: "hr-zones-dist", name: "HR Zone Distribution", description: "Breakdown of time spent in fat-burn, cardio, and peak zones", category: "cardio", requiredMetrics: ["heart_rate"] },
+  { id: "cardiac-drift", name: "Cardiac Drift Detection", description: "Detects abnormal HR rise during steady-state exercise (decoupling)", category: "cardio", requiredMetrics: ["heart_rate", "workout"] },
+  { id: "rhr-anomaly", name: "Resting HR Anomaly", description: "Z-score anomaly detection on daily RHR", category: "cardio", requiredMetrics: ["resting_heart_rate"] },
+
+  // ── Sleep (11-20) ──
+  { id: "sleep-duration", name: "Sleep Duration Assessment", description: "Classifies nightly sleep vs CDC/NSF recommendations (7-9h adults)", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "sleep-efficiency", name: "Sleep Efficiency", description: "Ratio of actual sleep to time in bed — targets >85%", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "deep-sleep-ratio", name: "Deep Sleep Ratio", description: "Evaluates SWS proportion — optimal is 15-25% of total sleep", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "rem-sleep-ratio", name: "REM Sleep Ratio", description: "Evaluates REM proportion — optimal is 20-25% of total sleep", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "sleep-consistency", name: "Sleep Schedule Consistency", description: "Measures bedtime/wake-time variability (social jet lag indicator)", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "sleep-debt", name: "Cumulative Sleep Debt", description: "Tracks cumulative sleep deficit over 7 days vs 8h target", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "sleep-latency", name: "Sleep Onset Latency", description: "Estimates time to fall asleep — healthy is <20 minutes", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "awakening-freq", name: "Night Awakening Frequency", description: "Counts nocturnal awakenings — frequent awakenings impact restorative sleep", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "sleep-score-trend", name: "Sleep Score Trend", description: "14-day trend analysis of composite sleep score", category: "sleep", requiredMetrics: ["sleep_score"] },
+  { id: "sleep-hr-dip", name: "Nocturnal HR Dipping", description: "Evaluates the physiological heart rate dip during sleep (10-20% is normal)", category: "sleep", requiredMetrics: ["sleep", "heart_rate"] },
+
+  // ── Activity (21-30) ──
+  { id: "daily-steps-goal", name: "Daily Steps Goal", description: "Progress toward 10,000-step daily target with percentile ranking", category: "activity", requiredMetrics: ["steps"] },
+  { id: "steps-trend", name: "Steps 14-Day Trend", description: "Moving-average trend of daily step count", category: "activity", requiredMetrics: ["steps"] },
+  { id: "active-minutes-who", name: "WHO Activity Guidelines", description: "Evaluates weekly moderate+vigorous minutes vs WHO 150-min target", category: "activity", requiredMetrics: ["active_minutes"] },
+  { id: "sedentary-alert", name: "Sedentary Behavior Alert", description: "Flags days with extremely low step counts (<2000 steps)", category: "activity", requiredMetrics: ["steps"] },
+  { id: "calorie-balance", name: "Calorie Expenditure Trend", description: "7-day rolling average of total calorie burn", category: "activity", requiredMetrics: ["calories"] },
+  { id: "distance-weekly", name: "Weekly Distance Accumulation", description: "Total distance covered in the past 7 days with trend", category: "activity", requiredMetrics: ["distance"] },
+  { id: "activity-consistency", name: "Activity Consistency Index", description: "Coefficient of variation of daily steps — lower = more consistent", category: "activity", requiredMetrics: ["steps"] },
+  { id: "peak-activity-time", name: "Peak Activity Time", description: "Identifies the time of day with highest average step count", category: "activity", requiredMetrics: ["steps"] },
+  { id: "floors-climbed", name: "Floors Climbed Assessment", description: "Daily floor count vs 10-floor recommendation for cardiovascular benefit", category: "activity", requiredMetrics: ["floors"] },
+  { id: "inactivity-streak", name: "Inactivity Streak Detection", description: "Consecutive days below 5000 steps", category: "activity", requiredMetrics: ["steps"] },
+
+  // ── Body Metrics (31-37) ──
+  { id: "bmi-classification", name: "BMI Classification", description: "WHO BMI category (underweight/normal/overweight/obese)", category: "body", requiredMetrics: ["bmi"] },
+  { id: "weight-trend", name: "Weight 30-Day Trend", description: "Linear regression on daily weight to detect gain/loss trajectory", category: "body", requiredMetrics: ["weight"] },
+  { id: "body-fat-zone", name: "Body Fat Percentage Zone", description: "Classifies body fat into athletic/fitness/acceptable/obese ranges", category: "body", requiredMetrics: ["body_fat"] },
+  { id: "weight-volatility", name: "Weight Volatility", description: "Day-to-day weight fluctuation — high volatility may indicate fluid retention", category: "body", requiredMetrics: ["weight"] },
+  { id: "bp-classification", name: "Blood Pressure Classification", description: "AHA blood pressure category (normal/elevated/stage1/stage2/crisis)", category: "body", requiredMetrics: ["blood_pressure"] },
+  { id: "bp-trend", name: "Blood Pressure Trend", description: "14-day systolic/diastolic trend analysis", category: "body", requiredMetrics: ["blood_pressure"] },
+  { id: "temp-anomaly", name: "Body Temperature Anomaly", description: "Flags body temperature readings outside 36.1-37.2°C normal range", category: "body", requiredMetrics: ["temperature"] },
+
+  // ── Recovery & Readiness (38-43) ──
+  { id: "recovery-status", name: "Recovery Score Status", description: "Categorizes current recovery level (poor/moderate/good/optimal)", category: "recovery", requiredMetrics: ["recovery_score"] },
+  { id: "recovery-trend", name: "Recovery Score Trend", description: "7-day recovery trajectory with momentum indicator", category: "recovery", requiredMetrics: ["recovery_score"] },
+  { id: "readiness-status", name: "Readiness Score Status", description: "Evaluates physical readiness for intense training", category: "recovery", requiredMetrics: ["readiness_score"] },
+  { id: "strain-balance", name: "Strain vs Recovery Balance", description: "Compares cumulative strain against recovery capacity", category: "recovery", requiredMetrics: ["strain_score", "recovery_score"] },
+  { id: "stress-level", name: "Stress Level Assessment", description: "Classifies average daily stress score (low/moderate/high/very high)", category: "recovery", requiredMetrics: ["stress"] },
+  { id: "stress-trend", name: "Stress 14-Day Trend", description: "Trend analysis of daily stress levels", category: "recovery", requiredMetrics: ["stress"] },
+
+  // ── Respiratory & SpO2 (44-48) ──
+  { id: "spo2-status", name: "Blood Oxygen Status", description: "Classifies SpO2 level (normal ≥95%, low 90-94%, critical <90%)", category: "respiratory", requiredMetrics: ["spo2"] },
+  { id: "spo2-trend", name: "SpO2 7-Day Trend", description: "Tracks blood oxygen saturation trend", category: "respiratory", requiredMetrics: ["spo2"] },
+  { id: "resp-rate-status", name: "Respiratory Rate Status", description: "Classifies breathing rate (normal 12-20 brpm)", category: "respiratory", requiredMetrics: ["respiratory_rate"] },
+  { id: "resp-rate-trend", name: "Respiratory Rate Trend", description: "14-day trend analysis of respiration rate", category: "respiratory", requiredMetrics: ["respiratory_rate"] },
+  { id: "resp-sleep-corr", name: "Respiratory-Sleep Correlation", description: "Correlates respiratory rate changes with sleep quality", category: "respiratory", requiredMetrics: ["respiratory_rate", "sleep"] },
+
+  // ── Metabolic (49-51) ──
+  { id: "glucose-status", name: "Blood Glucose Status", description: "Classifies fasting glucose (normal <100, prediabetic 100-125, diabetic ≥126 mg/dL)", category: "metabolic", requiredMetrics: ["blood_glucose"] },
+  { id: "glucose-variability", name: "Glucose Variability Index", description: "Coefficient of variation of blood glucose — high CV suggests poor glycemic control", category: "metabolic", requiredMetrics: ["blood_glucose"] },
+  { id: "glucose-trend", name: "Glucose 14-Day Trend", description: "Trend analysis of blood glucose levels", category: "metabolic", requiredMetrics: ["blood_glucose"] },
+
+  // ── Workout Performance (52-55) ──
+  { id: "training-load", name: "Acute Training Load", description: "7-day cumulative workout duration weighted by intensity (TRIMP-like)", category: "workout", requiredMetrics: ["workout"] },
+  { id: "training-monotony", name: "Training Monotony", description: "Variability of daily training load — high monotony increases overtraining risk", category: "workout", requiredMetrics: ["workout"] },
+  { id: "workout-frequency", name: "Workout Frequency", description: "Weekly workout count with consistency analysis", category: "workout", requiredMetrics: ["workout"] },
+  { id: "vo2max-estimate", name: "Estimated VO2max Proxy", description: "Estimates aerobic fitness from resting HR and activity level (Cooper/Uth formula proxy)", category: "workout", requiredMetrics: ["resting_heart_rate", "workout"] },
+
+  // ── Cross-Domain / Composite (56-70) ──
+  { id: "sleep-activity-corr", name: "Sleep-Activity Correlation", description: "Correlates daily step count with subsequent night's sleep quality", category: "trend", requiredMetrics: ["steps", "sleep"] },
+  { id: "hr-sleep-quality", name: "HR-Sleep Quality Link", description: "Correlates resting HR variations with sleep score changes", category: "trend", requiredMetrics: ["resting_heart_rate", "sleep_score"] },
+  { id: "exercise-recovery-efficiency", name: "Exercise Recovery Efficiency", description: "Measures how quickly recovery score rebounds after hard workouts", category: "recovery", requiredMetrics: ["recovery_score", "workout"] },
+  { id: "stress-sleep-impact", name: "Stress-Sleep Impact", description: "Quantifies the impact of daily stress on sleep duration", category: "trend", requiredMetrics: ["stress", "sleep"] },
+  { id: "weekend-weekday-activity", name: "Weekend vs Weekday Activity", description: "Compares average weekend activity to weekday patterns", category: "activity", requiredMetrics: ["steps"] },
+  { id: "morning-readiness", name: "Morning Readiness Prediction", description: "Predicts readiness from previous night's sleep metrics", category: "recovery", requiredMetrics: ["sleep", "readiness_score"] },
+  { id: "training-adaptation", name: "Training Adaptation Index", description: "Composite index from RHR trend + HRV trend + workout progression", category: "workout", requiredMetrics: ["resting_heart_rate", "heart_rate_variability", "workout"] },
+  { id: "holistic-wellness", name: "Holistic Wellness Score", description: "Composite 0-100 score from sleep, activity, HR, and recovery metrics", category: "trend", requiredMetrics: ["steps", "sleep", "resting_heart_rate"] },
+  { id: "circadian-stability", name: "Circadian Rhythm Stability", description: "Measures consistency of daily activity onset and sleep timing", category: "sleep", requiredMetrics: ["steps", "sleep"] },
+  { id: "overtraining-risk", name: "Overtraining Risk Score", description: "Multi-factor overtraining risk from HR trend + recovery + training load", category: "workout", requiredMetrics: ["resting_heart_rate", "workout"] },
+  { id: "detraining-risk", name: "Detraining Risk Detection", description: "Detects prolonged reduction in training stimulus over 14+ days", category: "workout", requiredMetrics: ["workout"] },
+  { id: "fitness-fatigue", name: "Fitness-Fatigue Balance", description: "Banister impulse-response model proxy (chronic vs acute load)", category: "workout", requiredMetrics: ["workout"] },
+  { id: "sleep-workout-timing", name: "Sleep-Workout Timing", description: "Analyzes if workout timing affects sleep quality", category: "trend", requiredMetrics: ["sleep", "workout"] },
+  { id: "metabolic-efficiency", name: "Metabolic Efficiency Index", description: "Calories burned per active minute — trends in metabolic efficiency", category: "metabolic", requiredMetrics: ["calories", "active_minutes"] },
+  { id: "hydration-proxy", name: "Hydration Status Proxy", description: "Estimates hydration status from RHR elevation + temperature", category: "body", requiredMetrics: ["resting_heart_rate", "temperature"] },
+
+  // ── Advanced Cardio (71-83) ──
+  { id: "hrv-rmssd-proxy", name: "HRV RMSSD Stability", description: "Tracks HRV stability using rolling standard deviation of daily values", category: "cardio", requiredMetrics: ["heart_rate_variability"] },
+  { id: "rhr-seasonal", name: "RHR Seasonal Variation", description: "Detects seasonal patterns in resting heart rate", category: "cardio", requiredMetrics: ["resting_heart_rate"] },
+  { id: "autonomic-balance", name: "Cardiac Autonomic Balance", description: "Sympathetic/parasympathetic proxy from combined HR and HRV data", category: "cardio", requiredMetrics: ["resting_heart_rate", "heart_rate_variability"] },
+  { id: "aerobic-threshold", name: "Aerobic Threshold Estimate", description: "Estimated aerobic threshold from workout HR distribution", category: "cardio", requiredMetrics: ["heart_rate", "workout"] },
+  { id: "hr-drift-rate", name: "HR Drift Rate", description: "Rate of cardiac drift per hour during sustained exercise", category: "cardio", requiredMetrics: ["heart_rate", "workout"] },
+  { id: "post-exercise-recovery-1min", name: "1-Minute HR Recovery", description: "Estimates 1-minute post-exercise HR recovery from workout data", category: "cardio", requiredMetrics: ["heart_rate", "workout"] },
+  { id: "morning-rhr-spike", name: "Morning RHR Elevation", description: "Detects abnormal morning RHR spikes suggesting illness or stress", category: "cardio", requiredMetrics: ["resting_heart_rate"] },
+  { id: "hr-circadian", name: "HR Circadian Pattern", description: "Analyzes 24-hour heart rate pattern and nocturnal dipping", category: "cardio", requiredMetrics: ["heart_rate"] },
+  { id: "bradycardia-flag", name: "Bradycardia Detection", description: "Flags resting heart rate consistently below 50 bpm in non-athletes", category: "cardio", requiredMetrics: ["resting_heart_rate"] },
+  { id: "tachycardia-flag", name: "Tachycardia Detection", description: "Flags resting heart rate consistently above 100 bpm", category: "cardio", requiredMetrics: ["resting_heart_rate"] },
+  { id: "hr-exercise-reactivity", name: "HR Exercise Reactivity", description: "How quickly HR rises at exercise onset — chronotropic competence proxy", category: "cardio", requiredMetrics: ["heart_rate", "workout"] },
+  { id: "cardiovascular-age", name: "Cardiovascular Age Estimate", description: "Estimated cardiovascular age from RHR and activity metrics", category: "cardio", requiredMetrics: ["resting_heart_rate", "steps"] },
+  { id: "parasympathetic-reactivation", name: "Parasympathetic Reactivation", description: "Post-exercise vagal reactivation speed from HR recovery patterns", category: "cardio", requiredMetrics: ["heart_rate", "workout"] },
+
+  // ── Advanced Sleep (84-95) ──
+  { id: "sleep-architecture", name: "Sleep Architecture Score", description: "Composite score of sleep stage proportions vs ideal distribution", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "rem-latency", name: "REM Sleep Latency", description: "Estimates time from sleep onset to first REM period", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "sleep-fragmentation", name: "Sleep Fragmentation Index", description: "Quantifies sleep disruption beyond simple awakening count", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "circadian-phase-shift", name: "Circadian Phase Shift", description: "Detects gradual bedtime/waketime shifts over 14 days", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "weekend-sleep-rebound", name: "Weekend Sleep Rebound", description: "Compares weekend vs weekday sleep duration — social jet lag indicator", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "sleep-regularity-index", name: "Sleep Regularity Index", description: "Probability of consistent sleep/wake state across days (SRI)", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "sws-adequacy", name: "Slow-Wave Sleep Adequacy", description: "Deep sleep minutes vs age-adjusted targets for physical restoration", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "sleep-onset-var", name: "Sleep Onset Variability", description: "Night-to-night variation in sleep onset times", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "terminal-wakefulness", name: "Terminal Wakefulness Detection", description: "Detects patterns of early morning awakening (waking 2+ hours early)", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "sleep-pressure", name: "Sleep Pressure Accumulation", description: "Estimated adenosine-driven sleep pressure from wake duration", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "rem-deficit", name: "REM Sleep Deficit", description: "Cumulative REM sleep shortfall over 7 days vs 90-min target", category: "sleep", requiredMetrics: ["sleep"] },
+  { id: "light-sleep-excess", name: "Light Sleep Proportion", description: "Flags excessive light sleep (>60%) at expense of restorative stages", category: "sleep", requiredMetrics: ["sleep"] },
+
+  // ── Advanced Activity (96-107) ──
+  { id: "step-cadence", name: "Step Cadence Analysis", description: "Average steps per active minute — indicates walking vs running", category: "activity", requiredMetrics: ["steps", "active_minutes"] },
+  { id: "movement-distribution", name: "Daily Movement Distribution", description: "Even vs clustered activity pattern analysis (MVPA bouts)", category: "activity", requiredMetrics: ["steps"] },
+  { id: "exercise-adherence", name: "Exercise Adherence Rate", description: "Percentage of days meeting 10K step or 30-min activity goal", category: "activity", requiredMetrics: ["steps"] },
+  { id: "weekend-warrior", name: "Weekend Warrior Index", description: "Activity concentration on weekends vs evenly spread across week", category: "activity", requiredMetrics: ["steps"] },
+  { id: "intensity-mix", name: "Activity Intensity Mix", description: "Proportion of low, moderate, and vigorous activity", category: "activity", requiredMetrics: ["steps", "heart_rate"] },
+  { id: "step-asymmetry", name: "Step Count Anomaly Detection", description: "Detects unusually asymmetric daily step patterns (possible injury)", category: "anomaly", requiredMetrics: ["steps"] },
+  { id: "movement-streak", name: "Active Movement Streak", description: "Longest consecutive days above 7500 steps", category: "activity", requiredMetrics: ["steps"] },
+  { id: "hourly-activity-pattern", name: "Hourly Activity Heatmap", description: "Activity intensity distribution across hours of the day", category: "activity", requiredMetrics: ["steps"] },
+  { id: "calorie-deficit-surplus", name: "Daily Calorie Balance", description: "Estimated calorie surplus/deficit from burn vs 2000 kcal baseline", category: "metabolic", requiredMetrics: ["calories"] },
+  { id: "recovery-day-detection", name: "Active Recovery Days", description: "Identifies light activity days between hard training sessions", category: "recovery", requiredMetrics: ["steps", "workout"] },
+  { id: "distance-pr-check", name: "Distance Personal Record Check", description: "Checks if recent distances approach or exceed personal records", category: "activity", requiredMetrics: ["distance"] },
+  { id: "daily-energy-expenditure", name: "Total Daily Energy Expenditure", description: "7-day TDEE estimation from calorie burn data", category: "metabolic", requiredMetrics: ["calories"] },
+
+  // ── Advanced Body Composition (108-115) ──
+  { id: "body-composition-trend", name: "Body Composition Trend", description: "Combined weight + body fat trajectory analysis", category: "body", requiredMetrics: ["weight", "body_fat"] },
+  { id: "lean-mass-estimate", name: "Lean Mass Estimate", description: "Estimated lean body mass from weight and body fat percentage", category: "body", requiredMetrics: ["weight", "body_fat"] },
+  { id: "bmi-trend", name: "BMI Trend Analysis", description: "30-day BMI trajectory with rate of change", category: "body", requiredMetrics: ["bmi"] },
+  { id: "weight-goal-projection", name: "Weight Goal Projection", description: "Projects days to reach target weight at current weekly rate", category: "body", requiredMetrics: ["weight"] },
+  { id: "fluid-retention-pattern", name: "Fluid Retention Pattern", description: "Detects periodic weight spikes suggesting fluid retention cycles", category: "body", requiredMetrics: ["weight"] },
+  { id: "metabolic-rate-estimate", name: "Basal Metabolic Rate Estimate", description: "Estimated BMR from weight and activity level", category: "metabolic", requiredMetrics: ["weight", "calories"] },
+  { id: "body-fat-trend", name: "Body Fat Trend", description: "30-day body fat percentage trend with linear projection", category: "body", requiredMetrics: ["body_fat"] },
+  { id: "weight-plateau", name: "Weight Plateau Detection", description: "Detects weight loss/gain plateaus over 14+ days", category: "body", requiredMetrics: ["weight"] },
+
+  // ── Advanced Recovery & Stress (116-127) ──
+  { id: "recovery-time-needed", name: "Recovery Time Estimate", description: "Estimated recovery hours needed based on recent strain load", category: "recovery", requiredMetrics: ["strain_score", "recovery_score"] },
+  { id: "stress-recovery-ratio", name: "Stress-Recovery Ratio", description: "Balance between cumulative stress and recovery over 7 days", category: "recovery", requiredMetrics: ["stress", "recovery_score"] },
+  { id: "allostatic-load", name: "Allostatic Load Estimate", description: "Cumulative physiological stress burden from multiple biomarkers", category: "recovery", requiredMetrics: ["stress", "resting_heart_rate", "sleep"] },
+  { id: "burnout-risk", name: "Burnout Risk Indicator", description: "Multi-week stress accumulation + declining recovery pattern", category: "recovery", requiredMetrics: ["stress", "recovery_score"] },
+  { id: "recovery-velocity", name: "Recovery Velocity", description: "Speed of recovery score improvement after dips below 50%", category: "recovery", requiredMetrics: ["recovery_score"] },
+  { id: "stress-reactivity", name: "Stress Reactivity Index", description: "Magnitude of stress spikes relative to personal baseline", category: "recovery", requiredMetrics: ["stress"] },
+  { id: "weekend-recovery", name: "Weekend Recovery Pattern", description: "Compares weekend vs weekday recovery scores", category: "recovery", requiredMetrics: ["recovery_score"] },
+  { id: "stress-habituation", name: "Stress Habituation Trend", description: "Whether stress response is adapting (declining) over time", category: "recovery", requiredMetrics: ["stress"] },
+  { id: "composite-recovery", name: "Neural Recovery Index", description: "Composite recovery from HRV + sleep quality + stress level", category: "recovery", requiredMetrics: ["heart_rate_variability", "sleep", "stress"] },
+  { id: "readiness-prediction", name: "Readiness Prediction", description: "Predicts next-day readiness from current recovery + sleep + strain", category: "recovery", requiredMetrics: ["recovery_score", "sleep", "strain_score"] },
+  { id: "strain-accumulation", name: "Strain Accumulation Alert", description: "Warns when 7-day cumulative strain exceeds recovery capacity", category: "recovery", requiredMetrics: ["strain_score"] },
+  { id: "recovery-consistency", name: "Recovery Consistency Index", description: "Variability in daily recovery scores — low CV = stable recovery", category: "recovery", requiredMetrics: ["recovery_score"] },
+
+  // ── Advanced Respiratory & SpO2 (128-135) ──
+  { id: "sleep-breathing", name: "Sleep Breathing Quality", description: "Respiratory rate variability during sleep periods", category: "respiratory", requiredMetrics: ["respiratory_rate", "sleep"] },
+  { id: "respiratory-fitness", name: "Respiratory Fitness Index", description: "Respiratory rate improvement trend correlated with fitness gains", category: "respiratory", requiredMetrics: ["respiratory_rate", "workout"] },
+  { id: "dyspnea-risk", name: "Dyspnea Risk Score", description: "Risk estimation from elevated respiratory rate + low SpO2", category: "respiratory", requiredMetrics: ["respiratory_rate", "spo2"] },
+  { id: "nocturnal-desat", name: "Nocturnal Desaturation", description: "Detects SpO2 drops during sleep indicative of sleep-disordered breathing", category: "respiratory", requiredMetrics: ["spo2", "sleep"] },
+  { id: "breathing-efficiency", name: "Breathing Efficiency Ratio", description: "Respiratory rate to heart rate ratio during exercise", category: "respiratory", requiredMetrics: ["respiratory_rate", "heart_rate"] },
+  { id: "respiratory-reserve", name: "Respiratory Reserve", description: "Gap between resting and peak exercise respiratory rate", category: "respiratory", requiredMetrics: ["respiratory_rate"] },
+  { id: "spo2-variability", name: "SpO2 Variability", description: "Day-to-day SpO2 fluctuation — high variability may indicate issues", category: "respiratory", requiredMetrics: ["spo2"] },
+  { id: "ventilatory-threshold", name: "Ventilatory Threshold Proxy", description: "Estimated ventilatory threshold from respiratory rate during exercise", category: "respiratory", requiredMetrics: ["respiratory_rate", "heart_rate", "workout"] },
+
+  // ── Advanced Metabolic (136-143) ──
+  { id: "glucose-meal-response", name: "Post-Meal Glucose Response", description: "Detects glucose spikes suggesting large post-meal glycemic responses", category: "metabolic", requiredMetrics: ["blood_glucose"] },
+  { id: "fasting-glucose-trend", name: "Fasting Glucose Trend", description: "Trend of morning/fasting glucose readings over 14 days", category: "metabolic", requiredMetrics: ["blood_glucose"] },
+  { id: "dawn-phenomenon", name: "Dawn Phenomenon Detection", description: "Detects early morning glucose rise pattern (4-8 AM elevation)", category: "metabolic", requiredMetrics: ["blood_glucose"] },
+  { id: "glucose-exercise-response", name: "Post-Exercise Glucose", description: "Glucose changes in the hours following workouts", category: "metabolic", requiredMetrics: ["blood_glucose", "workout"] },
+  { id: "time-in-range", name: "Time in Glucose Range", description: "Percentage of glucose readings within 70-180 mg/dL target range", category: "metabolic", requiredMetrics: ["blood_glucose"] },
+  { id: "hypoglycemia-risk", name: "Hypoglycemia Risk", description: "Frequency and severity of low glucose readings (<70 mg/dL)", category: "metabolic", requiredMetrics: ["blood_glucose"] },
+  { id: "insulin-sensitivity-proxy", name: "Insulin Sensitivity Proxy", description: "Glucose variability as a proxy for insulin sensitivity", category: "metabolic", requiredMetrics: ["blood_glucose"] },
+  { id: "calorie-burn-efficiency", name: "Calorie Burn Efficiency", description: "Calories burned per kg of body weight during activity", category: "metabolic", requiredMetrics: ["calories", "weight"] },
+
+  // ── Advanced Workout Performance (144-155) ──
+  { id: "training-intensity-dist", name: "Training Intensity Distribution", description: "Polarized vs threshold vs pyramidal training analysis from HR zones", category: "workout", requiredMetrics: ["heart_rate", "workout"] },
+  { id: "aerobic-decoupling", name: "Aerobic Decoupling Rate", description: "Pace:HR ratio drift over long efforts — aerobic fitness indicator", category: "workout", requiredMetrics: ["heart_rate", "workout"] },
+  { id: "training-stress-score", name: "Training Stress Score", description: "Normalized per-session training stress from duration and intensity", category: "workout", requiredMetrics: ["workout"] },
+  { id: "chronic-training-load", name: "Chronic Training Load (CTL)", description: "42-day exponentially weighted average of daily training stress", category: "workout", requiredMetrics: ["workout"] },
+  { id: "acute-chronic-ratio", name: "Acute:Chronic Workload Ratio", description: "7-day vs 28-day load ratio — injury risk indicator (sweet spot: 0.8-1.3)", category: "workout", requiredMetrics: ["workout"] },
+  { id: "performance-efficiency", name: "Performance Efficiency Factor", description: "Normalized speed per unit of heart rate — running/cycling efficiency", category: "workout", requiredMetrics: ["heart_rate", "workout"] },
+  { id: "progressive-overload", name: "Progressive Overload Tracking", description: "Whether training stimulus is progressively increasing over 4 weeks", category: "workout", requiredMetrics: ["workout"] },
+  { id: "workout-completion", name: "Workout Completion Rate", description: "Ratio of actual to typical workout duration — consistency metric", category: "workout", requiredMetrics: ["workout"] },
+  { id: "sport-diversity", name: "Sport Diversity Index", description: "Variety of workout types — cross-training reduces injury risk", category: "workout", requiredMetrics: ["workout"] },
+  { id: "training-periodization", name: "Training Periodization Analysis", description: "Detects build/recovery weeks in macro training cycle", category: "workout", requiredMetrics: ["workout"] },
+  { id: "race-readiness", name: "Race Readiness Score", description: "Composite readiness from fitness + freshness + recovery for peak performance", category: "workout", requiredMetrics: ["workout", "recovery_score", "resting_heart_rate"] },
+  { id: "endurance-index", name: "Endurance Index", description: "Ratio of long (>45min) to short workouts — endurance capacity indicator", category: "workout", requiredMetrics: ["workout"] },
+]

@@ -29,6 +29,7 @@ import usersRoutes from "./users.js"
 import webhooksRoutes from "./webhooks.js"
 import analyticsRoutes from "./analytics.js"
 import notificationsRoutes from "./notifications.js"
+import readinessRoutes from "./readiness.js"
 
 /**
  * Registers all v1 API routes under the `/v1` prefix.
@@ -128,6 +129,9 @@ export async function registerV1Routes(app: FastifyInstance): Promise<void> {
 
       // Analytics (LLM context, enhanced correlations, enhanced anomalies)
       await v1.register(analyticsRoutes, { prefix: "/users" })
+
+      // Readiness & Training Load — /v1/users/:userId/readiness, /v1/users/:userId/training-load
+      await v1.register(readinessRoutes, { prefix: "/users" })
     },
     { prefix: "/v1" },
   )

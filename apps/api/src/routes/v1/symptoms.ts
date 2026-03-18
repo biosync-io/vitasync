@@ -23,9 +23,9 @@ const symptomsRoutes: FastifyPluginAsync = async (app) => {
       .parse(request.query)
 
     const logs = await symptomService.list(userId, {
-      from: query.from ? new Date(query.from) : undefined,
-      to: query.to ? new Date(query.to) : undefined,
-      symptom: query.symptom,
+      ...(query.from ? { from: new Date(query.from) } : {}),
+      ...(query.to ? { to: new Date(query.to) } : {}),
+      ...(query.symptom !== undefined ? { symptom: query.symptom } : {}),
       limit: query.limit,
     })
     return reply.send({ data: logs })
@@ -52,8 +52,12 @@ const symptomsRoutes: FastifyPluginAsync = async (app) => {
 
     const log = await symptomService.create({
       userId,
-      ...body,
-      occurredAt: body.occurredAt ? new Date(body.occurredAt) : new Date(),
+      symptom: body.symptomName,
+      severity: body.severity,
+      startedAt: body.occurredAt ? new Date(body.occurredAt) : new Date(),
+      ...(body.bodyLocation !== undefined && { bodyLocation: body.bodyLocation }),
+      ...(body.notes !== undefined && { notes: body.notes }),
+      ...(body.triggers !== undefined && { triggers: body.triggers }),
     })
     return reply.status(201).send(log)
   })

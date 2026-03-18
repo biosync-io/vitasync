@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
+import { defined } from "../../lib/strip-undefined.js"
 import { AnomalyDetectionService } from "../../services/anomaly-detection.service.js"
 import { UserService } from "../../services/user.service.js"
 
@@ -21,7 +22,7 @@ const anomaliesRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.query)
 
-    const anomalies = await anomalyService.list(userId, query)
+    const anomalies = await anomalyService.list(userId, defined(query))
     return reply.send({ data: anomalies })
   })
 

@@ -66,6 +66,7 @@ export async function processNotificationJob(job: Job<NotificationJobData>): Pro
   }
 
   const channelConfigs: ChannelConfig[] = channelRows.map((ch) => ({
+    id: ch.id,
     channelType: ch.channelType as ChannelConfig["channelType"],
     config: ch.config as Record<string, unknown>,
     enabled: ch.enabled,

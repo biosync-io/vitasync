@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
-import { InsightsService } from "../../services/insights.service.js"
+import { InsightsService } from "../../services/insights/index.js"
 import { UserService } from "../../services/user.service.js"
 
 const insightsService = new InsightsService()

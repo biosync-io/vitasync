@@ -33,8 +33,8 @@ const healthScoresRoutes: FastifyPluginAsync = async (app) => {
       .parse(request.query)
 
     const scores = await healthScoreService.getHistory(userId, {
-      from: query.from ? new Date(query.from) : undefined,
-      to: query.to ? new Date(query.to) : undefined,
+      ...(query.from ? { from: new Date(query.from) } : {}),
+      ...(query.to ? { to: new Date(query.to) } : {}),
       limit: query.limit,
     })
     return reply.send({ data: scores })

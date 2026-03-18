@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
+import { defined } from "../../lib/strip-undefined.js"
 import { BiometricBaselineService } from "../../services/biometric-baseline.service.js"
 import { UserService } from "../../services/user.service.js"
 
@@ -14,7 +15,7 @@ const baselinesRoutes: FastifyPluginAsync = async (app) => {
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
 
     const query = z.object({ metricType: z.string().optional() }).parse(request.query)
-    const baselines = await baselineService.getBaselines(userId, query)
+    const baselines = await baselineService.getBaselines(userId, defined(query))
     return reply.send({ data: baselines })
   })
 

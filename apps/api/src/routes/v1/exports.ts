@@ -46,9 +46,9 @@ const exportsRoutes: FastifyPluginAsync = async (app) => {
       .parse(request.body)
 
     const exp = await exportService.requestExport(userId, body.format, {
-      from: body.from ? new Date(body.from) : undefined,
-      to: body.to ? new Date(body.to) : undefined,
-      metricTypes: body.metricTypes,
+      ...(body.from ? { from: new Date(body.from) } : {}),
+      ...(body.to ? { to: new Date(body.to) } : {}),
+      ...(body.metricTypes ? { metricTypes: body.metricTypes } : {}),
     })
     return reply.status(201).send(exp)
   })
