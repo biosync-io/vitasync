@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { type NutritionLogData, type NutritionSummary, type NutritionWeeklyAvg, nutritionApi, usersApi } from "../../../lib/api"
 
 const MEAL_ICONS: Record<string, string> = { breakfast: "🌅", lunch: "☀️", dinner: "🌙", snack: "🍿", other: "🍽️" }
@@ -21,7 +22,7 @@ function MacroBar({ label, value, unit, color }: { label: string; value: number 
 }
 
 export default function NutritionPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({ mealType: "lunch", name: "", calories: "", proteinG: "", carbsG: "", fatG: "", waterMl: "" })
   const queryClient = useQueryClient()

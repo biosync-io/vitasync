@@ -87,6 +87,30 @@ const DARK_LABELS: Record<DarkModePreference, string> = {
 
 const PREF_CYCLE: DarkModePreference[] = ["system", "light", "dark"]
 
+function Logo({ collapsed }: { collapsed: boolean }) {
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 shrink-0">
+        <circle cx="20" cy="20" r="17" className="fill-blue-100 dark:fill-blue-950" />
+        <circle cx="20" cy="20" r="17" className="stroke-blue-600 dark:stroke-blue-500" strokeWidth="1.5" fill="none" />
+        <polyline
+          points="5,20 9,20 11,15.5 13.5,24.5 17,8 20.5,24.5 22.5,15.5 25,20 35,20"
+          className="stroke-blue-700 dark:stroke-blue-400"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+        />
+      </svg>
+      {!collapsed && (
+        <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400 truncate">
+          VitaSync
+        </span>
+      )}
+    </div>
+  )
+}
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
@@ -134,16 +158,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <>
       {/* Logo */}
       <div className="flex h-14 items-center justify-between border-b border-gray-200 dark:border-gray-800 px-4">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xl font-bold text-indigo-600 truncate">
-            {!isMobile && !sidebarOpen ? "V" : "VitaSync"}
+        <Logo collapsed={!isMobile && !sidebarOpen} />
+        {(isMobile || sidebarOpen) && (
+          <span className="shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-900/40 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300">
+            API
           </span>
-          {(isMobile || sidebarOpen) && (
-            <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
-              API
-            </span>
-          )}
-        </div>
+        )}
         {/* Desktop collapse toggle */}
         {!isMobile && (
           <button
@@ -286,8 +306,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </svg>
         </button>
         <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-indigo-600">VitaSync</span>
-          <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
+          <Logo collapsed={false} />
+          <span className="rounded-full bg-indigo-100 dark:bg-indigo-900/40 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300">
             API
           </span>
         </div>

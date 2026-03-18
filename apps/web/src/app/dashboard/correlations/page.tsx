@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { correlationsApi, usersApi, type CorrelationData } from "../../../lib/api"
 
 function strengthColor(strength: string) {
@@ -32,7 +32,7 @@ function CorrelationBar({ coeff }: { coeff: number }) {
 }
 
 export default function CorrelationsPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const queryClient = useQueryClient()
 
   const { data: usersResult } = useQuery({

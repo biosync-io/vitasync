@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { symptomsApi, usersApi, type SymptomLogData, type SymptomPatterns } from "../../../lib/api"
 
 const SEVERITY_LABELS: Record<number, { label: string; color: string }> = {
@@ -13,7 +14,7 @@ const SEVERITY_LABELS: Record<number, { label: string; color: string }> = {
 }
 
 export default function SymptomsPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({ symptom: "", severity: "2", bodyLocation: "", triggers: "", notes: "" })
   const queryClient = useQueryClient()

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import {
   type ChannelType,
   type NotificationCategory,
@@ -99,7 +100,7 @@ const PAGE_SIZE = 10
 
 export default function NotificationsPage() {
   const queryClient = useQueryClient()
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [activeTab, setActiveTab] = useState<"channels" | "rules">("channels")
 
   // ── User selector ──

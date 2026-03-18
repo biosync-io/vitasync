@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { exportsApi, usersApi, type ExportData } from "../../../lib/api"
 
 const STATUS_STYLES: Record<string, { style: string; icon: string }> = {
@@ -20,7 +21,7 @@ const FORMAT_INFO: Record<string, { label: string; icon: string; description: st
 }
 
 export default function ExportsPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({ format: "json", dateRange: "all" })
   const queryClient = useQueryClient()

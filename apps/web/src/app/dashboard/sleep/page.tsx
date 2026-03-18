@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { sleepAnalysisApi, usersApi, type SleepDebtData, type SleepQualityData } from "../../../lib/api"
 
 function ScoreRing({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
@@ -27,7 +28,7 @@ function formatHours(h: number) {
 }
 
 export default function SleepPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [debtDays, setDebtDays] = useState(14)
   const [qualityDays, setQualityDays] = useState(30)
 

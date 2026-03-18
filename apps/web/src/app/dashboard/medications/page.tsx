@@ -2,10 +2,11 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { medicationsApi, usersApi, type MedicationData, type MedicationStats } from "../../../lib/api"
 
 export default function MedicationsPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [showCreate, setShowCreate] = useState(false)
   const [selectedMedId, setSelectedMedId] = useState<string | null>(null)
   const [form, setForm] = useState({ name: "", dosage: "", frequency: "daily", startDate: "" })

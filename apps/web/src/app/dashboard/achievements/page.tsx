@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { type AchievementData, type AchievementDefData, achievementsApi, usersApi } from "../../../lib/api"
 
 const TIER_STYLES: Record<string, string> = {
@@ -13,7 +14,7 @@ const TIER_STYLES: Record<string, string> = {
 }
 
 export default function AchievementsPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [tab, setTab] = useState<"unlocked" | "catalog">("unlocked")
   const queryClient = useQueryClient()
 

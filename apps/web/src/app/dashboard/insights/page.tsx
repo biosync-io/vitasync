@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useState, useMemo } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import {
   type Insight,
   type InsightAlgorithm,
@@ -162,7 +163,7 @@ function HealthBar({ label, value, max = 100 }: { label: string; value: number; 
 }
 
 export default function InsightsPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [categoryFilter, setCategoryFilter] = useState<InsightCategory | "">("")
   const [severityFilter, setSeverityFilter] = useState<InsightSeverity | "">("")
   const [dateRange, setDateRange] = useState<"7d" | "14d" | "30d" | "90d">("30d")

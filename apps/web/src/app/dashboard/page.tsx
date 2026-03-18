@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useState } from "react"
+import { useSelectedUser } from "../../lib/user-selection-context"
 import {
   apiKeysApi,
   healthScoresApi,
@@ -72,7 +72,7 @@ function MiniBar({ value, max, color }: { value: number; max: number; color: str
 }
 
 export default function DashboardPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
 
   const { data: providers = [] } = useQuery({ queryKey: ["providers"], queryFn: providersApi.list })
   const { data: usersResult } = useQuery({ queryKey: ["users", 0], queryFn: () => usersApi.list({ limit: 200 }) })
