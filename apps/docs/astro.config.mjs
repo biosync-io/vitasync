@@ -3,14 +3,15 @@ import { defineConfig } from "astro/config"
 
 export default defineConfig({
   site: "https://biosync-io.github.io",
+  base: "/vitasync",
   integrations: [
     starlight({
       title: "VitaSync",
       description:
         "Self-hosted wearable health data aggregation platform — one API for Fitbit, Garmin, Whoop, Strava and more.",
       head: [
-        { tag: "script", attrs: { src: "/particles.js", defer: true } },
-        { tag: "script", attrs: { src: "/scroll-reveal.js", defer: true } },
+        { tag: "script", attrs: { src: "/vitasync/particles.js", defer: true } },
+        { tag: "script", attrs: { src: "/vitasync/scroll-reveal.js", defer: true } },
       ],
       logo: {
         dark: "./src/assets/logo-dark.svg",
