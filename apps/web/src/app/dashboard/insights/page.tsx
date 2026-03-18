@@ -176,11 +176,11 @@ export default function InsightsPage() {
 
   const users = usersResult?.data ?? []
 
-  // Determine selected user's sex to hide sex-specific categories
+  // Determine selected user's gender to hide gender-specific categories
   const selectedUser = users.find((u) => u.id === selectedUserId)
-  const SEX_GATED_CATEGORIES: InsightCategory[] = ["womens_health"]
-  const visibleCategories = selectedUser?.sex === "male"
-    ? ALL_CATEGORIES.filter((c) => !SEX_GATED_CATEGORIES.includes(c))
+  const GENDER_GATED_CATEGORIES: InsightCategory[] = ["womens_health"]
+  const visibleCategories = selectedUser?.gender === "male"
+    ? ALL_CATEGORIES.filter((c) => !GENDER_GATED_CATEGORIES.includes(c))
     : ALL_CATEGORIES
 
   const rangeDays = { "7d": 7, "14d": 14, "30d": 30, "90d": 90 }[dateRange]
