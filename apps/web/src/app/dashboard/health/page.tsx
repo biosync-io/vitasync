@@ -67,7 +67,7 @@ export default function HealthDataPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Health Data</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">Health Data</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Browse, filter, and explore synced health metrics for any user.
         </p>
@@ -147,7 +147,7 @@ export default function HealthDataPage() {
 
       {/* Summary cards */}
       {selectedUserId && summary.length > 0 && (
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 stagger-grid">
           {summary.map((s) => (
             <button
               type="button"

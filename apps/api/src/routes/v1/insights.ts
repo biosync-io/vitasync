@@ -25,7 +25,12 @@ const insightsRoutes: FastifyPluginAsync = async (app) => {
       ...(query.to !== undefined && { to: new Date(query.to) }),
     })
 
-    return reply.send({ data: insights, total: insights.length })
+    // Filter out sex-specific categories based on user's biological sex
+    const filtered = owner.sex === "male"
+      ? insights.filter((i) => i.category !== "womens_health")
+      : insights
+
+    return reply.send({ data: filtered, total: filtered.length })
   })
 
   // GET /v1/insights/algorithms — list all available algorithms

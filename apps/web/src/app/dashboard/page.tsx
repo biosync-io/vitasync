@@ -37,7 +37,7 @@ function ScoreRing({ value, max = 100, size = 120, label, color }: { value: numb
 
 function GlassCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-5 shadow-glass animate-fade-in ${className}`}>
+    <div className={`rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-5 shadow-glass card-hover ${className}`}>
       {children}
     </div>
   )
@@ -126,7 +126,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">
             Health Command Center
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -149,7 +149,7 @@ export default function DashboardPage() {
 
       {/* Score Rings Row (shown when user selected) */}
       {selectedUserId && (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 animate-slide-up">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 stagger-grid">
           <GlassCard className="flex items-center justify-center relative">
             <ScoreRing
               value={healthScore?.overallScore ?? 0}
@@ -183,7 +183,7 @@ export default function DashboardPage() {
 
       {/* Severity Overview */}
       {selectedUserId && insights.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 animate-slide-up">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 stagger-grid">
           {(["critical", "warning", "info", "positive"] as const).map((sev) => (
             <SeverityBadge key={sev} severity={sev} count={sevCounts[sev]} />
           ))}
@@ -192,7 +192,7 @@ export default function DashboardPage() {
 
       {/* Two-column layout for insights + category breakdown */}
       {selectedUserId && insights.length > 0 && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 animate-slide-up">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 stagger-grid">
           {/* Top Insights */}
           <GlassCard className="lg:col-span-2">
             <div className="flex items-center justify-between mb-4">

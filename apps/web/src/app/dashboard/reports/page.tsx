@@ -218,7 +218,7 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">
             Health Intelligence Reports
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -310,9 +310,9 @@ export default function ReportsPage() {
 
       {/* ═══════════ LIVE DASHBOARD TAB ═══════════ */}
       {selectedUserId && activeTab === "live" && (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in-up">
           {/* Score rings row */}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-5 stagger-grid">
             <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 flex flex-col items-center">
               <ScoreRing value={healthScore?.overallScore ?? 0} label="Health" color="#6366f1" />
               {healthScore?.grade && <span className="mt-2 text-xs font-bold text-indigo-600 dark:text-indigo-400">{healthScore.grade}</span>}
@@ -396,7 +396,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Radar + Category breakdown + Top Insights */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 stagger-grid">
             {/* Radar */}
             <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-5">
               <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-3 uppercase tracking-wide">Health Dimensions</h3>

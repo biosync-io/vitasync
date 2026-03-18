@@ -57,7 +57,7 @@ export default function AnomaliesPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Anomaly Detection</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">Anomaly Detection</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">AI-powered detection of unusual patterns in your health metrics.</p>
         </div>
         {selectedUserId && (
@@ -94,7 +94,7 @@ export default function AnomaliesPage() {
 
       {/* Summary cards */}
       {selectedUserId && anomalies.length > 0 && (
-        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <div className="mb-6 grid gap-4 sm:grid-cols-3 stagger-grid">
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400">Total Anomalies</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{anomalies.length}</p>

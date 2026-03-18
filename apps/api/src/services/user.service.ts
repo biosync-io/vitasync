@@ -12,6 +12,7 @@ export class UserService {
     externalId: string
     email?: string
     displayName?: string
+    sex?: string
     metadata?: Record<string, unknown>
   }): Promise<{ user: User; created: boolean }> {
     const existing = await this.db
@@ -31,6 +32,7 @@ export class UserService {
         externalId: params.externalId,
         email: params.email ?? null,
         displayName: params.displayName ?? null,
+        sex: params.sex ?? null,
         metadata: params.metadata ?? {},
       })
       .returning()
@@ -71,13 +73,14 @@ export class UserService {
   async update(
     id: string,
     workspaceId: string,
-    patch: { email?: string; displayName?: string; metadata?: Record<string, unknown> },
+    patch: { email?: string; displayName?: string; sex?: string | null; metadata?: Record<string, unknown> },
   ): Promise<User | null> {
     const [updated] = await this.db
       .update(users)
       .set({
         ...(patch.email !== undefined && { email: patch.email }),
         ...(patch.displayName !== undefined && { displayName: patch.displayName }),
+        ...(patch.sex !== undefined && { sex: patch.sex }),
         ...(patch.metadata !== undefined && { metadata: patch.metadata }),
         updatedAt: new Date(),
       })
