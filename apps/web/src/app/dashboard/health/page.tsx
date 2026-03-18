@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { type HealthMetric, type HealthSummary, healthApi, usersApi } from "../../../lib/api"
 import { Pagination } from "../../../lib/Pagination"
 
@@ -21,7 +22,7 @@ const METRIC_LABELS: Record<string, string> = {
 const PAGE_SIZE = 100
 
 export default function HealthDataPage() {
-  const [selectedUserId, setSelectedUserId] = useState<string>("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [metricType, setMetricType] = useState<string>("")
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")

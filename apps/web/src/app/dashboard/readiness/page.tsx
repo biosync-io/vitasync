@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import {
   Area,
   AreaChart,
@@ -125,7 +125,7 @@ function SignalBar({ label, value }: { label: string; value: number | null }) {
 // ── Main Page ───────────────────────────────────────────────────
 
 export default function ReadinessPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
 
   const { data: usersResult } = useQuery({
     queryKey: ["users", 0],

@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { type HealthScoreData, healthScoresApi, usersApi } from "../../../lib/api"
 
 const GRADE_STYLES: Record<string, string> = {
@@ -36,7 +36,7 @@ function ScoreBar({ label, value }: { label: string; value: number | null }) {
 }
 
 export default function HealthScoresPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const queryClient = useQueryClient()
 
   const { data: usersResult } = useQuery({

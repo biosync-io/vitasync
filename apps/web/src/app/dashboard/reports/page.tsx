@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState, useMemo } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import {
   reportsApi,
   usersApi,
@@ -102,7 +103,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 }
 
 export default function ReportsPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [showGenerate, setShowGenerate] = useState(false)
   const [expandedReport, setExpandedReport] = useState<string | null>(null)
   const [form, setForm] = useState({ reportType: "weekly", periodStart: "", periodEnd: "" })

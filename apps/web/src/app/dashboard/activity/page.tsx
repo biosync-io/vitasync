@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { useQuery } from "@tanstack/react-query"
 import {
   Area,
@@ -95,8 +96,7 @@ function groupByDate<T>(
 // ── main page ──────────────────────────────────────────────────────────────
 
 export default function ActivityPage() {
-  const autoSelectDone = useRef(false)
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [eventType, setEventType] = useState("")
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
@@ -110,14 +110,6 @@ export default function ActivityPage() {
   })
 
   const users = usersResult?.data ?? []
-
-  useEffect(() => {
-    const first = users[0]
-    if (first && !autoSelectDone.current) {
-      autoSelectDone.current = true
-      setSelectedUserId(first.id)
-    }
-  }, [users])
 
   const { data: tableResult, isLoading } = useQuery({
     queryKey: ["activity-table", selectedUserId, eventType, from, to, cursor],

@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { trainingPlansApi, usersApi, type TrainingPlanData } from "../../../lib/api"
 
 const STATUS_STYLES: Record<string, string> = {
@@ -19,7 +20,7 @@ const LEVEL_LABELS: Record<string, string> = {
 }
 
 export default function TrainingPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [showGenerate, setShowGenerate] = useState(false)
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null)
   const [form, setForm] = useState({ goal: "fitness", fitnessLevel: "intermediate", durationWeeks: "8" })

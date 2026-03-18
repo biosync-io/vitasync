@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { anomaliesApi, usersApi, type AnomalyData } from "../../../lib/api"
 
 const SEVERITY_STYLES: Record<string, string> = {
@@ -18,7 +19,7 @@ const STATUS_STYLES: Record<string, string> = {
 }
 
 export default function AnomaliesPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [severityFilter, setSeverityFilter] = useState("")
   const queryClient = useQueryClient()
 

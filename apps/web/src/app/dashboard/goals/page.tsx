@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { type GoalData, goalsApi, usersApi } from "../../../lib/api"
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
@@ -12,7 +13,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
 }
 
 export default function GoalsPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [statusFilter, setStatusFilter] = useState<string>("")
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({ name: "", metric: "steps", targetValue: "", unit: "steps", goalType: "daily" })

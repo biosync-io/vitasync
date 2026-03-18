@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import { type MoodLogData, type MoodStats, moodApi, usersApi } from "../../../lib/api"
 
 const MOOD_EMOJI: Record<number, string> = { 1: "😢", 2: "😟", 3: "😐", 4: "🙂", 5: "😄" }
@@ -24,7 +25,7 @@ function MoodBar({ label, value, max }: { label: string; value: number | null; m
 }
 
 export default function MoodPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({ mood: "3", energy: "3", stress: "3", notes: "", tags: "" })
   const queryClient = useQueryClient()

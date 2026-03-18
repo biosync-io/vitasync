@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 import {
   type ChannelType,
   type NotificationLog,
@@ -51,7 +52,7 @@ const PAGE_SIZE = 20
 // ── Main Page ──────────────────────────────────────────────────────
 
 export default function NotificationLogsPage() {
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [statusFilter, setStatusFilter] = useState<string>("")
   const [channelFilter, setChannelFilter] = useState<string>("")
   const [page, setPage] = useState(1)
