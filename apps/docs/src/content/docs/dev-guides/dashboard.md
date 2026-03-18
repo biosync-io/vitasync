@@ -1,11 +1,11 @@
 ---
 title: Web Dashboard
-description: Using the VitaSync web dashboard — Sync Jobs, theme picker, and auto-sync settings.
+description: Using the VitaSync web dashboard — Sync Jobs, notifications, theme picker, and settings.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-The VitaSync web dashboard (`apps/web`) is a Next.js 15 App Router application available at **http://localhost:3000** (or your configured domain). It provides a management UI for users, provider connections, sync jobs, settings, and more.
+The VitaSync web dashboard (`apps/web`) is a Next.js 15 App Router application available at **http://localhost:3000** (or your configured domain). It provides a management UI for users, provider connections, sync jobs, notifications, settings, and more.
 
 ## Navigation
 
@@ -14,6 +14,8 @@ The VitaSync web dashboard (`apps/web`) is a Next.js 15 App Router application a
 | Users | `/dashboard/users` | Browse workspace users and their provider connections |
 | Sync Jobs | `/dashboard/sync-jobs` | Live view of background sync job queue |
 | Webhooks | `/dashboard/webhooks` | Manage outbound webhook endpoints |
+| Notifications | `/dashboard/notifications` | Configure notification channels and routing rules |
+| Notification Logs | `/dashboard/notification-logs` | View delivery history and debug failed notifications |
 | Settings | `/dashboard/settings` | API keys, appearance, and preferences |
 
 ## Sync Jobs
@@ -92,3 +94,39 @@ Create and manage API keys for programmatic access. Keys are shown in full **onc
 
 - **Accent colour** — pick from five themes; saved to `localStorage`.
 - **Auto-sync on connect** — enable or disable automatic sync when a new provider connection is detected.
+
+## Notification Settings
+
+The **Notification Settings** page (`/dashboard/notifications`) lets you manage notification channels and define routing rules — all stored in the database per user, no environment variables needed.
+
+### Channels Tab
+
+Manage delivery channels (Discord, Slack, Email, ntfy, Webhook, etc.):
+- **Add Channel** — select a channel type, enter a name, and provide the channel-specific configuration (e.g. webhook URL, SMTP settings).
+- **Test** — send a test message to verify the channel works before saving routing rules.
+- **Enable / Disable** — toggle channels on or off without deleting them.
+- **Delete** — remove a channel permanently.
+
+### Routing Rules Tab
+
+Define which notifications go to which channels:
+- **Add Rule** — select a channel, then choose matching criteria: **category** (e.g. `sync`, `anomaly`, `achievement`), **severity** (e.g. `critical`, `warning`, `info`), or both.
+- Rules are evaluated for every notification — if a notification matches a rule's criteria, it is delivered to that rule's channel.
+- Priority ordering lets you control which rule takes precedence when multiple rules match.
+
+<Aside type="tip">
+  See the [Notification System guide](/vitasync/dev-guides/notifications/) for channel configuration examples and the full API reference.
+</Aside>
+
+## Notification Logs
+
+The **Notification Logs** page (`/dashboard/notification-logs`) provides a searchable, filterable activity log of every notification the system has attempted to deliver.
+
+Each log entry shows:
+- **Status** — `delivered`, `failed`, or `pending`
+- **Channel** — which channel was used
+- **Category & Severity** — the notification's classification
+- **Timestamp** — when the delivery was attempted
+- **Error** — if the delivery failed, the error message is shown
+
+Use the filters at the top to narrow by status, channel, or date range. Failed deliveries include the error message to help debug configuration issues.
