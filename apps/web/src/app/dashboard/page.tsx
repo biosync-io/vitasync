@@ -159,21 +159,21 @@ export default function DashboardPage() {
           </GlassCard>
           <GlassCard className="flex items-center justify-center relative">
             <ScoreRing
-              value={readiness?.readinessScore ?? 0}
+              value={readiness?.score ?? 0}
               label="Readiness"
               color="#10b981"
             />
           </GlassCard>
           <GlassCard className="flex items-center justify-center relative">
             <ScoreRing
-              value={trainingLoad?.strain ?? 0}
+              value={trainingLoad?.fatigue ?? 0}
               label="Strain"
               color="#f59e0b"
             />
           </GlassCard>
           <GlassCard className="flex items-center justify-center relative">
             <ScoreRing
-              value={readiness?.recoveryScore ?? 0}
+              value={healthScore?.recoveryScore ?? 0}
               label="Recovery"
               color="#8b5cf6"
             />
