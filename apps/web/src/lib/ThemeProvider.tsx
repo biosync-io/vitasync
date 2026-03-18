@@ -3,11 +3,11 @@
 import { useEffect } from "react"
 
 export const ACCENT_THEMES = [
+  { id: "rose",   label: "Coral",  hex: "#ef4444" },
   { id: "indigo", label: "Indigo", hex: "#4f46e5" },
   { id: "blue",   label: "Blue",   hex: "#2563eb" },
   { id: "green",  label: "Green",  hex: "#16a34a" },
   { id: "purple", label: "Purple", hex: "#9333ea" },
-  { id: "rose",   label: "Rose",   hex: "#e11d48" },
 ] as const
 
 export type AccentTheme = (typeof ACCENT_THEMES)[number]["id"]
@@ -19,8 +19,8 @@ export const DARK_MODE_KEY = "vitasync_dark_mode"
 export type DarkModePreference = "light" | "dark" | "system"
 
 export function getStoredTheme(): AccentTheme {
-  if (typeof window === "undefined") return "indigo"
-  return (localStorage.getItem(THEME_KEY) as AccentTheme) ?? "indigo"
+  if (typeof window === "undefined") return "rose"
+  return (localStorage.getItem(THEME_KEY) as AccentTheme) ?? "rose"
 }
 
 export function applyTheme(theme: AccentTheme) {
