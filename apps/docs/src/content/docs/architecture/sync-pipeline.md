@@ -30,7 +30,9 @@ Worker picks up job
     ├─ 6. Consume generator in batches of 500
     │       └─ INSERT INTO health_metrics … ON CONFLICT DO NOTHING
     ├─ 7. Update connection.lastSyncedAt
-    └─ 8. Enqueue webhook delivery jobs for registered endpoints
+    ├─ 8. Enqueue webhook delivery jobs for registered endpoints
+    ├─ 9. Enqueue analytics job (correlations + health score update)
+    └─ 10. Run anomaly detection → enqueue notification jobs if thresholds met
 ```
 
 ## Sync Window
@@ -74,3 +76,46 @@ After a sync completes, the worker enqueues one delivery job per registered webh
 <Aside type="tip">
 Delivery history is available via `GET /v1/webhooks/:id/deliveries`.
 </Aside>
+
+## Analytics Pipeline
+
+After a sync completes, the worker enqueues an analytics job on the `analytics` queue (concurrency 3):
+
+1. **Correlation update** — Recomputes pairwise metric correlations over the last 90 days
+2. **Health score update** — Recalculates composite scores (overall, sleep, activity, cardio, recovery)
+3. **Anomaly detection** — Checks the most recent data points against statistical and clinical thresholds
+
+If anomalies are detected, the worker automatically enqueues notification jobs.
+
+## Notification Delivery
+
+The `notifications` queue (concurrency 8) dispatches alerts through user-configured channels:
+
+```
+Notification job arrives
+    │
+    ▼
+Notification Processor
+    ├─ 1. Load user's notification rules from DB
+    ├─ 2. Filter rules by category + severity match
+    ├─ 3. Resolve target notification_channels from matching rules
+    ├─ 4. For each channel:
+    │       ├─ Look up channel type → resolve from ChannelRegistry
+    │       ├─ Call channel.send(payload, config)
+    │       └─ Log result to notification_logs (success or failure)
+    └─ 5. Return aggregated delivery results
+```
+
+Supported channels: Discord, Slack, Teams, Email, Web Push, ntfy, Webhook.
+
+See the [Notification System guide](/dev-guides/notifications) for configuration details.
+
+## BullMQ Queue Summary
+
+| Queue | Concurrency | Purpose |
+|-------|-------------|---------|
+| `sync` | 5 | Provider data sync |
+| `webhooks` | 10 | HMAC-signed webhook delivery |
+| `analytics` | 3 | Correlation + health score computation |
+| `reports` | 2 | Scheduled health reports |
+| `notifications` | 8 | Multi-channel notification dispatch |

@@ -21,6 +21,12 @@ workspaces
           |         +-- events (via userId + providerId)
           |
           +-- personal_records (one per metricType+category per user)
+          |
+          +-- notification_channels (many per user)
+          |         |
+          |         +-- notification_logs (delivery audit trail)
+          |
+          +-- notification_rules (route categories → channels)
 
 workspaces
     |
@@ -205,6 +211,61 @@ Tracks the state of each background sync execution.
 | `startedAt` | timestamptz | |
 | `completedAt` | timestamptz | |
 | `createdAt` | timestamptz | |
+
+### `notification_channels`
+
+Stores user-configured notification channel instances. Each row represents a specific channel (e.g. "Work Slack", "Personal Discord").
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | Primary key |
+| `userId` | UUID | FK → `users.id` (cascade delete) |
+| `channelType` | varchar(30) | `discord`, `slack`, `teams`, `email`, `push`, `ntfy`, `webhook` |
+| `label` | varchar(100) | Human-readable name |
+| `config` | jsonb | Channel-specific settings (webhook URL, SMTP config, etc.) |
+| `enabled` | boolean | Whether this channel is active |
+| `createdAt` | timestamptz | |
+| `updatedAt` | timestamptz | |
+
+Indexed on `(userId)` and `(userId, channelType)`.
+
+### `notification_rules`
+
+Determines which events trigger which channels. A rule links event categories and minimum severity to a set of notification channels.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | Primary key |
+| `userId` | UUID | FK → `users.id` (cascade delete) |
+| `name` | varchar(100) | Human-readable rule name |
+| `categories` | jsonb | Array of categories: `anomaly`, `goal`, `achievement`, `sync`, `report`, `system`, `insight` |
+| `minSeverity` | varchar(20) | Minimum severity to match: `info`, `warning`, `critical` |
+| `channelIds` | jsonb | Array of `notification_channels.id` to deliver to |
+| `enabled` | boolean | Whether the rule is active |
+| `createdAt` | timestamptz | |
+| `updatedAt` | timestamptz | |
+
+Indexed on `(userId)`.
+
+### `notification_logs`
+
+Delivery audit log for every notification dispatch attempt.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | Primary key |
+| `userId` | UUID | FK → `users.id` (cascade delete) |
+| `channelId` | UUID | FK → `notification_channels.id` (cascade delete) |
+| `channelType` | varchar(30) | Denormalized for fast querying |
+| `title` | varchar(255) | Notification title |
+| `payload` | jsonb | Full payload sent |
+| `status` | varchar(20) | `pending`, `delivered`, `failed` |
+| `attempts` | integer | Number of delivery attempts |
+| `error` | varchar(2000) | Error message if failed |
+| `deliveredAt` | timestamptz | Null until successful |
+| `createdAt` | timestamptz | |
+
+Indexed on `(userId)`, `(channelId)`, and `(status)`.
 
 ---
 
