@@ -479,8 +479,8 @@ export default function ReportsPage() {
             </div>
           )}
           {reports.map((report) => {
-            const meta = REPORT_TYPE_META[report.reportType] ?? REPORT_TYPE_META.custom
-            const statusStyle = STATUS_STYLES[report.status] ?? STATUS_STYLES.ready
+            const meta = REPORT_TYPE_META[report.reportType] ?? { icon: "⚙️", gradient: "from-gray-500 to-gray-600" }
+            const statusStyle = STATUS_STYLES[report.status] ?? { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-700 dark:text-gray-300", icon: "⏳" }
             const isExpanded = expandedReport === report.id
 
             return (
