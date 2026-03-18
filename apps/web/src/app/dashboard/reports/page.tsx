@@ -34,8 +34,8 @@ export default function ReportsPage() {
     mutationFn: () =>
       reportsApi.generate(selectedUserId, {
         reportType: form.reportType,
-        periodStart: form.periodStart || undefined,
-        periodEnd: form.periodEnd || undefined,
+        ...(form.periodStart ? { periodStart: form.periodStart } : {}),
+        ...(form.periodEnd ? { periodEnd: form.periodEnd } : {}),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reports", selectedUserId] })

@@ -54,7 +54,7 @@ export default function MoodPage() {
         mood: Number(form.mood),
         energy: Number(form.energy),
         stress: Number(form.stress),
-        notes: form.notes || undefined,
+        ...(form.notes ? { notes: form.notes } : {}),
         tags: form.tags ? form.tags.split(",").map((t) => t.trim()) : [],
       }),
     onSuccess: () => {
@@ -147,7 +147,7 @@ export default function MoodPage() {
             {stats.topFactors.length > 0 && (
               <div className="mt-2">
                 <p className="text-xs text-gray-400">Top factor</p>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{stats.topFactors[0].factor}</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{stats.topFactors[0]?.factor}</p>
               </div>
             )}
           </div>

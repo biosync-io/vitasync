@@ -26,7 +26,7 @@ export default function GoalsPage() {
 
   const { data: goalsResult, isLoading } = useQuery({
     queryKey: ["goals", selectedUserId, statusFilter],
-    queryFn: () => goalsApi.list(selectedUserId, { status: statusFilter || undefined }),
+    queryFn: () => goalsApi.list(selectedUserId, statusFilter ? { status: statusFilter } : {}),
     enabled: !!selectedUserId,
   })
   const goals = goalsResult?.data ?? []
@@ -112,7 +112,7 @@ export default function GoalsPage() {
           {goals.length === 0 && <p className="col-span-full text-center text-sm text-gray-500 dark:text-gray-400 py-8">No goals found.</p>}
           {goals.map((g) => {
             const pct = g.targetValue > 0 ? Math.min(100, Math.round(((g.currentValue ?? 0) / g.targetValue) * 100)) : 0
-            const st = STATUS_STYLES[g.status] ?? STATUS_STYLES.active
+            const st = STATUS_STYLES[g.status] ?? { bg: "bg-blue-100 dark:bg-blue-900/40", text: "text-blue-700 dark:text-blue-400" }
             return (
               <div key={g.id} className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
                 <div className="flex items-start justify-between mb-3">

@@ -142,7 +142,7 @@ export default function ExportsPage() {
                 <tbody>
                   {exports.map((exp) => {
                     const fmtInfo = FORMAT_INFO[exp.format] ?? { label: exp.format.toUpperCase(), icon: "📦" }
-                    const statusInfo = STATUS_STYLES[exp.status] ?? STATUS_STYLES.pending!
+                    const statusInfo = STATUS_STYLES[exp.status] ?? { style: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300", icon: "⏳" }
                     return (
                       <tr key={exp.id} className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
                         <td className="px-5 py-3">

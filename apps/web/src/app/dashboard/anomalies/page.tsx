@@ -30,7 +30,7 @@ export default function AnomaliesPage() {
 
   const { data: anomaliesResult, isLoading } = useQuery({
     queryKey: ["anomalies", selectedUserId, severityFilter],
-    queryFn: () => anomaliesApi.list(selectedUserId, { severity: severityFilter || undefined }),
+    queryFn: () => anomaliesApi.list(selectedUserId, severityFilter ? { severity: severityFilter } : {}),
     enabled: !!selectedUserId,
   })
   const anomalies = anomaliesResult?.data ?? []
