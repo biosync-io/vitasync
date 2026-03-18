@@ -15,6 +15,13 @@
       "when": 1773791200000,
       "tag": "0001_events_dedup_constraint",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773852372368,
+      "tag": "0002_modern_lionheart",
+      "breakpoints": true
     }
   ]
 }
