@@ -47,10 +47,10 @@ export default function ApiKeysPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">API Keys</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">API Keys</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Keys are hashed and stored securely. The raw key is shown only once at creation.
           </p>
         </div>
@@ -60,7 +60,7 @@ export default function ApiKeysPage() {
             setShowCreate(true)
             setNewKey(null)
           }}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 w-full sm:w-auto"
         >
           + New Key
         </button>
@@ -85,24 +85,24 @@ export default function ApiKeysPage() {
       )}
 
       {showCreate && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-sm font-semibold text-gray-900">Create API Key</h2>
+        <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
+          <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Create API Key</h2>
           {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
           <div className="space-y-3">
             <div>
-              <label htmlFor="apikey-name" className="block text-xs font-medium text-gray-700">
+              <label htmlFor="apikey-name" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
                 Name *
               </label>
               <input
                 id="apikey-name"
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
                 placeholder="Production backend"
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               />
             </div>
             <div>
-              <p className="block text-xs font-medium text-gray-700 mb-1">Scopes *</p>
+              <p className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Scopes *</p>
               <div className="flex gap-2">
                 {SCOPES.map((scope) => (
                   <button
@@ -112,7 +112,7 @@ export default function ApiKeysPage() {
                     className={`rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors ${
                       form.scopes.includes(scope)
                         ? "bg-indigo-600 text-white border-indigo-600"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
                     }`}
                   >
                     {scope}
@@ -121,13 +121,13 @@ export default function ApiKeysPage() {
               </div>
             </div>
             <div>
-              <label htmlFor="apikey-expires" className="block text-xs font-medium text-gray-700">
+              <label htmlFor="apikey-expires" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
                 Expires At (optional)
               </label>
               <input
                 id="apikey-expires"
                 type="datetime-local"
-                className="mt-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                className="mt-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
                 value={form.expiresAt}
                 onChange={(e) => setForm((f) => ({ ...f, expiresAt: e.target.value }))}
               />
@@ -157,7 +157,7 @@ export default function ApiKeysPage() {
                 setShowCreate(false)
                 setError("")
               }}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700"
+              className="rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               Cancel
             </button>
@@ -169,46 +169,48 @@ export default function ApiKeysPage() {
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton loader — items have no stable identity
-            <div key={i} className="h-14 rounded-xl bg-gray-100 animate-pulse" />
+            <div key={i} className="h-14 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
           ))}
         </div>
       ) : (
         <>
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          {/* Desktop table */}
+          <div className="hidden sm:block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+              <thead className="bg-gray-50 dark:bg-gray-800/60">
                 <tr>
                   {["Name", "Prefix", "Scopes", "Last Used", "Expires", ""].map((h) => (
                     <th
                       key={h}
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap"
                     >
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {keys.map((key) => (
-                  <tr key={key.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{key.name}</td>
-                    <td className="px-4 py-3 text-sm font-mono text-gray-600">{key.keyPrefix}…</td>
+                  <tr key={key.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{key.name}</td>
+                    <td className="px-4 py-3 text-sm font-mono text-gray-600 dark:text-gray-400">{key.keyPrefix}…</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1 flex-wrap">
                         {key.scopes.map((s) => (
                           <span
                             key={s}
-                            className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                            className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-400"
                           >
                             {s}
                           </span>
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-400">
+                    <td className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500 whitespace-nowrap">
                       {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : "Never"}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-400">
+                    <td className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500 whitespace-nowrap">
                       {key.expiresAt ? new Date(key.expiresAt).toLocaleDateString() : "Never"}
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -224,7 +226,47 @@ export default function ApiKeysPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
+
+          {/* Mobile card view */}
+          <div className="sm:hidden space-y-3">
+            {keys.map((key) => (
+              <div
+                key={`m-${key.id}`}
+                className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{key.name}</p>
+                    <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{key.keyPrefix}…</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => revokeMutation.mutate(key.id)}
+                    className="text-xs text-red-500 hover:text-red-700 ml-2 shrink-0"
+                  >
+                    Revoke
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {key.scopes.map((s) => (
+                    <span
+                      key={s}
+                      className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-400"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+                  <span>Used: {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : "Never"}</span>
+                  <span>Expires: {key.expiresAt ? new Date(key.expiresAt).toLocaleDateString() : "Never"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
           <Pagination page={page} pageSize={PAGE_SIZE} total={allKeys.length} onChange={setPage} />
         </>
       )}

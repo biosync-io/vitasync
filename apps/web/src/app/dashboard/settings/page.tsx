@@ -189,8 +189,8 @@ export default function SettingsPage() {
   return (
     <div className="max-w-3xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Configure your workspace API access and preferences.
         </p>
       </div>
@@ -199,11 +199,11 @@ export default function SettingsPage() {
       <Suspense>
         <SetupBanner activeKey={activeKey} />
       </Suspense>
-      <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-900">Active API Key</h2>
-          <p className="mt-0.5 text-xs text-gray-500">
-            Stored in <code className="rounded bg-gray-100 px-1">localStorage</code>. All dashboard
+      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Active API Key</h2>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+            Stored in <code className="rounded bg-gray-100 dark:bg-gray-800 px-1">localStorage</code>. All dashboard
             requests are authenticated with this key.
           </p>
         </div>
@@ -215,7 +215,7 @@ export default function SettingsPage() {
                 value={activeKey}
                 onChange={(e) => setActiveKey(e.target.value)}
                 placeholder="vs_live_xxxxxxxxxxxx…"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 pr-16 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 pr-16 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <button
                 type="button"
@@ -257,11 +257,11 @@ export default function SettingsPage() {
       </section>
 
       {/* ── API Keys list ────────────────────────────────────────────────────── */}
-      <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-gray-900">API Keys</h2>
-            <p className="mt-0.5 text-xs text-gray-500">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">API Keys</h2>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
               Manage credentials for programmatic access.
             </p>
           </div>
@@ -282,7 +282,7 @@ export default function SettingsPage() {
 
         {/* Create form */}
         {createOpen && (
-          <div className="border-b border-gray-100 bg-indigo-50/50 px-6 py-5 space-y-4">
+          <div className="border-b border-gray-100 dark:border-gray-800 bg-indigo-50/50 dark:bg-indigo-950/20 px-6 py-5 space-y-4">
             {createdRawKey ? (
               <div className="rounded-lg border border-green-200 bg-green-50 p-4">
                 <p className="text-sm font-semibold text-green-800 mb-2">
@@ -320,11 +320,11 @@ export default function SettingsPage() {
               </div>
             ) : (
               <>
-                <h3 className="text-sm font-semibold text-gray-900">Create new API key</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Create new API key</h3>
                 <div>
                   <label
                     htmlFor="settings-key-name"
-                    className="mb-1 block text-xs font-medium text-gray-600"
+                    className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400"
                   >
                     Name
                   </label>
@@ -334,11 +334,11 @@ export default function SettingsPage() {
                     placeholder="e.g. CI pipeline, Mobile app…"
                     value={newKeyName}
                     onChange={(e) => setNewKeyName(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
-                  <p className="mb-2 block text-xs font-medium text-gray-600">Scopes</p>
+                  <p className="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-400">Scopes</p>
                   <div className="flex flex-wrap gap-2">
                     {ALL_SCOPES.map(({ value, label }) => (
                       <button
@@ -348,7 +348,7 @@ export default function SettingsPage() {
                         className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
                           newKeyScopes.includes(value)
                             ? "border-indigo-500 bg-indigo-600 text-white"
-                            : "border-gray-200 bg-white text-gray-600 hover:border-indigo-300"
+                            : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-indigo-300"
                         }`}
                       >
                         {label}
@@ -359,7 +359,7 @@ export default function SettingsPage() {
                 <div>
                   <label
                     htmlFor="settings-key-expires"
-                    className="mb-1 block text-xs font-medium text-gray-600"
+                    className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400"
                   >
                     Expires (optional)
                   </label>
@@ -368,7 +368,7 @@ export default function SettingsPage() {
                     type="date"
                     value={newKeyExpiry}
                     onChange={(e) => setNewKeyExpiry(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -383,7 +383,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => setCreateOpen(false)}
-                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white"
+                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
                   >
                     Cancel
                   </button>
@@ -409,13 +409,13 @@ export default function SettingsPage() {
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
             {keys.map((key) => (
               <li key={key.id} className="flex items-start justify-between gap-4 px-6 py-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-gray-900">{key.name}</span>
-                    <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500 font-mono">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{key.name}</span>
+                    <code className="rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 font-mono">
                       {key.keyPrefix}…
                     </code>
                     {isExpired(key) && (
@@ -455,17 +455,17 @@ export default function SettingsPage() {
       </section>
 
       {/* ── Appearance ───────────────────────────────────────────────────────── */}
-      <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-900">Appearance</h2>
-          <p className="mt-0.5 text-xs text-gray-500">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Appearance</h2>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
             Customise the dashboard accent colour and sync behaviour.
           </p>
         </div>
         <div className="px-6 py-5 space-y-6">
           {/* Accent colour picker */}
           <div>
-            <p className="text-xs font-medium text-gray-700 mb-3">Accent colour</p>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-3">Accent colour</p>
             <div className="flex flex-wrap gap-4">
               {ACCENT_THEMES.map((theme) => (
                 <button
@@ -491,7 +491,7 @@ export default function SettingsPage() {
                   </span>
                   <span
                     className={`text-xs ${
-                      currentTheme === theme.id ? "font-semibold text-gray-900" : "text-gray-500"
+                      currentTheme === theme.id ? "font-semibold text-gray-900 dark:text-gray-100" : "text-gray-500 dark:text-gray-400"
                     }`}
                   >
                     {theme.label}
@@ -504,8 +504,8 @@ export default function SettingsPage() {
           {/* Auto-sync toggle */}
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-gray-900">Auto-sync on connect</p>
-              <p className="mt-0.5 text-xs text-gray-500">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Auto-sync on connect</p>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                 Automatically trigger a data sync when a provider is connected via OAuth.
               </p>
             </div>
@@ -514,7 +514,7 @@ export default function SettingsPage() {
               aria-label={autoSync ? "Auto-sync is on — click to disable" : "Auto-sync is off — click to enable"}
               onClick={toggleAutoSync}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                autoSync ? "bg-indigo-600" : "bg-gray-200"
+                autoSync ? "bg-indigo-600" : "bg-gray-200 dark:bg-gray-700"
               }`}
             >
               <span
@@ -528,16 +528,16 @@ export default function SettingsPage() {
       </section>
 
       {/* ── API Reference link ───────────────────────────────────────────────── */}
-      <section className="rounded-xl border border-gray-200 bg-white shadow-sm px-6 py-5">
-        <h2 className="text-sm font-semibold text-gray-900 mb-1">API Reference</h2>
-        <p className="text-xs text-gray-500 mb-3">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm px-6 py-5">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">API Reference</h2>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
           Interactive Swagger docs are available on your API instance.
         </p>
         <a
           href="http://localhost:3001/docs"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
         >
           Open API docs ↗
         </a>
