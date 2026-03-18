@@ -24,3 +24,8 @@ export * from "./training-plans"
 export * from "./symptom-logs"
 export * from "./biometric-baselines"
 export * from "./health-snapshots"
+
+// ── Notification Tables ─────────────────────────────────────────
+export * from "./notification-channels"
+export * from "./notification-logs"
+export * from "./notification-rules"

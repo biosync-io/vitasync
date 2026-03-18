@@ -17,6 +17,8 @@ The [Model Context Protocol](https://modelcontextprotocol.io) is an open standar
 
 ## Available Tools
 
+### Data Query Tools
+
 | Tool | Description |
 |------|-------------|
 | `query_health_metrics` | Query `health_metrics` by user, metric type, time range, and provider |
@@ -24,6 +26,15 @@ The [Model Context Protocol](https://modelcontextprotocol.io) is an open standar
 | `list_connections` | List provider connections with status and last-synced time |
 | `get_events` | Query workout / sleep / activity events from the `events` table |
 | `get_personal_records` | Retrieve all-time personal bests from `personal_records` |
+
+### AI & Analytics Tools
+
+| Tool | Description |
+|------|-------------|
+| `get_health_context` | LLM-ready biological context including baselines, trends, anomalies, correlations, health scores, and a natural language summary. Ideal as a first call for AI coaching. |
+| `get_anomaly_alerts` | Retrieve detected health anomalies with optional `severity` (`info`, `warning`, `critical`) and `status` (`active`, `resolved`) filters |
+| `get_correlations` | Discover metric correlations with configurable `minStrength` threshold (default: 0.3). Returns Pearson and Spearman coefficients. |
+| `get_health_scores` | Retrieve composite health scores (overall, sleep, activity, cardio, recovery) with optional date range and limit |
 
 ## Setup
 
@@ -147,6 +158,22 @@ Compare my average resting heart rate in January vs February
 
 ```
 What are my top 5 personal records?
+```
+
+```
+Give me a full health context summary with baselines and trends
+```
+
+```
+Were there any anomalies detected in my health data this week?
+```
+
+```
+What correlations exist between my sleep quality and resting heart rate?
+```
+
+```
+Show me my overall health scores for the last month
 ```
 
 ```

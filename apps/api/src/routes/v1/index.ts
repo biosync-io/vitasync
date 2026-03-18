@@ -27,6 +27,8 @@ import syncJobsRoutes from "./sync-jobs.js"
 import trainingPlansRoutes from "./training-plans.js"
 import usersRoutes from "./users.js"
 import webhooksRoutes from "./webhooks.js"
+import analyticsRoutes from "./analytics.js"
+import notificationsRoutes from "./notifications.js"
 
 /**
  * Registers all v1 API routes under the `/v1` prefix.
@@ -120,6 +122,12 @@ export async function registerV1Routes(app: FastifyInstance): Promise<void> {
 
       // Sleep analysis — /v1/users/:userId/sleep-analysis
       await v1.register(sleepAnalysisRoutes, { prefix: "/users" })
+
+      // Notifications — /v1/users/:userId/notifications/*
+      await v1.register(notificationsRoutes, { prefix: "/users" })
+
+      // Analytics (LLM context, enhanced correlations, enhanced anomalies)
+      await v1.register(analyticsRoutes, { prefix: "/users" })
     },
     { prefix: "/v1" },
   )

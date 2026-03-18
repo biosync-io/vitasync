@@ -31,6 +31,8 @@
     "@biosync-io/provider-strava": "workspace:*",
     "@biosync-io/provider-whoop": "workspace:*",
     "@biosync-io/types": "workspace:*",
+    "@biosync-io/analytics": "workspace:*",
+    "@biosync-io/notification-core": "workspace:*",
     "bullmq": "^5.27.0",
     "drizzle-orm": "^0.38.4",
     "postgres": "^3.4.5",
