@@ -109,6 +109,29 @@ Content-Type: application/json
 |--------|------|-------|-------------|
 | `GET` | `/v1/providers` | `read` | List all configured providers |
 
+### Analytics
+
+| Method | Path | Scope | Description |
+|--------|------|-------|-------------|
+| `GET` | `/v1/users/:userId/analytics/context` | `read` | LLM-ready biological context (baselines, trends, anomalies, correlations, health scores) |
+| `POST` | `/v1/users/:userId/analytics/correlations` | `read` | Auto-discover metric correlations over a configurable time window |
+| `POST` | `/v1/users/:userId/analytics/anomalies` | `read` | Detect health anomalies using statistical and clinical thresholds |
+
+### Notifications
+
+| Method | Path | Scope | Description |
+|--------|------|-------|-------------|
+| `GET` | `/v1/users/:userId/notifications/channels` | `read` | List notification channels |
+| `POST` | `/v1/users/:userId/notifications/channels` | `write` | Register a notification channel |
+| `PUT` | `/v1/users/:userId/notifications/channels/:channelId` | `write` | Update channel settings |
+| `DELETE` | `/v1/users/:userId/notifications/channels/:channelId` | `write` | Delete a channel |
+| `POST` | `/v1/users/:userId/notifications/channels/:channelId/test` | `write` | Send a test notification |
+| `GET` | `/v1/users/:userId/notifications/rules` | `read` | List notification rules |
+| `POST` | `/v1/users/:userId/notifications/rules` | `write` | Create a notification rule |
+| `PUT` | `/v1/users/:userId/notifications/rules/:ruleId` | `write` | Update a rule |
+| `DELETE` | `/v1/users/:userId/notifications/rules/:ruleId` | `write` | Delete a rule |
+| `GET` | `/v1/users/:userId/notifications/logs` | `read` | Query notification delivery history |
+
 ## Error Codes
 
 VitaSync returns standard HTTP status codes. Error responses include a JSON body with `statusCode`, `error`, and `message`.
