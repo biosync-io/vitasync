@@ -84,18 +84,15 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
     if (!channel) return reply.status(404).send({ code: "NOT_FOUND", message: "Channel not found" })
 
     // Enqueue a test notification through the worker
-    const queue = request.server.notificationQueue
-    if (queue) {
-      await queue.add("test-notification", {
-        userId,
-        workspaceId: request.workspaceId,
-        channelId,
-        title: "Test Notification",
-        body: "This is a test notification from VitaSync.",
-        severity: "info",
-        category: "system",
-      })
-    }
+    await request.server.notificationQueue.add("test-notification", {
+      userId,
+      workspaceId: request.workspaceId,
+      channelId,
+      title: "Test Notification",
+      body: "This is a test notification from VitaSync.",
+      severity: "info",
+      category: "system",
+    })
 
     return reply.send({ message: "Test notification queued" })
   })

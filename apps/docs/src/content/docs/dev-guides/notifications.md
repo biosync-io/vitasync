@@ -316,7 +316,7 @@ The notification system uses three tables:
 - **`notification_rules`** — Routing rules that map categories + severity to channels
 - **`notification_logs`** — Delivery audit log with status, attempts, and error details
 
-See the [Data Model](/architecture/data-model) reference for full column definitions.
+See the [Data Model](/vitasync/architecture/data-model) reference for full column definitions.
 
 ## Worker Queue
 

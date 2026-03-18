@@ -108,7 +108,7 @@ Notification Processor
 
 Supported channels: Discord, Slack, Teams, Email, Web Push, ntfy, Webhook.
 
-See the [Notification System guide](/dev-guides/notifications) for configuration details.
+See the [Notification System guide](/vitasync/dev-guides/notifications) for configuration details.
 
 ## BullMQ Queue Summary
 

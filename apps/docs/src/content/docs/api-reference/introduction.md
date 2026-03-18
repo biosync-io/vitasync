@@ -27,7 +27,7 @@ All endpoints require Bearer token authentication:
 Authorization: Bearer vs_live_<your_api_key>
 ```
 
-See [Authentication](/api-reference/guides/authentication) for full details on creating keys and managing scopes.
+See [Authentication](/vitasync/api-reference/guides/authentication) for full details on creating keys and managing scopes.
 
 ## Content Type
 

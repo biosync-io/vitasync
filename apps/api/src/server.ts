@@ -7,6 +7,7 @@ import Fastify, { type FastifyError } from "fastify"
 import { config } from "./config.js"
 import authPlugin from "./plugins/auth.js"
 import { bullBoardPlugin } from "./plugins/bull-board.js"
+import queuesPlugin from "./plugins/queues.js"
 import { registerV1Routes } from "./routes/v1/index.js"
 
 export async function buildServer() {
@@ -112,6 +113,7 @@ export async function buildServer() {
 
   // ── Routes ───────────────────────────────────────────────────
   await app.register(authPlugin)
+  await app.register(queuesPlugin)
   await app.register(registerV1Routes)
 
   // ── Bull Board queue dashboard ───────────────────────────────
