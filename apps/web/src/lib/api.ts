@@ -492,6 +492,12 @@ export type InsightCategory =
   | "workout"
   | "trend"
   | "anomaly"
+  | "longevity"
+  | "immune"
+  | "cognitive"
+  | "hormonal"
+  | "womens_health"
+  | "performance"
 
 export interface Insight {
   id: string

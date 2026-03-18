@@ -189,4 +189,69 @@ export const ALGORITHMS: InsightAlgorithm[] = [
   { id: "training-periodization", name: "Training Periodization Analysis", description: "Detects build/recovery weeks in macro training cycle", category: "workout", requiredMetrics: ["workout"] },
   { id: "race-readiness", name: "Race Readiness Score", description: "Composite readiness from fitness + freshness + recovery for peak performance", category: "workout", requiredMetrics: ["workout", "recovery_score", "resting_heart_rate"] },
   { id: "endurance-index", name: "Endurance Index", description: "Ratio of long (>45min) to short workouts — endurance capacity indicator", category: "workout", requiredMetrics: ["workout"] },
+
+  // ── Longevity (156-165) ──
+  { id: "biological-age", name: "Biological Age Estimate", description: "Multi-biomarker biological age estimation vs chronological age", category: "longevity", requiredMetrics: ["resting_heart_rate", "heart_rate_variability", "sleep", "spo2"] },
+  { id: "longevity-score", name: "Longevity Score", description: "Composite longevity potential from cardio, sleep, recovery, and metabolic health", category: "longevity", requiredMetrics: ["resting_heart_rate", "heart_rate_variability", "sleep", "recovery_score"] },
+  { id: "aging-velocity", name: "Aging Velocity", description: "Rate of biological aging — are you aging faster or slower than calendar time?", category: "longevity", requiredMetrics: ["resting_heart_rate", "heart_rate_variability", "sleep"] },
+  { id: "cardiovascular-reserve", name: "Cardiovascular Reserve", description: "Gap between resting and estimated max capacity — longevity predictor", category: "longevity", requiredMetrics: ["resting_heart_rate", "heart_rate_variability"] },
+  { id: "hrv-age-gap", name: "HRV Age Gap", description: "Difference between expected HRV for your fitness level vs actual", category: "longevity", requiredMetrics: ["heart_rate_variability", "resting_heart_rate"] },
+  { id: "sleep-longevity-alignment", name: "Sleep Longevity Alignment", description: "How closely sleep patterns match longevity-optimal 7-8.5h range", category: "longevity", requiredMetrics: ["sleep"] },
+  { id: "resting-metabolic-health", name: "Resting Metabolic Health", description: "Resting heart rate trend as proxy for metabolic and cardiovascular health", category: "longevity", requiredMetrics: ["resting_heart_rate"] },
+  { id: "recovery-resilience", name: "Recovery Resilience", description: "How quickly your body bounces back from stress — resilience declines with aging", category: "longevity", requiredMetrics: ["recovery_score", "stress"] },
+  { id: "inflammation-proxy", name: "Inflammation Proxy", description: "Chronic low-grade inflammation estimated from HRV suppression + elevated RHR", category: "longevity", requiredMetrics: ["heart_rate_variability", "resting_heart_rate"] },
+  { id: "fitness-age", name: "Fitness Age", description: "Aerobic fitness translated to equivalent physiological age", category: "longevity", requiredMetrics: ["resting_heart_rate", "workout"] },
+
+  // ── Immune (166-173) ──
+  { id: "illness-prediction", name: "Illness Prediction (24-48h)", description: "Predicts illness onset from converging biomarker signals", category: "immune", requiredMetrics: ["resting_heart_rate", "heart_rate_variability", "sleep", "respiratory_rate"] },
+  { id: "immune-readiness", name: "Immune Readiness Score", description: "Multi-signal immune system strength estimation", category: "immune", requiredMetrics: ["sleep", "heart_rate_variability", "stress"] },
+  { id: "infection-recovery-tracker", name: "Infection Recovery Tracker", description: "Tracks biomarker return to baseline after illness episodes", category: "immune", requiredMetrics: ["resting_heart_rate", "heart_rate_variability"] },
+  { id: "sleep-immunity-link", name: "Sleep-Immunity Link", description: "Sleep duration correlated with immune vulnerability (Prather et al.)", category: "immune", requiredMetrics: ["sleep"] },
+  { id: "stress-immune-burden", name: "Stress-Immune Burden", description: "Chronic stress impact on estimated immune function", category: "immune", requiredMetrics: ["stress", "heart_rate_variability"] },
+  { id: "temperature-baseline-deviation", name: "Temperature Baseline Deviation", description: "Body temperature deviations from personal baseline — early illness marker", category: "immune", requiredMetrics: ["temperature"] },
+  { id: "post-training-immune-window", name: "Post-Training Immune Window", description: "Immune suppression window 3-72h after intense exercise", category: "immune", requiredMetrics: ["workout", "heart_rate_variability"] },
+  { id: "seasonal-vulnerability", name: "Seasonal Vulnerability", description: "Combined risk from sleep + stress + training load during illness seasons", category: "immune", requiredMetrics: ["sleep", "stress", "workout"] },
+
+  // ── Cognitive (174-181) ──
+  { id: "cognitive-readiness", name: "Cognitive Readiness", description: "Mental performance readiness from sleep, HRV, and stress patterns", category: "cognitive", requiredMetrics: ["sleep", "heart_rate_variability", "stress"] },
+  { id: "focus-window-prediction", name: "Focus Window Prediction", description: "Predicted deep focus window duration based on sleep quality", category: "cognitive", requiredMetrics: ["sleep", "resting_heart_rate"] },
+  { id: "brain-fog-risk", name: "Brain Fog Risk", description: "Risk of cognitive impairment from sleep debt, low SpO2, high stress", category: "cognitive", requiredMetrics: ["sleep", "spo2", "stress"] },
+  { id: "sleep-learning-capacity", name: "Sleep-Learning Capacity", description: "Memory consolidation capacity estimated from REM sleep proxy", category: "cognitive", requiredMetrics: ["sleep"] },
+  { id: "decision-fatigue-risk", name: "Decision Fatigue Risk", description: "Executive function depletion risk from poor sleep + high stress", category: "cognitive", requiredMetrics: ["sleep", "stress", "recovery_score"] },
+  { id: "creativity-window", name: "Creativity Window", description: "Divergent thinking potential from sleep + HRV variability patterns", category: "cognitive", requiredMetrics: ["sleep", "heart_rate_variability"] },
+  { id: "reaction-time-estimate", name: "Reaction Time Estimate", description: "Estimated psychomotor vigilance from sleep debt accumulation", category: "cognitive", requiredMetrics: ["sleep", "resting_heart_rate"] },
+  { id: "mental-energy-forecast", name: "Mental Energy Forecast", description: "Available cognitive reserves from sleep, stress, and recovery", category: "cognitive", requiredMetrics: ["sleep", "stress", "recovery_score"] },
+
+  // ── Hormonal (182-189) ──
+  { id: "cortisol-proxy", name: "Cortisol Stress Proxy", description: "Estimated cortisol levels from HRV decline rate, RHR trends, and stress", category: "hormonal", requiredMetrics: ["heart_rate_variability", "resting_heart_rate", "stress"] },
+  { id: "testosterone-proxy", name: "Anabolic Environment Score", description: "Testosterone-favorable conditions from sleep, HRV, and training", category: "hormonal", requiredMetrics: ["sleep", "heart_rate_variability", "recovery_score"] },
+  { id: "hormonal-rhythm-stability", name: "Circadian Rhythm Stability", description: "Consistency of daily hormonal cycling patterns", category: "hormonal", requiredMetrics: ["sleep", "resting_heart_rate"] },
+  { id: "stress-hormone-accumulation", name: "Stress Hormone Accumulation", description: "Multi-week stress hormone burden with chronic detection", category: "hormonal", requiredMetrics: ["stress", "heart_rate_variability"] },
+  { id: "recovery-hormone-window", name: "Growth Hormone Window Quality", description: "Deep sleep proxy for GH secretion — tissue repair and recovery", category: "hormonal", requiredMetrics: ["sleep", "heart_rate_variability"] },
+  { id: "metabolic-hormone-balance", name: "Metabolic Hormone Balance", description: "Leptin/ghrelin signaling quality from sleep and metabolic indicators", category: "hormonal", requiredMetrics: ["sleep", "resting_heart_rate", "weight"] },
+  { id: "thyroid-function-proxy", name: "Thyroid Function Proxy", description: "Thyroid health indicators from RHR stability and metabolic patterns", category: "hormonal", requiredMetrics: ["resting_heart_rate", "sleep"] },
+  { id: "adrenal-fatigue-risk", name: "Adrenal Fatigue Risk", description: "Chronic stress + declining HRV pattern indicating adrenal exhaustion", category: "hormonal", requiredMetrics: ["stress", "heart_rate_variability", "sleep", "recovery_score"] },
+
+  // ── Women's Health (190-197) ──
+  { id: "cycle-phase-detection", name: "Cycle Phase Detection", description: "Estimates menstrual cycle phase from RHR and HRV patterns", category: "womens_health", requiredMetrics: ["resting_heart_rate", "heart_rate_variability"] },
+  { id: "phase-adapted-training", name: "Phase-Adapted Training", description: "Cycle-aware training intensity recommendations", category: "womens_health", requiredMetrics: ["resting_heart_rate", "heart_rate_variability"] },
+  { id: "energy-cycle-pattern", name: "Energy Cycle Pattern", description: "Detects cyclical energy patterns over 4-week cycles", category: "womens_health", requiredMetrics: ["sleep"] },
+  { id: "pms-symptom-predictor", name: "PMS Symptom Predictor", description: "Predicts premenstrual symptoms from biomarker convergence", category: "womens_health", requiredMetrics: ["resting_heart_rate", "heart_rate_variability", "stress", "sleep"] },
+  { id: "iron-deficiency-proxy", name: "Iron Deficiency Indicators", description: "Anemia risk estimation from RHR trends, SpO2, and performance", category: "womens_health", requiredMetrics: ["resting_heart_rate", "spo2"] },
+  { id: "fertility-window-indicators", name: "Fertility Window Indicators", description: "Ovulation phase estimation from RHR and temperature patterns", category: "womens_health", requiredMetrics: ["resting_heart_rate"] },
+  { id: "menstrual-migraine-risk", name: "Menstrual Migraine Risk", description: "Migraine risk from rapid hormonal shift indicators", category: "womens_health", requiredMetrics: ["resting_heart_rate", "heart_rate_variability", "stress"] },
+  { id: "perimenopause-indicators", name: "Perimenopause Indicators", description: "Long-term pattern irregularity consistent with perimenopause", category: "womens_health", requiredMetrics: ["resting_heart_rate", "heart_rate_variability", "sleep"] },
+
+  // ── Performance (198-209) ──
+  { id: "peak-performance-prediction", name: "Peak Performance Prediction", description: "Multi-signal alignment for optimal athletic output prediction", category: "performance", requiredMetrics: ["heart_rate_variability", "sleep", "recovery_score", "resting_heart_rate"] },
+  { id: "pr-potential", name: "Personal Record Potential", description: "Probability of setting a PR based on rare biomarker alignment", category: "performance", requiredMetrics: ["heart_rate_variability", "sleep", "resting_heart_rate"] },
+  { id: "vo2max-trend", name: "VO2max Trend", description: "Estimated VO2max trajectory from resting heart rate patterns", category: "performance", requiredMetrics: ["resting_heart_rate"] },
+  { id: "race-readiness-v2", name: "Race Readiness Score", description: "Competition readiness from taper detection + supercompensation", category: "performance", requiredMetrics: ["heart_rate_variability", "resting_heart_rate", "sleep", "workout"] },
+  { id: "overtraining-syndrome-risk", name: "Overtraining Syndrome Risk", description: "Multi-week overtraining indicators from HRV + RHR + recovery", category: "performance", requiredMetrics: ["heart_rate_variability", "resting_heart_rate", "sleep", "recovery_score"] },
+  { id: "training-load-balance", name: "Training Load Balance", description: "Acute:chronic workload ratio — 0.8-1.3 sweet spot for injury prevention", category: "performance", requiredMetrics: ["workout"] },
+  { id: "lactate-threshold-estimate", name: "Lactate Threshold Estimate", description: "Estimated lactate threshold HR from resting heart rate", category: "performance", requiredMetrics: ["resting_heart_rate"] },
+  { id: "recovery-rate-analysis", name: "Recovery Rate Analysis", description: "Post-workout metric return-to-baseline speed — fitness indicator", category: "performance", requiredMetrics: ["heart_rate_variability", "resting_heart_rate", "workout"] },
+  { id: "endurance-capacity", name: "Endurance Capacity", description: "Aerobic base assessment from RHR, HRV, and long workout history", category: "performance", requiredMetrics: ["resting_heart_rate", "heart_rate_variability"] },
+  { id: "muscle-readiness", name: "Muscle Readiness", description: "Muscular recovery and readiness for resistance training", category: "performance", requiredMetrics: ["sleep", "recovery_score", "workout"] },
+  { id: "flow-state-likelihood", name: "Flow State Likelihood", description: "Optimal conditions for entering psychological flow state", category: "performance", requiredMetrics: ["heart_rate_variability", "sleep", "stress", "recovery_score"] },
 ]
