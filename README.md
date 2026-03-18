@@ -161,14 +161,10 @@ Copy `.env.example` to `.env` and fill in the values.
 | `FITBIT_CLIENT_SECRET` | for Fitbit | From Fitbit developer console |
 | `GARMIN_CONSUMER_KEY` | for Garmin | From Garmin Health API |
 | `GARMIN_CONSUMER_SECRET` | for Garmin | From Garmin Health API |
-| `SMTP_HOST` | for Email | SMTP server hostname |
-| `SMTP_PORT` | for Email | SMTP port (default: `587`) |
-| `SMTP_USER` | for Email | SMTP username |
-| `SMTP_PASS` | for Email | SMTP password |
-| `SMTP_FROM` | for Email | Sender address, e.g. `VitaSync <noreply@example.com>` |
-| `VAPID_PUBLIC_KEY` | for Push | VAPID public key (generate with `web-push generate-vapid-keys`) |
-| `VAPID_PRIVATE_KEY` | for Push | VAPID private key |
-| `VAPID_SUBJECT` | for Push | VAPID subject, e.g. `mailto:admin@example.com` |
+
+> **Note:** Notification channel settings (SMTP, VAPID, webhook URLs, etc.) are configured per-user
+> via the **Notifications** dashboard UI and stored in the `notification_channels` database table.
+> No environment variables are needed for notification channels.
 
 ---
 
