@@ -150,8 +150,8 @@ Push to branch
             └─ pushes to ghcr.io with channel-appropriate tags
 ```
 
-**Stable tags** (main): `1.2.3`, `1.2`, `1`, `latest`, `sha-xxxxxxx`  
-**Beta tags** (beta/\*\*): `beta`, `beta-xxxxxxx`, `sha-xxxxxxx`  
+**Stable tags** (main): `1.2.3`, `1.2`, `1`, `latest`, `sha-xxxxxxx`
+**Beta tags** (beta/\*\*): `beta`, `beta-xxxxxxx`, `sha-xxxxxxx`
 **Alpha tags** (everything else): `alpha`, `alpha-xxxxxxx`, `sha-xxxxxxx`
 
 The `helm-package` job runs only after a successful stable release and publishes the Helm chart to GHCR.
@@ -164,7 +164,7 @@ Runs on every pull request event. Validates that the PR title matches the Conven
 <type>[optional scope][optional !]: <description>
 ```
 
-Valid types: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `revert`.  
+Valid types: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `revert`.
 An empty or whitespace-only title fails immediately. See the [Contributing guide](/dev-guides/contributing) for examples.
 
 ### Version source of truth
