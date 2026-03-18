@@ -15,14 +15,16 @@ export function Pagination({ page, pageSize, total, onChange }: PaginationProps)
   const end = Math.min(page * pageSize, total)
 
   return (
-    <div className="mt-4 flex items-center justify-between text-sm">
-      <p className="text-gray-500 dark:text-gray-400">
+    <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm">
+      <p className="text-gray-500 dark:text-gray-400 text-center sm:text-left">
         {start}–{end} of {total.toLocaleString()}
       </p>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center justify-center gap-1">
         <PageBtn onClick={() => onChange(1)} disabled={page === 1} label="«" />
         <PageBtn onClick={() => onChange(page - 1)} disabled={page === 1} label="‹" />
 
+        {/* Full page numbers on desktop, simplified on mobile */}
+        <span className="hidden sm:contents">
         {buildPages(page, totalPages).map((p, i) =>
           p === "…" ? (
             // biome-ignore lint/suspicious/noArrayIndexKey: ellipsis separators are positional
@@ -44,6 +46,11 @@ export function Pagination({ page, pageSize, total, onChange }: PaginationProps)
             </button>
           ),
         )}
+        </span>
+        {/* Mobile: just show current/total */}
+        <span className="sm:hidden px-2 py-1 text-gray-600 dark:text-gray-300 font-medium tabular-nums">
+          {page}/{totalPages}
+        </span>
 
         <PageBtn onClick={() => onChange(page + 1)} disabled={page === totalPages} label="›" />
         <PageBtn onClick={() => onChange(totalPages)} disabled={page === totalPages} label="»" />

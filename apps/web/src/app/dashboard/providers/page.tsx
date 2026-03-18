@@ -14,8 +14,8 @@ export default function ProvidersPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Providers</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Providers</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Available wearable device integrations. Connect users to these providers via OAuth.
         </p>
       </div>
@@ -35,9 +35,9 @@ export default function ProvidersPage() {
         </div>
       )}
 
-      <div className="mt-10 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6">
-        <h2 className="text-sm font-semibold text-gray-700">OAuth Authorization URL</h2>
-        <p className="mt-1 text-sm text-gray-500">
+      <div className="mt-8 sm:mt-10 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6">
+        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">OAuth Authorization URL</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           To connect a user to a provider, redirect their browser to:
         </p>
         <code className="mt-2 block rounded bg-gray-900 px-4 py-3 text-sm text-green-400 overflow-auto">
@@ -53,11 +53,11 @@ function ProviderCard({ provider }: { provider: ProviderDef }) {
     provider.authType === "oauth2" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
-        <div>
-          <h3 className="font-semibold text-gray-900">{provider.name}</h3>
-          <p className="mt-1 text-sm text-gray-500 line-clamp-2">{provider.description}</p>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{provider.name}</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{provider.description}</p>
         </div>
         <span
           className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${authBadgeColor}`}
@@ -69,7 +69,7 @@ function ProviderCard({ provider }: { provider: ProviderDef }) {
         {provider.capabilities.map((cap) => (
           <span
             key={cap}
-            className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 capitalize"
+            className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-400 capitalize"
           >
             {cap.replace("_", " ")}
           </span>

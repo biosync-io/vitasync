@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Mobile sidebar slide-in animation ─────────────────────────────────── */
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-left {
+  animation: slide-in-left 0.2s ease-out;
+}
+
+/* ── Responsive table: card layout on small screens ────────────────────── */
+@layer utilities {
+  .table-responsive-wrapper {
+    @apply overflow-x-auto -mx-4 sm:mx-0;
+  }
+  .table-responsive-wrapper > table {
+    @apply min-w-[640px] sm:min-w-full;
+  }
+}
+
 :root {
   --background: 0 0% 100%;
   --foreground: 222.2 47.4% 11.2%;
