@@ -33,6 +33,8 @@ const navItems: Array<{ href: string; label: string; icon: string }> = [
   { href: "/dashboard/exports", label: "Data Export", icon: "📤" },
   { href: "/dashboard/sync-jobs", label: "Sync Jobs", icon: "⟳" },
   { href: "/dashboard/webhooks", label: "Webhooks", icon: "🔔" },
+  { href: "/dashboard/notifications", label: "Notifications", icon: "📣" },
+  { href: "/dashboard/notification-logs", label: "Notification Logs", icon: "📜" },
   { href: "/dashboard/api-keys", label: "API Keys", icon: "🔑" },
   { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
 ]

@@ -774,3 +774,91 @@ export interface BaselineData {
   sampleSize: number
   computedAt: string
 }
+
+// ---- Notification Types ----
+
+export type ChannelType = "discord" | "slack" | "teams" | "email" | "push" | "ntfy" | "webhook"
+export type NotificationSeverity = "info" | "warning" | "critical"
+export type NotificationCategory = "anomaly" | "goal" | "achievement" | "sync" | "report" | "system" | "insight"
+
+export interface NotificationChannel {
+  id: string
+  userId: string
+  channelType: ChannelType
+  label: string
+  config: Record<string, unknown>
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface NotificationRule {
+  id: string
+  userId: string
+  name: string
+  categories: NotificationCategory[]
+  minSeverity: NotificationSeverity
+  channelIds: string[]
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface NotificationLog {
+  id: string
+  userId: string
+  channelId: string
+  channelType: ChannelType
+  title: string
+  payload: Record<string, unknown>
+  status: "pending" | "delivered" | "failed"
+  attempts: number
+  error: string | null
+  deliveredAt: string | null
+  createdAt: string
+}
+
+// ---- Notification API ----
+
+export const notificationsApi = {
+  // Channels
+  listChannels: (userId: string) =>
+    request<{ data: NotificationChannel[] }>(`/v1/users/${userId}/notifications/channels`),
+  createChannel: (userId: string, body: { channelType: ChannelType; label: string; config: Record<string, unknown>; enabled?: boolean }) =>
+    request<{ data: NotificationChannel }>(`/v1/users/${userId}/notifications/channels`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateChannel: (userId: string, channelId: string, body: { label?: string; config?: Record<string, unknown>; enabled?: boolean }) =>
+    request<{ data: NotificationChannel }>(`/v1/users/${userId}/notifications/channels/${channelId}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  deleteChannel: (userId: string, channelId: string) =>
+    request<void>(`/v1/users/${userId}/notifications/channels/${channelId}`, { method: "DELETE" }),
+  testChannel: (userId: string, channelId: string) =>
+    request<{ message: string }>(`/v1/users/${userId}/notifications/channels/${channelId}/test`, { method: "POST" }),
+
+  // Rules
+  listRules: (userId: string) =>
+    request<{ data: NotificationRule[] }>(`/v1/users/${userId}/notifications/rules`),
+  createRule: (userId: string, body: { name: string; categories: NotificationCategory[]; minSeverity: NotificationSeverity; channelIds: string[]; enabled?: boolean }) =>
+    request<{ data: NotificationRule }>(`/v1/users/${userId}/notifications/rules`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateRule: (userId: string, ruleId: string, body: { name?: string; categories?: NotificationCategory[]; minSeverity?: NotificationSeverity; channelIds?: string[]; enabled?: boolean }) =>
+    request<{ data: NotificationRule }>(`/v1/users/${userId}/notifications/rules/${ruleId}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  deleteRule: (userId: string, ruleId: string) =>
+    request<void>(`/v1/users/${userId}/notifications/rules/${ruleId}`, { method: "DELETE" }),
+
+  // Logs
+  listLogs: (userId: string, opts?: { limit?: number }) => {
+    const params = new URLSearchParams()
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    return request<{ data: NotificationLog[] }>(`/v1/users/${userId}/notifications/logs?${params}`)
+  },
+}
