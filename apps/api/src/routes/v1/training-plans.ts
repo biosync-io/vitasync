@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
+import { defined } from "../../lib/strip-undefined.js"
 import { TrainingPlanService } from "../../services/training-plan.service.js"
 import { UserService } from "../../services/user.service.js"
 
@@ -20,7 +21,7 @@ const trainingPlansRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.query)
 
-    const plans = await planService.list(userId, query)
+    const plans = await planService.list(userId, defined(query))
     return reply.send({ data: plans })
   })
 
@@ -53,7 +54,7 @@ const trainingPlansRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.body)
 
-    const plan = await planService.generate(userId, body)
+    const plan = await planService.generate(userId, defined(body))
     return reply.status(201).send(plan)
   })
 

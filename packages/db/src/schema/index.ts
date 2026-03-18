@@ -25,6 +25,9 @@ export * from "./symptom-logs"
 export * from "./biometric-baselines"
 export * from "./health-snapshots"
 
+// ── Training & Analytics ────────────────────────────────────────
+export * from "./training-load"
+
 // ── Notification Tables ─────────────────────────────────────────
 export * from "./notification-channels"
 export * from "./notification-logs"

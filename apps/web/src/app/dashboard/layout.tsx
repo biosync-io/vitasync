@@ -16,6 +16,7 @@ const navItems: Array<{ href: string; label: string; icon: string }> = [
   { href: "/dashboard/users", label: "Users", icon: "👤" },
   { href: "/dashboard/health", label: "Health Data", icon: "♥" },
   { href: "/dashboard/health-scores", label: "Health Score", icon: "📊" },
+  { href: "/dashboard/readiness", label: "Readiness", icon: "🔋" },
   { href: "/dashboard/insights", label: "Insights", icon: "🧠" },
   { href: "/dashboard/activity", label: "Activity", icon: "🏃" },
   { href: "/dashboard/goals", label: "Goals", icon: "🎯" },

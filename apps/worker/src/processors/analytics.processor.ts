@@ -6,9 +6,13 @@ import {
   biometricBaselines,
   goals,
   achievements,
+  trainingLoad,
 } from "@biosync-io/db"
 import type { Job } from "bullmq"
 import { and, eq, gte, lte, desc, sql } from "drizzle-orm"
+import { computeReadiness } from "@biosync-io/analytics"
+import { computeBodyScore } from "@biosync-io/analytics"
+import { computeTrainingLoad } from "@biosync-io/analytics"
 
 export interface AnalyticsJobData {
   userId: string
@@ -34,12 +38,20 @@ export async function processAnalyticsJob(job: Job<AnalyticsJobData>): Promise<v
   const db = getDb()
   const today = new Date()
 
-  // 1. Compute health score
+  // 1. Compute health score (now with proprietary readiness & body score engines)
   try {
     const score = await computeHealthScore(db, userId, today)
     job.log(`Health score computed: ${score.overallScore} (${score.grade})`)
   } catch (err: any) {
     job.log(`Health score computation failed: ${err.message}`)
+  }
+
+  // 1b. Compute and persist training load
+  try {
+    const load = await computeAndPersistTrainingLoad(userId, today)
+    job.log(`Training load: ATL=${load.atl} CTL=${load.ctl} TSB=${load.tsb} (${load.status})`)
+  } catch (err: any) {
+    job.log(`Training load computation failed: ${err.message}`)
   }
 
   // 2. Anomaly detection
@@ -103,8 +115,21 @@ async function computeHealthScore(db: ReturnType<typeof getDb>, userId: string, 
   const sleepScore = scoreFromMetric(byType, "sleep_score", "sleep")
   const activityScore = scoreFromStepsAndActive(byType)
   const cardioScore = scoreFromCardio(byType)
+
+  // Use proprietary engines for recovery & body scores
+  let recoveryScore: number | null = null
+  let bodyScoreVal: number | null = null
+  try {
+    const readiness = await computeReadiness(userId, date)
+    recoveryScore = readiness.score
+  } catch { /* fall back to null if insufficient data */ }
+  try {
+    const body = await computeBodyScore(userId, date)
+    bodyScoreVal = body.score
+  } catch { /* fall back to null if insufficient data */ }
+
   const overallScore = weightedAvg([
-    [sleepScore, 0.25], [activityScore, 0.25], [cardioScore, 0.20], [50, 0.15], [50, 0.15],
+    [sleepScore, 0.20], [activityScore, 0.20], [cardioScore, 0.15], [recoveryScore, 0.25], [bodyScoreVal, 0.20],
   ])
   const grade = overallScore >= 90 ? "A+" : overallScore >= 80 ? "A" : overallScore >= 70 ? "B" : overallScore >= 60 ? "C" : "D"
 
@@ -120,8 +145,8 @@ async function computeHealthScore(db: ReturnType<typeof getDb>, userId: string, 
 
   const [row] = await db
     .insert(healthScores)
-    .values({ userId, date: dayStart, overallScore, sleepScore, activityScore, cardioScore, recoveryScore: null, bodyScore: null, grade, weeklyAverage, breakdown: {} })
-    .onConflictDoUpdate({ target: [healthScores.userId, healthScores.date], set: { overallScore, grade, weeklyAverage } })
+    .values({ userId, date: dayStart, overallScore, sleepScore, activityScore, cardioScore, recoveryScore, bodyScore: bodyScoreVal, grade, weeklyAverage, breakdown: {} })
+    .onConflictDoUpdate({ target: [healthScores.userId, healthScores.date], set: { overallScore, sleepScore, activityScore, cardioScore, recoveryScore, bodyScore: bodyScoreVal, grade, weeklyAverage } })
     .returning()
   return row!
 }
@@ -295,4 +320,47 @@ function weightedAvg(items: [number | null, number][]): number {
     if (val != null) { sum += val * w; totalW += w }
   }
   return totalW > 0 ? Math.round((sum / totalW) * 10) / 10 : 50
+}
+
+// ── Training Load Persistence ───────────────────────────────────
+
+async function computeAndPersistTrainingLoad(userId: string, date: Date) {
+  const load = await computeTrainingLoad(userId, date)
+  const db = getDb()
+  const dayDate = new Date(date)
+  dayDate.setHours(0, 0, 0, 0)
+
+  const todayStrain = load.dailyStrain.find((d) => d.date === load.date)
+
+  await db
+    .insert(trainingLoad)
+    .values({
+      userId,
+      date: dayDate,
+      dailyStrain: todayStrain?.strain ?? 0,
+      atl: load.atl,
+      ctl: load.ctl,
+      tsb: load.tsb,
+      status: load.status,
+      workoutCount: todayStrain?.workoutCount ?? 0,
+      totalDurationMin: todayStrain?.totalDurationMin ?? 0,
+      totalCalories: todayStrain?.totalCalories ?? 0,
+      breakdown: { fitness: load.fitness, fatigue: load.fatigue },
+    })
+    .onConflictDoUpdate({
+      target: [trainingLoad.userId, trainingLoad.date],
+      set: {
+        dailyStrain: todayStrain?.strain ?? 0,
+        atl: load.atl,
+        ctl: load.ctl,
+        tsb: load.tsb,
+        status: load.status,
+        workoutCount: todayStrain?.workoutCount ?? 0,
+        totalDurationMin: todayStrain?.totalDurationMin ?? 0,
+        totalCalories: todayStrain?.totalCalories ?? 0,
+        breakdown: { fitness: load.fitness, fatigue: load.fatigue },
+      },
+    })
+
+  return load
 }

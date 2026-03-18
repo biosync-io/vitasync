@@ -12,7 +12,7 @@ export class DataExportService {
       .select()
       .from(dataExports)
       .where(eq(dataExports.userId, userId))
-      .orderBy(desc(dataExports.requestedAt))
+      .orderBy(desc(dataExports.createdAt))
       .limit(opts.limit ?? 20)
   }
 
@@ -32,9 +32,9 @@ export class DataExportService {
         userId,
         format,
         status: "pending",
-        dateRangeStart: opts.from ?? null,
-        dateRangeEnd: opts.to ?? null,
-        filters: opts.metricTypes ? { metricTypes: opts.metricTypes } : null,
+        periodStart: opts.from ?? null,
+        periodEnd: opts.to ?? null,
+        metricTypes: opts.metricTypes ? opts.metricTypes : null,
       })
       .returning()
     return row!
@@ -56,8 +56,8 @@ export class DataExportService {
 
     try {
       const conditions = [eq(healthMetrics.userId, exportRow.userId)]
-      if (exportRow.dateRangeStart) conditions.push(gte(healthMetrics.recordedAt, exportRow.dateRangeStart))
-      if (exportRow.dateRangeEnd) conditions.push(lte(healthMetrics.recordedAt, exportRow.dateRangeEnd))
+      if (exportRow.periodStart) conditions.push(gte(healthMetrics.recordedAt, exportRow.periodStart))
+      if (exportRow.periodEnd) conditions.push(lte(healthMetrics.recordedAt, exportRow.periodEnd))
 
       const metrics = await this.db
         .select()
@@ -67,8 +67,8 @@ export class DataExportService {
         .limit(50000)
 
       const eventConditions = [eq(events.userId, exportRow.userId)]
-      if (exportRow.dateRangeStart) eventConditions.push(gte(events.startedAt, exportRow.dateRangeStart))
-      if (exportRow.dateRangeEnd) eventConditions.push(lte(events.startedAt, exportRow.dateRangeEnd))
+      if (exportRow.periodStart) eventConditions.push(gte(events.startedAt, exportRow.periodStart))
+      if (exportRow.periodEnd) eventConditions.push(lte(events.startedAt, exportRow.periodEnd))
 
       const eventRows = await this.db
         .select()
@@ -91,7 +91,6 @@ export class DataExportService {
         .set({
           status: "ready",
           recordCount: metrics.length + eventRows.length,
-          fileSizeBytes: JSON.stringify(content).length,
           completedAt: new Date(),
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         })

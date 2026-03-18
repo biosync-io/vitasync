@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
+import { defined } from "../../lib/strip-undefined.js"
 import { ChallengeService } from "../../services/challenge.service.js"
 import { UserService } from "../../services/user.service.js"
 
@@ -16,7 +17,7 @@ const challengesRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.query)
 
-    const challenges = await challengeService.list(request.workspaceId, query)
+    const challenges = await challengeService.list(request.workspaceId, defined(query))
     return reply.send({ data: challenges })
   })
 
@@ -36,11 +37,15 @@ const challengesRoutes: FastifyPluginAsync = async (app) => {
 
     const challenge = await challengeService.create({
       workspaceId: request.workspaceId,
-      createdBy: (request.body as any).createdBy ?? null,
-      ...body,
-      startDate: new Date(body.startDate),
-      endDate: new Date(body.endDate),
+      createdBy: (request.body as any).createdBy ?? "",
+      name: body.title,
+      challengeType: "target",
+      metricType: body.metricType,
+      startsAt: new Date(body.startDate),
+      endsAt: new Date(body.endDate),
       status: "draft",
+      ...(body.description !== undefined && { description: body.description }),
+      ...(body.maxParticipants !== undefined && { maxParticipants: body.maxParticipants }),
     })
     return reply.status(201).send(challenge)
   })
@@ -48,7 +53,7 @@ const challengesRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/challenges/:challengeId
   app.get("/:challengeId", async (request, reply) => {
     const { challengeId } = z.object({ challengeId: z.string().uuid() }).parse(request.params)
-    const challenge = await challengeService.findById(challengeId, request.workspaceId)
+    const challenge = await challengeService.findById(challengeId)
     if (!challenge) return reply.status(404).send({ code: "NOT_FOUND", message: "Challenge not found" })
     return reply.send(challenge)
   })
@@ -84,7 +89,7 @@ const challengesRoutes: FastifyPluginAsync = async (app) => {
   // POST /v1/challenges/:challengeId/activate
   app.post("/:challengeId/activate", async (request, reply) => {
     const { challengeId } = z.object({ challengeId: z.string().uuid() }).parse(request.params)
-    const challenge = await challengeService.activate(challengeId, request.workspaceId)
+    const challenge = await challengeService.activate(challengeId)
     if (!challenge) return reply.status(404).send({ code: "NOT_FOUND", message: "Challenge not found" })
     return reply.send(challenge)
   })

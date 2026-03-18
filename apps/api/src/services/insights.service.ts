@@ -412,6 +412,7 @@ export class InsightsService {
     const vals = (type: string) => (byType.get(type) ?? []).filter((r) => r.value != null).map((r) => r.value!)
     const recs = (type: string) => byType.get(type) ?? []
     const sorted = (v: number[]) => [...v].sort((a, b) => a - b)
+    const dayStats = (type: string) => (byType.get(type) ?? []).filter((r) => r.value != null).map((r) => ({ date: r.recordedAt.toISOString().slice(0, 10), value: r.value! }))
 
     switch (alg.id) {
       // ── Cardio ──────────────────────────────────────────────
@@ -1043,7 +1044,7 @@ export class InsightsService {
         const meanS = s.reduce((a, b) => a + b, 0) / n
         const meanSl = sl.reduce((a, b) => a + b, 0) / n
         let num = 0; let denS = 0; let denSl = 0
-        for (let i = 0; i < n; i++) { num += (s[i] - meanS) * (sl[i] - meanSl); denS += (s[i] - meanS) ** 2; denSl += (sl[i] - meanSl) ** 2 }
+        for (let i = 0; i < n; i++) { num += (s[i]! - meanS) * (sl[i]! - meanSl); denS += (s[i]! - meanS) ** 2; denSl += (sl[i]! - meanSl) ** 2 }
         const r = denS && denSl ? num / Math.sqrt(denS * denSl) : 0
         const sev: InsightSeverity = r > 0.3 ? "positive" : r < -0.3 ? "warning" : "info"
         return makeInsight(alg, sev, `Steps-sleep correlation: r=${r.toFixed(2)}. ${r > 0.3 ? "More activity is linked to better sleep." : r < -0.3 ? "Higher activity may be disrupting sleep." : "No strong link detected."}`, Number(r.toFixed(2)), "r", { low: -0.3, high: 0.3 }, { n })
@@ -1056,7 +1057,7 @@ export class InsightsService {
         const r1 = rhr.slice(-n); const s1 = ss.slice(-n)
         const mr = r1.reduce((a, b) => a + b, 0) / n; const ms = s1.reduce((a, b) => a + b, 0) / n
         let num = 0; let d1 = 0; let d2 = 0
-        for (let i = 0; i < n; i++) { num += (r1[i] - mr) * (s1[i] - ms); d1 += (r1[i] - mr) ** 2; d2 += (s1[i] - ms) ** 2 }
+        for (let i = 0; i < n; i++) { num += (r1[i]! - mr) * (s1[i]! - ms); d1 += (r1[i]! - mr) ** 2; d2 += (s1[i]! - ms) ** 2 }
         const r = d1 && d2 ? num / Math.sqrt(d1 * d2) : 0
         const sev: InsightSeverity = r < -0.3 ? "positive" : r > 0.3 ? "warning" : "info"
         return makeInsight(alg, sev, `RHR-sleep quality correlation: r=${r.toFixed(2)}. ${r < -0.3 ? "Lower RHR = better sleep (expected)." : "No strong inverse relationship."}`, Number(r.toFixed(2)), "r", { low: -0.5, high: 0 }, { n })
@@ -1066,9 +1067,9 @@ export class InsightsService {
         const rec = vals("recovery_score")
         if (rec.length < 7 || workouts.length < 2) return null
         const dipDays: number[] = []
-        for (let i = 1; i < rec.length; i++) { if (rec[i] < rec[i - 1] * 0.85) dipDays.push(i) }
+        for (let i = 1; i < rec.length; i++) { if (rec[i]! < rec[i - 1]! * 0.85) dipDays.push(i) }
         if (dipDays.length === 0) return makeInsight(alg, "positive", "Recovery stayed stable — no significant post-workout dips detected.", 0, "days", { low: 1, high: 3 }, {})
-        const recoveryTimes = dipDays.map((d) => { let t = 1; while (d + t < rec.length && rec[d + t] < rec[d - 1]) t++; return t })
+        const recoveryTimes = dipDays.map((d) => { let t = 1; while (d + t < rec.length && rec[d + t]! < rec[d - 1]!) t++; return t })
         const avg = recoveryTimes.reduce((a, b) => a + b, 0) / recoveryTimes.length
         const sev: InsightSeverity = avg <= 1.5 ? "positive" : avg <= 3 ? "info" : "warning"
         return makeInsight(alg, sev, `Average recovery rebound: ${avg.toFixed(1)} days after hard efforts. ${avg <= 1.5 ? "Excellent recovery speed." : avg <= 3 ? "Normal recovery time." : "Slow recovery — consider reducing load."}`, Number(avg.toFixed(1)), "days", { low: 1, high: 3 }, { dips: dipDays.length })
@@ -1080,8 +1081,8 @@ export class InsightsService {
         const n = Math.min(stress.length, sleepV.length)
         const s = stress.slice(-n); const sl = sleepV.slice(-n)
         const highStressDays = s.filter((v) => v > 70).length
-        const avgSleepOnHigh = s.reduce((acc, v, i) => v > 70 ? { sum: acc.sum + sl[i], count: acc.count + 1 } : acc, { sum: 0, count: 0 })
-        const avgSleepOnLow = s.reduce((acc, v, i) => v <= 70 ? { sum: acc.sum + sl[i], count: acc.count + 1 } : acc, { sum: 0, count: 0 })
+        const avgSleepOnHigh = s.reduce((acc, v, i) => v > 70 ? { sum: acc.sum + sl[i]!, count: acc.count + 1 } : acc, { sum: 0, count: 0 })
+        const avgSleepOnLow = s.reduce((acc, v, i) => v <= 70 ? { sum: acc.sum + sl[i]!, count: acc.count + 1 } : acc, { sum: 0, count: 0 })
         const highAvg = avgSleepOnHigh.count ? avgSleepOnHigh.sum / avgSleepOnHigh.count : 0
         const lowAvg = avgSleepOnLow.count ? avgSleepOnLow.sum / avgSleepOnLow.count : 0
         const diff = lowAvg - highAvg
@@ -1107,7 +1108,7 @@ export class InsightsService {
         if (sleepV.length < 7 || readiness.length < 7) return null
         const n = Math.min(sleepV.length, readiness.length) - 1
         let correctPredictions = 0
-        for (let i = 0; i < n; i++) { if ((sleepV[i] >= 420 && readiness[i + 1] >= 60) || (sleepV[i] < 420 && readiness[i + 1] < 60)) correctPredictions++ }
+        for (let i = 0; i < n; i++) { if ((sleepV[i]! >= 420 && readiness[i + 1]! >= 60) || (sleepV[i]! < 420 && readiness[i + 1]! < 60)) correctPredictions++ }
         const accuracy = n > 0 ? (correctPredictions / n) * 100 : 0
         const sev: InsightSeverity = accuracy >= 70 ? "positive" : "info"
         return makeInsight(alg, sev, `Sleep predicts next-day readiness with ${accuracy.toFixed(0)}% accuracy. ${accuracy >= 70 ? "Strong predictive link — prioritize sleep." : "Other factors also influence readiness."}`, Number(accuracy.toFixed(0)), "%", { low: 50, high: 80 }, { n })
@@ -1163,7 +1164,7 @@ export class InsightsService {
       case "detraining-risk": {
         if (workouts.length === 0) return null
         const sorted = [...workouts].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
-        const lastWorkout = new Date(sorted[0].startedAt)
+        const lastWorkout = new Date(sorted[0]!.startedAt)
         const daysSince = Math.floor((Date.now() - lastWorkout.getTime()) / 86400000)
         const twoWeekCount = workouts.filter((w) => new Date(w.startedAt) >= new Date(Date.now() - 14 * 86400000)).length
         const sev: InsightSeverity = daysSince <= 3 && twoWeekCount >= 4 ? "positive" : daysSince <= 7 ? "info" : "warning"
@@ -1177,9 +1178,9 @@ export class InsightsService {
         const dailyLoad: number[] = Array(42).fill(0)
         for (const w of workouts) {
           const daysAgo = Math.floor((now - new Date(w.startedAt).getTime()) / 86400000)
-          if (daysAgo < 42) dailyLoad[daysAgo] += (w.durationSeconds || 0) / 60 * (w.averageHeartRate ? w.averageHeartRate / 150 : 1)
+          if (daysAgo < 42) dailyLoad[daysAgo]! += (w.durationSeconds || 0) / 60 * (w.avgHeartRate ? w.avgHeartRate / 150 : 1)
         }
-        for (let i = 41; i >= 0; i--) { ctl = ctl + (dailyLoad[i] - ctl) / 42; atl = atl + (dailyLoad[i] - atl) / 7 }
+        for (let i = 41; i >= 0; i--) { ctl = ctl + (dailyLoad[i]! - ctl) / 42; atl = atl + (dailyLoad[i]! - atl) / 7 }
         const tsb = ctl - atl
         const sev: InsightSeverity = tsb > 10 ? "positive" : tsb > -10 ? "info" : "warning"
         return makeInsight(alg, sev, `Training balance: CTL=${ctl.toFixed(0)}, ATL=${atl.toFixed(0)}, TSB=${tsb.toFixed(0)}. ${tsb > 10 ? "Fresh — ready for hard effort." : tsb > -10 ? "Balanced fatigue/fitness." : "Fatigued — recovery recommended."}`, Number(tsb.toFixed(0)), "TSB", { low: -15, high: 15 }, { ctl: ctl.toFixed(1), atl: atl.toFixed(1) })
@@ -1203,12 +1204,12 @@ export class InsightsService {
         const cal = vals("calories"); const active = vals("active_minutes")
         if (cal.length < 7 || active.length < 7) return null
         const n = Math.min(cal.length, active.length)
-        const efficiency = cal.slice(-n).map((c, i) => active[active.length - n + i] > 0 ? c / active[active.length - n + i] : 0).filter((e) => e > 0)
+        const efficiency = cal.slice(-n).map((c, i) => active[active.length - n + i]! > 0 ? c / active[active.length - n + i]! : 0).filter((e) => e > 0)
         if (efficiency.length < 3) return null
         const avg = efficiency.reduce((a, b) => a + b, 0) / efficiency.length
         const t = trend(efficiency)
-        const sev: InsightSeverity = t === "improving" ? "positive" : t === "stable" ? "info" : "warning"
-        return makeInsight(alg, sev, `Metabolic efficiency: ${avg.toFixed(1)} cal/active-min (${t}). ${t === "improving" ? "Burning more efficiently." : "Stable metabolic output."}`, Number(avg.toFixed(1)), "cal/min", { low: 5, high: 15 }, { trend: t, days: efficiency.length })
+        const sev: InsightSeverity = t === "rising" ? "positive" : t === "stable" ? "info" : "warning"
+        return makeInsight(alg, sev, `Metabolic efficiency: ${avg.toFixed(1)} cal/active-min (${t}). ${t === "rising" ? "Burning more efficiently." : "Stable metabolic output."}`, Number(avg.toFixed(1)), "cal/min", { low: 5, high: 15 }, { trend: t, days: efficiency.length })
       }
 
       case "hydration-proxy": {
@@ -1256,11 +1257,11 @@ export class InsightsService {
 
       case "aerobic-threshold": {
         if (workouts.length < 3) return null
-        const hrWorkouts = workouts.filter((w) => w.averageHeartRate && w.maxHeartRate)
+        const hrWorkouts = workouts.filter((w) => w.avgHeartRate && w.maxHeartRate)
         if (hrWorkouts.length < 3) return null
         const maxHRs = hrWorkouts.map((w) => w.maxHeartRate!)
         const estMax = Math.max(...maxHRs)
-        const avgExercise = hrWorkouts.map((w) => w.averageHeartRate!).reduce((a, b) => a + b, 0) / hrWorkouts.length
+        const avgExercise = hrWorkouts.map((w) => w.avgHeartRate!).reduce((a, b) => a + b, 0) / hrWorkouts.length
         const atPct = (avgExercise / estMax) * 100
         const sev: InsightSeverity = atPct < 75 ? "positive" : atPct < 85 ? "info" : "warning"
         return makeInsight(alg, sev, `Avg exercise HR is ${atPct.toFixed(0)}% of max (${Math.round(avgExercise)}/${estMax} bpm). ${atPct < 75 ? "Mostly aerobic zone training." : atPct < 85 ? "Mixed aerobic/anaerobic." : "Predominantly high-intensity."}`, Number(atPct.toFixed(0)), "% max HR", { low: 60, high: 85 }, { avgExercise: Math.round(avgExercise), estMax })
@@ -1268,9 +1269,9 @@ export class InsightsService {
 
       case "hr-drift-rate": {
         if (workouts.length < 3) return null
-        const longWorkouts = workouts.filter((w) => (w.durationSeconds || 0) > 1800 && w.averageHeartRate)
+        const longWorkouts = workouts.filter((w) => (w.durationSeconds || 0) > 1800 && w.avgHeartRate)
         if (longWorkouts.length < 2) return null
-        const drifts = longWorkouts.map((w) => { const dur = (w.durationSeconds || 0) / 3600; return w.maxHeartRate && w.averageHeartRate ? (w.maxHeartRate - w.averageHeartRate) / dur : 0 }).filter((d) => d > 0)
+        const drifts = longWorkouts.map((w) => { const dur = (w.durationSeconds || 0) / 3600; return w.maxHeartRate && w.avgHeartRate ? (w.maxHeartRate - w.avgHeartRate) / dur : 0 }).filter((d) => d > 0)
         if (drifts.length === 0) return null
         const avgDrift = drifts.reduce((a, b) => a + b, 0) / drifts.length
         const sev: InsightSeverity = avgDrift < 10 ? "positive" : avgDrift < 20 ? "info" : "warning"
@@ -1279,9 +1280,9 @@ export class InsightsService {
 
       case "post-exercise-recovery-1min": {
         if (workouts.length < 3) return null
-        const hrWorkouts = workouts.filter((w) => w.maxHeartRate && w.averageHeartRate)
+        const hrWorkouts = workouts.filter((w) => w.maxHeartRate && w.avgHeartRate)
         if (hrWorkouts.length < 2) return null
-        const recoveryEst = hrWorkouts.map((w) => (w.maxHeartRate! - w.averageHeartRate!) * 0.6)
+        const recoveryEst = hrWorkouts.map((w) => (w.maxHeartRate! - w.avgHeartRate!) * 0.6)
         const avg = recoveryEst.reduce((a, b) => a + b, 0) / recoveryEst.length
         const sev: InsightSeverity = avg > 30 ? "positive" : avg > 20 ? "info" : "warning"
         return makeInsight(alg, sev, `Estimated 1-min HR recovery: ~${Math.round(avg)} bpm. ${avg > 30 ? "Excellent cardiac recovery." : avg > 20 ? "Normal recovery." : "Slow recovery — improve aerobic fitness."}`, Math.round(avg), "bpm", { low: 20, high: 40 }, { samples: recoveryEst.length })
@@ -1326,7 +1327,7 @@ export class InsightsService {
 
       case "hr-exercise-reactivity": {
         if (workouts.length < 3) return null
-        const hrWorkouts = workouts.filter((w) => w.averageHeartRate && w.maxHeartRate)
+        const hrWorkouts = workouts.filter((w) => w.avgHeartRate && w.maxHeartRate)
         if (hrWorkouts.length < 2) return null
         const rhr = vals("resting_heart_rate")
         const avgRHR = rhr.length > 0 ? rhr.reduce((a, b) => a + b, 0) / rhr.length : 60
@@ -1349,9 +1350,9 @@ export class InsightsService {
 
       case "parasympathetic-reactivation": {
         if (workouts.length < 3) return null
-        const hrWork = workouts.filter((w) => w.maxHeartRate && w.averageHeartRate)
+        const hrWork = workouts.filter((w) => w.maxHeartRate && w.avgHeartRate)
         if (hrWork.length < 2) return null
-        const dropPct = hrWork.map((w) => ((w.maxHeartRate! - w.averageHeartRate!) / w.maxHeartRate!) * 100)
+        const dropPct = hrWork.map((w) => ((w.maxHeartRate! - w.avgHeartRate!) / w.maxHeartRate!) * 100)
         const avgDrop = dropPct.reduce((a, b) => a + b, 0) / dropPct.length
         const sev: InsightSeverity = avgDrop > 15 ? "positive" : avgDrop > 8 ? "info" : "warning"
         return makeInsight(alg, sev, `Post-exercise HR drop: ${avgDrop.toFixed(1)}% from peak. ${avgDrop > 15 ? "Fast parasympathetic reactivation." : avgDrop > 8 ? "Normal vagal reactivation." : "Slow reactivation — aerobic conditioning may help."}`, Number(avgDrop.toFixed(1)), "%", { low: 8, high: 20 }, { samples: hrWork.length })
@@ -1417,7 +1418,7 @@ export class InsightsService {
         if (sleepV.length < 14) return null
         const mean = sleepV.reduce((a, b) => a + b, 0) / sleepV.length
         let matches = 0
-        for (let i = 1; i < sleepV.length; i++) { if ((sleepV[i] > mean && sleepV[i - 1] > mean) || (sleepV[i] <= mean && sleepV[i - 1] <= mean)) matches++ }
+        for (let i = 1; i < sleepV.length; i++) { if ((sleepV[i]! > mean && sleepV[i - 1]! > mean) || (sleepV[i]! <= mean && sleepV[i - 1]! <= mean)) matches++ }
         const sri = (matches / (sleepV.length - 1)) * 100
         const sev: InsightSeverity = sri >= 80 ? "positive" : sri >= 60 ? "info" : "warning"
         return makeInsight(alg, sev, `Sleep regularity index: ${sri.toFixed(0)}%. ${sri >= 80 ? "Highly regular sleep pattern." : sri >= 60 ? "Moderately regular." : "Irregular — consistency improves sleep quality."}`, Number(sri.toFixed(0)), "%", { low: 60, high: 90 }, { days: sleepV.length })
@@ -1455,7 +1456,7 @@ export class InsightsService {
       case "sleep-pressure": {
         const sleepV = vals("sleep")
         if (sleepV.length < 3) return null
-        const lastSleep = sleepV[sleepV.length - 1]
+        const lastSleep = sleepV[sleepV.length - 1]!
         const wakeDuration = Math.max(0, 1440 - lastSleep)
         const pressure = Math.min(100, (wakeDuration / 960) * 100)
         const sev: InsightSeverity = pressure < 70 ? "positive" : pressure < 90 ? "info" : "warning"
@@ -1488,7 +1489,7 @@ export class InsightsService {
         const steps = vals("steps"); const active = vals("active_minutes")
         if (steps.length < 7 || active.length < 7) return null
         const n = Math.min(steps.length, active.length)
-        const cadences = steps.slice(-n).map((s, i) => active[active.length - n + i] > 0 ? s / active[active.length - n + i] : 0).filter((c) => c > 0)
+        const cadences = steps.slice(-n).map((s, i) => active[active.length - n + i]! > 0 ? s / active[active.length - n + i]! : 0).filter((c) => c > 0)
         if (cadences.length < 3) return null
         const avg = cadences.reduce((a, b) => a + b, 0) / cadences.length
         const sev: InsightSeverity = avg >= 100 ? "positive" : avg >= 70 ? "info" : "warning"
@@ -1611,18 +1612,18 @@ export class InsightsService {
         const weight = vals("weight"); const bf = vals("body_fat")
         if (weight.length < 7 || bf.length < 7) return null
         const wTrend = trend(weight.slice(-14)); const bfTrend = trend(bf.slice(-14))
-        const ideal = (wTrend === "declining" && bfTrend === "declining") || (wTrend === "improving" && bfTrend === "declining")
+        const ideal = (wTrend === "falling" && bfTrend === "falling") || (wTrend === "rising" && bfTrend === "falling")
         const sev: InsightSeverity = ideal ? "positive" : wTrend === "stable" && bfTrend === "stable" ? "info" : "warning"
-        return makeInsight(alg, sev, `Weight: ${wTrend}, Body fat: ${bfTrend}. ${ideal ? "Favorable body composition change." : "Monitor composition alongside weight."}`, bf[bf.length - 1], "%", { low: 10, high: 25 }, { wTrend, bfTrend })
+        return makeInsight(alg, sev, `Weight: ${wTrend}, Body fat: ${bfTrend}. ${ideal ? "Favorable body composition change." : "Monitor composition alongside weight."}`, bf[bf.length - 1]!, "%", { low: 10, high: 25 }, { wTrend, bfTrend })
       }
 
       case "lean-mass-estimate": {
         const weight = vals("weight"); const bf = vals("body_fat")
         if (weight.length < 3 || bf.length < 3) return null
-        const w = weight[weight.length - 1]; const f = bf[bf.length - 1]
+        const w = weight[weight.length - 1]!; const f = bf[bf.length - 1]!
         const lean = w * (1 - f / 100)
-        const prevW = weight.length > 7 ? weight[weight.length - 8] : weight[0]
-        const prevF = bf.length > 7 ? bf[bf.length - 8] : bf[0]
+        const prevW = weight.length > 7 ? weight[weight.length - 8]! : weight[0]!
+        const prevF = bf.length > 7 ? bf[bf.length - 8]! : bf[0]!
         const prevLean = prevW * (1 - prevF / 100)
         const change = lean - prevLean
         const sev: InsightSeverity = change > 0 ? "positive" : Math.abs(change) < 0.5 ? "info" : "warning"
@@ -1632,7 +1633,7 @@ export class InsightsService {
       case "bmi-trend": {
         const bmi = vals("bmi")
         if (bmi.length < 7) return null
-        const current = bmi[bmi.length - 1]
+        const current = bmi[bmi.length - 1]!
         const t = trend(bmi.slice(-30))
         const cat = current < 18.5 ? "Underweight" : current < 25 ? "Normal" : current < 30 ? "Overweight" : "Obese"
         const sev: InsightSeverity = current >= 18.5 && current < 25 ? "positive" : current >= 25 && current < 30 ? "info" : "warning"
@@ -1643,7 +1644,7 @@ export class InsightsService {
         const weight = vals("weight")
         if (weight.length < 14) return null
         const slope = linearSlope(weight.slice(-14))
-        const current = weight[weight.length - 1]
+        const current = weight[weight.length - 1]!
         const weeklyChange = slope * 7
         const sev: InsightSeverity = Math.abs(weeklyChange) < 0.5 ? "info" : weeklyChange < -1.5 ? "warning" : "positive"
         return makeInsight(alg, sev, `Weight trend: ${weeklyChange > 0 ? "+" : ""}${weeklyChange.toFixed(2)} kg/week. ${Math.abs(weeklyChange) < 0.2 ? "Weight is stable." : weeklyChange < -1.5 ? "Rapid loss — ensure adequate nutrition." : "Steady progress."}`, Number(weeklyChange.toFixed(2)), "kg/week", { low: -1, high: 0.5 }, { current: current.toFixed(1), slope: slope.toFixed(4) })
@@ -1653,7 +1654,7 @@ export class InsightsService {
         const weight = vals("weight")
         if (weight.length < 14) return null
         const ma = movingAverage(weight, 3)
-        const spikes = weight.filter((w, i) => i < ma.length && w > ma[i] + 1).length
+        const spikes = weight.filter((w, i) => i < ma.length && w > ma[i]! + 1).length
         const pct = (spikes / weight.length) * 100
         const sev: InsightSeverity = pct < 10 ? "positive" : pct < 25 ? "info" : "warning"
         return makeInsight(alg, sev, `Fluid retention spikes: ${spikes} days (~${pct.toFixed(0)}%). ${pct >= 25 ? "Frequent weight spikes — possible fluid retention cycles." : "Normal weight fluctuation."}`, spikes, "days", { low: 0, high: 5 }, { totalDays: weight.length })
@@ -1662,7 +1663,7 @@ export class InsightsService {
       case "metabolic-rate-estimate": {
         const weight = vals("weight"); const cal = vals("calories")
         if (weight.length < 3 || cal.length < 7) return null
-        const w = weight[weight.length - 1]
+        const w = weight[weight.length - 1]!
         const bmr = w * 24
         const avgCal = cal.slice(-7).reduce((a, b) => a + b, 0) / 7
         const activityFactor = avgCal / bmr
@@ -1674,7 +1675,7 @@ export class InsightsService {
         const bf = vals("body_fat")
         if (bf.length < 7) return null
         const slope = linearSlope(bf.slice(-30))
-        const current = bf[bf.length - 1]
+        const current = bf[bf.length - 1]!
         const monthlyChange = slope * 30
         const sev: InsightSeverity = monthlyChange < -0.5 ? "positive" : Math.abs(monthlyChange) < 0.5 ? "info" : "warning"
         return makeInsight(alg, sev, `Body fat: ${current.toFixed(1)}% (${monthlyChange > 0 ? "+" : ""}${monthlyChange.toFixed(1)}%/month). ${monthlyChange < -0.5 ? "Decreasing — good progress." : Math.abs(monthlyChange) < 0.5 ? "Stable." : "Increasing — review diet and exercise."}`, Number(current.toFixed(1)), "%", { low: 10, high: 25 }, { monthlyChange: monthlyChange.toFixed(2) })
@@ -1737,7 +1738,7 @@ export class InsightsService {
         const rec = vals("recovery_score")
         if (rec.length < 14) return null
         const dips = []; let i = 0
-        while (i < rec.length) { if (rec[i] < 50) { const start = i; while (i < rec.length && rec[i] < 50) i++; dips.push(i - start) } else { i++ } }
+        while (i < rec.length) { if (rec[i]! < 50) { const start = i; while (i < rec.length && rec[i]! < 50) i++; dips.push(i - start) } else { i++ } }
         const avgDipLen = dips.length > 0 ? dips.reduce((a, b) => a + b, 0) / dips.length : 0
         const sev: InsightSeverity = avgDipLen <= 2 ? "positive" : avgDipLen <= 4 ? "info" : "warning"
         return makeInsight(alg, sev, `Recovery velocity: avg ${avgDipLen.toFixed(1)} days below 50%. ${avgDipLen <= 2 ? "Quick bounce-back." : avgDipLen <= 4 ? "Moderate recovery speed." : "Slow recovery — consider rest priorities."}`, Number(avgDipLen.toFixed(1)), "days", { low: 1, high: 4 }, { dips: dips.length })
@@ -1791,7 +1792,7 @@ export class InsightsService {
       case "readiness-prediction": {
         const rec = vals("recovery_score"); const sleepV = vals("sleep"); const strain = vals("strain_score")
         if (rec.length < 3 || sleepV.length < 3 || strain.length < 3) return null
-        const lastRec = rec[rec.length - 1]; const lastSleep = sleepV[sleepV.length - 1]; const lastStrain = strain[strain.length - 1]
+        const lastRec = rec[rec.length - 1]!; const lastSleep = sleepV[sleepV.length - 1]!; const lastStrain = strain[strain.length - 1]!
         const predicted = Math.round(lastRec * 0.4 + (lastSleep / 480) * 30 + (1 - lastStrain / 100) * 30)
         const sev: InsightSeverity = predicted >= 70 ? "positive" : predicted >= 45 ? "info" : "warning"
         return makeInsight(alg, sev, `Predicted readiness: ${predicted}/100. ${predicted >= 70 ? "Ready for hard training tomorrow." : predicted >= 45 ? "Moderate readiness — light to moderate training." : "Low readiness — prioritize recovery."}`, predicted, "/100", { low: 40, high: 75 }, { lastRec, lastSleep, lastStrain })
@@ -1829,8 +1830,8 @@ export class InsightsService {
         if (rr.length < 14 || workouts.length < 3) return null
         const t = trend(rr.slice(-14))
         const avgRR = rr.slice(-7).reduce((a, b) => a + b, 0) / 7
-        const sev: InsightSeverity = t === "declining" ? "positive" : t === "stable" ? "info" : "warning"
-        return makeInsight(alg, sev, `Respiratory fitness: avg RR ${avgRR.toFixed(1)}/min (${t}). ${t === "declining" ? "Improving — lower RR indicates better fitness." : "Respiratory rate stable or rising."}`, Number(avgRR.toFixed(1)), "breaths/min", { low: 12, high: 18 }, { trend: t, workouts: workouts.length })
+        const sev: InsightSeverity = t === "falling" ? "positive" : t === "stable" ? "info" : "warning"
+        return makeInsight(alg, sev, `Respiratory fitness: avg RR ${avgRR.toFixed(1)}/min (${t}). ${t === "falling" ? "Improving — lower RR indicates better fitness." : "Respiratory rate stable or rising."}`, Number(avgRR.toFixed(1)), "breaths/min", { low: 12, high: 18 }, { trend: t, workouts: workouts.length })
       }
 
       case "dyspnea-risk": {
@@ -1856,7 +1857,7 @@ export class InsightsService {
         const rr = vals("respiratory_rate"); const hr = vals("heart_rate")
         if (rr.length < 7 || hr.length < 7) return null
         const n = Math.min(rr.length, hr.length)
-        const ratios = rr.slice(-n).map((r, i) => hr[hr.length - n + i] > 0 ? r / hr[hr.length - n + i] : 0).filter((r) => r > 0)
+        const ratios = rr.slice(-n).map((r, i) => hr[hr.length - n + i]! > 0 ? r / hr[hr.length - n + i]! : 0).filter((r) => r > 0)
         const avgRatio = ratios.reduce((a, b) => a + b, 0) / ratios.length
         const sev: InsightSeverity = avgRatio < 0.2 ? "positive" : avgRatio < 0.3 ? "info" : "warning"
         return makeInsight(alg, sev, `Breathing efficiency (RR/HR): ${avgRatio.toFixed(3)}. ${avgRatio < 0.2 ? "Efficient breathing relative to heart rate." : "Higher ratio — respiratory conditioning may help."}`, Number(avgRatio.toFixed(3)), "ratio", { low: 0.1, high: 0.25 }, { samples: ratios.length })
@@ -1956,7 +1957,7 @@ export class InsightsService {
       case "calorie-burn-efficiency": {
         const cal = vals("calories"); const weight = vals("weight")
         if (cal.length < 7 || weight.length < 1) return null
-        const w = weight[weight.length - 1]
+        const w = weight[weight.length - 1]!
         const avgCal = cal.slice(-7).reduce((a, b) => a + b, 0) / 7
         const perKg = w > 0 ? avgCal / w : 0
         const sev: InsightSeverity = perKg >= 30 ? "positive" : perKg >= 22 ? "info" : "warning"
@@ -1966,12 +1967,12 @@ export class InsightsService {
       // ── Advanced Workout Performance ──
       case "training-intensity-dist": {
         if (workouts.length < 5) return null
-        const hrWorkouts = workouts.filter((w) => w.averageHeartRate && w.maxHeartRate)
+        const hrWorkouts = workouts.filter((w) => w.avgHeartRate && w.maxHeartRate)
         if (hrWorkouts.length < 3) return null
         const maxHR = Math.max(...hrWorkouts.map((w) => w.maxHeartRate!))
-        const z1z2 = hrWorkouts.filter((w) => w.averageHeartRate! < maxHR * 0.75).length
-        const z3 = hrWorkouts.filter((w) => w.averageHeartRate! >= maxHR * 0.75 && w.averageHeartRate! < maxHR * 0.85).length
-        const z4z5 = hrWorkouts.filter((w) => w.averageHeartRate! >= maxHR * 0.85).length
+        const z1z2 = hrWorkouts.filter((w) => w.avgHeartRate! < maxHR * 0.75).length
+        const z3 = hrWorkouts.filter((w) => w.avgHeartRate! >= maxHR * 0.75 && w.avgHeartRate! < maxHR * 0.85).length
+        const z4z5 = hrWorkouts.filter((w) => w.avgHeartRate! >= maxHR * 0.85).length
         const total = hrWorkouts.length
         const polarized = (z1z2 / total > 0.7 && z4z5 / total > 0.1)
         const sev: InsightSeverity = polarized ? "positive" : z3 / total > 0.5 ? "warning" : "info"
@@ -1980,9 +1981,9 @@ export class InsightsService {
 
       case "aerobic-decoupling": {
         if (workouts.length < 3) return null
-        const longWorkouts = workouts.filter((w) => (w.durationSeconds || 0) > 2700 && w.averageHeartRate)
+        const longWorkouts = workouts.filter((w) => (w.durationSeconds || 0) > 2700 && w.avgHeartRate)
         if (longWorkouts.length < 2) return null
-        const decoupling = longWorkouts.map((w) => { return w.maxHeartRate && w.averageHeartRate ? ((w.maxHeartRate - w.averageHeartRate) / w.averageHeartRate) * 100 : 0 }).filter((d) => d > 0)
+        const decoupling = longWorkouts.map((w) => { return w.maxHeartRate && w.avgHeartRate ? ((w.maxHeartRate - w.avgHeartRate) / w.avgHeartRate) * 100 : 0 }).filter((d) => d > 0)
         const avg = decoupling.reduce((a, b) => a + b, 0) / decoupling.length
         const sev: InsightSeverity = avg < 5 ? "positive" : avg < 10 ? "info" : "warning"
         return makeInsight(alg, sev, `Aerobic decoupling: ${avg.toFixed(1)}%. ${avg < 5 ? "Minimal — excellent aerobic fitness." : avg < 10 ? "Moderate — room for improvement." : "High decoupling — more base training needed."}`, Number(avg.toFixed(1)), "%", { low: 3, high: 10 }, { samples: decoupling.length })
@@ -1990,7 +1991,7 @@ export class InsightsService {
 
       case "training-stress-score": {
         if (workouts.length < 3) return null
-        const scores = workouts.map((w) => { const dur = (w.durationSeconds || 0) / 3600; const intensity = w.averageHeartRate ? w.averageHeartRate / 150 : 0.7; return dur * intensity * 100 })
+        const scores = workouts.map((w) => { const dur = (w.durationSeconds || 0) / 3600; const intensity = w.avgHeartRate ? w.avgHeartRate / 150 : 0.7; return dur * intensity * 100 })
         const avg = scores.reduce((a, b) => a + b, 0) / scores.length
         const sev: InsightSeverity = avg >= 50 && avg <= 150 ? "positive" : avg > 150 ? "warning" : "info"
         return makeInsight(alg, sev, `Avg training stress: ${avg.toFixed(0)} TSS/session. ${avg >= 50 && avg <= 150 ? "Productive training stimulus." : avg > 150 ? "Very high per-session stress." : "Low training stimulus."}`, Math.round(avg), "TSS", { low: 40, high: 150 }, { sessions: scores.length })
@@ -2000,9 +2001,9 @@ export class InsightsService {
         if (workouts.length < 14) return null
         const now = Date.now()
         const dailyLoad: number[] = Array(42).fill(0)
-        for (const w of workouts) { const d = Math.floor((now - new Date(w.startedAt).getTime()) / 86400000); if (d < 42) dailyLoad[d] += (w.durationSeconds || 0) / 60 * (w.averageHeartRate ? w.averageHeartRate / 150 : 1) }
+        for (const w of workouts) { const d = Math.floor((now - new Date(w.startedAt).getTime()) / 86400000); if (d < 42) dailyLoad[d]! += (w.durationSeconds || 0) / 60 * (w.avgHeartRate ? w.avgHeartRate / 150 : 1) }
         let ctl = 0
-        for (let i = 41; i >= 0; i--) ctl = ctl + (dailyLoad[i] - ctl) / 42
+        for (let i = 41; i >= 0; i--) ctl = ctl + (dailyLoad[i]! - ctl) / 42
         const sev: InsightSeverity = ctl >= 40 ? "positive" : ctl >= 20 ? "info" : "warning"
         return makeInsight(alg, sev, `Chronic training load (CTL): ${ctl.toFixed(0)}. ${ctl >= 40 ? "Strong fitness base." : ctl >= 20 ? "Moderate fitness." : "Low CTL — gradually increase training volume."}`, Math.round(ctl), "CTL", { low: 20, high: 60 }, { days: 42 })
       }
@@ -2011,7 +2012,7 @@ export class InsightsService {
         if (workouts.length < 14) return null
         const now = Date.now()
         const dailyLoad: number[] = Array(28).fill(0)
-        for (const w of workouts) { const d = Math.floor((now - new Date(w.startedAt).getTime()) / 86400000); if (d < 28) dailyLoad[d] += (w.durationSeconds || 0) / 60 }
+        for (const w of workouts) { const d = Math.floor((now - new Date(w.startedAt).getTime()) / 86400000); if (d < 28) dailyLoad[d]! += (w.durationSeconds || 0) / 60 }
         const acuteLoad = dailyLoad.slice(0, 7).reduce((a, b) => a + b, 0) / 7
         const chronicLoad = dailyLoad.reduce((a, b) => a + b, 0) / 28
         const ratio = chronicLoad > 0 ? acuteLoad / chronicLoad : 1
@@ -2021,13 +2022,13 @@ export class InsightsService {
 
       case "performance-efficiency": {
         if (workouts.length < 3) return null
-        const hrWorkouts = workouts.filter((w) => w.averageHeartRate && w.distanceMeters && w.durationSeconds)
+        const hrWorkouts = workouts.filter((w) => w.avgHeartRate && w.distanceMeters && w.durationSeconds)
         if (hrWorkouts.length < 2) return null
-        const efs = hrWorkouts.map((w) => { const speedKmH = (w.distanceMeters! / 1000) / (w.durationSeconds! / 3600); return w.averageHeartRate! > 0 ? speedKmH / w.averageHeartRate! * 100 : 0 }).filter((e) => e > 0)
+        const efs = hrWorkouts.map((w) => { const speedKmH = (w.distanceMeters! / 1000) / (w.durationSeconds! / 3600); return w.avgHeartRate! > 0 ? speedKmH / w.avgHeartRate! * 100 : 0 }).filter((e) => e > 0)
         const avg = efs.reduce((a, b) => a + b, 0) / efs.length
         const t = efs.length >= 5 ? trend(efs) : "stable"
-        const sev: InsightSeverity = t === "improving" ? "positive" : t === "stable" ? "info" : "warning"
-        return makeInsight(alg, sev, `Performance efficiency: ${avg.toFixed(2)} (speed/HR ratio, ${t}). ${t === "improving" ? "Getting faster at same HR — fitness improving." : "Efficiency stable or declining."}`, Number(avg.toFixed(2)), "EF", { low: 3, high: 8 }, { samples: efs.length, trend: t })
+        const sev: InsightSeverity = t === "rising" ? "positive" : t === "stable" ? "info" : "warning"
+        return makeInsight(alg, sev, `Performance efficiency: ${avg.toFixed(2)} (speed/HR ratio, ${t}). ${t === "rising" ? "Getting faster at same HR — fitness improving." : "Efficiency stable or declining."}`, Number(avg.toFixed(2)), "EF", { low: 3, high: 8 }, { samples: efs.length, trend: t })
       }
 
       case "progressive-overload": {
@@ -2055,7 +2056,7 @@ export class InsightsService {
 
       case "sport-diversity": {
         if (workouts.length < 5) return null
-        const types = new Set(workouts.map((w) => w.activityType || "unknown"))
+        const types = new Set(workouts.map((w) => ((w.data as Record<string, unknown>)?.activityType as string) || "unknown"))
         const diversity = types.size
         const sev: InsightSeverity = diversity >= 3 ? "positive" : diversity >= 2 ? "info" : "warning"
         return makeInsight(alg, sev, `Sport diversity: ${diversity} different activity types. ${diversity >= 3 ? "Good cross-training — reduces injury risk." : "Limited variety — consider adding different activities."}`, diversity, "types", { low: 2, high: 5 }, { types: [...types] })
@@ -2065,11 +2066,11 @@ export class InsightsService {
         if (workouts.length < 21) return null
         const now = Date.now()
         const weekLoads = [0, 0, 0]
-        for (const w of workouts) { const d = Math.floor((now - new Date(w.startedAt).getTime()) / 86400000); const wk = Math.floor(d / 7); if (wk < 3) weekLoads[wk] += (w.durationSeconds || 0) / 60 }
-        const building = weekLoads[2] < weekLoads[1] && weekLoads[1] < weekLoads[0]
-        const deload = weekLoads[0] < weekLoads[1] * 0.7
+        for (const w of workouts) { const d = Math.floor((now - new Date(w.startedAt).getTime()) / 86400000); const wk = Math.floor(d / 7); if (wk < 3) weekLoads[wk]! += (w.durationSeconds || 0) / 60 }
+        const building = weekLoads[2]! < weekLoads[1]! && weekLoads[1]! < weekLoads[0]!
+        const deload = weekLoads[0]! < weekLoads[1]! * 0.7
         const sev: InsightSeverity = building ? "positive" : deload ? "info" : "warning"
-        return makeInsight(alg, sev, `Periodization: Wk1=${Math.round(weekLoads[0])}min, Wk2=${Math.round(weekLoads[1])}min, Wk3=${Math.round(weekLoads[2])}min. ${building ? "Progressive build — good periodization." : deload ? "Recovery week detected." : "No clear periodization pattern."}`, Math.round(weekLoads[0]), "min (this week)", { low: 100, high: 300 }, { weekLoads: weekLoads.map(Math.round) })
+        return makeInsight(alg, sev, `Periodization: Wk1=${Math.round(weekLoads[0]!)}min, Wk2=${Math.round(weekLoads[1]!)}min, Wk3=${Math.round(weekLoads[2]!)}min. ${building ? "Progressive build — good periodization." : deload ? "Recovery week detected." : "No clear periodization pattern."}`, Math.round(weekLoads[0]!), "min (this week)", { low: 100, high: 300 }, { weekLoads: weekLoads.map(Math.round) })
       }
 
       case "race-readiness": {
@@ -2078,8 +2079,8 @@ export class InsightsService {
         const now = Date.now()
         let ctl = 0; let atl = 0
         const dailyLoad: number[] = Array(42).fill(0)
-        for (const w of workouts) { const d = Math.floor((now - new Date(w.startedAt).getTime()) / 86400000); if (d < 42) dailyLoad[d] += (w.durationSeconds || 0) / 60 }
-        for (let i = 41; i >= 0; i--) { ctl = ctl + (dailyLoad[i] - ctl) / 42; atl = atl + (dailyLoad[i] - atl) / 7 }
+        for (const w of workouts) { const d = Math.floor((now - new Date(w.startedAt).getTime()) / 86400000); if (d < 42) dailyLoad[d]! += (w.durationSeconds || 0) / 60 }
+        for (let i = 41; i >= 0; i--) { ctl = ctl + (dailyLoad[i]! - ctl) / 42; atl = atl + (dailyLoad[i]! - atl) / 7 }
         const freshness = ctl - atl
         const recScore = rec.length >= 3 ? rec.slice(-3).reduce((a, b) => a + b, 0) / 3 / 100 * 30 : 15
         const rhrScore = rhr.length >= 7 ? Math.min(30, Math.max(0, (70 - rhr.slice(-7).reduce((a, b) => a + b, 0) / 7) * 1.5)) : 15

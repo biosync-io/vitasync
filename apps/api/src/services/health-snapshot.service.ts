@@ -142,23 +142,14 @@ export class HealthSnapshotService {
         periodType,
         periodStart,
         periodEnd,
-        avgHealthScore: currentAvgScore > 0 ? Math.round(currentAvgScore) : null,
+        overallScore: currentAvgScore > 0 ? Math.round(currentAvgScore) : null,
         avgRestingHr: findAvg("resting_heart_rate"),
         avgHrv: findAvg("heart_rate_variability"),
         avgSteps: findAvg("steps") ? Math.round(findAvg("steps")!) : null,
-        avgSleepScore: findAvg("sleep_score"),
-        avgActiveCalories: findAvg("active_calories") ? Math.round(findAvg("active_calories")!) : null,
+        avgSleepMinutes: findAvg("sleep_score"),
+        avgCalories: findAvg("active_calories") ? Math.round(findAvg("active_calories")!) : null,
         workoutCount: Number(workoutStats?.workoutCount ?? 0),
-        totalWorkoutMinutes: workoutStats?.totalDuration ? Math.round(Number(workoutStats.totalDuration) / 60) : 0,
-        periodComparison,
-        metricBreakdown: Object.fromEntries(
-          metricAggregates.map((a) => [a.metricType, {
-            avg: Math.round(Number(a.avgValue ?? 0) * 10) / 10,
-            min: a.minValue,
-            max: a.maxValue,
-            count: Number(a.count),
-          }]),
-        ),
+        periodComparison: periodComparison != null ? { scoreChange: periodComparison } : null,
       })
       .returning()
 

@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
+import { defined } from "../../lib/strip-undefined.js"
 import { MedicationService } from "../../services/medication.service.js"
 import { UserService } from "../../services/user.service.js"
 
@@ -38,10 +39,12 @@ const medicationsRoutes: FastifyPluginAsync = async (app) => {
 
     const med = await medicationService.createMedication({
       userId,
-      ...body,
+      name: body.name,
+      dosage: body.dosage,
+      frequency: body.frequency,
       startDate: new Date(body.startDate),
-      endDate: body.endDate ? new Date(body.endDate) : null,
-      active: true,
+      ...(body.endDate ? { endDate: new Date(body.endDate) } : {}),
+      isActive: true,
     })
     return reply.status(201).send(med)
   })
@@ -76,7 +79,12 @@ const medicationsRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.body)
 
-    const med = await medicationService.updateMedication(medId, userId, body)
+    const med = await medicationService.updateMedication(medId, userId, defined({
+      ...(body.name !== undefined && { name: body.name }),
+      ...(body.dosage !== undefined && { dosage: body.dosage }),
+      ...(body.frequency !== undefined && { frequency: body.frequency }),
+      ...(body.active !== undefined && { isActive: body.active }),
+    }))
     if (!med) return reply.status(404).send({ code: "NOT_FOUND", message: "Medication not found" })
     return reply.send(med)
   })
@@ -114,9 +122,10 @@ const medicationsRoutes: FastifyPluginAsync = async (app) => {
     const log = await medicationService.logAdherence({
       medicationId: medId,
       userId,
-      ...body,
+      status: body.status,
       scheduledAt: new Date(body.scheduledAt),
       takenAt: body.takenAt ? new Date(body.takenAt) : null,
+      ...(body.notes !== undefined && { notes: body.notes }),
     })
     return reply.status(201).send(log)
   })
@@ -138,8 +147,8 @@ const medicationsRoutes: FastifyPluginAsync = async (app) => {
       .parse(request.query)
 
     const logs = await medicationService.getAdherenceLogs(medId, userId, {
-      from: query.from ? new Date(query.from) : undefined,
-      to: query.to ? new Date(query.to) : undefined,
+      ...(query.from ? { from: new Date(query.from) } : {}),
+      ...(query.to ? { to: new Date(query.to) } : {}),
       limit: query.limit,
     })
     return reply.send({ data: logs })

@@ -34,7 +34,7 @@ const correlationsRoutes: FastifyPluginAsync = async (app) => {
       .object({ days: z.coerce.number().min(7).max(365).default(90) })
       .parse(request.query)
 
-    const correlations = await correlationService.computeCorrelations(userId, query.days)
+    const correlations = await correlationService.computeCorrelations(userId, query)
     return reply.send({ data: correlations, count: correlations.length })
   })
 }

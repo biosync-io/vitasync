@@ -23,9 +23,9 @@ const moodRoutes: FastifyPluginAsync = async (app) => {
       .parse(request.query)
 
     const logs = await moodService.list(userId, {
-      from: query.from ? new Date(query.from) : undefined,
-      to: query.to ? new Date(query.to) : undefined,
-      mood: query.mood,
+      ...(query.from ? { from: new Date(query.from) } : {}),
+      ...(query.to ? { to: new Date(query.to) } : {}),
+      ...(query.mood !== undefined ? { mood: query.mood } : {}),
       limit: query.limit,
     })
     return reply.send({ data: logs })
@@ -68,7 +68,7 @@ const moodRoutes: FastifyPluginAsync = async (app) => {
       .object({ days: z.coerce.number().min(7).max(365).default(30) })
       .parse(request.query)
 
-    const stats = await moodService.getStats(userId, query.days)
+    const stats = await moodService.getStats(userId, { days: query.days })
     return reply.send(stats)
   })
 }

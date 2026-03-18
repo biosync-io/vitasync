@@ -187,6 +187,20 @@ export const healthScoresApi = {
     request<HealthScoreData>(`/v1/users/${userId}/health-scores/compute`, { method: "POST", body: JSON.stringify({}) }),
 }
 
+// ---- Readiness & Training Load ----
+export const readinessApi = {
+  get: (userId: string, date?: string) => {
+    const params = date ? `?date=${date}` : ""
+    return request<ReadinessData>(`/v1/users/${userId}/readiness${params}`)
+  },
+  trainingLoad: (userId: string, date?: string) => {
+    const params = date ? `?date=${date}` : ""
+    return request<TrainingLoadData>(`/v1/users/${userId}/training-load${params}`)
+  },
+  trainingLoadHistory: (userId: string, days?: number) =>
+    request<{ data: TrainingLoadHistoryEntry[] }>(`/v1/users/${userId}/training-load/history?days=${days ?? 30}`),
+}
+
 // ---- Goals ----
 export const goalsApi = {
   list: (userId: string, opts?: { status?: string }) => {
@@ -515,6 +529,41 @@ export interface HealthScoreData {
   bodyScore: number | null
   weeklyAvg: number | null
   createdAt: string
+}
+
+export interface ReadinessData {
+  score: number
+  recommendation: "train_hard" | "train_light" | "active_recovery" | "rest"
+  recommendationText: string
+  signals: {
+    hrv: { score: number; weight: number; contribution: number } | null
+    sleep: { score: number; weight: number; contribution: number } | null
+    restingHr: { score: number; weight: number; contribution: number } | null
+    strain: { score: number; weight: number; contribution: number } | null
+    physiological: { score: number; weight: number; contribution: number } | null
+  }
+  confidence: number
+  date: string
+}
+
+export interface TrainingLoadData {
+  atl: number
+  ctl: number
+  tsb: number
+  fitness: number
+  fatigue: number
+  status: "peaked" | "fresh" | "neutral" | "fatigued" | "overreached"
+  dailyStrain: { date: string; strain: number; workoutCount: number; totalDurationMin: number; totalCalories: number }[]
+  date: string
+}
+
+export interface TrainingLoadHistoryEntry {
+  date: string
+  dailyStrain: number
+  atl: number
+  ctl: number
+  tsb: number
+  status: string
 }
 
 export interface GoalData {

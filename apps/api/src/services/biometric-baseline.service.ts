@@ -53,16 +53,14 @@ export class BiometricBaselineService {
 
     if (sampleSize === 0) {
       // No data, insert/update with zeros
-      return this.upsertBaseline(userId, metricType, windowDays, {
+      return this.upsertBaseline(userId, metricType, {
         mean: 0,
         stddev: 0,
         min: 0,
         max: 0,
         median: 0,
-        p5: 0,
         p25: 0,
         p75: 0,
-        p95: 0,
         sampleSize: 0,
       })
     }
@@ -82,14 +80,12 @@ export class BiometricBaselineService {
       min: values[0]!,
       max: values[values.length - 1]!,
       median: percentile(values, 50),
-      p5: percentile(values, 5),
       p25: percentile(values, 25),
       p75: percentile(values, 75),
-      p95: percentile(values, 95),
       sampleSize,
     }
 
-    return this.upsertBaseline(userId, metricType, windowDays, stats)
+    return this.upsertBaseline(userId, metricType, stats)
   }
 
   async computeAllBaselines(userId: string): Promise<BiometricBaselineRow[]> {
@@ -109,7 +105,7 @@ export class BiometricBaselineService {
     const results: BiometricBaselineRow[] = []
     for (const metricType of metricTypes) {
       const baseline = await this.computeBaseline(userId, metricType)
-      if (baseline.sampleSize > 0) results.push(baseline)
+      if ((baseline.sampleSize ?? 0) > 0) results.push(baseline)
     }
 
     return results
@@ -118,17 +114,14 @@ export class BiometricBaselineService {
   private async upsertBaseline(
     userId: string,
     metricType: string,
-    windowDays: number,
     stats: {
       mean: number
       stddev: number
       min: number
       max: number
       median: number
-      p5: number
       p25: number
       p75: number
-      p95: number
       sampleSize: number
     },
   ): Promise<BiometricBaselineRow> {
@@ -137,8 +130,7 @@ export class BiometricBaselineService {
       .update(biometricBaselines)
       .set({
         ...stats,
-        windowDays,
-        computedAt: new Date(),
+        date: new Date(),
       })
       .where(
         and(
@@ -156,7 +148,7 @@ export class BiometricBaselineService {
       .values({
         userId,
         metricType,
-        windowDays,
+        date: new Date(),
         ...stats,
       })
       .returning()

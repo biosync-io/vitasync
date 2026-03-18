@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
+import { defined } from "../../lib/strip-undefined.js"
 import { NotificationService } from "../../services/notification.service.js"
 import { UserService } from "../../services/user.service.js"
 
@@ -54,7 +55,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.body)
 
-    const channel = await notificationService.updateChannel(channelId, userId, body)
+    const channel = await notificationService.updateChannel(channelId, userId, defined(body))
     if (!channel) return reply.status(404).send({ code: "NOT_FOUND", message: "Channel not found" })
     return reply.send({ data: channel })
   })
@@ -147,7 +148,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.body)
 
-    const rule = await notificationService.updateRule(ruleId, userId, body)
+    const rule = await notificationService.updateRule(ruleId, userId, defined(body))
     if (!rule) return reply.status(404).send({ code: "NOT_FOUND", message: "Rule not found" })
     return reply.send({ data: rule })
   })

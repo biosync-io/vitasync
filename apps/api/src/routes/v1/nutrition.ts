@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
+import { defined } from "../../lib/strip-undefined.js"
 import { NutritionService } from "../../services/nutrition.service.js"
 import { UserService } from "../../services/user.service.js"
 
@@ -23,9 +24,9 @@ const nutritionRoutes: FastifyPluginAsync = async (app) => {
       .parse(request.query)
 
     const logs = await nutritionService.list(userId, {
-      from: query.from ? new Date(query.from) : undefined,
-      to: query.to ? new Date(query.to) : undefined,
-      mealType: query.mealType,
+      ...(query.from ? { from: new Date(query.from) } : {}),
+      ...(query.to ? { to: new Date(query.to) } : {}),
+      ...(query.mealType !== undefined ? { mealType: query.mealType } : {}),
       limit: query.limit,
     })
     return reply.send({ data: logs })
@@ -55,8 +56,17 @@ const nutritionRoutes: FastifyPluginAsync = async (app) => {
 
     const log = await nutritionService.create({
       userId,
-      ...body,
-      loggedAt: body.loggedAt ? new Date(body.loggedAt) : new Date(),
+      mealType: body.mealType,
+      consumedAt: body.loggedAt ? new Date(body.loggedAt) : new Date(),
+      ...(body.description !== undefined && { description: body.description }),
+      ...(body.calories !== undefined && { calories: body.calories }),
+      ...(body.proteinG !== undefined && { proteinG: body.proteinG }),
+      ...(body.carbsG !== undefined && { carbsG: body.carbsG }),
+      ...(body.fatG !== undefined && { fatG: body.fatG }),
+      ...(body.fiberG !== undefined && { fiberG: body.fiberG }),
+      ...(body.sugarG !== undefined && { sugarG: body.sugarG }),
+      ...(body.sodiumMg !== undefined && { sodiumMg: body.sodiumMg }),
+      ...(body.waterMl !== undefined && { waterMl: body.waterMl }),
     })
     return reply.status(201).send(log)
   })
@@ -93,7 +103,7 @@ const nutritionRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.body)
 
-    const log = await nutritionService.update(logId, userId, body)
+    const log = await nutritionService.update(logId, userId, defined(body))
     if (!log) return reply.status(404).send({ code: "NOT_FOUND", message: "Nutrition log not found" })
     return reply.send(log)
   })

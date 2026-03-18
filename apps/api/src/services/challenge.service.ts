@@ -58,7 +58,12 @@ export class ChallengeService {
       .where(eq(challengeParticipants.challengeId, challengeId))
       .orderBy(desc(challengeParticipants.score))
 
-    return participants.map((p, i) => ({ ...p, displayName: p.displayName ?? undefined, rank: i + 1 }))
+    return participants.map((p, i) => ({
+      userId: p.userId,
+      ...(p.displayName != null && { displayName: p.displayName }),
+      score: p.score,
+      rank: i + 1,
+    }))
   }
 
   async updateScores(challengeId: string): Promise<number> {
