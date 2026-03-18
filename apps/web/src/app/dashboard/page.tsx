@@ -93,7 +93,7 @@ function ScoreRing({ value, max = 100, size = 100, label, color, icon: Icon }: {
           <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{Math.round(value)}</span>
         </div>
       </div>
-      <div className="flex items-center gap-1.5 text-sm font-medium text-gray-600 dark:text-gray-400">
+      <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color }}>
         <Icon className="h-4 w-4" />
         <span>{label}</span>
       </div>
@@ -128,17 +128,18 @@ function Sparkline({ data, color, height = 32 }: { data: number[]; color: string
   )
 }
 
-function StatCard({ label, value, subtitle, icon: Icon, trend, trendValue, sparkData, sparkColor }: {
+function StatCard({ label, value, subtitle, icon: Icon, trend, trendValue, sparkData, sparkColor, iconBg, iconColor }: {
   label: string; value: string | number; subtitle: string
   icon: React.ComponentType<{ className?: string }>
   trend?: "up" | "down"; trendValue?: string
   sparkData?: number[]; sparkColor?: string
+  iconBg?: string; iconColor?: string
 }) {
   return (
     <DashCard>
       <div className="flex items-start justify-between">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent-50 dark:bg-accent-900/20">
-          <Icon className="h-5 w-5 text-accent-600 dark:text-accent-400" />
+        <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${iconBg ?? "bg-accent-50 dark:bg-accent-900/20"}`}>
+          <Icon className={`h-5 w-5 ${iconColor ?? "text-accent-600 dark:text-accent-400"}`} />
         </div>
         {trend && trendValue && (
           <span className={`inline-flex items-center gap-0.5 rounded-lg px-2 py-1 text-xs font-medium ${
@@ -224,7 +225,7 @@ function WeeklySchedule({ events }: { events: WorkoutEvent[] }) {
     <DashCard>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <CalendarDays className="h-4 w-4 text-accent-500" />
+          <CalendarDays className="h-4 w-4 text-indigo-500" />
           This Week
         </h2>
         <a href="/dashboard/training" className="inline-flex items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline">
@@ -256,8 +257,8 @@ function WeeklySchedule({ events }: { events: WorkoutEvent[] }) {
       <div className="space-y-2">
         {events.slice(0, 4).map((ev) => (
           <div key={ev.id} className="flex items-center gap-3 rounded-xl bg-gray-50/80 dark:bg-gray-800/30 px-3.5 py-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-100 dark:bg-accent-900/30">
-              <Dumbbell className="h-4 w-4 text-accent-600 dark:text-accent-400" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30">
+              <Dumbbell className="h-4 w-4 text-orange-600 dark:text-orange-400" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
@@ -290,7 +291,7 @@ function BiometricTimeline({ metrics }: { metrics: { time: string; hr: number | 
     <DashCard>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <Activity className="h-4 w-4 text-accent-500" />
+          <Activity className="h-4 w-4 text-red-500" />
           Today&apos;s Biometrics
         </h2>
         <div className="flex items-center gap-4 text-[10px] font-medium">
@@ -334,7 +335,7 @@ function GoalProgress({ goals }: { goals: GoalData[] }) {
     <DashCard>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <Target className="h-4 w-4 text-accent-500" />
+          <Target className="h-4 w-4 text-emerald-500" />
           Active Goals
         </h2>
         <a href="/dashboard/goals" className="inline-flex items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline">
@@ -379,8 +380,13 @@ export default function DashboardPage() {
   const { data: webhooks = [] } = useQuery({ queryKey: ["webhooks"], queryFn: webhooksApi.list })
   const { data: algorithms } = useQuery({ queryKey: ["insight-algorithms"], queryFn: () => insightsApi.algorithms() })
 
+  // Fetch selected user directly so greeting works even if list hasn't loaded
+  const { data: selectedUser } = useQuery({
+    queryKey: ["user", selectedUserId],
+    queryFn: () => usersApi.get(selectedUserId),
+    enabled: !!selectedUserId,
+  })
   const users = usersResult?.data ?? []
-  const selectedUser = users.find((u) => u.id === selectedUserId)
 
   const { data: healthScore } = useQuery({
     queryKey: ["health-score", selectedUserId],
@@ -675,7 +681,7 @@ export default function DashboardPage() {
             <DashCard>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-accent-500" />
+                  <TrendingUp className="h-4 w-4 text-blue-500" />
                   Health Trend
                 </h2>
                 <a href="/dashboard/health-scores" className="inline-flex items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline">
@@ -708,12 +714,16 @@ export default function DashboardPage() {
       {/* ──────────── Platform Stats with Sparklines ──────────── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 stagger-grid">
         <StatCard label="Providers" value={providers.length} subtitle="OAuth integrations" icon={Zap}
+          iconBg="bg-purple-50 dark:bg-purple-900/20" iconColor="text-purple-600 dark:text-purple-400"
           sparkData={[3, 3, 4, 4, 5, providers.length]} sparkColor="#8b5cf6" />
         <StatCard label="Algorithms" value={algoCount} subtitle="Proprietary analyses" icon={Brain} trend="up" trendValue="+12%"
+          iconBg="bg-emerald-50 dark:bg-emerald-900/20" iconColor="text-emerald-600 dark:text-emerald-400"
           sparkData={[20, 24, 28, 32, 36, algoCount]} sparkColor="#10b981" />
         <StatCard label="API Keys" value={keys.length} subtitle="Active credentials" icon={KeyRound}
+          iconBg="bg-blue-50 dark:bg-blue-900/20" iconColor="text-blue-600 dark:text-blue-400"
           sparkData={[1, 1, 2, 2, 3, keys.length]} sparkColor="#3b82f6" />
         <StatCard label="Webhooks" value={webhooks.length} subtitle="Event subscriptions" icon={Webhook}
+          iconBg="bg-amber-50 dark:bg-amber-900/20" iconColor="text-amber-600 dark:text-amber-400"
           sparkData={[0, 1, 1, 2, 2, webhooks.length]} sparkColor="#f59e0b" />
       </div>
 
