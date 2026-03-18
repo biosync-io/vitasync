@@ -344,7 +344,7 @@ CREATE TABLE "notification_rules" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-DROP INDEX "idx_events_provider_dedup";--> statement-breakpoint
+DROP INDEX IF EXISTS "idx_events_provider_dedup";--> statement-breakpoint
 ALTER TABLE "provider_connections" ALTER COLUMN "status" SET DEFAULT 'connected';--> statement-breakpoint
 ALTER TABLE "achievements" ADD CONSTRAINT "achievements_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "anomaly_alerts" ADD CONSTRAINT "anomaly_alerts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
