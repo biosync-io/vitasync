@@ -409,4 +409,8 @@ CREATE INDEX "idx_notification_logs_user" ON "notification_logs" USING btree ("u
 CREATE INDEX "idx_notification_logs_channel" ON "notification_logs" USING btree ("channel_id");--> statement-breakpoint
 CREATE INDEX "idx_notification_logs_status" ON "notification_logs" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "idx_notification_rules_user" ON "notification_rules" USING btree ("user_id");--> statement-breakpoint
-ALTER TABLE "events" ADD CONSTRAINT "uq_events_provider_dedup" UNIQUE("user_id","provider_id","provider_event_id");
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_events_provider_dedup') THEN
+    ALTER TABLE "events" ADD CONSTRAINT "uq_events_provider_dedup" UNIQUE("user_id","provider_id","provider_event_id");
+  END IF;
+END $$;
