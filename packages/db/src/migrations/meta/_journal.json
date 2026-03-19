@@ -27,7 +27,7 @@
       "idx": 3,
       "version": "7",
       "when": 1773945600000,
-      "tag": "0003_add_users_sex",
+      "tag": "0003_add_users_gender",
       "breakpoints": true
     }
   ]
