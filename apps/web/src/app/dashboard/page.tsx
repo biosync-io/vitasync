@@ -564,10 +564,10 @@ export default function DashboardPage() {
               {moodStats && (
                 <div className="flex items-center gap-4 rounded-2xl border border-purple-100 dark:border-purple-800/40 bg-purple-50/60 dark:bg-purple-900/10 px-5 py-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/30 text-2xl">
-                    {moodStats.avgMood >= 7 ? "😊" : moodStats.avgMood >= 4 ? "😐" : "😞"}
+                    {moodStats.avgScore >= 7 ? "😊" : moodStats.avgScore >= 4 ? "😐" : "😞"}
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{moodStats.avgMood.toFixed(1)}<span className="text-sm font-normal text-gray-400">/10</span></p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{moodStats.avgScore.toFixed(1)}<span className="text-sm font-normal text-gray-400">/10</span></p>
                     <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Avg Mood · 7d</p>
                   </div>
                 </div>
@@ -578,8 +578,8 @@ export default function DashboardPage() {
                     <Moon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{sleepQuality.avgDuration.toFixed(1)}<span className="text-sm font-normal text-gray-400"> hrs</span></p>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Avg Sleep · Score {sleepQuality.avgScore}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{sleepQuality.avgEfficiency.toFixed(1)}<span className="text-sm font-normal text-gray-400">%</span></p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Sleep Efficiency · Score {sleepQuality.avgSleepScore}</p>
                   </div>
                 </div>
               )}

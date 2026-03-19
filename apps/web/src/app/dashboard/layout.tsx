@@ -51,63 +51,63 @@ import {
 
 const navSections: Array<{
   title: string
-  items: Array<{ href: string; label: string; icon: LucideIcon; badge?: string }>
+  items: Array<{ href: string; label: string; icon: LucideIcon; badge?: string; color: string }>
 }> = [
   {
     title: "Overview",
     items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/dashboard/health-scores", label: "Health Score", icon: BarChart3 },
-      { href: "/dashboard/readiness", label: "Readiness", icon: Battery },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, color: "text-blue-500" },
+      { href: "/dashboard/health-scores", label: "Health Score", icon: BarChart3, color: "text-rose-500" },
+      { href: "/dashboard/readiness", label: "Readiness", icon: Battery, color: "text-emerald-500" },
     ],
   },
   {
     title: "Intelligence",
     items: [
-      { href: "/dashboard/insights", label: "Insights Engine", icon: Brain },
-      { href: "/dashboard/reports", label: "Reports", icon: FileText },
-      { href: "/dashboard/anomalies", label: "Anomalies", icon: AlertTriangle },
-      { href: "/dashboard/correlations", label: "Correlations", icon: Link2 },
+      { href: "/dashboard/insights", label: "Insights Engine", icon: Brain, color: "text-purple-500" },
+      { href: "/dashboard/reports", label: "Reports", icon: FileText, color: "text-sky-500" },
+      { href: "/dashboard/anomalies", label: "Anomalies", icon: AlertTriangle, color: "text-amber-500" },
+      { href: "/dashboard/correlations", label: "Correlations", icon: Link2, color: "text-teal-500" },
     ],
   },
   {
     title: "Health Data",
     items: [
-      { href: "/dashboard/health", label: "Health Data", icon: Heart },
-      { href: "/dashboard/sleep", label: "Sleep Analysis", icon: Moon },
-      { href: "/dashboard/activity", label: "Activity", icon: Footprints },
-      { href: "/dashboard/nutrition", label: "Nutrition", icon: Apple },
-      { href: "/dashboard/mood", label: "Mood", icon: Smile },
-      { href: "/dashboard/symptoms", label: "Symptoms", icon: Stethoscope },
-      { href: "/dashboard/medications", label: "Medications", icon: Pill },
+      { href: "/dashboard/health", label: "Health Data", icon: Heart, color: "text-red-500" },
+      { href: "/dashboard/sleep", label: "Sleep Analysis", icon: Moon, color: "text-indigo-500" },
+      { href: "/dashboard/activity", label: "Activity", icon: Footprints, color: "text-orange-500" },
+      { href: "/dashboard/nutrition", label: "Nutrition", icon: Apple, color: "text-lime-500" },
+      { href: "/dashboard/mood", label: "Mood", icon: Smile, color: "text-yellow-500" },
+      { href: "/dashboard/symptoms", label: "Symptoms", icon: Stethoscope, color: "text-pink-500" },
+      { href: "/dashboard/medications", label: "Medications", icon: Pill, color: "text-cyan-500" },
     ],
   },
   {
     title: "Performance",
     items: [
-      { href: "/dashboard/training", label: "Training Plans", icon: ClipboardList },
-      { href: "/dashboard/goals", label: "Goals", icon: Target },
-      { href: "/dashboard/achievements", label: "Achievements", icon: Trophy },
-      { href: "/dashboard/challenges", label: "Challenges", icon: Swords },
+      { href: "/dashboard/training", label: "Training Plans", icon: ClipboardList, color: "text-violet-500" },
+      { href: "/dashboard/goals", label: "Goals", icon: Target, color: "text-emerald-500" },
+      { href: "/dashboard/achievements", label: "Achievements", icon: Trophy, color: "text-amber-500" },
+      { href: "/dashboard/challenges", label: "Challenges", icon: Swords, color: "text-red-500" },
     ],
   },
   {
     title: "Platform",
     items: [
-      { href: "/dashboard/providers", label: "Providers", icon: Zap },
-      { href: "/dashboard/users", label: "Users", icon: Users },
-      { href: "/dashboard/sync-jobs", label: "Sync Jobs", icon: RefreshCw },
-      { href: "/dashboard/exports", label: "Data Export", icon: Upload },
+      { href: "/dashboard/providers", label: "Providers", icon: Zap, color: "text-yellow-500" },
+      { href: "/dashboard/users", label: "Users", icon: Users, color: "text-blue-500" },
+      { href: "/dashboard/sync-jobs", label: "Sync Jobs", icon: RefreshCw, color: "text-green-500" },
+      { href: "/dashboard/exports", label: "Data Export", icon: Upload, color: "text-fuchsia-500" },
     ],
   },
   {
     title: "Developer",
     items: [
-      { href: "/dashboard/webhooks", label: "Webhooks", icon: Bell },
-      { href: "/dashboard/notifications", label: "Notifications", icon: Megaphone },
-      { href: "/dashboard/notification-logs", label: "Notification Logs", icon: ScrollText },
-      { href: "/dashboard/api-keys", label: "API Keys", icon: KeyRound },
-      { href: "/dashboard/settings", label: "Settings", icon: Settings },
+      { href: "/dashboard/webhooks", label: "Webhooks", icon: Bell, color: "text-orange-500" },
+      { href: "/dashboard/notifications", label: "Notifications", icon: Megaphone, color: "text-rose-500" },
+      { href: "/dashboard/notification-logs", label: "Notification Logs", icon: ScrollText, color: "text-slate-500" },
+      { href: "/dashboard/api-keys", label: "API Keys", icon: KeyRound, color: "text-amber-500" },
+      { href: "/dashboard/settings", label: "Settings", icon: Settings, color: "text-gray-500" },
     ],
   },
 ]
@@ -256,7 +256,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
                         }`}
                       >
-                        <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-white" : "text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300"}`} />
+                        <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-white" : `${item.color} group-hover:opacity-80`}`} />
                         {!collapsed && (
                           <span className="truncate">{item.label}</span>
                         )}
@@ -308,7 +308,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </button>
 
         <a
-          href="/docs"
+          href="https://biosync-io.github.io/vitasync/"
           target="_blank"
           rel="noopener noreferrer"
           className={`flex items-center rounded-xl px-3 py-2.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors ${

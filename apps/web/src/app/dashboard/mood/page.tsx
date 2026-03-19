@@ -130,8 +130,8 @@ export default function MoodPage() {
       {selectedUserId && stats && (
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm text-center">
-            <div className="text-3xl">{MOOD_EMOJI[Math.round(stats.avgMood)] ?? "😐"}</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.avgMood.toFixed(1)}</div>
+            <div className="text-3xl">{MOOD_EMOJI[Math.round(stats.avgScore)] ?? "😐"}</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.avgScore.toFixed(1)}</div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Avg Mood</p>
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
@@ -148,7 +148,7 @@ export default function MoodPage() {
             {stats.topFactors.length > 0 && (
               <div className="mt-2">
                 <p className="text-xs text-gray-400">Top factor</p>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{stats.topFactors[0]?.factor}</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{stats.topFactors[0]}</p>
               </div>
             )}
           </div>

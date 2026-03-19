@@ -40,10 +40,23 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "vitasync.configMapName" . }}
-          {{- with .Values.web.extraEnv }}
           env:
+            - name: INTERNAL_API_URL
+              value: "http://{{ include "vitasync.fullname" . }}-api:{{ .Values.api.service.port }}"
+            {{- if .Values.secrets.existingSecret }}
+            - name: DEFAULT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: DEFAULT_API_KEY
+                  optional: true
+            {{- else if .Values.config.DEFAULT_API_KEY }}
+            - name: DEFAULT_API_KEY
+              value: {{ .Values.config.DEFAULT_API_KEY | quote }}
+            {{- end }}
+            {{- with .Values.web.extraEnv }}
             {{- toYaml . | nindent 12 }}
-          {{- end }}
+            {{- end }}
           livenessProbe:
             {{- toYaml .Values.web.livenessProbe | nindent 12 }}
           readinessProbe:
