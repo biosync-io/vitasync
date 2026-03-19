@@ -374,7 +374,7 @@ export interface User {
   externalId: string
   email: string | null
   displayName: string | null
-  sex: string | null
+  gender: string | null
   createdAt: string
 }
 

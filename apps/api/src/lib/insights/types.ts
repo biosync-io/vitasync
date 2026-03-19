@@ -56,10 +56,10 @@ export interface InsightInput {
   metrics: MetricDataPoint[]
   events: EventDataPoint[]
   period: { from: Date; to: Date }
-  /** Optional user profile for age/sex-specific calculations */
+  /** Optional user profile for age/gender-specific calculations */
   profile?: {
     age?: number
-    sex?: "male" | "female"
+    gender?: "male" | "female"
     heightCm?: number
     weightKg?: number
   }
