@@ -535,7 +535,7 @@ export default function InsightsPage() {
                 className="text-[11px] text-accent-500 hover:text-accent-600 font-bold tracking-wide">Clear filters</button>
             )}
           </div>
-          <div className="space-y-3 cyber-stagger">
+          <div className="space-y-3">
             {sorted.map((insight) => <InsightCard key={insight.id} insight={insight} />)}
           </div>
         </div>
