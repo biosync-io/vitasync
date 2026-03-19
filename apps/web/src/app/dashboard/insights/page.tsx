@@ -726,8 +726,3 @@ function AlgorithmGrid({ algorithms, search }: { algorithms: InsightAlgorithm[];
     </div>
   )
 }
-        )
-      })}
-    </div>
-  )
-}
