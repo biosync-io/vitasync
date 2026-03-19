@@ -580,102 +580,186 @@ function InsightCard({ insight }: { insight: Insight }) {
   const cat = CAT[insight.category]
 
   return (
+    /* Animated gradient border wrapper */
     <div
-      className={`scan-line group relative rounded-2xl border overflow-hidden transition-all duration-300 backdrop-blur-sm hover:-translate-y-0.5 ${s.bg} ${s.border}`}
-      style={{ boxShadow: `0 0 0 0 rgba(${s.glowRGB},0)`, transition: "all 0.3s ease, box-shadow 0.4s ease" }}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 8px 32px -8px rgba(${s.glowRGB},0.2), inset 0 1px 0 rgba(${s.glowRGB},0.1)` }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = `0 0 0 0 rgba(${s.glowRGB},0)` }}
+      className="insight-card-border"
+      style={{ "--card-glow": s.hex } as React.CSSProperties}
     >
-      {/* Neon left accent */}
-      <div className={`absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b ${s.gradient}`} style={{ boxShadow: `2px 0 12px rgba(${s.glowRGB},0.3)` }} />
-      {/* Top-right ambient glow */}
-      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-[0.04] group-hover:opacity-[0.08] transition-opacity pointer-events-none" style={{ background: `radial-gradient(circle, ${s.hex}, transparent 70%)` }} />
+      <div
+        className={`group relative rounded-[15px] overflow-hidden transition-all duration-300 bg-white/70 dark:bg-gray-950/80 backdrop-blur-xl card-grid-bg`}
+        style={{ boxShadow: `0 0 0 0 rgba(${s.glowRGB},0)`, transition: "all 0.3s ease, box-shadow 0.5s ease" }}
+        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 12px 40px -12px rgba(${s.glowRGB},0.25), 0 0 0 1px rgba(${s.glowRGB},0.08)` }}
+        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = `0 0 0 0 rgba(${s.glowRGB},0)` }}
+      >
+        {/* HUD targeting bracket corners */}
+        <div className="hud-corners absolute inset-3 pointer-events-none z-20" style={{ "--accent-500": s.hex } as React.CSSProperties} />
 
-      <div className="relative z-10 p-5 pl-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            {/* Badges */}
-            <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-              <span className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-0.5 text-[10px] font-bold border backdrop-blur-sm ${cat.color}`}>
-                {cat.icon} {cat.label}
-              </span>
-              <span className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-0.5 text-[10px] font-bold border border-current/10 ${s.text}`} style={{ background: `rgba(${s.glowRGB},0.06)` }}>
-                {s.icon} {insight.severity}
-              </span>
+        {/* Neon left accent — thicker with animated glow */}
+        <div className={`absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b ${s.gradient}`} style={{ boxShadow: `3px 0 16px rgba(${s.glowRGB},0.35), 1px 0 4px rgba(${s.glowRGB},0.5)` }} />
+
+        {/* Ambient corner glow */}
+        <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-[0.04] group-hover:opacity-[0.1] transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(circle, ${s.hex}, transparent 70%)` }} />
+        <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(circle, ${s.hex}, transparent 70%)` }} />
+
+        {/* Scan line sweep on hover */}
+        <div className="scan-line absolute inset-0 pointer-events-none" />
+
+        <div className="relative z-10 p-5 pl-7">
+          {/* Top row: badges + value */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              {/* Badge row */}
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                {/* Severity orb */}
+                <div
+                  className="sev-orb inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white shrink-0"
+                  style={{ background: `linear-gradient(135deg, ${s.hex}, ${s.hex}cc)`, "--sev-glow": `${s.hex}80` } as React.CSSProperties}
+                >
+                  {s.icon}
+                </div>
+                {/* Category badge */}
+                <span className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold border backdrop-blur-sm ${cat.color}`}>
+                  {cat.icon} {cat.label}
+                </span>
+                {/* Severity text badge */}
+                <span
+                  className={`inline-flex items-center rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] ${s.text}`}
+                  style={{ background: `rgba(${s.glowRGB},0.08)`, border: `1px solid rgba(${s.glowRGB},0.15)` }}
+                >
+                  {insight.severity}
+                </span>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-[15px] font-bold text-gray-900 dark:text-gray-100 leading-snug tracking-tight group-hover:text-gray-800 dark:group-hover:text-white transition-colors">
+                {insight.title}
+              </h3>
+
+              {/* Expanding accent line under title on hover */}
+              <div className="hover-line h-[1.5px] w-24 mt-1.5 rounded-full" style={{ background: `linear-gradient(90deg, ${s.hex}, transparent)` }} />
+
+              {/* Description */}
+              <p className="mt-2.5 text-[13px] leading-relaxed text-gray-500 dark:text-gray-400">{insight.description}</p>
             </div>
-            {/* Title */}
-            <h3 className="text-[15px] font-bold text-gray-900 dark:text-gray-100 leading-snug tracking-tight">{insight.title}</h3>
-            <p className="mt-1.5 text-[13px] leading-relaxed text-gray-500 dark:text-gray-400">{insight.description}</p>
+
+            {/* Value display — neon style */}
+            {insight.value != null && (
+              <div className="flex-shrink-0 text-right pt-8">
+                <div className="inline-flex items-baseline gap-1">
+                  <span
+                    className={`val-neon text-3xl font-black tabular-nums ${s.text}`}
+                    style={{ "--val-glow": `${s.hex}60`, letterSpacing: "-0.02em" } as React.CSSProperties}
+                  >
+                    {insight.value}
+                  </span>
+                  {insight.unit && (
+                    <span className="text-[11px] text-gray-400/80 dark:text-gray-500/80 font-semibold uppercase tracking-wider">{insight.unit}</span>
+                  )}
+                </div>
+                {/* Mini severity bar under value */}
+                <div className="mt-1.5 ml-auto w-12 h-[2px] rounded-full overflow-hidden" style={{ background: `rgba(${s.glowRGB},0.1)` }}>
+                  <div className="h-full rounded-full" style={{ width: "100%", background: `linear-gradient(90deg, transparent, ${s.hex})`, boxShadow: `0 0 6px ${s.hex}40` }} />
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Value display */}
-          {insight.value != null && (
-            <div className="flex-shrink-0 text-right">
-              <div className="inline-flex items-baseline gap-1">
-                <span className={`text-3xl font-black tabular-nums ${s.text}`} style={{ textShadow: `0 0 20px rgba(${s.glowRGB},0.15)` }}>
-                  {insight.value}
-                </span>
-                {insight.unit && (
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500 font-semibold">{insight.unit}</span>
-                )}
-              </div>
-            </div>
+          {/* Reference range */}
+          {insight.referenceRange && insight.value != null && (
+            <HoloRangeBar low={insight.referenceRange.low} high={insight.referenceRange.high} value={insight.value} hex={s.hex} glowRGB={s.glowRGB} />
+          )}
+
+          {/* Metadata toggle */}
+          {Object.keys(insight.metadata).length > 0 && (
+            <>
+              <button type="button" onClick={() => setExpanded(!expanded)}
+                className="mt-4 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500 hover:text-accent-500 dark:hover:text-accent-400 transition-colors group/btn">
+                <span className="inline-flex h-4 w-4 items-center justify-center rounded border border-current/20 text-[8px] transition-transform duration-200" style={{ transform: expanded ? "rotate(90deg)" : "none" }}>▸</span>
+                <span>{expanded ? "Hide" : "Show"} diagnostics</span>
+                <span className="h-px flex-1 min-w-[20px] bg-current opacity-20" />
+              </button>
+              {expanded && (
+                <div className="mt-2.5 rounded-lg bg-gray-950/[0.03] dark:bg-white/[0.02] border border-gray-200/20 dark:border-gray-700/15 p-3.5 font-mono text-[11px] space-y-1.5 overflow-hidden"
+                  style={{ background: `linear-gradient(135deg, rgba(${s.glowRGB},0.02), transparent)` }}>
+                  <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200/10 dark:border-gray-700/10">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">System Diagnostics</span>
+                  </div>
+                  {Object.entries(insight.metadata).map(([k, v]) => (
+                    <div key={k} className="flex items-start gap-2 group/row hover:bg-white/[0.03] rounded px-1 -mx-1 py-0.5 transition-colors">
+                      <span className="text-accent-500/60 shrink-0 select-none">›</span>
+                      <span className="font-bold text-gray-600 dark:text-gray-300 shrink-0">{k}</span>
+                      <span className="text-gray-400 dark:text-gray-500 truncate">{JSON.stringify(v)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
-
-        {/* Reference range */}
-        {insight.referenceRange && insight.value != null && (
-          <CyberRangeBar low={insight.referenceRange.low} high={insight.referenceRange.high} value={insight.value} glowRGB={s.glowRGB} />
-        )}
-
-        {/* Metadata toggle */}
-        {Object.keys(insight.metadata).length > 0 && (
-          <button type="button" onClick={() => setExpanded(!expanded)}
-            className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold text-gray-400 dark:text-gray-500 hover:text-accent-500 dark:hover:text-accent-400 transition-colors tracking-wide">
-            <span className="transition-transform duration-200" style={{ display: "inline-block", transform: expanded ? "rotate(90deg)" : "none" }}>▸</span>
-            {expanded ? "Hide details" : "Show details"}
-          </button>
-        )}
-        {expanded && (
-          <div className="mt-2.5 rounded-xl bg-black/[0.03] dark:bg-white/[0.02] border border-gray-200/30 dark:border-gray-700/20 p-3 text-xs font-mono text-gray-500 dark:text-gray-400 space-y-1 backdrop-blur-sm">
-            {Object.entries(insight.metadata).map(([k, v]) => (
-              <div key={k} className="flex gap-2">
-                <span className="font-bold text-gray-700 dark:text-gray-300 shrink-0">{k}:</span>
-                <span className="truncate opacity-70">{JSON.stringify(v)}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   )
 }
 
-/* ── Cyber Reference Range Bar ─── */
-function CyberRangeBar({ low, high, value, glowRGB }: { low: number; high: number; value: number; glowRGB: string }) {
+/* ── Holographic Reference Range Bar ─── */
+function HoloRangeBar({ low, high, value, hex, glowRGB }: { low: number; high: number; value: number; hex: string; glowRGB: string }) {
   const rMin = low * 0.5, rMax = high * 1.5, span = rMax - rMin
   const refL = Math.max(0, Math.min(100, ((low - rMin) / span) * 100))
   const refR = Math.max(0, 100 - Math.min(100, ((high - rMin) / span) * 100))
   const valPct = Math.max(0, Math.min(100, ((value - rMin) / span) * 100))
   const inRange = value >= low && value <= high
+  const dotColor = inRange ? "#10b981" : "#f59e0b"
+  const dotGlow = inRange ? "16,185,129" : "245,158,11"
 
   return (
-    <div className="mt-4">
-      <div className="flex items-center justify-between text-[9px] text-gray-400 dark:text-gray-500 mb-2 font-bold uppercase tracking-[0.15em]">
-        <span className="tabular-nums">{low}</span>
-        <span>Reference Range</span>
-        <span className="tabular-nums">{high}</span>
-      </div>
-      <div className="relative h-2 rounded-full neon-track overflow-visible">
-        {/* Safe zone */}
-        <div className="absolute inset-y-0 rounded-full" style={{ left: `${refL}%`, right: `${refR}%`, background: "rgba(16,185,129,0.15)", boxShadow: "inset 0 0 8px rgba(16,185,129,0.1)" }} />
-        {/* Value indicator */}
-        <div className="absolute top-1/2 transition-all duration-700 ease-out" style={{ left: `${valPct}%`, transform: "translate(-50%, -50%)" }}>
-          {/* Outer glow ring */}
-          <div className="absolute -inset-2 rounded-full" style={{ background: `radial-gradient(circle, rgba(${inRange ? "16,185,129" : "245,158,11"},0.2), transparent 70%)` }} />
-          <div className={`relative w-3.5 h-3.5 rounded-full border-2 border-white dark:border-gray-900 ${inRange ? "bg-emerald-500" : "bg-amber-500"}`}
-            style={{ boxShadow: `0 0 10px rgba(${inRange ? "16,185,129" : "245,158,11"},0.5)` }} />
+    <div className="mt-5">
+      {/* Labels */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] font-bold tabular-nums text-gray-400 dark:text-gray-500">{low}</span>
+        <div className="flex items-center gap-2">
+          <span className="h-px w-4 bg-gray-300/30 dark:bg-gray-700/30" />
+          <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-400/60 dark:text-gray-500/60">Reference Range</span>
+          <span className="h-px w-4 bg-gray-300/30 dark:bg-gray-700/30" />
         </div>
+        <span className="text-[10px] font-bold tabular-nums text-gray-400 dark:text-gray-500">{high}</span>
+      </div>
+
+      {/* Track */}
+      <div className="relative h-3 rounded-full overflow-visible range-ticks" style={{ background: "linear-gradient(90deg, rgba(239,68,68,0.08), rgba(16,185,129,0.12) 33%, rgba(16,185,129,0.12) 66%, rgba(245,158,11,0.08) 100%)" }}>
+        {/* Neon shimmer sweep */}
+        <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)", backgroundSize: "200% 100%", animation: "trackShine 4s linear infinite" }} />
+        </div>
+
+        {/* Reference zone highlight */}
+        <div className="absolute inset-y-0 rounded-full border border-emerald-500/20" style={{ left: `${refL}%`, right: `${refR}%`, background: "linear-gradient(180deg, rgba(16,185,129,0.2), rgba(16,185,129,0.08))", boxShadow: "inset 0 0 12px rgba(16,185,129,0.08)" }}>
+          {/* Edge glow lines */}
+          <div className="absolute left-0 top-0 bottom-0 w-px bg-emerald-500/30" />
+          <div className="absolute right-0 top-0 bottom-0 w-px bg-emerald-500/30" />
+        </div>
+
+        {/* Value indicator cluster */}
+        <div className="absolute top-1/2 transition-all duration-700 ease-out z-10" style={{ left: `${valPct}%`, transform: "translate(-50%, -50%)" }}>
+          {/* Outer pulse ring */}
+          <div className="absolute -inset-3 rounded-full animate-ping opacity-20" style={{ background: dotColor }} />
+          {/* Glow aura */}
+          <div className="absolute -inset-2 rounded-full" style={{ background: `radial-gradient(circle, rgba(${dotGlow},0.3), transparent 70%)` }} />
+          {/* Dot */}
+          <div
+            className="relative w-4 h-4 rounded-full border-2 border-white dark:border-gray-950"
+            style={{ background: dotColor, boxShadow: `0 0 12px rgba(${dotGlow},0.6), 0 0 4px rgba(${dotGlow},0.8)` }}
+          >
+            {/* Inner highlight */}
+            <div className="absolute top-0.5 left-0.5 w-1.5 h-1.5 rounded-full bg-white/40" />
+          </div>
+        </div>
+      </div>
+
+      {/* Status indicator below */}
+      <div className="flex items-center justify-center mt-2 gap-1.5">
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: dotColor, boxShadow: `0 0 6px rgba(${dotGlow},0.5)` }} />
+        <span className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: dotColor }}>{inRange ? "Within range" : "Outside range"}</span>
       </div>
     </div>
   )
