@@ -47,6 +47,7 @@ import {
   X,
   BarChart3,
   Battery,
+  MessageSquare,
   type LucideIcon,
 } from "lucide-react"
 
@@ -66,6 +67,7 @@ const navSections: Array<{
     title: "Intelligence",
     items: [
       { href: "/dashboard/insights", label: "Insights Engine", icon: Brain, color: "text-purple-500" },
+      { href: "/dashboard/chat", label: "AI Chat", icon: MessageSquare, color: "text-green-500" },
       { href: "/dashboard/reports", label: "Reports", icon: FileText, color: "text-sky-500" },
       { href: "/dashboard/anomalies", label: "Anomalies", icon: AlertTriangle, color: "text-amber-500" },
       { href: "/dashboard/correlations", label: "Correlations", icon: Link2, color: "text-teal-500" },

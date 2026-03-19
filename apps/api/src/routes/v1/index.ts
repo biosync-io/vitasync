@@ -28,6 +28,7 @@ import trainingPlansRoutes from "./training-plans.js"
 import usersRoutes from "./users.js"
 import webhooksRoutes from "./webhooks.js"
 import analyticsRoutes from "./analytics.js"
+import chatRoutes from "./chat.js"
 import notificationsRoutes from "./notifications.js"
 import readinessRoutes from "./readiness.js"
 
@@ -132,6 +133,9 @@ export async function registerV1Routes(app: FastifyInstance): Promise<void> {
 
       // Readiness & Training Load — /v1/users/:userId/readiness, /v1/users/:userId/training-load
       await v1.register(readinessRoutes, { prefix: "/users" })
+
+      // AI Chat — /v1/users/:userId/chat
+      await v1.register(chatRoutes, { prefix: "/users" })
     },
     { prefix: "/v1" },
   )

@@ -921,3 +921,26 @@ export const notificationsApi = {
     return request<{ data: NotificationLog[] }>(`/v1/users/${userId}/notifications/logs?${params}`)
   },
 }
+
+// ---- AI Chat ----
+export interface ChatMessage {
+  role: "user" | "assistant" | "system"
+  content: string
+  timestamp: string
+}
+
+export interface ChatResponse {
+  reply: string
+  context: {
+    metricsUsed: string[]
+    dataPoints: number
+  }
+}
+
+export const chatApi = {
+  send: (userId: string, body: { message: string; history?: ChatMessage[] }) =>
+    request<{ data: ChatResponse }>(`/v1/users/${userId}/chat`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+}
