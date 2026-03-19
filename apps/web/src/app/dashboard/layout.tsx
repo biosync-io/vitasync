@@ -4,10 +4,11 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import {
-  type DarkModePreference,
-  applyDarkMode,
-  getStoredDarkMode,
+  type AppearanceMode,
+  applyAppearance,
+  getStoredAppearance,
 } from "../../lib/ThemeProvider"
+import { ThemeSettingsPanel } from "../../lib/ThemeSettingsPanel"
 import { CommandPalette } from "../../lib/CommandPalette"
 import {
   LayoutDashboard,
@@ -112,19 +113,23 @@ const navSections: Array<{
   },
 ]
 
-const DARK_ICONS: Record<DarkModePreference, LucideIcon> = {
+const DARK_ICONS: Record<AppearanceMode, LucideIcon> = {
   light: Sun,
   dark: MoonStar,
   system: Monitor,
+  midnight: MoonStar,
+  dim: MoonStar,
 }
 
-const DARK_LABELS: Record<DarkModePreference, string> = {
+const DARK_LABELS: Record<AppearanceMode, string> = {
   light: "Light",
   dark: "Dark",
   system: "System",
+  midnight: "Midnight",
+  dim: "Dim",
 }
 
-const PREF_CYCLE: DarkModePreference[] = ["system", "light", "dark"]
+const PREF_CYCLE: AppearanceMode[] = ["system", "light", "dark", "midnight", "dim"]
 
 function Logo({ collapsed }: { collapsed: boolean }) {
   return (
@@ -166,12 +171,13 @@ function useIsMobile() {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isMobile = useIsMobile()
-  const [darkMode, setDarkMode] = useState<DarkModePreference>("system")
+  const [darkMode, setDarkMode] = useState<AppearanceMode>("system")
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [themeOpen, setThemeOpen] = useState(false)
 
   useEffect(() => {
-    setDarkMode(getStoredDarkMode())
+    setDarkMode(getStoredAppearance())
   }, [])
 
   useEffect(() => {
@@ -186,9 +192,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => document.removeEventListener("keydown", onKeyDown)
   }, [])
 
+  // Re-sync the local darkMode state when theme panel changes it
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const current = getStoredAppearance()
+      setDarkMode((prev) => (prev !== current ? current : prev))
+    }, 300)
+    return () => clearInterval(interval)
+  }, [])
+
   const cycleDarkMode = useCallback(() => {
     const next = PREF_CYCLE[(PREF_CYCLE.indexOf(darkMode) + 1) % PREF_CYCLE.length] ?? "system"
-    applyDarkMode(next)
+    applyAppearance(next)
     setDarkMode(next)
   }, [darkMode])
 
@@ -295,17 +310,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </button>
 
-        <button
-          type="button"
-          onClick={cycleDarkMode}
-          title={`Theme: ${DARK_LABELS[darkMode]} — click to cycle`}
-          className={`flex w-full items-center rounded-xl px-3 py-2.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors ${
-            !isMobile && !sidebarOpen ? "justify-center" : "gap-3"
-          }`}
-        >
-          <ThemeIcon className="h-[18px] w-[18px] shrink-0" />
-          {(isMobile || sidebarOpen) && <span>{DARK_LABELS[darkMode]} mode</span>}
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setThemeOpen((o) => !o)}
+            title={`Theme: ${DARK_LABELS[darkMode]} — click to customize`}
+            className={`flex w-full items-center rounded-xl px-3 py-2.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors ${
+              !isMobile && !sidebarOpen ? "justify-center" : "gap-3"
+            }`}
+          >
+            <ThemeIcon className="h-[18px] w-[18px] shrink-0" />
+            {(isMobile || sidebarOpen) && <span>{DARK_LABELS[darkMode]} mode</span>}
+          </button>
+          <ThemeSettingsPanel open={themeOpen} onClose={() => setThemeOpen(false)} />
+        </div>
 
         <a
           href="https://biosync-io.github.io/vitasync/"

@@ -76,6 +76,11 @@ const THEME_SWATCH_BG: Record<string, string> = {
   green:  "bg-[#16a34a]",
   purple: "bg-[#9333ea]",
   rose:   "bg-[#e11d48]",
+  orange: "bg-[#ea580c]",
+  teal:   "bg-[#0d9488]",
+  amber:  "bg-[#d97706]",
+  cyan:   "bg-[#0891b2]",
+  pink:   "bg-[#ec4899]",
 }
 
 function SetupBanner({ activeKey }: { activeKey: string }) {

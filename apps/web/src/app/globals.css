@@ -58,6 +58,58 @@ html.dark {
   --primary-foreground: 222.2 47.4% 1.2%;
 }
 
+/* ── Midnight mode — AMOLED pure black ─────────────────────────────── */
+html.midnight {
+  --background: 0 0% 0%;
+  --foreground: 210 20% 92%;
+  --muted: 0 0% 6%;
+  --muted-foreground: 215 14% 55%;
+  --border: 0 0% 10%;
+  --ring: 0 0% 10%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 0 0% 0%;
+}
+
+html.midnight,
+html.midnight body {
+  background-color: #000;
+}
+
+/* Override common bg-* tokens for midnight to be true black */
+html.midnight .bg-white { background-color: #000 !important; }
+html.midnight .dark\:bg-gray-900 { background-color: #000 !important; }
+html.midnight .dark\:bg-gray-950 { background-color: #000 !important; }
+html.midnight .dark\:bg-gray-900\/80 { background-color: rgba(0,0,0,0.8) !important; }
+html.midnight .bg-gray-50 { background-color: #050505 !important; }
+
+/* Card / surface backgrounds in midnight */
+html.midnight .dark\:bg-gray-800 { background-color: #0a0a0a !important; }
+html.midnight .dark\:border-gray-800 { border-color: #181818 !important; }
+html.midnight .dark\:border-gray-700 { border-color: #1a1a1a !important; }
+html.midnight .border-gray-100 { border-color: #111 !important; }
+
+/* ── Dim mode — softer, muted dark ─────────────────────────────────── */
+html.dim {
+  --background: 220 16% 12%;
+  --foreground: 215 20% 80%;
+  --muted: 220 14% 16%;
+  --muted-foreground: 215 14% 52%;
+  --border: 220 12% 20%;
+  --ring: 220 12% 20%;
+  --primary: 215 20% 85%;
+  --primary-foreground: 220 16% 10%;
+}
+
+html.dim .bg-white { background-color: hsl(220 16% 12%) !important; }
+html.dim .dark\:bg-gray-900 { background-color: hsl(220 16% 10%) !important; }
+html.dim .dark\:bg-gray-950 { background-color: hsl(220 16% 8%) !important; }
+html.dim .dark\:bg-gray-900\/80 { background-color: hsla(220, 16%, 10%, 0.8) !important; }
+html.dim .bg-gray-50 { background-color: hsl(220 16% 13%) !important; }
+html.dim .dark\:bg-gray-800 { background-color: hsl(220 14% 16%) !important; }
+html.dim .dark\:border-gray-800 { border-color: hsl(220 12% 22%) !important; }
+html.dim .dark\:text-gray-100 { color: hsl(215 20% 80%) !important; }
+html.dim .dark\:text-gray-400 { color: hsl(215 14% 52%) !important; }
+
 html.dark input,
 html.dark textarea,
 html.dark select {
@@ -152,6 +204,56 @@ select {
   --accent-300: #a5b4fc; --accent-400: #818cf8; --accent-500: #6366f1;
   --accent-600: #4f46e5; --accent-700: #4338ca; --accent-800: #3730a3;
   --accent-900: #312e81;
+}
+
+[data-accent="orange"] {
+  --ai-50:  255 247 237; --ai-100: 255 237 213; --ai-200: 254 215 170;
+  --ai-300: 253 186 116; --ai-500: 249 115  22; --ai-600: 234  88  12;
+  --ai-700: 194  65   12; --ai-800: 154  52  18;
+  --accent-50:  #fff7ed; --accent-100: #ffedd5; --accent-200: #fed7aa;
+  --accent-300: #fdba74; --accent-400: #fb923c; --accent-500: #f97316;
+  --accent-600: #ea580c; --accent-700: #c2410c; --accent-800: #9a3412;
+  --accent-900: #7c2d12;
+}
+
+[data-accent="teal"] {
+  --ai-50:  240 253 250; --ai-100: 204 251 241; --ai-200: 153 246 228;
+  --ai-300: 94  234 212; --ai-500:  20 184 166; --ai-600:  13 148 136;
+  --ai-700:  15 118 110; --ai-800:  17  94  89;
+  --accent-50:  #f0fdfa; --accent-100: #ccfbf1; --accent-200: #99f6e4;
+  --accent-300: #5eead4; --accent-400: #2dd4bf; --accent-500: #14b8a6;
+  --accent-600: #0d9488; --accent-700: #0f766e; --accent-800: #115e59;
+  --accent-900: #134e4a;
+}
+
+[data-accent="amber"] {
+  --ai-50:  255 251 235; --ai-100: 254 243 199; --ai-200: 253 230 138;
+  --ai-300: 252 211  77; --ai-500: 245 158  11; --ai-600: 217 119   6;
+  --ai-700: 180  83  9;  --ai-800: 146  64  14;
+  --accent-50:  #fffbeb; --accent-100: #fef3c7; --accent-200: #fde68a;
+  --accent-300: #fcd34d; --accent-400: #fbbf24; --accent-500: #f59e0b;
+  --accent-600: #d97706; --accent-700: #b45309; --accent-800: #92400e;
+  --accent-900: #78350f;
+}
+
+[data-accent="cyan"] {
+  --ai-50:  236 254 255; --ai-100: 207 250 254; --ai-200: 165 243 252;
+  --ai-300: 103 232 249; --ai-500:   6 182 212; --ai-600:   8 145 178;
+  --ai-700:  14 116 144; --ai-800:  21  94 117;
+  --accent-50:  #ecfeff; --accent-100: #cffafe; --accent-200: #a5f3fc;
+  --accent-300: #67e8f9; --accent-400: #22d3ee; --accent-500: #06b6d4;
+  --accent-600: #0891b2; --accent-700: #0e7490; --accent-800: #155e75;
+  --accent-900: #164e63;
+}
+
+[data-accent="pink"] {
+  --ai-50:  253 242 248; --ai-100: 252 231 243; --ai-200: 251 207 232;
+  --ai-300: 249 168 212; --ai-500: 236  72 153; --ai-600: 219  39 119;
+  --ai-700: 190  24 93;  --ai-800: 157  23  77;
+  --accent-50:  #fdf2f8; --accent-100: #fce7f3; --accent-200: #fbcfe8;
+  --accent-300: #f9a8d4; --accent-400: #f472b6; --accent-500: #ec4899;
+  --accent-600: #db2777; --accent-700: #be185d; --accent-800: #9d174d;
+  --accent-900: #831843;
 }
 
 /* Remap all hardcoded Tailwind indigo-* utilities to the accent variables.
