@@ -125,33 +125,46 @@ export default function SleepPage() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-8 mb-6">
-            <ScoreRing label="Quality Score" value={Math.round(quality.avgScore)} max={100} color="stroke-indigo-500" />
+            <ScoreRing label="Sleep Score" value={Math.round(quality.avgSleepScore)} max={100} color="stroke-indigo-500" />
             <ScoreRing label="Consistency" value={Math.round(quality.consistencyScore)} max={100} color="stroke-emerald-500" />
+            <ScoreRing label="Efficiency" value={Math.round(quality.avgEfficiency)} max={100} color="stroke-amber-500" />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Avg Duration</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatHours(quality.avgDuration)}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Deep Sleep</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{quality.avgDeepSleepPercent}%</p>
             </div>
             <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Avg Bedtime</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{quality.avgBedtime ?? "—"}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">REM Sleep</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{quality.avgRemSleepPercent}%</p>
             </div>
             <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Avg Wake Time</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{quality.avgWakeTime ?? "—"}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Light Sleep</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{quality.avgLightSleepPercent}%</p>
             </div>
             <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400">Weekday Avg</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatHours(quality.weekdayAvg)}</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatHours(quality.weekdayVsWeekend.weekday)}</p>
             </div>
             <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400">Weekend Avg</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatHours(quality.weekendAvg)}</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatHours(quality.weekdayVsWeekend.weekend)}</p>
             </div>
           </div>
-          <p className="text-xs text-gray-400 text-center mt-3">Based on {quality.days} days of data</p>
+
+          {quality.recommendations.length > 0 && (
+            <div className="mt-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 p-3">
+              <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-1">Recommendations</p>
+              <ul className="space-y-1">
+                {quality.recommendations.map((r, i) => (
+                  <li key={i} className="text-xs text-indigo-600 dark:text-indigo-400">• {r}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <p className="text-xs text-gray-400 text-center mt-3">Trend: {quality.trend}</p>
         </div>
       )}
     </div>

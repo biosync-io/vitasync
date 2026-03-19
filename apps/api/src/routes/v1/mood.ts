@@ -68,7 +68,9 @@ const moodRoutes: FastifyPluginAsync = async (app) => {
       .object({ days: z.coerce.number().min(7).max(365).default(30) })
       .parse(request.query)
 
-    const stats = await moodService.getStats(userId, { days: query.days })
+    const to = new Date()
+    const from = new Date(to.getTime() - query.days * 24 * 60 * 60 * 1000)
+    const stats = await moodService.getStats(userId, { from, to })
     return reply.send(stats)
   })
 }

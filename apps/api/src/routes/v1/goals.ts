@@ -24,6 +24,7 @@ const goalsRoutes: FastifyPluginAsync = async (app) => {
 
     const goals = await goalService.list(userId, {
       ...(query.category !== undefined && { category: query.category }),
+      ...(query.status !== undefined && { active: query.status === "active" }),
     })
     return reply.send({ data: goals })
   })

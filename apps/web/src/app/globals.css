@@ -58,6 +58,58 @@ html.dark {
   --primary-foreground: 222.2 47.4% 1.2%;
 }
 
+/* ── Midnight mode — AMOLED pure black ─────────────────────────────── */
+html.midnight {
+  --background: 0 0% 0%;
+  --foreground: 210 20% 92%;
+  --muted: 0 0% 6%;
+  --muted-foreground: 215 14% 55%;
+  --border: 0 0% 10%;
+  --ring: 0 0% 10%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 0 0% 0%;
+}
+
+html.midnight,
+html.midnight body {
+  background-color: #000;
+}
+
+/* Override common bg-* tokens for midnight to be true black */
+html.midnight .bg-white { background-color: #000 !important; }
+html.midnight .dark\:bg-gray-900 { background-color: #000 !important; }
+html.midnight .dark\:bg-gray-950 { background-color: #000 !important; }
+html.midnight .dark\:bg-gray-900\/80 { background-color: rgba(0,0,0,0.8) !important; }
+html.midnight .bg-gray-50 { background-color: #050505 !important; }
+
+/* Card / surface backgrounds in midnight */
+html.midnight .dark\:bg-gray-800 { background-color: #0a0a0a !important; }
+html.midnight .dark\:border-gray-800 { border-color: #181818 !important; }
+html.midnight .dark\:border-gray-700 { border-color: #1a1a1a !important; }
+html.midnight .border-gray-100 { border-color: #111 !important; }
+
+/* ── Dim mode — softer, muted dark ─────────────────────────────────── */
+html.dim {
+  --background: 220 16% 12%;
+  --foreground: 215 20% 80%;
+  --muted: 220 14% 16%;
+  --muted-foreground: 215 14% 52%;
+  --border: 220 12% 20%;
+  --ring: 220 12% 20%;
+  --primary: 215 20% 85%;
+  --primary-foreground: 220 16% 10%;
+}
+
+html.dim .bg-white { background-color: hsl(220 16% 12%) !important; }
+html.dim .dark\:bg-gray-900 { background-color: hsl(220 16% 10%) !important; }
+html.dim .dark\:bg-gray-950 { background-color: hsl(220 16% 8%) !important; }
+html.dim .dark\:bg-gray-900\/80 { background-color: hsla(220, 16%, 10%, 0.8) !important; }
+html.dim .bg-gray-50 { background-color: hsl(220 16% 13%) !important; }
+html.dim .dark\:bg-gray-800 { background-color: hsl(220 14% 16%) !important; }
+html.dim .dark\:border-gray-800 { border-color: hsl(220 12% 22%) !important; }
+html.dim .dark\:text-gray-100 { color: hsl(215 20% 80%) !important; }
+html.dim .dark\:text-gray-400 { color: hsl(215 14% 52%) !important; }
+
 html.dark input,
 html.dark textarea,
 html.dark select {
@@ -79,42 +131,129 @@ select {
 
 /* ── Accent colour theme system ─────────────────────────────────────────
    Variables hold space-separated RGB components for use inside rgb().
-   The indigo defaults exactly match Tailwind's compiled indigo palette, so
-   the UI looks identical until the user picks a different theme.
+   Default accent: coral red (matching FitPulse-inspired design)
    ──────────────────────────────────────────────────────────────────────── */
 :root {
-  --ai-50:  238 242 255;
-  --ai-100: 224 231 255;
-  --ai-200: 199 210 254;
-  --ai-300: 165 180 252;
-  --ai-500:  99 102 241;
-  --ai-600:  79  70 229;
-  --ai-700:  67  56 202;
-  --ai-800:  55  48 163;
+  --ai-50:  255 241 242;
+  --ai-100: 255 228 230;
+  --ai-200: 254 205 211;
+  --ai-300: 253 164 175;
+  --ai-400: 251 113 133;
+  --ai-500: 239  68  68;
+  --ai-600: 220  38  38;
+  --ai-700: 185  28  28;
+  --ai-800: 153  27  27;
+
+  --accent-50:  #fff1f2;
+  --accent-100: #ffe4e6;
+  --accent-200: #fecdd3;
+  --accent-300: #fda4af;
+  --accent-400: #fb7185;
+  --accent-500: #ef4444;
+  --accent-600: #dc2626;
+  --accent-700: #b91c1c;
+  --accent-800: #991b1b;
+  --accent-900: #7f1d1d;
 }
 
 [data-accent="blue"] {
   --ai-50:  239 246 255; --ai-100: 219 234 254; --ai-200: 191 219 254;
   --ai-300: 147 197 253; --ai-500:  59 130 246; --ai-600:  37  99 235;
   --ai-700:  29  78 216; --ai-800:  30  64 175;
+  --accent-50:  #eff6ff; --accent-100: #dbeafe; --accent-200: #bfdbfe;
+  --accent-300: #93c5fd; --accent-400: #60a5fa; --accent-500: #3b82f6;
+  --accent-600: #2563eb; --accent-700: #1d4ed8; --accent-800: #1e40af;
+  --accent-900: #1e3a5f;
 }
 
 [data-accent="green"] {
   --ai-50:  240 253 244; --ai-100: 220 252 231; --ai-200: 187 247 208;
   --ai-300: 134 239 172; --ai-500:  34 197  94; --ai-600:  22 163  74;
   --ai-700:  21 128  61; --ai-800:  22 101  52;
+  --accent-50:  #f0fdf4; --accent-100: #dcfce7; --accent-200: #bbf7d0;
+  --accent-300: #86efac; --accent-400: #4ade80; --accent-500: #22c55e;
+  --accent-600: #16a34a; --accent-700: #15803d; --accent-800: #166534;
+  --accent-900: #14532d;
 }
 
 [data-accent="purple"] {
   --ai-50:  250 245 255; --ai-100: 243 232 255; --ai-200: 233 213 255;
   --ai-300: 216 180 254; --ai-500: 168  85 247; --ai-600: 147  51 234;
   --ai-700: 126  34 206; --ai-800: 107  33 168;
+  --accent-50:  #faf5ff; --accent-100: #f3e8ff; --accent-200: #e9d5ff;
+  --accent-300: #d8b4fe; --accent-400: #c084fc; --accent-500: #a855f7;
+  --accent-600: #9333ea; --accent-700: #7e22ce; --accent-800: #6b21a8;
+  --accent-900: #581c87;
 }
 
 [data-accent="rose"] {
   --ai-50:  255 241 242; --ai-100: 255 228 230; --ai-200: 254 205 211;
   --ai-300: 253 164 175; --ai-500: 244  63  94; --ai-600: 225  29  72;
   --ai-700: 190  18  60; --ai-800: 159  18  57;
+  --accent-50:  #fff1f2; --accent-100: #ffe4e6; --accent-200: #fecdd3;
+  --accent-300: #fda4af; --accent-400: #fb7185; --accent-500: #f43f5e;
+  --accent-600: #e11d48; --accent-700: #be123c; --accent-800: #9f1239;
+  --accent-900: #881337;
+}
+
+[data-accent="indigo"] {
+  --ai-50:  238 242 255; --ai-100: 224 231 255; --ai-200: 199 210 254;
+  --ai-300: 165 180 252; --ai-500:  99 102 241; --ai-600:  79  70 229;
+  --ai-700:  67  56 202; --ai-800:  55  48 163;
+  --accent-50:  #eef2ff; --accent-100: #e0e7ff; --accent-200: #c7d2fe;
+  --accent-300: #a5b4fc; --accent-400: #818cf8; --accent-500: #6366f1;
+  --accent-600: #4f46e5; --accent-700: #4338ca; --accent-800: #3730a3;
+  --accent-900: #312e81;
+}
+
+[data-accent="orange"] {
+  --ai-50:  255 247 237; --ai-100: 255 237 213; --ai-200: 254 215 170;
+  --ai-300: 253 186 116; --ai-500: 249 115  22; --ai-600: 234  88  12;
+  --ai-700: 194  65   12; --ai-800: 154  52  18;
+  --accent-50:  #fff7ed; --accent-100: #ffedd5; --accent-200: #fed7aa;
+  --accent-300: #fdba74; --accent-400: #fb923c; --accent-500: #f97316;
+  --accent-600: #ea580c; --accent-700: #c2410c; --accent-800: #9a3412;
+  --accent-900: #7c2d12;
+}
+
+[data-accent="teal"] {
+  --ai-50:  240 253 250; --ai-100: 204 251 241; --ai-200: 153 246 228;
+  --ai-300: 94  234 212; --ai-500:  20 184 166; --ai-600:  13 148 136;
+  --ai-700:  15 118 110; --ai-800:  17  94  89;
+  --accent-50:  #f0fdfa; --accent-100: #ccfbf1; --accent-200: #99f6e4;
+  --accent-300: #5eead4; --accent-400: #2dd4bf; --accent-500: #14b8a6;
+  --accent-600: #0d9488; --accent-700: #0f766e; --accent-800: #115e59;
+  --accent-900: #134e4a;
+}
+
+[data-accent="amber"] {
+  --ai-50:  255 251 235; --ai-100: 254 243 199; --ai-200: 253 230 138;
+  --ai-300: 252 211  77; --ai-500: 245 158  11; --ai-600: 217 119   6;
+  --ai-700: 180  83  9;  --ai-800: 146  64  14;
+  --accent-50:  #fffbeb; --accent-100: #fef3c7; --accent-200: #fde68a;
+  --accent-300: #fcd34d; --accent-400: #fbbf24; --accent-500: #f59e0b;
+  --accent-600: #d97706; --accent-700: #b45309; --accent-800: #92400e;
+  --accent-900: #78350f;
+}
+
+[data-accent="cyan"] {
+  --ai-50:  236 254 255; --ai-100: 207 250 254; --ai-200: 165 243 252;
+  --ai-300: 103 232 249; --ai-500:   6 182 212; --ai-600:   8 145 178;
+  --ai-700:  14 116 144; --ai-800:  21  94 117;
+  --accent-50:  #ecfeff; --accent-100: #cffafe; --accent-200: #a5f3fc;
+  --accent-300: #67e8f9; --accent-400: #22d3ee; --accent-500: #06b6d4;
+  --accent-600: #0891b2; --accent-700: #0e7490; --accent-800: #155e75;
+  --accent-900: #164e63;
+}
+
+[data-accent="pink"] {
+  --ai-50:  253 242 248; --ai-100: 252 231 243; --ai-200: 251 207 232;
+  --ai-300: 249 168 212; --ai-500: 236  72 153; --ai-600: 219  39 119;
+  --ai-700: 190  24 93;  --ai-800: 157  23  77;
+  --accent-50:  #fdf2f8; --accent-100: #fce7f3; --accent-200: #fbcfe8;
+  --accent-300: #f9a8d4; --accent-400: #f472b6; --accent-500: #ec4899;
+  --accent-600: #db2777; --accent-700: #be185d; --accent-800: #9d174d;
+  --accent-900: #831843;
 }
 
 /* Remap all hardcoded Tailwind indigo-* utilities to the accent variables.
@@ -136,6 +275,31 @@ select {
 .hover\:border-indigo-300:hover  { border-color: rgb(var(--ai-300)) !important; }
 .hover\:bg-indigo-50\/50:hover   { background-color: rgb(var(--ai-50) / 0.5) !important; }
 .focus\:ring-indigo-500:focus    { --tw-ring-color: rgb(var(--ai-500)) !important; }
+
+/* ── Accent color utility classes ─────────────────────────────────────── */
+.bg-accent-50      { background-color: var(--accent-50); }
+.bg-accent-100     { background-color: var(--accent-100); }
+.bg-accent-200     { background-color: var(--accent-200); }
+.bg-accent-400     { background-color: var(--accent-400); }
+.bg-accent-500     { background-color: var(--accent-500); }
+.bg-accent-600     { background-color: var(--accent-600); }
+.text-accent-400   { color: var(--accent-400); }
+.text-accent-500   { color: var(--accent-500); }
+.text-accent-600   { color: var(--accent-600); }
+.text-accent-700   { color: var(--accent-700); }
+.border-accent-200 { border-color: var(--accent-200); }
+.border-accent-500 { border-color: var(--accent-500); }
+.from-accent-400   { --tw-gradient-from: var(--accent-400); }
+.from-accent-500   { --tw-gradient-from: var(--accent-500); }
+.to-accent-600     { --tw-gradient-to: var(--accent-600); }
+.shadow-accent-500\/20 { --tw-shadow-color: color-mix(in srgb, var(--accent-500) 20%, transparent); }
+.shadow-accent-500\/25 { --tw-shadow-color: color-mix(in srgb, var(--accent-500) 25%, transparent); }
+.focus\:border-accent-500:focus { border-color: var(--accent-500); }
+.focus\:ring-accent-500\/20:focus { --tw-ring-color: color-mix(in srgb, var(--accent-500) 20%, transparent); }
+.hover\:border-accent-200:hover { border-color: var(--accent-200); }
+.dark .dark\:bg-accent-900\/20 { background-color: color-mix(in srgb, var(--accent-900) 20%, transparent); }
+.dark .dark\:text-accent-400   { color: var(--accent-400); }
+.dark .dark\:border-accent-800 { border-color: var(--accent-800); }
 
 /* ── Professional Animations ──────────────────────────────────────────── */
 
@@ -234,4 +398,283 @@ select {
 @keyframes gradientShimmer {
   0%   { background-position: 0% center; }
   100% { background-position: 200% center; }
+}
+
+/* ── Futuristic / Cyber UI Utilities ──────────────────────────────────── */
+
+/* Animated gradient mesh background */
+.cyber-mesh {
+  background:
+    radial-gradient(ellipse at 20% 50%, var(--accent-500) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, var(--accent-600) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, var(--accent-400) 0%, transparent 40%);
+  opacity: 0.12;
+  animation: meshDrift 12s ease-in-out infinite alternate;
+}
+@keyframes meshDrift {
+  0%   { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.15) translate(-3%, 3%); }
+}
+
+/* Horizontal neon scan-line that sweeps across cards on hover */
+.scan-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--accent-400) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  height: 1px;
+  top: auto;
+  bottom: 50%;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.scan-line:hover::after {
+  opacity: 0.25;
+  animation: scanSweep 1.2s ease-in-out;
+}
+@keyframes scanSweep {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  20%  { opacity: 0.35; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+/* Gentle neon glow border that pulses */
+.neon-border {
+  box-shadow:
+    inset 0 0 0 1px var(--accent-500),
+    0 0 12px -4px var(--accent-500);
+  transition: box-shadow 0.4s ease;
+}
+.neon-border:hover {
+  box-shadow:
+    inset 0 0 0 1px var(--accent-400),
+    0 0 24px -2px var(--accent-400);
+}
+
+/* Pulsing glow ring for data orbs */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 8px -2px currentColor; }
+  50%      { box-shadow: 0 0 20px -2px currentColor; }
+}
+.pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* Data stream dots – vertical flowing particles */
+@keyframes dataStream {
+  0%   { transform: translateY(-8px); opacity: 0; }
+  30%  { opacity: 1; }
+  100% { transform: translateY(8px); opacity: 0; }
+}
+.data-stream > span {
+  animation: dataStream 1.5s ease-in-out infinite;
+}
+.data-stream > span:nth-child(2) { animation-delay: 0.3s; }
+.data-stream > span:nth-child(3) { animation-delay: 0.6s; }
+
+/* Futuristic card entrance with slight scale + blur */
+@keyframes cyberFadeIn {
+  0%   { opacity: 0; transform: translateY(12px) scale(0.97); filter: blur(4px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+.cyber-stagger > * {
+  opacity: 0;
+  animation: cyberFadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.cyber-stagger > *:nth-child(1)  { animation-delay: 0ms; }
+.cyber-stagger > *:nth-child(2)  { animation-delay: 80ms; }
+.cyber-stagger > *:nth-child(3)  { animation-delay: 160ms; }
+.cyber-stagger > *:nth-child(4)  { animation-delay: 240ms; }
+.cyber-stagger > *:nth-child(5)  { animation-delay: 320ms; }
+.cyber-stagger > *:nth-child(6)  { animation-delay: 400ms; }
+.cyber-stagger > *:nth-child(7)  { animation-delay: 480ms; }
+.cyber-stagger > *:nth-child(8)  { animation-delay: 560ms; }
+.cyber-stagger > *:nth-child(9)  { animation-delay: 640ms; }
+.cyber-stagger > *:nth-child(10) { animation-delay: 720ms; }
+.cyber-stagger > *:nth-child(11) { animation-delay: 800ms; }
+.cyber-stagger > *:nth-child(12) { animation-delay: 880ms; }
+
+/* Reference range neon track */
+.neon-track {
+  position: relative;
+  background: linear-gradient(90deg,
+    rgba(239, 68, 68, 0.15) 0%,
+    rgba(16, 185, 129, 0.25) 33%,
+    rgba(16, 185, 129, 0.25) 66%,
+    rgba(245, 158, 11, 0.15) 100%
+  );
+}
+.neon-track::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  animation: trackShine 4s linear infinite;
+}
+@keyframes trackShine {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Holographic shimmer overlay for hero sections */
+@keyframes holoShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.holo-shimmer {
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    rgba(255,255,255,0.06) 38%,
+    rgba(255,255,255,0.12) 40%,
+    rgba(255,255,255,0.06) 42%,
+    transparent 50%
+  );
+  background-size: 300% 100%;
+  animation: holoShift 6s ease-in-out infinite;
+}
+
+/* Floating particles effect via box-shadow (pure CSS) */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-6px); }
+}
+.float-gentle {
+  animation: float 4s ease-in-out infinite;
+}
+.float-gentle-delay {
+  animation: float 4s ease-in-out 1s infinite;
+}
+
+/* ── Futuristic Insight Card Enhancements ─────────────────────────────── */
+
+/* Rotating gradient border wrapper */
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes rotateBorder {
+  to { --border-angle: 360deg; }
+}
+.insight-card-border {
+  --border-angle: 0deg;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 40%,
+    var(--card-glow) 50%,
+    transparent 60%
+  );
+  animation: rotateBorder 4s linear infinite paused;
+  border-radius: 1rem;
+  padding: 1px;
+}
+.insight-card-border:hover {
+  animation-play-state: running;
+}
+
+/* Glowing severity orb with breathing pulse */
+@keyframes severityPulse {
+  0%, 100% { box-shadow: 0 0 4px var(--sev-glow), 0 0 12px var(--sev-glow); transform: scale(1); }
+  50%      { box-shadow: 0 0 8px var(--sev-glow), 0 0 24px var(--sev-glow); transform: scale(1.05); }
+}
+.sev-orb {
+  animation: severityPulse 3s ease-in-out infinite;
+}
+
+/* Value counter neon flicker */
+@keyframes neonFlicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { text-shadow: 0 0 7px var(--val-glow), 0 0 20px var(--val-glow); opacity: 1; }
+  20%, 24%, 55% { text-shadow: none; opacity: 0.8; }
+}
+.val-neon {
+  animation: neonFlicker 6s linear infinite;
+}
+
+/* Expanding horizontal line on hover */
+@keyframes expandLine {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.hover-line {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.group:hover .hover-line {
+  transform: scaleX(1);
+}
+
+/* Reference range tick marks */
+.range-ticks {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255,255,255,0.03) 0px,
+    rgba(255,255,255,0.03) 1px,
+    transparent 1px,
+    transparent 8px
+  );
+}
+
+/* Terminal-style blinking cursor for metadata */
+@keyframes termBlink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+.term-cursor::after {
+  content: "▊";
+  animation: termBlink 1.2s step-end infinite;
+  color: var(--accent-500);
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+/* Subtle grid pattern for card internal bg */
+.card-grid-bg {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* HUD corners — gives a sci-fi targeting bracket feel */
+.hud-corners {
+  position: relative;
+}
+.hud-corners::before,
+.hud-corners::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--accent-500);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.hud-corners::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1.5px solid;
+  border-left: 1.5px solid;
+  border-top-left-radius: 4px;
+}
+.hud-corners::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1.5px solid;
+  border-right: 1.5px solid;
+  border-bottom-right-radius: 4px;
+}
+.group:hover .hud-corners::before,
+.group:hover .hud-corners::after {
+  opacity: 0.5;
 }

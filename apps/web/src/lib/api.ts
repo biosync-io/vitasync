@@ -645,12 +645,13 @@ export interface MoodLogData {
 }
 
 export interface MoodStats {
-  avgMood: number
-  avgEnergy: number | null
-  avgStress: number | null
-  trend: string
-  distribution: Record<string, number>
-  topFactors: { factor: string; count: number }[]
+  avgScore: number
+  avgEnergy: number
+  avgStress: number
+  totalEntries: number
+  moodDistribution: Record<string, number>
+  trend: "improving" | "declining" | "stable"
+  topFactors: string[]
 }
 
 export interface NutritionLogData {
@@ -796,14 +797,16 @@ export interface SleepDebtData {
 }
 
 export interface SleepQualityData {
-  avgScore: number
+  avgSleepScore: number
+  avgDeepSleepPercent: number
+  avgRemSleepPercent: number
+  avgLightSleepPercent: number
+  avgAwakePercent: number
+  avgEfficiency: number
   consistencyScore: number
-  avgDuration: number
-  avgBedtime: string | null
-  avgWakeTime: string | null
-  weekdayAvg: number
-  weekendAvg: number
-  days: number
+  weekdayVsWeekend: { weekday: number; weekend: number }
+  trend: string
+  recommendations: string[]
 }
 
 export interface SnapshotData {

@@ -10,9 +10,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@biosync-io/types": "workspace:*",
     "@tanstack/react-query": "^5.32.0",
     "@tanstack/react-query-devtools": "^5.32.0",
-    "@biosync-io/types": "workspace:*",
+    "lucide-react": "^0.577.0",
     "next": "15.1.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
