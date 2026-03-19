@@ -399,3 +399,157 @@ select {
   0%   { background-position: 0% center; }
   100% { background-position: 200% center; }
 }
+
+/* ── Futuristic / Cyber UI Utilities ──────────────────────────────────── */
+
+/* Animated gradient mesh background */
+.cyber-mesh {
+  background:
+    radial-gradient(ellipse at 20% 50%, var(--accent-500) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, var(--accent-600) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, var(--accent-400) 0%, transparent 40%);
+  opacity: 0.12;
+  animation: meshDrift 12s ease-in-out infinite alternate;
+}
+@keyframes meshDrift {
+  0%   { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.15) translate(-3%, 3%); }
+}
+
+/* Horizontal neon scan-line that sweeps across cards on hover */
+.scan-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--accent-400) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  height: 1px;
+  top: auto;
+  bottom: 50%;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.scan-line:hover::after {
+  opacity: 0.25;
+  animation: scanSweep 1.2s ease-in-out;
+}
+@keyframes scanSweep {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  20%  { opacity: 0.35; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+/* Gentle neon glow border that pulses */
+.neon-border {
+  box-shadow:
+    inset 0 0 0 1px var(--accent-500),
+    0 0 12px -4px var(--accent-500);
+  transition: box-shadow 0.4s ease;
+}
+.neon-border:hover {
+  box-shadow:
+    inset 0 0 0 1px var(--accent-400),
+    0 0 24px -2px var(--accent-400);
+}
+
+/* Pulsing glow ring for data orbs */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 8px -2px currentColor; }
+  50%      { box-shadow: 0 0 20px -2px currentColor; }
+}
+.pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* Data stream dots – vertical flowing particles */
+@keyframes dataStream {
+  0%   { transform: translateY(-8px); opacity: 0; }
+  30%  { opacity: 1; }
+  100% { transform: translateY(8px); opacity: 0; }
+}
+.data-stream > span {
+  animation: dataStream 1.5s ease-in-out infinite;
+}
+.data-stream > span:nth-child(2) { animation-delay: 0.3s; }
+.data-stream > span:nth-child(3) { animation-delay: 0.6s; }
+
+/* Futuristic card entrance with slight scale + blur */
+@keyframes cyberFadeIn {
+  0%   { opacity: 0; transform: translateY(12px) scale(0.97); filter: blur(4px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+.cyber-stagger > * {
+  opacity: 0;
+  animation: cyberFadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.cyber-stagger > *:nth-child(1)  { animation-delay: 0ms; }
+.cyber-stagger > *:nth-child(2)  { animation-delay: 80ms; }
+.cyber-stagger > *:nth-child(3)  { animation-delay: 160ms; }
+.cyber-stagger > *:nth-child(4)  { animation-delay: 240ms; }
+.cyber-stagger > *:nth-child(5)  { animation-delay: 320ms; }
+.cyber-stagger > *:nth-child(6)  { animation-delay: 400ms; }
+.cyber-stagger > *:nth-child(7)  { animation-delay: 480ms; }
+.cyber-stagger > *:nth-child(8)  { animation-delay: 560ms; }
+.cyber-stagger > *:nth-child(9)  { animation-delay: 640ms; }
+.cyber-stagger > *:nth-child(10) { animation-delay: 720ms; }
+.cyber-stagger > *:nth-child(11) { animation-delay: 800ms; }
+.cyber-stagger > *:nth-child(12) { animation-delay: 880ms; }
+
+/* Reference range neon track */
+.neon-track {
+  position: relative;
+  background: linear-gradient(90deg,
+    rgba(239, 68, 68, 0.15) 0%,
+    rgba(16, 185, 129, 0.25) 33%,
+    rgba(16, 185, 129, 0.25) 66%,
+    rgba(245, 158, 11, 0.15) 100%
+  );
+}
+.neon-track::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  animation: trackShine 4s linear infinite;
+}
+@keyframes trackShine {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Holographic shimmer overlay for hero sections */
+@keyframes holoShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.holo-shimmer {
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    rgba(255,255,255,0.06) 38%,
+    rgba(255,255,255,0.12) 40%,
+    rgba(255,255,255,0.06) 42%,
+    transparent 50%
+  );
+  background-size: 300% 100%;
+  animation: holoShift 6s ease-in-out infinite;
+}
+
+/* Floating particles effect via box-shadow (pure CSS) */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-6px); }
+}
+.float-gentle {
+  animation: float 4s ease-in-out infinite;
+}
+.float-gentle-delay {
+  animation: float 4s ease-in-out 1s infinite;
+}
