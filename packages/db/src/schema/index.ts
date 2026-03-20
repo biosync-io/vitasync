@@ -28,6 +28,11 @@ export * from "./health-snapshots"
 // ── Training & Analytics ────────────────────────────────────────
 export * from "./training-load"
 
+// ── Journal & Wellness ──────────────────────────────────────────
+export * from "./journal-entries"
+export * from "./water-intake"
+export * from "./habits"
+
 // ── Notification Tables ─────────────────────────────────────────
 export * from "./notification-channels"
 export * from "./notification-logs"

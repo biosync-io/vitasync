@@ -47,6 +47,9 @@ import {
   X,
   BarChart3,
   Battery,
+  BookText,
+  Droplets,
+  ListChecks,
   type LucideIcon,
 } from "lucide-react"
 
@@ -79,6 +82,9 @@ const navSections: Array<{
       { href: "/dashboard/activity", label: "Activity", icon: Footprints, color: "text-orange-500" },
       { href: "/dashboard/nutrition", label: "Nutrition", icon: Apple, color: "text-lime-500" },
       { href: "/dashboard/mood", label: "Mood", icon: Smile, color: "text-yellow-500" },
+      { href: "/dashboard/journal", label: "Journal", icon: BookText, color: "text-indigo-400" },
+      { href: "/dashboard/water", label: "Water Intake", icon: Droplets, color: "text-sky-500" },
+      { href: "/dashboard/habits", label: "Habits", icon: ListChecks, color: "text-emerald-400" },
       { href: "/dashboard/symptoms", label: "Symptoms", icon: Stethoscope, color: "text-pink-500" },
       { href: "/dashboard/medications", label: "Medications", icon: Pill, color: "text-cyan-500" },
     ],
