@@ -921,3 +921,144 @@ export const notificationsApi = {
     return request<{ data: NotificationLog[] }>(`/v1/users/${userId}/notifications/logs?${params}`)
   },
 }
+
+// ---- Journal ----
+export interface JournalEntry {
+  id: string
+  userId: string
+  title: string | null
+  body: string
+  moodScore: number | null
+  moodLabel: string | null
+  gratitude: string[]
+  tags: string[]
+  entryDate: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface JournalStats {
+  totalEntries: number
+  avgMoodScore: number
+  streak: number
+  topTags: string[]
+  moodDistribution: Record<string, number>
+}
+
+export const journalApi = {
+  list: (userId: string, opts?: { from?: string; to?: string; search?: string; limit?: number }) => {
+    const params = new URLSearchParams()
+    if (opts?.from) params.set("from", opts.from)
+    if (opts?.to) params.set("to", opts.to)
+    if (opts?.search) params.set("search", opts.search)
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    return request<{ data: JournalEntry[] }>(`/v1/users/${userId}/journal?${params}`)
+  },
+  create: (userId: string, body: Record<string, unknown>) =>
+    request<JournalEntry>(`/v1/users/${userId}/journal`, { method: "POST", body: JSON.stringify(body) }),
+  update: (userId: string, entryId: string, body: Record<string, unknown>) =>
+    request<JournalEntry>(`/v1/users/${userId}/journal/${entryId}`, { method: "PATCH", body: JSON.stringify(body) }),
+  delete: (userId: string, entryId: string) =>
+    request<void>(`/v1/users/${userId}/journal/${entryId}`, { method: "DELETE" }),
+  stats: (userId: string, days?: number) =>
+    request<JournalStats>(`/v1/users/${userId}/journal/stats?days=${days ?? 30}`),
+}
+
+// ---- Water Intake ----
+export interface WaterIntakeData {
+  id: string
+  userId: string
+  amountMl: number
+  beverageType: string
+  note: string | null
+  dailyGoalMl: number
+  loggedAt: string
+  createdAt: string
+}
+
+export interface WaterDailySummary {
+  totalMl: number
+  goalMl: number
+  progressPct: number
+  logCount: number
+  byBeverage: Record<string, number>
+}
+
+export interface WaterWeeklyStats {
+  days: Array<{ date: string; totalMl: number; goalMl: number }>
+  avgDailyMl: number
+  goalMetDays: number
+}
+
+export const waterApi = {
+  list: (userId: string, opts?: { from?: string; to?: string; limit?: number }) => {
+    const params = new URLSearchParams()
+    if (opts?.from) params.set("from", opts.from)
+    if (opts?.to) params.set("to", opts.to)
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    return request<{ data: WaterIntakeData[] }>(`/v1/users/${userId}/water?${params}`)
+  },
+  create: (userId: string, body: Record<string, unknown>) =>
+    request<WaterIntakeData>(`/v1/users/${userId}/water`, { method: "POST", body: JSON.stringify(body) }),
+  delete: (userId: string, logId: string) =>
+    request<void>(`/v1/users/${userId}/water/${logId}`, { method: "DELETE" }),
+  today: (userId: string) =>
+    request<WaterDailySummary>(`/v1/users/${userId}/water/today`),
+  weekly: (userId: string) =>
+    request<WaterWeeklyStats>(`/v1/users/${userId}/water/weekly`),
+}
+
+// ---- Habits ----
+export interface HabitData {
+  id: string
+  userId: string
+  name: string
+  icon: string
+  color: string
+  frequency: string
+  targetDays: number[]
+  active: boolean
+  currentStreak: number
+  longestStreak: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface HabitLogData {
+  id: string
+  habitId: string
+  userId: string
+  completedDate: string
+  note: string | null
+  createdAt: string
+}
+
+export interface HabitsSummary {
+  totalHabits: number
+  completedToday: number
+  completionRate: number
+  habits: Array<{ id: string; name: string; icon: string; completed: boolean; currentStreak: number; longestStreak: number }>
+}
+
+export const habitsApi = {
+  list: (userId: string, opts?: { active?: boolean }) => {
+    const params = new URLSearchParams()
+    if (opts?.active !== undefined) params.set("active", String(opts.active))
+    return request<{ data: HabitData[] }>(`/v1/users/${userId}/habits?${params}`)
+  },
+  create: (userId: string, body: Record<string, unknown>) =>
+    request<HabitData>(`/v1/users/${userId}/habits`, { method: "POST", body: JSON.stringify(body) }),
+  update: (userId: string, habitId: string, body: Record<string, unknown>) =>
+    request<HabitData>(`/v1/users/${userId}/habits/${habitId}`, { method: "PATCH", body: JSON.stringify(body) }),
+  delete: (userId: string, habitId: string) =>
+    request<void>(`/v1/users/${userId}/habits/${habitId}`, { method: "DELETE" }),
+  complete: (userId: string, habitId: string, body?: { date?: string; note?: string }) =>
+    request<HabitLogData>(`/v1/users/${userId}/habits/${habitId}/complete`, { method: "POST", body: JSON.stringify(body ?? {}) }),
+  uncomplete: (userId: string, habitId: string, date: string) =>
+    request<void>(`/v1/users/${userId}/habits/${habitId}/complete/${date}`, { method: "DELETE" }),
+  summary: (userId: string, date?: string) => {
+    const params = new URLSearchParams()
+    if (date) params.set("date", date)
+    return request<HabitsSummary>(`/v1/users/${userId}/habits/summary?${params}`)
+  },
+}

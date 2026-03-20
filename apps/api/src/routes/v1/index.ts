@@ -30,6 +30,9 @@ import webhooksRoutes from "./webhooks.js"
 import analyticsRoutes from "./analytics.js"
 import notificationsRoutes from "./notifications.js"
 import readinessRoutes from "./readiness.js"
+import journalRoutes from "./journal.js"
+import waterRoutes from "./water.js"
+import habitsRoutes from "./habits.js"
 
 /**
  * Registers all v1 API routes under the `/v1` prefix.
@@ -132,6 +135,15 @@ export async function registerV1Routes(app: FastifyInstance): Promise<void> {
 
       // Readiness & Training Load — /v1/users/:userId/readiness, /v1/users/:userId/training-load
       await v1.register(readinessRoutes, { prefix: "/users" })
+
+      // Daily journal — /v1/users/:userId/journal
+      await v1.register(journalRoutes, { prefix: "/users" })
+
+      // Water intake tracking — /v1/users/:userId/water
+      await v1.register(waterRoutes, { prefix: "/users" })
+
+      // Habits tracking — /v1/users/:userId/habits
+      await v1.register(habitsRoutes, { prefix: "/users" })
     },
     { prefix: "/v1" },
   )
