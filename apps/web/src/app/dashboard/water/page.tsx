@@ -13,13 +13,89 @@ const BEVERAGE_EMOJI: Record<string, string> = {
   other: "🥤",
 }
 
+const BEVERAGE_COLORS: Record<string, string> = {
+  water: "from-cyan-400 to-blue-500",
+  tea: "from-emerald-400 to-teal-500",
+  coffee: "from-amber-600 to-orange-700",
+  juice: "from-orange-400 to-yellow-500",
+  other: "from-purple-400 to-pink-500",
+}
+
 const QUICK_AMOUNTS = [
-  { label: "Small glass", ml: 200 },
-  { label: "Glass", ml: 250 },
-  { label: "Large glass", ml: 350 },
-  { label: "Bottle", ml: 500 },
-  { label: "Large bottle", ml: 750 },
+  { label: "Small glass", ml: 200, icon: "🥛" },
+  { label: "Glass", ml: 250, icon: "🥤" },
+  { label: "Large glass", ml: 350, icon: "🍶" },
+  { label: "Bottle", ml: 500, icon: "🧴" },
+  { label: "Large bottle", ml: 750, icon: "💧" },
 ]
+
+function WaterGauge({ pct, totalMl, goalMl }: { pct: number; totalMl: number; goalMl: number }) {
+  const r = 68
+  const c = 2 * Math.PI * r
+  const offset = c - (Math.min(pct, 100) / 100) * c
+  const color = pct >= 100 ? "#10b981" : pct >= 60 ? "#3b82f6" : pct >= 30 ? "#eab308" : "#ef4444"
+  const bgWave = pct >= 100 ? "from-emerald-500/10 to-teal-500/10" : "from-blue-500/10 to-cyan-500/10"
+
+  return (
+    <div className="relative flex items-center justify-center">
+      <div className={`absolute inset-0 rounded-full bg-gradient-to-t ${bgWave} animate-pulse-slow`} />
+      <svg width="160" height="160" className="drop-shadow-lg">
+        <defs>
+          <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={pct >= 100 ? "#10b981" : "#3b82f6"} />
+            <stop offset="100%" stopColor={pct >= 100 ? "#059669" : "#1d4ed8"} />
+          </linearGradient>
+        </defs>
+        <circle cx="80" cy="80" r={r} fill="none" stroke="currentColor" className="text-gray-100 dark:text-gray-800" strokeWidth="8" />
+        <circle cx="80" cy="80" r={r} fill="none" stroke="url(#waterGrad)" strokeWidth="8"
+          strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round"
+          className="transition-all duration-1000 ease-out -rotate-90 origin-center" />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-bold tracking-tight" style={{ color }}>{pct}%</span>
+        <span className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-medium">{totalMl}/{goalMl}ml</span>
+        {pct >= 100 && <span className="text-xs mt-0.5 text-emerald-500 font-semibold">🎉 Goal Met!</span>}
+      </div>
+    </div>
+  )
+}
+
+function WeeklyChart({ days }: { days: Array<{ date: string; totalMl: number; goalMl: number }> }) {
+  const maxMl = Math.max(...days.map((d) => Math.max(d.totalMl, d.goalMl)), 1)
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+  return (
+    <div className="flex items-end justify-between gap-2 h-32 px-2">
+      {days.map((day) => {
+        const pct = (day.totalMl / maxMl) * 100
+        const goalPct = (day.goalMl / maxMl) * 100
+        const metGoal = day.totalMl >= day.goalMl
+        const dayOfWeek = new Date(day.date).getDay()
+        return (
+          <div key={day.date} className="flex-1 flex flex-col items-center gap-1 group" title={`${day.date}: ${day.totalMl}ml / ${day.goalMl}ml`}>
+            {/* Goal line marker */}
+            <div className="relative w-full flex-1">
+              <div className="absolute bottom-0 w-full flex flex-col items-center">
+                <div
+                  className={`w-full rounded-t-lg transition-all duration-500 ${
+                    metGoal
+                      ? "bg-gradient-to-t from-emerald-500 to-emerald-400 shadow-md shadow-emerald-500/20"
+                      : "bg-gradient-to-t from-blue-500 to-blue-400 shadow-md shadow-blue-500/20"
+                  } group-hover:opacity-90`}
+                  style={{ height: `${Math.max(4, pct)}%` }}
+                />
+              </div>
+              {/* Goal marker */}
+              <div className="absolute w-full border-t-2 border-dashed border-gray-300 dark:border-gray-600 opacity-50"
+                style={{ bottom: `${goalPct}%` }} />
+            </div>
+            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">{dayNames[dayOfWeek]}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 export default function WaterPage() {
   const { selectedUserId, setSelectedUserId } = useSelectedUser()
@@ -72,79 +148,89 @@ export default function WaterPage() {
     },
   })
 
-  const progressColor = (pct: number) =>
-    pct >= 100 ? "bg-emerald-500" : pct >= 60 ? "bg-blue-500" : pct >= 30 ? "bg-yellow-500" : "bg-red-500"
-
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">💧 Water Intake</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Track your daily hydration and stay on top of your water goals.</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="animate-fade-in-down">
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Water Intake</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Stay hydrated, stay sharp. Track every sip toward your daily goal.</p>
       </div>
 
       {/* User select */}
-      <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-        <label htmlFor="water-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
-        <select id="water-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+      <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
+        <label htmlFor="water-user" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">User</label>
+        <select id="water-user" className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500/40 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
           <option value="">Select a user…</option>
           {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
         </select>
       </div>
 
-      {!selectedUserId && <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-16">Select a user to track water intake.</p>}
+      {!selectedUserId && (
+        <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
+          <span className="text-6xl mb-4 animate-float">💧</span>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Select a user to track water intake.</p>
+        </div>
+      )}
 
       {selectedUserId && todayData && (
         <>
-          {/* Today's progress */}
-          <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Today&apos;s Progress</h2>
-              <span className={`text-sm font-bold px-3 py-1 rounded-full ${todayData.progressPct >= 100 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400"}`}>
-                {todayData.progressPct >= 100 ? "🎉 Goal Met!" : `${todayData.progressPct}%`}
-              </span>
-            </div>
-            <div className="h-6 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-              <div className={`h-6 rounded-full ${progressColor(todayData.progressPct)} transition-all duration-500`} style={{ width: `${Math.min(100, todayData.progressPct)}%` }} />
-            </div>
-            <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mt-2">
-              <span>{todayData.totalMl} ml consumed</span>
-              <span>Goal: {todayData.goalMl} ml</span>
+          {/* Today's progress + Quick add — side by side on desktop */}
+          <div className="grid gap-6 lg:grid-cols-2 stagger-grid">
+            {/* Today's gauge */}
+            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
+              <h2 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Today&apos;s Hydration</h2>
+              <div className="flex items-center justify-center mb-4">
+                <WaterGauge pct={todayData.progressPct} totalMl={todayData.totalMl} goalMl={todayData.goalMl} />
+              </div>
+              {/* Beverage breakdown */}
+              {Object.keys(todayData.byBeverage).length > 0 && (
+                <div className="flex flex-wrap justify-center gap-2">
+                  {Object.entries(todayData.byBeverage).map(([type, ml]) => (
+                    <div key={type} className={`inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r ${BEVERAGE_COLORS[type] ?? BEVERAGE_COLORS.other} bg-opacity-10 px-3 py-1 text-xs font-medium`}>
+                      <span>{BEVERAGE_EMOJI[type] ?? "🥤"}</span>
+                      <span className="text-white">{ml}ml</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Beverage breakdown */}
-            {Object.keys(todayData.byBeverage).length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-3">
-                {Object.entries(todayData.byBeverage).map(([type, ml]) => (
-                  <div key={type} className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
-                    <span>{BEVERAGE_EMOJI[type] ?? "🥤"}</span>
-                    <span>{type}: {ml}ml</span>
-                  </div>
+            {/* Quick add */}
+            <div className="rounded-2xl border border-blue-200/60 dark:border-blue-800/40 bg-gradient-to-br from-blue-50/80 to-cyan-50/50 dark:from-blue-950/40 dark:to-cyan-950/20 backdrop-blur-xl p-6 shadow-lg shadow-blue-500/5">
+              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Quick Add</h3>
+
+              {/* Beverage selector */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {Object.entries(BEVERAGE_EMOJI).map(([type, emoji]) => (
+                  <button key={type} type="button" onClick={() => setBeverage(type)}
+                    className={`rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                      beverage === type
+                        ? `bg-gradient-to-r ${BEVERAGE_COLORS[type]} text-white shadow-md`
+                        : "bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-blue-300"
+                    }`}>
+                    {emoji} {type}
+                  </button>
                 ))}
               </div>
-            )}
-          </div>
 
-          {/* Quick add */}
-          <div className="mb-6 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 p-5 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Quick Add</h3>
-            <div className="flex items-center gap-3 mb-3">
-              <select className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={beverage} onChange={(e) => setBeverage(e.target.value)}>
-                {Object.entries(BEVERAGE_EMOJI).map(([type, emoji]) => (
-                  <option key={type} value={type}>{emoji} {type}</option>
+              {/* Amount buttons */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+                {QUICK_AMOUNTS.map((qa) => (
+                  <button key={qa.ml} type="button" onClick={() => addMut.mutate(qa.ml)} disabled={addMut.isPending}
+                    className="group rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 px-3 py-3 text-center hover:border-blue-400 hover:shadow-md hover:shadow-blue-500/10 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50">
+                    <span className="text-lg block mb-0.5 group-hover:scale-110 transition-transform">{qa.icon}</span>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{qa.ml}ml</span>
+                    <span className="text-[10px] text-gray-400 block">{qa.label}</span>
+                  </button>
                 ))}
-              </select>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {QUICK_AMOUNTS.map((qa) => (
-                <button key={qa.ml} type="button" onClick={() => addMut.mutate(qa.ml)} disabled={addMut.isPending} className="rounded-lg border border-blue-300 dark:border-blue-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm hover:bg-blue-100 dark:hover:bg-blue-900/30 disabled:opacity-50">
-                  {qa.label} ({qa.ml}ml)
-                </button>
-              ))}
-              <div className="flex items-center gap-1">
-                <input type="number" min="50" max="5000" className="w-20 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-2 text-sm" value={customMl} onChange={(e) => setCustomMl(e.target.value)} />
-                <button type="button" onClick={() => addMut.mutate(Number(customMl))} disabled={addMut.isPending} className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
-                  +ml
-                </button>
+                {/* Custom */}
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 p-3 flex flex-col items-center justify-center gap-1.5">
+                  <input type="number" min="50" max="5000" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-2 py-1.5 text-sm text-center font-mono" value={customMl} onChange={(e) => setCustomMl(e.target.value)} />
+                  <button type="button" onClick={() => addMut.mutate(Number(customMl))} disabled={addMut.isPending}
+                    className="w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 px-3 py-1.5 text-xs font-semibold text-white hover:from-blue-600 hover:to-cyan-600 shadow-md shadow-blue-500/20 disabled:opacity-50 transition-all">
+                    + Custom
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -153,57 +239,48 @@ export default function WaterPage() {
 
       {/* Weekly stats */}
       {selectedUserId && weeklyData && (
-        <div className="mb-6 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm text-center">
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{weeklyData.avgDailyMl}ml</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Avg Daily (7d)</p>
+        <div className="grid gap-4 sm:grid-cols-3 stagger-grid">
+          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card text-center">
+            <span className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">{weeklyData.avgDailyMl}</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">ml</span>
+            <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-medium mt-1">Avg Daily (7d)</p>
           </div>
-          <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm text-center">
-            <p className="text-2xl font-bold text-emerald-600">{weeklyData.goalMetDays}/7</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Goals Met</p>
+          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card text-center">
+            <span className="text-3xl font-bold tracking-tight text-emerald-500">{weeklyData.goalMetDays}</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">/7 days</span>
+            <p className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-medium mt-1">Goals Met</p>
           </div>
-          <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">7-Day Trend</p>
-            <div className="flex items-end gap-1 h-12">
-              {weeklyData.days.map((day) => {
-                const pct = day.goalMl > 0 ? Math.min(100, (day.totalMl / day.goalMl) * 100) : 0
-                return (
-                  <div key={day.date} className="flex-1 flex flex-col items-center gap-0.5" title={`${day.date}: ${day.totalMl}ml`}>
-                    <div className={`w-full rounded-sm ${progressColor(pct)}`} style={{ height: `${Math.max(4, pct * 0.48)}px` }} />
-                    <span className="text-[9px] text-gray-400">{day.date.slice(8)}</span>
-                  </div>
-                )
-              })}
-            </div>
+          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">7-Day Trend</p>
+            <WeeklyChart days={weeklyData.days} />
           </div>
         </div>
       )}
 
       {/* Recent logs */}
       {selectedUserId && !isLoading && logs.length > 0 && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-              <tr>
-                <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Time</th>
-                <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Type</th>
-                <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Amount</th>
-                <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Note</th>
-                <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                  <td className="px-4 py-3 text-gray-900 dark:text-gray-100">{new Date(log.loggedAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
-                  <td className="px-4 py-3">{BEVERAGE_EMOJI[log.beverageType] ?? "🥤"} {log.beverageType}</td>
-                  <td className="px-4 py-3 font-medium text-blue-600 dark:text-blue-400">{log.amountMl}ml</td>
-                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400 max-w-xs truncate">{log.note ?? ""}</td>
-                  <td className="px-4 py-3"><button type="button" onClick={() => deleteMut.mutate(log.id)} className="text-gray-400 hover:text-red-500 text-xs">✕</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-card overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Recent Logs</h2>
+          </div>
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            {logs.map((log) => (
+              <div key={log.id} className="group flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                <div className={`h-9 w-9 rounded-xl bg-gradient-to-br ${BEVERAGE_COLORS[log.beverageType] ?? BEVERAGE_COLORS.other} flex items-center justify-center text-white text-sm shadow-md shrink-0`}>
+                  {BEVERAGE_EMOJI[log.beverageType] ?? "🥤"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{log.amountMl}ml <span className="text-gray-400 font-normal">· {log.beverageType}</span></p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(log.loggedAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                </div>
+                {log.note && <span className="text-xs text-gray-400 truncate max-w-[120px]">{log.note}</span>}
+                <button type="button" onClick={() => deleteMut.mutate(log.id)}
+                  className="shrink-0 h-7 w-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all" title="Delete">
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
