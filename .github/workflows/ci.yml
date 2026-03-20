@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build packages (types, db, providers)
+      - name: Build packages (types, db, providers, analytics, notifications)
         run: |
           pnpm --filter @biosync-io/types build
           pnpm --filter @biosync-io/db build
@@ -42,6 +42,8 @@ jobs:
           pnpm --filter @biosync-io/provider-garmin build
           pnpm --filter @biosync-io/provider-strava build
           pnpm --filter @biosync-io/provider-whoop build
+          pnpm --filter @biosync-io/analytics build
+          pnpm --filter @biosync-io/notification-core build
 
       - name: Lint (Biome)
         run: pnpm exec biome ci .
@@ -108,6 +110,8 @@ jobs:
           pnpm --filter @biosync-io/provider-garmin build
           pnpm --filter @biosync-io/provider-strava build
           pnpm --filter @biosync-io/provider-whoop build
+          pnpm --filter @biosync-io/analytics build
+          pnpm --filter @biosync-io/notification-core build
 
       - name: Run migrations
         run: pnpm --filter @biosync-io/db run db:migrate
