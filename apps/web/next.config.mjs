@@ -12,6 +12,8 @@ const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../../"),
   experimental: {
     typedRoutes: true,
+    // Next.js 16: enable React compiler for automatic memoization
+    reactCompiler: true,
   },
 }
 
