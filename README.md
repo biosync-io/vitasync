@@ -8,9 +8,9 @@
 [![Docker](https://github.com/your-org/vitasync/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/your-org/vitasync/actions/workflows/docker-publish.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://typescriptlang.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://typescriptlang.org)
 
-Connect Fitbit, Garmin, Withings, Polar, Strava — and more — to a single API you control.
+Connect Fitbit, Garmin, WHOOP, Strava — and more — to a single API you control.
 
 </div>
 
@@ -35,6 +35,10 @@ VitaSync is a fully TypeScript monorepo that gives you a production-ready, multi
 | **MCP server** | Exposes health data + AI analytics to AI assistants (Claude, Cursor, VS Code Copilot) via the Model Context Protocol |
 | **Grafana dashboards** | 8 pre-built health dashboards auto-provisioned from `monitoring/grafana/dashboards/` |
 | **Web dashboard** | Next.js dashboard with sync-job monitor, accent theme picker, and auto-sync on provider connect |
+| **Personal wellness tracking** | Daily journal, water intake, habits tracker, mood logs, nutrition, medications, and symptom tracking |
+| **Goals & gamification** | Health goals with streak tracking, tiered achievements, workspace-wide challenges with leaderboards |
+| **Training & readiness** | Training plans, training load metrics, readiness scores, and sleep analysis with debt tracking |
+| **Reports & exports** | Periodic health reports (weekly to annual), data export in JSON/CSV/FHIR R4 formats, health snapshots |
 | **Helm chart** | Production-ready chart with HPA, PDB, ingress, migration Job, and secret management |
 
 ---
@@ -46,8 +50,9 @@ vitasync/
 ├── apps/
 │   ├── api/        # Fastify 5 REST API — routes, services, auth plugin
 │   ├── worker/     # BullMQ worker — sync, analytics, notifications
-│   ├── web/        # Next.js 15 App Router dashboard
-│   └── mcp/        # MCP server — expose health data + AI analytics to AI assistants
+│   ├── web/        # Next.js 16 App Router dashboard
+│   ├── mcp/        # MCP server — expose health data + AI analytics to AI assistants
+│   └── docs/       # Astro Starlight documentation site
 ├── packages/
 │   ├── types/      # Shared TypeScript types (HealthMetric, ProviderDefinition…)
 │   ├── db/         # Drizzle ORM schemas + postgres.js client
@@ -64,7 +69,9 @@ vitasync/
 │   └── providers/
 │       ├── core/   # Abstract OAuth2Provider / OAuth1Provider + ProviderRegistry
 │       ├── fitbit/ # Fitbit Connect implementation
-│       └── garmin/ # Garmin Connect implementation
+│       ├── garmin/ # Garmin Connect implementation
+│       ├── strava/ # Strava implementation
+│       └── whoop/  # WHOOP implementation
 ├── monitoring/
 │   ├── docker-compose.monitoring.yml   # Grafana + Prometheus + exporters
 │   ├── grafana/dashboards/             # 8 pre-built health dashboards
@@ -86,6 +93,22 @@ API (Fastify)
   ├─ routes/v1/health → query health metrics with filters
   ├─ routes/v1/analytics → LLM context, correlations, anomaly detection
   ├─ routes/v1/notifications → channel CRUD, rules, delivery logs
+  ├─ routes/v1/mood → mood tracking
+  ├─ routes/v1/journal → daily journal entries
+  ├─ routes/v1/water → water intake tracking
+  ├─ routes/v1/habits → daily habits with streaks
+  ├─ routes/v1/nutrition → nutrition logging
+  ├─ routes/v1/medications → medication tracking
+  ├─ routes/v1/symptoms → symptom logging
+  ├─ routes/v1/goals → health goals with progress
+  ├─ routes/v1/achievements → gamified achievements
+  ├─ routes/v1/challenges → workspace-wide challenges
+  ├─ routes/v1/training-plans → training plan management
+  ├─ routes/v1/reports → health report generation
+  ├─ routes/v1/exports → data exports (JSON, CSV)
+  ├─ routes/v1/health-scores → composite wellness scores
+  ├─ routes/v1/readiness → readiness & training load
+  ├─ routes/v1/sleep-analysis → sleep debt & quality
   ├─ routes/v1/api-keys → create/revoke API keys
   ├─ routes/v1/webhooks → CRUD + delivery history
   └─ routes/v1/providers → list available providers
@@ -198,12 +221,36 @@ Authorization: Bearer vs_live_<key>
 | `GET` | `/v1/users/:id/analytics/context` | LLM-ready biological context (AI) |
 | `POST` | `/v1/users/:id/analytics/correlations` | Auto-discover metric correlations |
 | `POST` | `/v1/users/:id/analytics/anomalies` | Detect health anomalies |
-| `GET` | `/v1/users/:id/notifications/channels` | List notification channels |
-| `POST` | `/v1/users/:id/notifications/channels` | Register a notification channel |
-| `POST` | `/v1/users/:id/notifications/channels/:cid/test` | Send a test notification |
-| `GET` | `/v1/users/:id/notifications/rules` | List notification rules |
-| `POST` | `/v1/users/:id/notifications/rules` | Create a notification rule |
-| `GET` | `/v1/users/:id/notifications/logs` | Delivery log history |
+| `GET/POST` | `/v1/users/:id/notifications/*` | Notification channels, rules, logs |
+
+### Personal wellness endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET/POST` | `/v1/users/:id/journal` | Daily journal entries (CRUD, search, stats) |
+| `GET/POST` | `/v1/users/:id/water` | Water intake tracking (log, today, weekly) |
+| `GET/POST` | `/v1/users/:id/habits` | Habits with streak tracking (CRUD, complete, summary) |
+| `GET/POST` | `/v1/users/:id/mood` | Mood and mental wellness logs (CRUD, stats) |
+| `GET/POST` | `/v1/users/:id/nutrition` | Nutrition and meal logging (CRUD, daily/weekly) |
+| `GET/POST` | `/v1/users/:id/medications` | Medication tracking (CRUD, adherence stats) |
+| `GET/POST` | `/v1/users/:id/symptoms` | Symptom logging (CRUD, patterns) |
+
+### Goals, achievements & training
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET/POST` | `/v1/users/:id/goals` | Health goals with progress tracking |
+| `GET` | `/v1/users/:id/achievements` | Unlocked achievements and badges |
+| `GET/POST` | `/v1/challenges` | Workspace-wide challenges with leaderboards |
+| `GET/POST` | `/v1/users/:id/training-plans` | Training plan management |
+| `GET` | `/v1/users/:id/readiness` | Readiness score and training load |
+| `GET` | `/v1/users/:id/health-scores` | Composite wellness scores |
+| `GET/POST` | `/v1/users/:id/reports` | Health report generation |
+| `GET/POST` | `/v1/users/:id/exports` | Data export (JSON, CSV) |
+| `GET` | `/v1/users/:id/sleep-analysis` | Sleep debt, quality analysis |
+| `GET` | `/v1/users/:id/baselines` | Biometric baselines |
+| `GET` | `/v1/users/:id/snapshots` | Point-in-time health snapshots |
+| `GET` | `/v1/users/:id/insights` | AI-generated health insights |
 
 ### Example: connect a Fitbit user
 

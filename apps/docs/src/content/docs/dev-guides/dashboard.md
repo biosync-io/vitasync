@@ -5,18 +5,42 @@ description: Using the VitaSync web dashboard — Sync Jobs, notifications, them
 
 import { Aside } from '@astrojs/starlight/components';
 
-The VitaSync web dashboard (`apps/web`) is a Next.js 15 App Router application available at **http://localhost:3000** (or your configured domain). It provides a management UI for users, provider connections, sync jobs, notifications, settings, and more.
+The VitaSync web dashboard (`apps/web`) is a Next.js 16 App Router application available at **http://localhost:3000** (or your configured domain). It provides a management UI for users, provider connections, sync jobs, notifications, settings, and more.
 
 ## Navigation
 
 | Section | Path | Description |
 |---------|------|-------------|
-| Users | `/dashboard/users` | Browse workspace users and their provider connections |
-| Sync Jobs | `/dashboard/sync-jobs` | Live view of background sync job queue |
-| Webhooks | `/dashboard/webhooks` | Manage outbound webhook endpoints |
-| Notifications | `/dashboard/notifications` | Configure notification channels and routing rules |
-| Notification Logs | `/dashboard/notification-logs` | View delivery history and debug failed notifications |
-| Settings | `/dashboard/settings` | API keys, appearance, and preferences |
+| Dashboard | `/dashboard` | Overview with health scores, recent workouts, goals, insights |
+| Health Score | `/dashboard/health-scores` | Composite wellness score visualization |
+| Readiness | `/dashboard/readiness` | Recovery readiness and training load |
+| Insights | `/dashboard/insights` | AI-generated health insights |
+| Reports | `/dashboard/reports` | Health report generation |
+| Anomalies | `/dashboard/anomalies` | Detected health anomalies |
+| Correlations | `/dashboard/correlations` | Metric relationship discovery |
+| Health Data | `/dashboard/health` | Raw health metric explorer |
+| Sleep | `/dashboard/sleep` | Sleep analysis and tracking |
+| Activity | `/dashboard/activity` | Workout history and training |
+| Nutrition | `/dashboard/nutrition` | Nutrition and meal logging |
+| Mood | `/dashboard/mood` | Mood and mental wellness tracking |
+| Journal | `/dashboard/journal` | Daily journal with gratitude and mood tagging |
+| Water Intake | `/dashboard/water` | Hydration tracking with daily goals |
+| Habits | `/dashboard/habits` | Daily habit tracking with streaks |
+| Symptoms | `/dashboard/symptoms` | Symptom logging |
+| Medications | `/dashboard/medications` | Medication tracking |
+| Training | `/dashboard/training` | Training plans and load |
+| Goals | `/dashboard/goals` | Health goal tracking |
+| Achievements | `/dashboard/achievements` | Unlocked badges |
+| Challenges | `/dashboard/challenges` | Workspace-wide challenges |
+| Providers | `/dashboard/providers` | Connected devices and OAuth |
+| Users | `/dashboard/users` | Workspace user management |
+| Sync Jobs | `/dashboard/sync-jobs` | Live BullMQ job queue monitor |
+| Exports | `/dashboard/exports` | Data export management |
+| Webhooks | `/dashboard/webhooks` | Webhook CRUD and delivery history |
+| Notifications | `/dashboard/notifications` | Notification channel setup and rules |
+| Notification Logs | `/dashboard/notification-logs` | Delivery history |
+| API Keys | `/dashboard/api-keys` | API key management |
+| Settings | `/dashboard/settings` | Theme, preferences, auto-sync toggle |
 
 ## Sync Jobs
 
