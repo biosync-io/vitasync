@@ -800,10 +800,11 @@ export interface SleepDebtData {
 
 export interface SleepQualityData {
   avgSleepScore: number
-  avgDeepSleepPercent: number
-  avgRemSleepPercent: number
-  avgLightSleepPercent: number
-  avgAwakePercent: number
+  avgDurationHours: number
+  avgDeepSleepPct: number
+  avgRemSleepPct: number
+  avgLightSleepPct: number
+  avgAwakePct: number
   avgEfficiency: number
   consistencyScore: number
   weekdayVsWeekend: { weekday: number; weekend: number }

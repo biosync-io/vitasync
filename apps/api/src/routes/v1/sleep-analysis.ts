@@ -14,7 +14,7 @@ const sleepAnalysisRoutes: FastifyPluginAsync = async (app) => {
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
 
     const query = z.object({ days: z.coerce.number().min(3).max(90).default(14) }).parse(request.query)
-    const debt = await sleepService.getSleepDebt(userId, query.days)
+    const debt = await sleepService.getSleepDebt(userId, query.days, owner.gender)
     return reply.send(debt)
   })
 
@@ -25,7 +25,7 @@ const sleepAnalysisRoutes: FastifyPluginAsync = async (app) => {
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
 
     const query = z.object({ days: z.coerce.number().min(7).max(365).default(30) }).parse(request.query)
-    const report = await sleepService.getSleepQualityReport(userId, query.days)
+    const report = await sleepService.getSleepQualityReport(userId, query.days, owner.gender)
     return reply.send(report)
   })
 }

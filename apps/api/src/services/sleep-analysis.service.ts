@@ -1,46 +1,66 @@
 import { getDb, healthMetrics } from "@biosync-io/db"
-import { and, avg, eq, gte, lte, sql } from "drizzle-orm"
+import { and, eq, gte, lte, sql, desc } from "drizzle-orm"
 
+/**
+ * Sleep Analysis Service
+ *
+ * Analyzes sleep data from the `sleep` metric type (JSONB data field
+ * with durationMinutes, deepSleepMinutes, remSleepMinutes, etc.)
+ * and `sleep_score` metric type (numeric score).
+ *
+ * Gender-aware: adjusts ideal sleep duration recommendations.
+ */
 export class SleepAnalysisService {
   private get db() {
     return getDb()
   }
 
-  async getSleepDebt(userId: string, days = 14): Promise<{
+  async getSleepDebt(userId: string, days = 14, gender?: string | null): Promise<{
     idealSleepHours: number
     avgSleepHours: number
     totalDebtHours: number
-    dailyDebt: { date: string; hoursSlept: number; debt: number }[]
+    dailyDebt: Array<{ date: string; hoursSlept: number; debt: number }>
     recommendation: string
   }> {
     const since = new Date()
     since.setDate(since.getDate() - days)
 
+    // Fetch sleep records (structured data in JSONB)
     const sleepData = await this.db
       .select({
-        recordedDate: sql<string>`date(${healthMetrics.recordedAt})`,
-        avgValue: avg(healthMetrics.value),
+        data: healthMetrics.data,
+        recordedAt: healthMetrics.recordedAt,
       })
       .from(healthMetrics)
       .where(
         and(
           eq(healthMetrics.userId, userId),
-          eq(healthMetrics.metricType, "sleep_duration"),
+          eq(healthMetrics.metricType, "sleep"),
           gte(healthMetrics.recordedAt, since),
         ),
       )
-      .groupBy(sql`date(${healthMetrics.recordedAt})`)
-      .orderBy(sql`date(${healthMetrics.recordedAt})`)
+      .orderBy(healthMetrics.recordedAt)
 
-    const idealSleepHours = 8 // WHO recommendation
-    const dailyDebt = sleepData.map((d) => {
-      const hoursSlept = Math.round(Number(d.avgValue ?? 0) * 10) / 10
-      return {
-        date: d.recordedDate,
-        hoursSlept,
-        debt: Math.round((idealSleepHours - hoursSlept) * 10) / 10,
-      }
-    })
+    // Women typically need slightly more sleep (NSF recommendation)
+    const idealSleepHours = gender === "female" ? 8.5 : 8
+
+    // Group by date and extract duration from JSONB data
+    const byDate = new Map<string, number>()
+    for (const row of sleepData) {
+      const d = row.data as Record<string, unknown> | null
+      if (!d) continue
+      const durationMin = d.durationMinutes as number | undefined
+      if (durationMin == null) continue
+      const date = new Date(row.recordedAt).toISOString().slice(0, 10)
+      // If multiple sleep records per day (e.g., naps), sum them
+      byDate.set(date, (byDate.get(date) ?? 0) + durationMin / 60)
+    }
+
+    const dailyDebt = [...byDate.entries()].map(([date, hoursSlept]) => ({
+      date,
+      hoursSlept: Math.round(hoursSlept * 10) / 10,
+      debt: Math.round((idealSleepHours - hoursSlept) * 10) / 10,
+    }))
 
     const avgSleepHours = dailyDebt.length > 0
       ? Math.round((dailyDebt.reduce((s, d) => s + d.hoursSlept, 0) / dailyDebt.length) * 10) / 10
@@ -52,20 +72,21 @@ export class SleepAnalysisService {
     if (totalDebtHours > 10) {
       recommendation = "Significant sleep debt detected. Prioritize sleep catch-up with earlier bedtimes over the next week."
     } else if (totalDebtHours > 5) {
-      recommendation = "Moderate sleep debt. Try adding 30-60 minutes of sleep per night to recover."
+      recommendation = "Moderate sleep debt. Try adding 30–60 minutes of sleep per night to recover."
     } else if (totalDebtHours > 2) {
-      recommendation = "Minor sleep debt. An extra 15-30 minutes per night should help."
+      recommendation = "Minor sleep debt. An extra 15–30 minutes per night should help."
     }
 
     return { idealSleepHours, avgSleepHours, totalDebtHours, dailyDebt, recommendation }
   }
 
-  async getSleepQualityReport(userId: string, days = 30): Promise<{
+  async getSleepQualityReport(userId: string, days = 30, gender?: string | null): Promise<{
     avgSleepScore: number
-    avgDeepSleepPercent: number
-    avgRemSleepPercent: number
-    avgLightSleepPercent: number
-    avgAwakePercent: number
+    avgDurationHours: number
+    avgDeepSleepPct: number
+    avgRemSleepPct: number
+    avgLightSleepPct: number
+    avgAwakePct: number
     avgEfficiency: number
     consistencyScore: number
     weekdayVsWeekend: { weekday: number; weekend: number }
@@ -75,53 +96,76 @@ export class SleepAnalysisService {
     const since = new Date()
     since.setDate(since.getDate() - days)
 
-    const metricTypes = [
-      "sleep_score", "deep_sleep_pct", "rem_sleep_pct",
-      "light_sleep_pct", "awake_pct", "sleep_efficiency", "sleep_duration",
-    ]
+    // Fetch sleep records (JSONB data) and sleep scores
+    const [sleepRecords, sleepScores] = await Promise.all([
+      this.db
+        .select({ data: healthMetrics.data, recordedAt: healthMetrics.recordedAt })
+        .from(healthMetrics)
+        .where(and(eq(healthMetrics.userId, userId), eq(healthMetrics.metricType, "sleep"), gte(healthMetrics.recordedAt, since)))
+        .orderBy(healthMetrics.recordedAt),
+      this.db
+        .select({ value: healthMetrics.value, recordedAt: healthMetrics.recordedAt })
+        .from(healthMetrics)
+        .where(and(eq(healthMetrics.userId, userId), eq(healthMetrics.metricType, "sleep_score"), gte(healthMetrics.recordedAt, since)))
+        .orderBy(healthMetrics.recordedAt),
+    ])
 
-    const metrics = await this.db
-      .select({
-        metricType: healthMetrics.metricType,
-        value: healthMetrics.value,
-        recordedAt: healthMetrics.recordedAt,
-      })
-      .from(healthMetrics)
-      .where(
-        and(
-          eq(healthMetrics.userId, userId),
-          sql`${healthMetrics.metricType} = ANY(${metricTypes})`,
-          gte(healthMetrics.recordedAt, since),
-        ),
-      )
-      .orderBy(healthMetrics.recordedAt)
+    // Extract sleep stage data from JSONB
+    const durations: number[] = []
+    const deepPcts: number[] = []
+    const remPcts: number[] = []
+    const lightPcts: number[] = []
+    const awakePcts: number[] = []
+    const efficiencies: number[] = []
+    const weekdayDurations: number[] = []
+    const weekendDurations: number[] = []
 
-    const buckets: Record<string, number[]> = {}
-    const durationByDay: Record<string, number[]> = { weekday: [], weekend: [] }
+    for (const row of sleepRecords) {
+      const d = row.data as Record<string, unknown> | null
+      if (!d) continue
+      const totalMin = d.durationMinutes as number | undefined
+      if (totalMin == null || totalMin <= 0) continue
+      const nap = d.nap as boolean | undefined
+      if (nap) continue // Skip naps for quality analysis
 
-    for (const m of metrics) {
-      if (m.value == null) continue
-      if (!buckets[m.metricType]) buckets[m.metricType] = []
-      buckets[m.metricType]!.push(m.value)
+      const deepMin = (d.deepSleepMinutes as number | undefined) ?? 0
+      const remMin = (d.remSleepMinutes as number | undefined) ?? 0
+      const lightMin = (d.lightSleepMinutes as number | undefined) ?? 0
+      const awakeMin = (d.awakeMinutes as number | undefined) ?? 0
+      const efficiency = d.sleepEfficiency as number | undefined
 
-      if (m.metricType === "sleep_duration") {
-        const day = m.recordedAt.getDay()
-        const key = day === 0 || day === 6 ? "weekend" : "weekday"
-        durationByDay[key]!.push(m.value)
+      const hours = totalMin / 60
+      durations.push(hours)
+
+      if (totalMin > 0) {
+        deepPcts.push((deepMin / totalMin) * 100)
+        remPcts.push((remMin / totalMin) * 100)
+        lightPcts.push((lightMin / totalMin) * 100)
+        awakePcts.push((awakeMin / (totalMin + awakeMin)) * 100)
+      }
+
+      if (efficiency != null) efficiencies.push(efficiency)
+
+      const dayOfWeek = new Date(row.recordedAt).getDay()
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        weekendDurations.push(hours)
+      } else {
+        weekdayDurations.push(hours)
       }
     }
 
     const calcAvg = (arr: number[]) => arr.length > 0 ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10 : 0
 
-    const avgSleepScore = calcAvg(buckets.sleep_score ?? [])
-    const avgDeepSleepPercent = calcAvg(buckets.deep_sleep_pct ?? [])
-    const avgRemSleepPercent = calcAvg(buckets.rem_sleep_pct ?? [])
-    const avgLightSleepPercent = calcAvg(buckets.light_sleep_pct ?? [])
-    const avgAwakePercent = calcAvg(buckets.awake_pct ?? [])
-    const avgEfficiency = calcAvg(buckets.sleep_efficiency ?? [])
+    const scoreValues = sleepScores.filter((s) => s.value != null).map((s) => s.value!)
+    const avgSleepScore = calcAvg(scoreValues)
+    const avgDurationHours = calcAvg(durations)
+    const avgDeepSleepPct = calcAvg(deepPcts)
+    const avgRemSleepPct = calcAvg(remPcts)
+    const avgLightSleepPct = calcAvg(lightPcts)
+    const avgAwakePct = calcAvg(awakePcts)
+    const avgEfficiency = calcAvg(efficiencies)
 
-    // Sleep consistency — measure stddev of sleep duration
-    const durations = buckets.sleep_duration ?? []
+    // Sleep consistency: stddev of durations
     let consistencyScore = 100
     if (durations.length > 2) {
       const mean = durations.reduce((a, b) => a + b, 0) / durations.length
@@ -129,41 +173,55 @@ export class SleepAnalysisService {
       consistencyScore = Math.max(0, Math.round(100 - stddev * 15))
     }
 
-    // Weekday vs weekend
     const weekdayVsWeekend = {
-      weekday: calcAvg(durationByDay.weekday!),
-      weekend: calcAvg(durationByDay.weekend!),
+      weekday: calcAvg(weekdayDurations),
+      weekend: calcAvg(weekendDurations),
     }
 
-    // Trend — compare first half to second half of sleep scores
-    const scores = buckets.sleep_score ?? []
+    // Trend: compare first vs second half of sleep scores
     let trend = "stable"
-    if (scores.length >= 4) {
-      const mid = Math.floor(scores.length / 2)
-      const firstHalf = calcAvg(scores.slice(0, mid))
-      const secondHalf = calcAvg(scores.slice(mid))
+    if (scoreValues.length >= 4) {
+      const mid = Math.floor(scoreValues.length / 2)
+      const firstHalf = calcAvg(scoreValues.slice(0, mid))
+      const secondHalf = calcAvg(scoreValues.slice(mid))
       if (secondHalf > firstHalf + 2) trend = "improving"
       else if (secondHalf < firstHalf - 2) trend = "declining"
     }
 
-    // Recommendations
+    // Gender-aware recommendations
+    const idealDeep = gender === "female" ? 18 : 20 // Women: slightly lower deep sleep baseline
+    const idealREM = 22 // REM should be ~20-25% for both genders
+
     const recommendations: string[] = []
-    if (avgSleepScore < 60) recommendations.push("Your sleep score is below average. Focus on sleep hygiene fundamentals.")
-    if (avgDeepSleepPercent < 15) recommendations.push("Deep sleep is low. Avoid alcohol before bed and maintain cool room temperature.")
-    if (avgRemSleepPercent < 20) recommendations.push("REM sleep is low. Reduce caffeine intake after noon.")
-    if (avgEfficiency < 85) recommendations.push("Sleep efficiency is low. Only go to bed when truly sleepy.")
-    if (consistencyScore < 50) recommendations.push("Sleep consistency is poor. Maintain a regular sleep-wake schedule.")
-    if (Math.abs(weekdayVsWeekend.weekend - weekdayVsWeekend.weekday) > 1.5) {
-      recommendations.push("Large weekday/weekend sleep difference detected. Try to keep schedules more consistent.")
+    if (avgSleepScore > 0 && avgSleepScore < 60) {
+      recommendations.push("Your sleep score is below average. Focus on sleep hygiene fundamentals.")
     }
-    if (recommendations.length === 0) recommendations.push("Your sleep patterns look healthy. Keep up the good habits!")
+    if (avgDeepSleepPct > 0 && avgDeepSleepPct < idealDeep - 5) {
+      recommendations.push(`Deep sleep is low (${avgDeepSleepPct.toFixed(0)}%). Avoid alcohol before bed and keep room temperature between 65–68°F (18–20°C).`)
+    }
+    if (avgRemSleepPct > 0 && avgRemSleepPct < idealREM - 5) {
+      recommendations.push(`REM sleep is low (${avgRemSleepPct.toFixed(0)}%). Reduce caffeine after noon and maintain a consistent wake time.`)
+    }
+    if (avgEfficiency > 0 && avgEfficiency < 85) {
+      recommendations.push(`Sleep efficiency is ${avgEfficiency.toFixed(0)}%. Only go to bed when truly sleepy, and avoid screens 30 min before bed.`)
+    }
+    if (consistencyScore < 50) {
+      recommendations.push("Sleep schedule is inconsistent. A regular bedtime/wake time is one of the most impactful changes you can make.")
+    }
+    if (Math.abs(weekdayVsWeekend.weekend - weekdayVsWeekend.weekday) > 1.5) {
+      recommendations.push(`Weekend sleep is ${(weekdayVsWeekend.weekend - weekdayVsWeekend.weekday).toFixed(1)}h different from weekdays — this 'social jet lag' disrupts circadian rhythm.`)
+    }
+    if (recommendations.length === 0) {
+      recommendations.push("Your sleep patterns look healthy. Keep up the good habits!")
+    }
 
     return {
       avgSleepScore,
-      avgDeepSleepPercent,
-      avgRemSleepPercent,
-      avgLightSleepPercent,
-      avgAwakePercent,
+      avgDurationHours,
+      avgDeepSleepPct,
+      avgRemSleepPct,
+      avgLightSleepPct,
+      avgAwakePct,
       avgEfficiency,
       consistencyScore,
       weekdayVsWeekend,
