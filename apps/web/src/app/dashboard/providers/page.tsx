@@ -90,7 +90,7 @@ export default function ProvidersPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-grid">
           {providers.map((provider) => (
-            <ProviderCard key={provider.id} provider={provider} isConnected={connectedProviderIds.has(provider.id)} />
+            <ProviderCard key={provider.id} provider={provider} isConnected={connectedProviderIds.has(provider.id)} selectedUserId={selectedUserId} />
           ))}
         </div>
       )}
@@ -108,8 +108,14 @@ export default function ProvidersPage() {
   )
 }
 
-function ProviderCard({ provider, isConnected }: { provider: ProviderDef; isConnected: boolean }) {
+function ProviderCard({ provider, isConnected, selectedUserId }: { provider: ProviderDef; isConnected: boolean; selectedUserId: string }) {
   const colors = PROVIDER_COLORS[provider.id] ?? { bg: "from-gray-400 to-gray-500", icon: "🔗" }
+
+  const handleConnect = () => {
+    if (!selectedUserId) return
+    // Open OAuth flow in a new window — the API will redirect to the provider's OAuth page
+    window.open(`/api/v1/oauth/${provider.id}/authorize?userId=${selectedUserId}`, "_blank", "width=600,height=700")
+  }
 
   return (
     <div className={`rounded-2xl border bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 group ${
@@ -138,13 +144,31 @@ function ProviderCard({ provider, isConnected }: { provider: ProviderDef; isConn
         )}
       </div>
       <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">{provider.description}</p>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-1.5 mb-4">
         {provider.capabilities.map((cap) => (
           <span key={cap} className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400 capitalize">
             {cap.replace(/_/g, " ")}
           </span>
         ))}
       </div>
+      {/* Connect/Disconnect button */}
+      {selectedUserId ? (
+        isConnected ? (
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Connected</span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleConnect}
+            className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white hover:from-indigo-600 hover:to-purple-700 shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/30 hover:-translate-y-0.5 transition-all duration-200"
+          >
+            Connect {provider.name}
+          </button>
+        )
+      ) : (
+        <p className="text-[10px] text-gray-400 italic">Select a user above to connect</p>
+      )}
     </div>
   )
 }
