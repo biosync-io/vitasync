@@ -8,8 +8,8 @@ const providersRoutes: FastifyPluginAsync = async (app) => {
       id: def.id,
       name: def.name,
       description: def.description,
-      authType: def.authType,
-      capabilities: def.capabilities,
+      authType: def.capabilities.oauth1 ? "oauth1" : "oauth2",
+      capabilities: def.capabilities.supportedMetrics,
       logoUrl: def.logoUrl ?? null,
     }))
 
@@ -30,8 +30,8 @@ const providersRoutes: FastifyPluginAsync = async (app) => {
       id: def.id,
       name: def.name,
       description: def.description,
-      authType: def.authType,
-      capabilities: def.capabilities,
+      authType: def.capabilities.oauth1 ? "oauth1" : "oauth2",
+      capabilities: def.capabilities.supportedMetrics,
       logoUrl: def.logoUrl ?? null,
     })
   })

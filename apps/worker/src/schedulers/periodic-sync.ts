@@ -1,6 +1,6 @@
-import { getDb, providerConnections, users } from "@biosync-io/db"
+import { getDb, providerConnections } from "@biosync-io/db"
 import type { Queue } from "bullmq"
-import { eq } from "drizzle-orm"
+import { and, eq, gt } from "drizzle-orm"
 import type { Redis } from "ioredis"
 
 /**
@@ -10,7 +10,7 @@ import type { Redis } from "ioredis"
  * Uses BullMQ's built-in scheduler (QueueScheduler is not needed in BullMQ v5+).
  *
  * Strategy:
- * - Every `SYNC_INTERVAL_MS` milliseconds, query all active provider connections
+ * - Every `SYNC_INTERVAL_MS` milliseconds, query all connected provider connections
  * - For each connection, add a sync job if one isn't already queued or running
  * - Jobs are deduplicated via `jobId` based on connectionId to avoid pile-up
  */
@@ -29,6 +29,8 @@ export async function startPeriodicScheduler(
     {
       repeat: { every: SYNC_INTERVAL_MS },
       jobId: "periodic-sync-sweep", // stable ID prevents duplicate repeatable jobs
+      removeOnComplete: { count: 50 },
+      removeOnFail: { count: 100 },
     },
   )
 
@@ -56,44 +58,68 @@ export async function startPeriodicScheduler(
 }
 
 /**
- * Query all active connections and enqueue a sync job for each.
+ * Query all connected connections and enqueue a sync job for each.
  * Uses a per-connection jobId to deduplicate — BullMQ will skip if already queued.
+ * Paginates through the DB in batches to avoid loading all connections into memory.
  */
 export async function enqueueAllActiveConnections(syncQueue: Queue): Promise<void> {
   const db = getDb()
+  const PAGE_SIZE = 100
+  let lastId = ""
+  let total = 0
 
-  const activeConnections = await db
-    .select({
-      id: providerConnections.id,
-      userId: providerConnections.userId,
-      providerId: providerConnections.providerId,
-    })
-    .from(providerConnections)
-    .where(eq(providerConnections.status, "active"))
+  for (;;) {
+    const page = await db
+      .select({
+        id: providerConnections.id,
+        userId: providerConnections.userId,
+        providerId: providerConnections.providerId,
+      })
+      .from(providerConnections)
+      .where(
+        and(
+          eq(providerConnections.status, "connected"),
+          lastId ? gt(providerConnections.id, lastId) : undefined,
+        ),
+      )
+      .orderBy(providerConnections.id)
+      .limit(PAGE_SIZE)
 
-  if (activeConnections.length === 0) return
+    if (page.length === 0) break
 
-  console.info(`[scheduler] Sweep: scheduling sync for ${activeConnections.length} connection(s)`)
+    total += page.length
 
-  // Batch add all jobs — deduplication is handled by BullMQ jobId
-  await Promise.allSettled(
-    activeConnections.map((conn) =>
-      syncQueue
-        .add(
-          "sync",
-          {
-            connectionId: conn.id,
-            userId: conn.userId,
-            providerId: conn.providerId,
-          },
-          {
-            // Unique per connection: if job already exists in queue, skip
-            jobId: `sync-${conn.id}-${Math.floor(Date.now() / SYNC_INTERVAL_MS)}`,
-            attempts: 3,
-            backoff: { type: "exponential", delay: 30_000 },
-          },
-        )
-        .catch((err) => console.error(`[scheduler] Failed to enqueue ${conn.id}:`, err)),
-    ),
-  )
+    await Promise.allSettled(
+      page.map((conn) =>
+        syncQueue
+          .add(
+            "sync",
+            {
+              connectionId: conn.id,
+              userId: conn.userId,
+              providerId: conn.providerId,
+            },
+            {
+              // Unique per connection: if job already exists in queue, skip.
+              // Time-bucket ensures one sync per connection per interval window.
+              jobId: `sync-${conn.id}-${Math.floor(Date.now() / SYNC_INTERVAL_MS)}`,
+              attempts: 3,
+              backoff: { type: "exponential", delay: 30_000 },
+              // Must remove completed jobs so the jobId is freed each interval.
+              // Without this, completed jobs permanently block re-addition.
+              removeOnComplete: { count: 100 },
+              removeOnFail: { count: 500 },
+            },
+          )
+          .catch((err) => console.error(`[scheduler] Failed to enqueue ${conn.id}:`, err)),
+      ),
+    )
+
+    if (page.length < PAGE_SIZE) break
+    lastId = page[page.length - 1]!.id
+  }
+
+  if (total > 0) {
+    console.info(`[scheduler] Sweep: enqueued sync for ${total} connection(s)`)
+  }
 }

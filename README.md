@@ -5,11 +5,12 @@
 **Self-hosted wearable health data aggregation platform**
 
 [![CI](https://github.com/your-org/vitasync/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/vitasync/actions/workflows/ci.yml)
+[![Docker](https://github.com/your-org/vitasync/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/your-org/vitasync/actions/workflows/docker-publish.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://typescriptlang.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://typescriptlang.org)
 
-Connect Fitbit, Garmin, Withings, Polar, Strava — and more — to a single API you control.
+Connect Fitbit, Garmin, WHOOP, Strava — and more — to a single API you control.
 
 </div>
 
@@ -24,12 +25,21 @@ VitaSync is a fully TypeScript monorepo that gives you a production-ready, multi
 | Feature | Details |
 |---------|---------|
 | **Plugin provider system** | Add a new device brand by implementing one abstract class and calling `register()` |
+| **AI & Analytics** | Correlation engine, anomaly detection, health scores, and LLM-ready context endpoints for AI coaching |
+| **Modular notifications** | Discord, Slack, Teams, Email, Push, ntfy, Webhook — rule-based routing with severity filtering |
 | **Multi-tenant** | Workspaces isolate data; API keys are scoped per workspace |
-| **Async-first** | BullMQ workers handle sync + webhook delivery; `syncData` streams via `AsyncGenerator` |
+| **Async-first** | BullMQ workers handle sync, webhook delivery, analytics, and notifications via `AsyncGenerator` |
 | **Idempotent syncs** | Composite unique index on `(userId, providerId, metricType, recordedAt)` — re-running a sync is safe |
 | **Secure by default** | OAuth tokens encrypted with AES-256-GCM; API keys stored as SHA-256 hashes only |
-| **OpenAPI docs** | Swagger UI auto-generated at `/docs` || **MCP server** | Exposes health data to AI assistants (Claude, Cursor, VS Code Copilot) via the Model Context Protocol |
-| **Grafana dashboards** | 8 pre-built health dashboards auto-provisioned from `monitoring/grafana/dashboards/` || **Helm chart** | Production-ready chart with HPA, PDB, ingress, migration Job, and secret management |
+| **OpenAPI docs** | Swagger UI auto-generated at `/docs` |
+| **MCP server** | Exposes health data + AI analytics to AI assistants (Claude, Cursor, VS Code Copilot) via the Model Context Protocol |
+| **Grafana dashboards** | 8 pre-built health dashboards auto-provisioned from `monitoring/grafana/dashboards/` |
+| **Web dashboard** | Next.js dashboard with sync-job monitor, accent theme picker, and auto-sync on provider connect |
+| **Personal wellness tracking** | Daily journal, water intake, habits tracker, mood logs, nutrition, medications, and symptom tracking |
+| **Goals & gamification** | Health goals with streak tracking, tiered achievements, workspace-wide challenges with leaderboards |
+| **Training & readiness** | Training plans, training load metrics, readiness scores, and sleep analysis with debt tracking |
+| **Reports & exports** | Periodic health reports (weekly to annual), data export in JSON/CSV/FHIR R4 formats, health snapshots |
+| **Helm chart** | Production-ready chart with HPA, PDB, ingress, migration Job, and secret management |
 
 ---
 
@@ -39,16 +49,29 @@ VitaSync is a fully TypeScript monorepo that gives you a production-ready, multi
 vitasync/
 ├── apps/
 │   ├── api/        # Fastify 5 REST API — routes, services, auth plugin
-│   ├── worker/     # BullMQ worker — sync processor, webhook dispatcher
-│   ├── web/        # Next.js 15 App Router dashboard
-│   └── mcp/        # MCP server — expose health data to AI assistants
+│   ├── worker/     # BullMQ worker — sync, analytics, notifications
+│   ├── web/        # Next.js 16 App Router dashboard
+│   ├── mcp/        # MCP server — expose health data + AI analytics to AI assistants
+│   └── docs/       # Astro Starlight documentation site
 ├── packages/
 │   ├── types/      # Shared TypeScript types (HealthMetric, ProviderDefinition…)
 │   ├── db/         # Drizzle ORM schemas + postgres.js client
+│   ├── analytics/  # Correlation engine, anomaly detection, LLM context builder
+│   ├── notifications/
+│   │   ├── core/       # Abstract channel, registry, manager, types
+│   │   ├── discord/    # Discord webhook notifications
+│   │   ├── slack/      # Slack Block Kit notifications
+│   │   ├── teams/      # Microsoft Teams Adaptive Cards
+│   │   ├── email/      # SMTP email (nodemailer)
+│   │   ├── push/       # Web Push (VAPID)
+│   │   ├── ntfy/       # ntfy.sh notifications
+│   │   └── webhook/    # Generic webhook (HMAC-SHA256 signed)
 │   └── providers/
 │       ├── core/   # Abstract OAuth2Provider / OAuth1Provider + ProviderRegistry
 │       ├── fitbit/ # Fitbit Connect implementation
-│       └── garmin/ # Garmin Connect implementation
+│       ├── garmin/ # Garmin Connect implementation
+│       ├── strava/ # Strava implementation
+│       └── whoop/  # WHOOP implementation
 ├── monitoring/
 │   ├── docker-compose.monitoring.yml   # Grafana + Prometheus + exporters
 │   ├── grafana/dashboards/             # 8 pre-built health dashboards
@@ -68,6 +91,24 @@ API (Fastify)
   ├─ routes/v1/users → CRUD for workspace users
   ├─ routes/v1/connections → list/disconnect, trigger sync
   ├─ routes/v1/health → query health metrics with filters
+  ├─ routes/v1/analytics → LLM context, correlations, anomaly detection
+  ├─ routes/v1/notifications → channel CRUD, rules, delivery logs
+  ├─ routes/v1/mood → mood tracking
+  ├─ routes/v1/journal → daily journal entries
+  ├─ routes/v1/water → water intake tracking
+  ├─ routes/v1/habits → daily habits with streaks
+  ├─ routes/v1/nutrition → nutrition logging
+  ├─ routes/v1/medications → medication tracking
+  ├─ routes/v1/symptoms → symptom logging
+  ├─ routes/v1/goals → health goals with progress
+  ├─ routes/v1/achievements → gamified achievements
+  ├─ routes/v1/challenges → workspace-wide challenges
+  ├─ routes/v1/training-plans → training plan management
+  ├─ routes/v1/reports → health report generation
+  ├─ routes/v1/exports → data exports (JSON, CSV)
+  ├─ routes/v1/health-scores → composite wellness scores
+  ├─ routes/v1/readiness → readiness & training load
+  ├─ routes/v1/sleep-analysis → sleep debt & quality
   ├─ routes/v1/api-keys → create/revoke API keys
   ├─ routes/v1/webhooks → CRUD + delivery history
   └─ routes/v1/providers → list available providers
@@ -80,7 +121,9 @@ API (Fastify)
                   ├─ decrypts OAuth tokens
                   ├─ streams data via provider.syncData()
                   ├─ bulk-inserts to health_metrics (idempotent)
-                  └─ enqueues webhook delivery
+                  ├─ enqueues webhook delivery
+                  ├─ runs anomaly detection → triggers notification if threshold met
+                  └─ dispatches notifications via registered channels
 ```
 
 ---
@@ -142,6 +185,10 @@ Copy `.env.example` to `.env` and fill in the values.
 | `GARMIN_CONSUMER_KEY` | for Garmin | From Garmin Health API |
 | `GARMIN_CONSUMER_SECRET` | for Garmin | From Garmin Health API |
 
+> **Note:** Notification channel settings (SMTP, VAPID, webhook URLs, etc.) are configured per-user
+> via the **Notifications** dashboard UI and stored in the `notification_channels` database table.
+> No environment variables are needed for notification channels.
+
 ---
 
 ## API reference
@@ -171,6 +218,39 @@ Authorization: Bearer vs_live_<key>
 | `GET` | `/v1/users/:id/health/summary` | Count per metric type |
 | `POST` | `/v1/api-keys` | Create an API key |
 | `POST` | `/v1/webhooks` | Register a webhook |
+| `GET` | `/v1/users/:id/analytics/context` | LLM-ready biological context (AI) |
+| `POST` | `/v1/users/:id/analytics/correlations` | Auto-discover metric correlations |
+| `POST` | `/v1/users/:id/analytics/anomalies` | Detect health anomalies |
+| `GET/POST` | `/v1/users/:id/notifications/*` | Notification channels, rules, logs |
+
+### Personal wellness endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET/POST` | `/v1/users/:id/journal` | Daily journal entries (CRUD, search, stats) |
+| `GET/POST` | `/v1/users/:id/water` | Water intake tracking (log, today, weekly) |
+| `GET/POST` | `/v1/users/:id/habits` | Habits with streak tracking (CRUD, complete, summary) |
+| `GET/POST` | `/v1/users/:id/mood` | Mood and mental wellness logs (CRUD, stats) |
+| `GET/POST` | `/v1/users/:id/nutrition` | Nutrition and meal logging (CRUD, daily/weekly) |
+| `GET/POST` | `/v1/users/:id/medications` | Medication tracking (CRUD, adherence stats) |
+| `GET/POST` | `/v1/users/:id/symptoms` | Symptom logging (CRUD, patterns) |
+
+### Goals, achievements & training
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET/POST` | `/v1/users/:id/goals` | Health goals with progress tracking |
+| `GET` | `/v1/users/:id/achievements` | Unlocked achievements and badges |
+| `GET/POST` | `/v1/challenges` | Workspace-wide challenges with leaderboards |
+| `GET/POST` | `/v1/users/:id/training-plans` | Training plan management |
+| `GET` | `/v1/users/:id/readiness` | Readiness score and training load |
+| `GET` | `/v1/users/:id/health-scores` | Composite wellness scores |
+| `GET/POST` | `/v1/users/:id/reports` | Health report generation |
+| `GET/POST` | `/v1/users/:id/exports` | Data export (JSON, CSV) |
+| `GET` | `/v1/users/:id/sleep-analysis` | Sleep debt, quality analysis |
+| `GET` | `/v1/users/:id/baselines` | Biometric baselines |
+| `GET` | `/v1/users/:id/snapshots` | Point-in-time health snapshots |
+| `GET` | `/v1/users/:id/insights` | AI-generated health insights |
 
 ### Example: connect a Fitbit user
 
@@ -229,6 +309,73 @@ export function registerMyDeviceProvider() {
 
 ---
 
+## Notification Channels
+
+VitaSync includes a modular notification system supporting 7 channel types. Users configure channels and define rules that route notifications by category and severity.
+
+### Supported channels
+
+| Channel | Package | Transport |
+|---------|---------|-----------|
+| **Discord** | `@biosync-io/notification-discord` | Webhook embeds with severity-mapped colors |
+| **Slack** | `@biosync-io/notification-slack` | Block Kit formatted messages |
+| **Microsoft Teams** | `@biosync-io/notification-teams` | Adaptive Cards v1.4 |
+| **Email** | `@biosync-io/notification-email` | SMTP via nodemailer with HTML templates |
+| **Web Push** | `@biosync-io/notification-push` | VAPID-based web push notifications |
+| **ntfy** | `@biosync-io/notification-ntfy` | [ntfy.sh](https://ntfy.sh) REST API |
+| **Webhook** | `@biosync-io/notification-webhook` | Generic HTTP POST with HMAC-SHA256 signing |
+
+### How it works
+
+1. **Register a channel** — `POST /v1/users/:id/notifications/channels` with `channelType` and channel-specific `config` (e.g. webhook URL, SMTP settings).
+2. **Create rules** — `POST /v1/users/:id/notifications/rules` to map categories (`anomaly`, `goal`, `achievement`, `sync`, `report`, `system`, `insight`) and minimum severity (`info`, `warning`, `critical`) to one or more channels.
+3. **Automatic dispatch** — When an event occurs (e.g. anomaly detected), the worker resolves matching rules and dispatches to all configured channels in parallel via the `notifications` BullMQ queue.
+4. **Test delivery** — `POST /v1/users/:id/notifications/channels/:cid/test` sends a test message through the worker.
+5. **Audit log** — Every delivery is recorded in `notification_logs` and queryable via `GET /v1/users/:id/notifications/logs`.
+
+### Adding a notification channel
+
+1. Create `packages/notifications/<name>/` with a class extending `NotificationChannel` from `@biosync-io/notification-core`.
+2. Implement `send(payload, config)` and `validateConfig(config)`.
+3. Register with `channelRegistry.register("myChannel", new MyChannel())` in the worker.
+
+---
+
+## AI & Advanced Analytics
+
+VitaSync provides built-in analytics that power AI-assisted health coaching.
+
+### Correlation Engine
+
+The correlation engine (`@biosync-io/analytics`) automatically discovers relationships between health metrics using Pearson and Spearman rank correlation:
+
+- Analyzes pairwise metric correlations over configurable time windows (7–365 days)
+- Filters for statistical significance (|r| > 0.3, p < 0.05)
+- Persists results to the database for trend tracking
+- API: `POST /v1/users/:id/analytics/correlations`
+
+### Anomaly Detection
+
+Multi-method anomaly detection identifies unusual health patterns:
+
+- **Statistical**: Z-score (2.5σ) and IQR outlier detection
+- **Clinical thresholds**: SpO₂ < 92%, HR > 120 bpm, temperature > 39.5°C, and more
+- Automatically triggers notifications when thresholds are breached
+- API: `POST /v1/users/:id/analytics/anomalies`
+
+### LLM-Ready Context
+
+The `buildLLMContext()` function produces a structured biological context package optimized for AI assistants:
+
+- Metric baselines and trends
+- Recent anomalies and active alerts
+- Key correlations and health scores
+- Natural language summary for direct prompt injection
+- API: `GET /v1/users/:id/analytics/context`
+- MCP: `get_health_context` tool
+
+---
+
 ## MCP Server
 
 The `apps/mcp` package is a [Model Context Protocol](https://modelcontextprotocol.io) server that lets AI assistants query your VitaSync health data directly.
@@ -257,7 +404,19 @@ Add to `~/.config/claude/claude_desktop_config.json`:
 }
 ```
 
-The server exposes these tools: `query_health_metrics`, `list_users`, `list_connections`, `get_events`, `get_personal_records`.
+The server exposes these tools:
+
+| Tool | Description |
+|------|-------------|
+| `query_health_metrics` | Query health metrics by user, type, time range |
+| `list_users` | List workspace users |
+| `list_connections` | List provider connections with status |
+| `get_events` | Query workout / sleep / activity events |
+| `get_personal_records` | Retrieve all-time personal bests |
+| `get_health_context` | LLM-ready biological context with baselines, trends, anomalies, correlations, and health scores |
+| `get_anomaly_alerts` | Retrieve detected health anomalies with severity and status filters |
+| `get_correlations` | Discover metric correlations with configurable minimum strength |
+| `get_health_scores` | Retrieve composite health scores (overall, sleep, activity, cardio, recovery) |
 
 ---
 
@@ -320,6 +479,62 @@ helm install vitasync ./helm/vitasync \
 
 ---
 
+## Dashboard
+
+The `apps/web` Next.js dashboard is available at **http://localhost:3000** and provides:
+
+| Feature | Description |
+|---------|-------------|
+| **Sync Jobs** | Live table of BullMQ jobs — status badges (completed / failed / active / waiting), duration, last run time, and a manual refresh button. Auto-refreshes every 5 seconds. |
+| **Theme picker** | Five accent colours (Indigo, Blue, Green, Purple, Rose) saved in `localStorage`. All UI chrome (buttons, links, focus rings) updates instantly. |
+| **Auto-sync on connect** | When a user connects a new provider via OAuth the dashboard fires a sync automatically without any extra click. |
+| **Auto-sync toggle** | In **Settings → Appearance** you can disable the auto-sync behaviour. The preference is saved in `localStorage` (`vitasync_auto_sync`). |
+
+---
+
+## Releases & Versioning
+
+The canonical version is stored in the [`VERSION`](VERSION) file at the root of the repository. `package.json` files are **not** used for release versioning.
+
+### Release channels
+
+Docker images are published to `ghcr.io/your-org/vitasync-*` on every push:
+
+| Branch | Channel | Example tags |
+|--------|---------|-------------|
+| `main` | **stable** | `1.2.3`, `1.2`, `1`, `latest`, `sha-abc1234` |
+| `beta/**` | **beta** | `beta`, `beta-abc1234`, `sha-abc1234` |
+| `feature/**`, `fix/**`, `alpha/**` | **alpha** | `alpha`, `alpha-abc1234`, `sha-abc1234` |
+
+Pull a specific channel:
+
+```bash
+# latest stable release
+docker pull ghcr.io/your-org/vitasync-api:latest
+
+# latest beta
+docker pull ghcr.io/your-org/vitasync-api:beta
+
+# pinned alpha build
+docker pull ghcr.io/your-org/vitasync-api:alpha-abc1234
+```
+
+### Automatic version bumps (Conventional Commits)
+
+When a PR is merged to `main`, the `docker-publish` workflow reads the **PR title** and bumps the `VERSION` file automatically:
+
+| PR title prefix | Bump | Example |
+|-----------------|------|---------|
+| `feat!:` or `BREAKING CHANGE` | **major** | `1.0.0 → 2.0.0` |
+| `feat:` | **minor** | `1.0.0 → 1.1.0` |
+| `fix:`, `chore:`, anything else | **patch** | `1.0.0 → 1.0.1` |
+
+The workflow commits the bumped `VERSION` file back to `main` with a `chore: release vX.Y.Z` commit and a matching git tag (e.g. `v1.2.3`). **No manual label-setting or tag-pushing is needed.**
+
+See [Contributing](apps/docs/src/content/docs/dev-guides/contributing.md) for the full PR title convention.
+
+---
+
 ## Development commands
 
 ```bash
@@ -348,13 +563,15 @@ pnpm db:studio      # Open Drizzle Studio
 | Queue | BullMQ 5 + Redis 7 |
 | Dashboard | Next.js 15 App Router + Tailwind CSS |
 | MCP | @modelcontextprotocol/sdk 1.x |
+| Analytics | Custom correlation engine + anomaly detector |
+| Notifications | 7 channel providers (Discord, Slack, Teams, Email, Push, ntfy, Webhook) |
 | Observability | Grafana 10.4 + Prometheus 2.51 |
 | Monorepo | pnpm workspaces + Turborepo |
 | Lint/format | Biome |
 | Testing | Vitest |
 | Containers | Docker + docker compose |
 | Kubernetes | Helm 3 |
-| CI/CD | GitHub Actions |
+| CI/CD | GitHub Actions · Docker Publish (stable / beta / alpha channels) |
 
 ---
 

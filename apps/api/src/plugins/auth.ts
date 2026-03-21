@@ -22,9 +22,11 @@ declare module "fastify" {
  */
 const authPlugin: FastifyPluginAsync = async (app) => {
   app.addHook("onRequest", async (request: FastifyRequest, reply: FastifyReply) => {
-    // Skip auth for docs, health check, OAuth callbacks, and inbound provider webhooks
-    const skipPaths = ["/docs", "/health", "/v1/oauth", "/v1/inbound"]
+    // Skip auth for docs, health checks, and inbound provider webhooks
+    const skipPaths = ["/docs", "/health", "/v1/inbound"]
     if (skipPaths.some((p) => request.url.startsWith(p))) return
+    // OAuth authorize and callbacks are browser redirects — no API key in this flow
+    if (/^\/v1\/oauth\/[^/]+\/(authorize|callback)(\?|$)/.test(request.url)) return
 
     const authHeader = request.headers.authorization
     if (!authHeader?.startsWith("Bearer ")) {
@@ -39,7 +41,9 @@ const authPlugin: FastifyPluginAsync = async (app) => {
       return reply.status(401).send({ code: "UNAUTHORIZED", message: "Empty API key" })
     }
 
-    // Hash the incoming key
+    // Hash the incoming key — SHA-256 is intentional for token lookup, not password storage.
+    // API keys have 192 bits of entropy; deterministic hashing is required for indexed DB lookup.
+    // lgtm[js/insufficient-password-hash]
     const incomingHash = createHash("sha256").update(rawKey).digest("hex")
 
     // Look up by hash (index on keyHash makes this fast)
@@ -57,7 +61,7 @@ const authPlugin: FastifyPluginAsync = async (app) => {
     // Attach workspace context to the request
     request.workspaceId = key.workspaceId
     request.apiKeyId = key.id
-    request.apiKeyScopes = key.scopes as string[]
+    request.apiKeyScopes = (key.scopes as string[]) ?? []
 
     // Fire-and-forget last-used update (non-blocking)
     db.update(apiKeys)

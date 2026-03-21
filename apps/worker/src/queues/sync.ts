@@ -17,7 +17,13 @@ function getConnection(): Redis {
 
 export function getSyncQueue(): Queue {
   if (!_syncQueue) {
-    _syncQueue = new Queue("sync", { connection: getConnection() })
+    _syncQueue = new Queue("sync", {
+      connection: getConnection(),
+      defaultJobOptions: {
+        removeOnComplete: { count: 100 },
+        removeOnFail: { count: 500 },
+      },
+    })
   }
   return _syncQueue
 }

@@ -27,7 +27,7 @@ All endpoints require Bearer token authentication:
 Authorization: Bearer vs_live_<your_api_key>
 ```
 
-See [Authentication](/api-reference/guides/authentication) for full details on creating keys and managing scopes.
+See [Authentication](/vitasync/api-reference/guides/authentication) for full details on creating keys and managing scopes.
 
 ## Content Type
 
@@ -108,6 +108,104 @@ Content-Type: application/json
 | Method | Path | Scope | Description |
 |--------|------|-------|-------------|
 | `GET` | `/v1/providers` | `read` | List all configured providers |
+
+### Analytics
+
+| Method | Path | Scope | Description |
+|--------|------|-------|-------------|
+| `GET` | `/v1/users/:userId/analytics/context` | `read` | LLM-ready biological context (baselines, trends, anomalies, correlations, health scores) |
+| `POST` | `/v1/users/:userId/analytics/correlations` | `read` | Auto-discover metric correlations over a configurable time window |
+| `POST` | `/v1/users/:userId/analytics/anomalies` | `read` | Detect health anomalies using statistical and clinical thresholds |
+
+### Notifications
+
+| Method | Path | Scope | Description |
+|--------|------|-------|-------------|
+| `GET` | `/v1/users/:userId/notifications/channels` | `read` | List notification channels |
+| `POST` | `/v1/users/:userId/notifications/channels` | `write` | Register a notification channel |
+| `PUT` | `/v1/users/:userId/notifications/channels/:channelId` | `write` | Update channel settings |
+| `DELETE` | `/v1/users/:userId/notifications/channels/:channelId` | `write` | Delete a channel |
+| `POST` | `/v1/users/:userId/notifications/channels/:channelId/test` | `write` | Send a test notification |
+| `GET` | `/v1/users/:userId/notifications/rules` | `read` | List notification rules |
+| `POST` | `/v1/users/:userId/notifications/rules` | `write` | Create a notification rule |
+| `PUT` | `/v1/users/:userId/notifications/rules/:ruleId` | `write` | Update a rule |
+| `DELETE` | `/v1/users/:userId/notifications/rules/:ruleId` | `write` | Delete a rule |
+| `GET` | `/v1/users/:userId/notifications/logs` | `read` | Query notification delivery history |
+
+### Health Tracking
+
+| Method | Path | Scope | Description |
+|--------|------|-------|-------------|
+| `GET` | `/v1/users/:userId/mood` | `read` | List mood entries (filterable by date, mood type) |
+| `POST` | `/v1/users/:userId/mood` | `write` | Log a mood entry (score, energy, stress, tags) |
+| `GET` | `/v1/users/:userId/mood/stats` | `read` | Mood statistics and trends |
+| `GET` | `/v1/users/:userId/journal` | `read` | List journal entries (search, filter by tags/date) |
+| `POST` | `/v1/users/:userId/journal` | `write` | Create a journal entry (title, body, mood, gratitude) |
+| `PATCH` | `/v1/users/:userId/journal/:entryId` | `write` | Update a journal entry |
+| `DELETE` | `/v1/users/:userId/journal/:entryId` | `write` | Delete a journal entry |
+| `GET` | `/v1/users/:userId/journal/stats` | `read` | Journal statistics (streak, mood distribution) |
+| `GET` | `/v1/users/:userId/water` | `read` | List water intake logs |
+| `POST` | `/v1/users/:userId/water` | `write` | Log water intake (amount, beverage type) |
+| `DELETE` | `/v1/users/:userId/water/:logId` | `write` | Delete a water log |
+| `GET` | `/v1/users/:userId/water/today` | `read` | Today's hydration summary and goal progress |
+| `GET` | `/v1/users/:userId/water/weekly` | `read` | 7-day hydration stats with daily breakdown |
+| `GET` | `/v1/users/:userId/habits` | `read` | List habit definitions |
+| `POST` | `/v1/users/:userId/habits` | `write` | Create a habit (name, icon, color, frequency) |
+| `PATCH` | `/v1/users/:userId/habits/:habitId` | `write` | Update a habit |
+| `DELETE` | `/v1/users/:userId/habits/:habitId` | `write` | Delete a habit and its logs |
+| `POST` | `/v1/users/:userId/habits/:habitId/complete` | `write` | Mark a habit as completed for a date |
+| `DELETE` | `/v1/users/:userId/habits/:habitId/complete/:date` | `write` | Undo a habit completion |
+| `GET` | `/v1/users/:userId/habits/summary` | `read` | Daily summary with completion rate and streaks |
+| `GET` | `/v1/users/:userId/nutrition` | `read` | List nutrition/meal logs |
+| `POST` | `/v1/users/:userId/nutrition` | `write` | Log a meal with macros |
+| `GET` | `/v1/users/:userId/nutrition/summary/daily` | `read` | Today's nutrition totals |
+| `GET` | `/v1/users/:userId/nutrition/summary/weekly` | `read` | Weekly average macros |
+| `GET` | `/v1/users/:userId/medications` | `read` | List medications |
+| `POST` | `/v1/users/:userId/medications` | `write` | Add a medication |
+| `POST` | `/v1/users/:userId/medications/:medId/log` | `write` | Log a dose taken |
+| `GET` | `/v1/users/:userId/medications/:medId/stats` | `read` | Adherence statistics |
+| `GET` | `/v1/users/:userId/symptoms` | `read` | List symptom logs |
+| `POST` | `/v1/users/:userId/symptoms` | `write` | Log a symptom occurrence |
+| `GET` | `/v1/users/:userId/symptoms/patterns` | `read` | Symptom frequency patterns |
+
+### Goals & Gamification
+
+| Method | Path | Scope | Description |
+|--------|------|-------|-------------|
+| `GET` | `/v1/users/:userId/goals` | `read` | List health goals |
+| `POST` | `/v1/users/:userId/goals` | `write` | Create a goal with target metric and value |
+| `PATCH` | `/v1/users/:userId/goals/:goalId` | `write` | Update goal settings |
+| `GET` | `/v1/users/:userId/achievements` | `read` | List unlocked achievements |
+| `GET` | `/v1/challenges` | `read` | List workspace challenges |
+| `POST` | `/v1/challenges` | `write` | Create a challenge |
+| `POST` | `/v1/challenges/:challengeId/join` | `write` | Join a challenge |
+| `GET` | `/v1/challenges/:challengeId/leaderboard` | `read` | Challenge leaderboard |
+
+### Training & Readiness
+
+| Method | Path | Scope | Description |
+|--------|------|-------|-------------|
+| `GET` | `/v1/users/:userId/training-plans` | `read` | List training plans |
+| `POST` | `/v1/users/:userId/training-plans` | `write` | Create a training plan |
+| `GET` | `/v1/users/:userId/readiness` | `read` | Readiness score with contributing signals |
+| `GET` | `/v1/users/:userId/readiness/training-load` | `read` | Training load metrics (CTL, ATL, TSB) |
+
+### Reports, Exports & Scores
+
+| Method | Path | Scope | Description |
+|--------|------|-------|-------------|
+| `GET` | `/v1/users/:userId/reports` | `read` | List generated health reports |
+| `POST` | `/v1/users/:userId/reports` | `write` | Generate a health report |
+| `GET` | `/v1/users/:userId/exports` | `read` | List data exports |
+| `POST` | `/v1/users/:userId/exports` | `write` | Create a data export (JSON, CSV) |
+| `GET` | `/v1/users/:userId/health-scores` | `read` | Composite wellness scores (overall, sleep, activity, cardio, recovery) |
+| `POST` | `/v1/users/:userId/health-scores/compute` | `write` | Compute a new health score |
+| `GET` | `/v1/users/:userId/sleep-analysis/debt` | `read` | Sleep debt analysis |
+| `GET` | `/v1/users/:userId/sleep-analysis/quality` | `read` | Sleep quality metrics |
+| `GET` | `/v1/users/:userId/baselines` | `read` | Biometric baselines |
+| `GET` | `/v1/users/:userId/snapshots` | `read` | Health snapshots |
+| `POST` | `/v1/users/:userId/snapshots` | `write` | Create a health snapshot |
+| `GET` | `/v1/users/:userId/insights` | `read` | AI-generated health insights |
 
 ## Error Codes
 

@@ -54,11 +54,14 @@ const inboundRoutes: FastifyPluginAsync = async (app) => {
         })
       }
 
-      const signature = (request.headers["x-webhook-signature"] as string | undefined) ?? ""
       const rawBody: Buffer =
         (request as typeof request & { rawBody?: Buffer }).rawBody ?? Buffer.from("")
 
-      if (provider.verifyWebhookSignature) {
+      const signature = "extractWebhookSignature" in provider && provider.extractWebhookSignature
+        ? provider.extractWebhookSignature(request.headers as Record<string, string | string[] | undefined>, rawBody)
+        : (request.headers["x-webhook-signature"] as string | undefined) ?? ""
+
+      if ("verifyWebhookSignature" in provider && provider.verifyWebhookSignature) {
         const valid = provider.verifyWebhookSignature(rawBody, signature, webhookSecret)
         if (!valid) {
           app.log.warn({ providerId }, "Inbound webhook signature verification failed")
@@ -69,7 +72,9 @@ const inboundRoutes: FastifyPluginAsync = async (app) => {
       }
 
       // ── Route to correct user ───────────────────────────────
-      const providerUserId = request.headers["x-provider-user-id"] as string | undefined
+      const providerUserId = "extractProviderUserId" in provider && provider.extractProviderUserId
+        ? provider.extractProviderUserId(request.headers as Record<string, string | string[] | undefined>, request.body)
+        : (request.headers["x-provider-user-id"] as string | undefined)
       if (!providerUserId) {
         return reply.status(400).send({
           code: "MISSING_HEADER",
@@ -85,7 +90,7 @@ const inboundRoutes: FastifyPluginAsync = async (app) => {
       }
 
       // ── Process data points ─────────────────────────────────
-      if (provider.processWebhook) {
+      if ("processWebhook" in provider && provider.processWebhook) {
         const dataPoints = await provider.processWebhook(request.body)
 
         if (dataPoints.length > 0) {

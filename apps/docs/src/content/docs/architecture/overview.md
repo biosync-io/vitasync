@@ -15,10 +15,20 @@ vitasync/
 │   ├── api/        # Fastify 5 REST API
 │   ├── worker/     # BullMQ background worker
 │   ├── web/        # Next.js 15 App Router dashboard
-│   └── mcp/        # MCP server — expose health data to AI assistants
+│   └── mcp/        # MCP server — expose health data + AI analytics to AI assistants
 ├── packages/
 │   ├── types/      # Shared TypeScript types
 │   ├── db/         # Drizzle ORM schemas + postgres.js client
+│   ├── analytics/  # Correlation engine, anomaly detection, LLM context builder
+│   ├── notifications/
+│   │   ├── core/       # Abstract channel, registry, manager, shared types
+│   │   ├── discord/    # Discord webhook embeds
+│   │   ├── slack/      # Slack Block Kit
+│   │   ├── teams/      # Microsoft Teams Adaptive Cards
+│   │   ├── email/      # SMTP via nodemailer
+│   │   ├── push/       # Web Push (VAPID)
+│   │   ├── ntfy/       # ntfy.sh REST API
+│   │   └── webhook/    # Generic webhook (HMAC-SHA256)
 │   └── providers/
 │       ├── core/   # Abstract providers + ProviderRegistry
 │       ├── fitbit/
@@ -49,17 +59,25 @@ API (Fastify 5)
   ├─ GET  /v1/users/:id/connections
   ├─ POST /v1/users/:id/connections/:cid/sync  → enqueue sync job
   ├─ GET  /v1/users/:id/health  → query metrics with filters
+  ├─ GET  /v1/users/:id/analytics/context → LLM-ready biological context
+  ├─ POST /v1/users/:id/analytics/correlations → auto-discover correlations
+  ├─ POST /v1/users/:id/analytics/anomalies → detect anomalies
+  ├─ GET  /v1/users/:id/notifications/channels → channel CRUD
+  ├─ POST /v1/users/:id/notifications/rules → rule-based routing
   ├─ POST /v1/api-keys
   └─ POST /v1/webhooks
 
           │ BullMQ enqueue
           ▼
     Worker process
-      ├─ resolves provider from ProviderRegistry
-      ├─ decrypts OAuth tokens (AES-256-GCM)
-      ├─ streams data via provider.syncData() → AsyncGenerator
-      ├─ bulk-inserts to health_metrics (idempotent)
-      └─ enqueues webhook delivery job
+      ├─ sync queue: resolves provider, decrypts tokens, streams data
+      │    ├─ bulk-inserts to health_metrics (idempotent)
+      │    └─ enqueues webhook delivery + anomaly check
+      ├─ analytics queue: compute correlations + health scores
+      ├─ notifications queue: resolve rules → dispatch to channels
+      │    ├─ Discord, Slack, Teams, Email, Push, ntfy, Webhook
+      │    └─ log delivery results to notification_logs
+      └─ webhooks queue: HMAC-signed HTTP delivery with retries
 
 AI Assistant (Claude, GPT, Cursor…)
   │ MCP protocol (stdio or HTTP/SSE)
@@ -69,7 +87,11 @@ MCP Server (apps/mcp)
   ├─ tool: list_users            → SELECT from users
   ├─ tool: list_connections      → SELECT from provider_connections
   ├─ tool: get_personal_records  → SELECT from personal_records
-  └─ tool: get_events            → SELECT from events (workouts, sleep…)
+  ├─ tool: get_events            → SELECT from events
+  ├─ tool: get_health_context    → LLM-ready biological context
+  ├─ tool: get_anomaly_alerts    → detected anomalies with severity filters
+  ├─ tool: get_correlations      → metric correlations with strength filter
+  └─ tool: get_health_scores     → composite health scores
 ```
 
 ## Key Design Decisions
@@ -90,13 +112,76 @@ Health metrics are inserted with a composite unique index on `(userId, providerI
 
 Every resource (users, connections, metrics, webhooks, API keys) belongs to a **workspace**. API keys are scoped to a workspace and hashed before storage. This makes VitaSync safe to use as a backend for multi-tenant SaaS products.
 
+### Modular Notification System
+
+Notifications follow the same plugin pattern as providers. Each channel (Discord, Slack, Teams, Email, Push, ntfy, Webhook) is an independent package under `packages/notifications/` that extends the abstract `NotificationChannel` class from `@biosync-io/notification-core`. Channels register into a singleton `ChannelRegistry` at worker startup.
+
+Users configure channels and define rules that map notification categories (`anomaly`, `goal`, `achievement`, `sync`, `report`, `system`, `insight`) and minimum severity levels (`info`, `warning`, `critical`) to specific channels. The `NotificationManager` resolves matching rules and dispatches to all configured channels in parallel via `Promise.allSettled`, logging every delivery attempt.
+
+### AI & Analytics Pipeline
+
+The `@biosync-io/analytics` package provides three core capabilities:
+
+1. **Correlation Engine** — Computes pairwise Pearson and Spearman rank correlations across health metrics. Only statistically significant results (|r| > 0.3, p < 0.05) are retained and persisted.
+2. **Anomaly Detector** — Uses Z-score analysis (2.5σ), IQR outlier detection, and clinical thresholds (SpO₂ < 92%, HR > 120, temp > 39.5°C) to identify unusual health patterns. Detected anomalies can trigger notifications automatically.
+3. **LLM Context Builder** — `buildLLMContext()` produces a structured biological context package with baselines, trends, anomalies, correlations, health scores, and a natural language summary. This powers the MCP `get_health_context` tool and the REST `GET /analytics/context` endpoint.
+
+## CI/CD & Release Pipeline
+
+VitaSync uses GitHub Actions for all CI/CD. There are two key workflows:
+
+### `docker-publish.yml` — build, version, and publish
+
+Runs on every push to `main`, `feature/**`, `fix/**`, `alpha/**`, and `beta/**`.
+
+```
+Push to branch
+      │
+      ├─ (main only) release job
+      │     ├─ reads PR title via GitHub API
+      │     ├─ detects Conventional Commit type (feat / fix / feat! …)
+      │     ├─ bumps VERSION file (major / minor / patch)
+      │     └─ commits "chore: release vX.Y.Z" + git tag back to main
+      │
+      └─ build-and-push job
+            ├─ determines channel: main → stable, beta/** → beta, else → alpha
+            ├─ resolves version: stable uses bumped VERSION; pre-release appends channel+sha
+            ├─ builds Docker images for api / worker / web
+            └─ pushes to ghcr.io with channel-appropriate tags
+```
+
+**Stable tags** (main): `1.2.3`, `1.2`, `1`, `latest`, `sha-xxxxxxx`
+**Beta tags** (beta/\*\*): `beta`, `beta-xxxxxxx`, `sha-xxxxxxx`
+**Alpha tags** (everything else): `alpha`, `alpha-xxxxxxx`, `sha-xxxxxxx`
+
+The `helm-package` job runs only after a successful stable release and publishes the Helm chart to GHCR.
+
+### `pr-title-lint.yml` — enforce Conventional Commits
+
+Runs on every pull request event. Validates that the PR title matches the Conventional Commit pattern:
+
+```
+<type>[optional scope][optional !]: <description>
+```
+
+Valid types: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `revert`.
+An empty or whitespace-only title fails immediately. See the [Contributing guide](/vitasync/dev-guides/contributing) for examples.
+
+### Version source of truth
+
+The `VERSION` file at the repository root is the **single source of truth** for the release version. `package.json` files are not used for versioning. Only the `release` job (triggered on `main`) ever modifies `VERSION`.
+
+---
+
 ## MCP Server
 
 `apps/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server built with the official `@modelcontextprotocol/sdk`. It connects directly to the VitaSync PostgreSQL database (read-only) and exposes health data as **MCP tools** that any MCP-compatible AI assistant can call.
 
-This means you can ask an AI assistant things like _"How have my resting heart rate and HRV trended over the last 3 months?"_ or _"Show me my top 10 personal records"_ and it will fetch live data from your VitaSync instance.
+This means you can ask an AI assistant things like _"How have my resting heart rate and HRV trended over the last 3 months?"_ or _"What anomalies were detected this week?"_ and it will fetch live data from your VitaSync instance.
 
-See the [MCP Server guide](/dev-guides/mcp) for setup instructions.
+The server exposes 9 tools: `query_health_metrics`, `list_users`, `list_connections`, `get_events`, `get_personal_records`, `get_health_context`, `get_anomaly_alerts`, `get_correlations`, and `get_health_scores`.
+
+See the [MCP Server guide](/vitasync/dev-guides/mcp) for setup instructions.
 
 ## Monitoring Stack
 
@@ -122,4 +207,4 @@ Eight pre-built Grafana dashboards are provisioned automatically:
 | Daily Activity | `vs-daily-activity` |
 | Provider Health | `vs-provider-health` |
 
-See the [Grafana Dashboards guide](/dev-guides/grafana-dashboards) for setup instructions.
+See the [Grafana Dashboards guide](/vitasync/dev-guides/grafana-dashboards) for setup instructions.

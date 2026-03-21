@@ -50,7 +50,7 @@ export async function processWebhookJob(job: Job<WebhookJobData>): Promise<void>
     })
     .returning()
 
-  const deliveryId = delivery?.id
+  const deliveryId = delivery!.id
   let responseStatus: number | null = null
 
   try {
@@ -77,7 +77,7 @@ export async function processWebhookJob(job: Job<WebhookJobData>): Promise<void>
       .update(webhookDeliveries)
       .set({
         status: "delivered",
-        attempts: (delivery?.attempts ?? 0) + 1,
+        attempts: (delivery!.attempts ?? 0) + 1,
         lastAttemptedAt: new Date(),
         responseStatus,
       })
@@ -89,7 +89,7 @@ export async function processWebhookJob(job: Job<WebhookJobData>): Promise<void>
       .update(webhookDeliveries)
       .set({
         status: job.attemptsMade >= (job.opts.attempts ?? 1) - 1 ? "failed" : "pending",
-        attempts: (delivery?.attempts ?? 0) + 1,
+        attempts: (delivery!.attempts ?? 0) + 1,
         lastAttemptedAt: new Date(),
         responseStatus,
       })

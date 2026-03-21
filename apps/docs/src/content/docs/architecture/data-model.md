@@ -21,6 +21,31 @@ workspaces
           |         +-- events (via userId + providerId)
           |
           +-- personal_records (one per metricType+category per user)
+          |
+          +-- notification_channels (many per user)
+          |         |
+          |         +-- notification_logs (delivery audit trail)
+          |
+          +-- notification_rules (route categories → channels)
+          |
+          +-- mood_logs (mood & mental wellness)
+          +-- journal_entries (daily journal)
+          +-- water_intake (hydration tracking)
+          +-- habits (habit definitions)
+          |       +-- habit_logs (daily completions)
+          +-- nutrition_logs (meal/food tracking)
+          +-- medications (medication tracking)
+          +-- symptom_logs (symptom occurrences)
+          +-- goals (health goals)
+          +-- achievements (unlocked badges)
+          +-- training_plans (workout plans)
+          +-- health_scores (composite wellness scores)
+          +-- health_reports (generated reports)
+          +-- health_snapshots (point-in-time snapshots)
+          +-- biometric_baselines (rolling baselines)
+          +-- anomaly_alerts (detected anomalies)
+          +-- correlations (metric relationships)
+          +-- training_load (fitness/fatigue/form)
 
 workspaces
     |
@@ -206,6 +231,61 @@ Tracks the state of each background sync execution.
 | `completedAt` | timestamptz | |
 | `createdAt` | timestamptz | |
 
+### `notification_channels`
+
+Stores user-configured notification channel instances. Each row represents a specific channel (e.g. "Work Slack", "Personal Discord").
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | Primary key |
+| `userId` | UUID | FK → `users.id` (cascade delete) |
+| `channelType` | varchar(30) | `discord`, `slack`, `teams`, `email`, `push`, `ntfy`, `webhook` |
+| `label` | varchar(100) | Human-readable name |
+| `config` | jsonb | Channel-specific settings (webhook URL, SMTP config, etc.) |
+| `enabled` | boolean | Whether this channel is active |
+| `createdAt` | timestamptz | |
+| `updatedAt` | timestamptz | |
+
+Indexed on `(userId)` and `(userId, channelType)`.
+
+### `notification_rules`
+
+Determines which events trigger which channels. A rule links event categories and minimum severity to a set of notification channels.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | Primary key |
+| `userId` | UUID | FK → `users.id` (cascade delete) |
+| `name` | varchar(100) | Human-readable rule name |
+| `categories` | jsonb | Array of categories: `anomaly`, `goal`, `achievement`, `sync`, `report`, `system`, `insight` |
+| `minSeverity` | varchar(20) | Minimum severity to match: `info`, `warning`, `critical` |
+| `channelIds` | jsonb | Array of `notification_channels.id` to deliver to |
+| `enabled` | boolean | Whether the rule is active |
+| `createdAt` | timestamptz | |
+| `updatedAt` | timestamptz | |
+
+Indexed on `(userId)`.
+
+### `notification_logs`
+
+Delivery audit log for every notification dispatch attempt.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | Primary key |
+| `userId` | UUID | FK → `users.id` (cascade delete) |
+| `channelId` | UUID | FK → `notification_channels.id` (cascade delete) |
+| `channelType` | varchar(30) | Denormalized for fast querying |
+| `title` | varchar(255) | Notification title |
+| `payload` | jsonb | Full payload sent |
+| `status` | varchar(20) | `pending`, `delivered`, `failed` |
+| `attempts` | integer | Number of delivery attempts |
+| `error` | varchar(2000) | Error message if failed |
+| `deliveredAt` | timestamptz | Null until successful |
+| `createdAt` | timestamptz | |
+
+Indexed on `(userId)`, `(channelId)`, and `(status)`.
+
 ---
 
 ## Metric Types
@@ -339,3 +419,78 @@ Tracks the state of each background sync execution.
   }
 }
 ```
+
+## Wellness Tracking Tables
+
+### `journal_entries`
+
+Daily journal entries with mood tagging, gratitude lists, and searchable content.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid | PK, auto-generated |
+| `user_id` | uuid | FK → users, cascade delete |
+| `title` | varchar(200) | Optional title/headline |
+| `body` | text | Main journal content (markdown-friendly) |
+| `mood_score` | double | Mood 1–5 at time of writing |
+| `mood_label` | varchar(50) | happy, calm, anxious, sad, energized, tired, grateful, reflective |
+| `gratitude` | jsonb | Array of gratitude strings |
+| `tags` | jsonb | Array of tag strings |
+| `entry_date` | timestamptz | When the entry is for |
+| `created_at` | timestamptz | Row creation time |
+| `updated_at` | timestamptz | Last update time |
+
+Index: `(user_id, entry_date)`
+
+### `water_intake`
+
+Individual hydration logs with beverage type and daily goal tracking.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid | PK, auto-generated |
+| `user_id` | uuid | FK → users, cascade delete |
+| `amount_ml` | integer | Amount in milliliters |
+| `beverage_type` | varchar(30) | water, tea, coffee, juice, other |
+| `note` | varchar(200) | Optional context note |
+| `daily_goal_ml` | integer | Daily goal snapshot (default 2500) |
+| `logged_at` | timestamptz | When the intake was logged |
+| `created_at` | timestamptz | Row creation time |
+
+Index: `(user_id, logged_at)`
+
+### `habits`
+
+User-defined habit definitions with streak tracking.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid | PK, auto-generated |
+| `user_id` | uuid | FK → users, cascade delete |
+| `name` | varchar(100) | Habit name |
+| `icon` | varchar(10) | Emoji icon |
+| `color` | varchar(20) | UI color (blue, green, red, etc.) |
+| `frequency` | varchar(20) | daily, weekdays, custom |
+| `target_days` | jsonb | Array of day numbers (0=Sun, 6=Sat) |
+| `active` | boolean | Whether the habit is active |
+| `current_streak` | integer | Current consecutive day streak |
+| `longest_streak` | integer | Best streak ever |
+| `created_at` | timestamptz | Row creation time |
+| `updated_at` | timestamptz | Last update time |
+
+Index: `(user_id)`
+
+### `habit_logs`
+
+One row per habit per day when completed.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid | PK, auto-generated |
+| `habit_id` | uuid | FK → habits, cascade delete |
+| `user_id` | uuid | FK → users, cascade delete |
+| `completed_date` | date | The date the habit was completed |
+| `note` | varchar(200) | Optional note |
+| `created_at` | timestamptz | Row creation time |
+
+Indexes: `(habit_id, completed_date)`, `(user_id, completed_date)`

@@ -24,12 +24,12 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
-    "drizzle-orm": "^0.38.4",
+    "drizzle-orm": "^0.45.1",
     "postgres": "^3.4.5"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",
-    "drizzle-kit": "^0.30.4",
+    "drizzle-kit": "^0.31.10",
     "rimraf": "^6.0.1",
     "tsup": "^8.3.5",
     "typescript": "^5.7.3"

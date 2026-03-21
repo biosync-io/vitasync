@@ -3,14 +3,15 @@ import { defineConfig } from "astro/config"
 
 export default defineConfig({
   site: "https://biosync-io.github.io",
+  base: "/vitasync",
   integrations: [
     starlight({
       title: "VitaSync",
       description:
         "Self-hosted wearable health data aggregation platform — one API for Fitbit, Garmin, Whoop, Strava and more.",
       head: [
-        { tag: "script", attrs: { src: "/particles.js", defer: true } },
-        { tag: "script", attrs: { src: "/scroll-reveal.js", defer: true } },
+        { tag: "script", attrs: { src: "/vitasync/particles.js", defer: true } },
+        { tag: "script", attrs: { src: "/vitasync/scroll-reveal.js", defer: true } },
       ],
       logo: {
         dark: "./src/assets/logo-dark.svg",
@@ -86,7 +87,20 @@ export default defineConfig({
             { label: "API Keys", slug: "dev-guides/api-keys" },
             { label: "Webhooks", slug: "dev-guides/webhooks" },
             { label: "MCP Server", slug: "dev-guides/mcp" },
+            { label: "Notifications", slug: "dev-guides/notifications" },
+            { label: "Dashboard", slug: "dev-guides/dashboard" },
+            { label: "AI & Analytics", slug: "dev-guides/analytics" },
             { label: "Grafana Dashboards", slug: "dev-guides/grafana-dashboards" },
+          ],
+        },
+        {
+          label: "Features",
+          items: [
+            { label: "Goals & Achievements", slug: "dev-guides/goals-achievements" },
+            { label: "Health Tracking", slug: "dev-guides/health-tracking" },
+            { label: "Challenges & Training", slug: "dev-guides/challenges" },
+            { label: "Reports & Data Exports", slug: "dev-guides/reports-exports" },
+            { label: "Sleep Analysis & Biometrics", slug: "dev-guides/sleep-biometrics" },
           ],
         },
         {

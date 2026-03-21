@@ -1,0 +1,45 @@
+name: PR Title Lint
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  lint:
+    name: Conventional Commit title
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Check PR title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [[ -z "${TITLE// }" ]]; then
+            echo "✗ PR title is empty. Please add a title following Conventional Commits."
+            echo ""
+            echo "Examples:"
+            echo "  feat: add Garmin provider"
+            echo "  fix(oauth): handle token expiry"
+            echo "  feat!: redesign sync API  ← triggers major bump"
+            exit 1
+          fi
+
+          # Conventional Commit pattern:
+          #   <type>[optional scope][optional !]: <description>
+          # Valid types: feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert
+          PATTERN='^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)(\([^)]+\))?!?: .+'
+          if echo "$TITLE" | grep -qP "$PATTERN"; then
+            echo "✓ PR title follows Conventional Commits: $TITLE"
+          else
+            echo "✗ PR title does not follow Conventional Commits."
+            echo ""
+            echo "Expected format:  <type>[scope][!]: <description>"
+            echo "Examples:"
+            echo "  feat: add Garmin provider"
+            echo "  fix(oauth): handle token expiry"
+            echo "  feat!: redesign sync API  ← triggers major bump"
+            echo ""
+            echo "Valid types: feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert"
+            exit 1
+          fi

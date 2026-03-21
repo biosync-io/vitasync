@@ -1,6 +1,6 @@
 import { getDb, providerConnections, users } from "@biosync-io/db"
 import type { User } from "@biosync-io/types"
-import { and, eq } from "drizzle-orm"
+import { and, count, eq } from "drizzle-orm"
 
 export class UserService {
   private get db() {
@@ -12,8 +12,9 @@ export class UserService {
     externalId: string
     email?: string
     displayName?: string
+    gender?: string
     metadata?: Record<string, unknown>
-  }): Promise<User> {
+  }): Promise<{ user: User; created: boolean }> {
     const existing = await this.db
       .select()
       .from(users)
@@ -22,7 +23,7 @@ export class UserService {
       )
       .limit(1)
 
-    if (existing[0]) return existing[0] as User
+    if (existing[0]) return { user: existing[0] as User, created: false }
 
     const [created] = await this.db
       .insert(users)
@@ -31,11 +32,12 @@ export class UserService {
         externalId: params.externalId,
         email: params.email ?? null,
         displayName: params.displayName ?? null,
+        gender: params.gender ?? null,
         metadata: params.metadata ?? {},
       })
       .returning()
 
-    return created as User
+    return { user: created as User, created: true }
   }
 
   async findById(id: string, workspaceId: string): Promise<User | null> {
@@ -48,28 +50,37 @@ export class UserService {
     return (user as User) ?? null
   }
 
-  async list(workspaceId: string, opts: { limit: number; offset: number }): Promise<User[]> {
-    const rows = await this.db
-      .select()
-      .from(users)
-      .where(eq(users.workspaceId, workspaceId))
-      .limit(opts.limit)
-      .offset(opts.offset)
-      .orderBy(users.createdAt)
-
-    return rows as User[]
+  async list(
+    workspaceId: string,
+    opts: { limit: number; offset: number },
+  ): Promise<{ data: User[]; total: number }> {
+    const [rows, countRows] = await Promise.all([
+      this.db
+        .select()
+        .from(users)
+        .where(eq(users.workspaceId, workspaceId))
+        .limit(opts.limit)
+        .offset(opts.offset)
+        .orderBy(users.createdAt),
+      this.db
+        .select({ total: count() })
+        .from(users)
+        .where(eq(users.workspaceId, workspaceId)),
+    ])
+    return { data: rows as User[], total: countRows[0]?.total ?? 0 }
   }
 
   async update(
     id: string,
     workspaceId: string,
-    patch: { email?: string; displayName?: string; metadata?: Record<string, unknown> },
+    patch: { email?: string; displayName?: string; gender?: string | null; metadata?: Record<string, unknown> },
   ): Promise<User | null> {
     const [updated] = await this.db
       .update(users)
       .set({
         ...(patch.email !== undefined && { email: patch.email }),
         ...(patch.displayName !== undefined && { displayName: patch.displayName }),
+        ...(patch.gender !== undefined && { gender: patch.gender }),
         ...(patch.metadata !== undefined && { metadata: patch.metadata }),
         updatedAt: new Date(),
       })

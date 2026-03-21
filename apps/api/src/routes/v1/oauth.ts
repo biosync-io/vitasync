@@ -47,7 +47,11 @@ const oauthRoutes: FastifyPluginAsync = async (app) => {
       state,
     )
 
-    stateStore.set(state, { userId, workspaceId: request.workspaceId, codeVerifier })
+    stateStore.set(state, {
+      userId,
+      workspaceId: request.workspaceId,
+      ...(codeVerifier !== undefined && { codeVerifier }),
+    })
 
     return reply.redirect(url, 302)
   })
@@ -95,7 +99,7 @@ const oauthRoutes: FastifyPluginAsync = async (app) => {
       providerId,
       code,
       redirectUri,
-      codeVerifier: stored.codeVerifier,
+      ...(stored.codeVerifier !== undefined && { codeVerifier: stored.codeVerifier }),
     })
 
     return reply.send({

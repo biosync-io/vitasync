@@ -9,12 +9,14 @@ const CreateUserBody = z.object({
   externalId: z.string().min(1).max(255),
   email: z.string().email().optional(),
   displayName: z.string().max(255).optional(),
+  gender: z.enum(["male", "female", "other"]).optional(),
   metadata: z.record(z.unknown()).optional(),
 })
 
 const UpdateUserBody = z.object({
   email: z.string().email().optional(),
   displayName: z.string().max(255).optional(),
+  gender: z.enum(["male", "female", "other"]).nullish(),
   metadata: z.record(z.unknown()).optional(),
 })
 
@@ -22,17 +24,21 @@ const usersRoutes: FastifyPluginAsync = async (app) => {
   // POST /v1/users — create or find existing user
   app.post("/", { preHandler: [requireScope("write")] }, async (request, reply) => {
     const body = CreateUserBody.parse(request.body)
-    const user = await userService.findOrCreate({
+    const { user, created } = await userService.findOrCreate({
       workspaceId: request.workspaceId,
-      ...body,
+      externalId: body.externalId,
+      ...(body.email !== undefined && { email: body.email }),
+      ...(body.displayName !== undefined && { displayName: body.displayName }),
+      ...(body.gender !== undefined && { gender: body.gender }),
+      ...(body.metadata !== undefined && { metadata: body.metadata }),
     })
-    return reply.status(201).send(user)
+    return reply.status(created ? 201 : 200).send(user)
   })
 
   // GET /v1/users — list users in workspace
   app.get("/", async (request, reply) => {
     const query = z
-      .object({ limit: z.coerce.number().default(50), offset: z.coerce.number().default(0) })
+      .object({ limit: z.coerce.number().int().min(1).max(200).default(50), offset: z.coerce.number().int().min(0).default(0) })
       .parse(request.query)
     const result = await userService.list(request.workspaceId, query)
     return reply.send(result)
@@ -50,7 +56,12 @@ const usersRoutes: FastifyPluginAsync = async (app) => {
   app.patch("/:userId", { preHandler: [requireScope("write")] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const body = UpdateUserBody.parse(request.body)
-    const user = await userService.update(userId, request.workspaceId, body)
+    const user = await userService.update(userId, request.workspaceId, {
+      ...(body.email !== undefined && { email: body.email }),
+      ...(body.displayName !== undefined && { displayName: body.displayName }),
+      ...(body.gender !== undefined && { gender: body.gender ?? null }),
+      ...(body.metadata !== undefined && { metadata: body.metadata }),
+    })
     if (!user) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
     return reply.send(user)
   })

@@ -1,8 +1,10 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
-import { type ApiKey, apiKeysApi } from "../../../lib/api"
+import { useEffect, useState, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
+import { type ApiKey, apiKeysApi, getRuntimeDefaultKey } from "../../../lib/api"
+import { type AccentTheme, ACCENT_THEMES, applyTheme, getStoredTheme } from "../../../lib/ThemeProvider"
 
 const STORAGE_KEY = "vitasync_api_key"
 
@@ -62,14 +64,38 @@ function ScopeTag({ scope }: { scope: string }) {
 }
 
 const ALL_SCOPES = [
-  { value: "read:users", label: "Read Users" },
-  { value: "write:users", label: "Write Users" },
-  { value: "read:health", label: "Read Health Data" },
-  { value: "read:events", label: "Read Events" },
-  { value: "read:providers", label: "Read Providers" },
-  { value: "write:connections", label: "Write Connections" },
+  { value: "read", label: "Read" },
+  { value: "write", label: "Write" },
   { value: "admin", label: "Admin (all)" },
 ]
+
+// Static map used instead of inline styles to satisfy the no-inline-styles lint rule.
+const THEME_SWATCH_BG: Record<string, string> = {
+  indigo: "bg-[#4f46e5]",
+  blue:   "bg-[#2563eb]",
+  green:  "bg-[#16a34a]",
+  purple: "bg-[#9333ea]",
+  rose:   "bg-[#e11d48]",
+  orange: "bg-[#ea580c]",
+  teal:   "bg-[#0d9488]",
+  amber:  "bg-[#d97706]",
+  cyan:   "bg-[#0891b2]",
+  pink:   "bg-[#ec4899]",
+}
+
+function SetupBanner({ activeKey }: { activeKey: string }) {
+  const searchParams = useSearchParams()
+  const needsSetup = searchParams.get("setup") === "1" && !activeKey
+  if (!needsSetup) return null
+  return (
+    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      <strong>API key required.</strong> Paste your key below and click <strong>Save</strong> to
+      start using the dashboard. Use the <strong>Bootstrap key</strong>{" "}
+      (<code className="rounded bg-amber-100 px-1 font-mono">vs_test_dev0…</code>) for local
+      development, or create a new one below.
+    </div>
+  )
+}
 
 export default function SettingsPage() {
   const queryClient = useQueryClient()
@@ -79,8 +105,18 @@ export default function SettingsPage() {
   const [showActiveKey, setShowActiveKey] = useState(false)
 
   useEffect(() => {
-    setActiveKey(localStorage.getItem(STORAGE_KEY) ?? "")
-  }, [])
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      setActiveKey(stored)
+    } else {
+      // Fall back to the runtime-configured default key (injected by Helm in K8s
+      // via DEFAULT_API_KEY, or baked in at build time via NEXT_PUBLIC_DEFAULT_API_KEY).
+      // Auto-save it so subsequent API calls work without any manual step.
+      getRuntimeDefaultKey().then((key) => {
+        if (key) saveActiveKey(key)
+      })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function saveActiveKey(key: string) {
     if (key) {
@@ -94,19 +130,17 @@ export default function SettingsPage() {
   }
 
   // ── API Keys management ────────────────────────────────────────────────────
+  // Guard: only fetch once an active key is available to authenticate the request.
   const { data: keys = [], isLoading: keysLoading } = useQuery({
     queryKey: ["api-keys"],
     queryFn: apiKeysApi.list,
+    enabled: !!activeKey,
   })
 
   // Create key form
   const [createOpen, setCreateOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState("")
-  const [newKeyScopes, setNewKeyScopes] = useState<string[]>([
-    "read:users",
-    "read:health",
-    "read:events",
-  ])
+  const [newKeyScopes, setNewKeyScopes] = useState<string[]>(["read", "write"])
   const [newKeyExpiry, setNewKeyExpiry] = useState("")
   const [createdRawKey, setCreatedRawKey] = useState<string | null>(null)
 
@@ -120,7 +154,7 @@ export default function SettingsPage() {
     onSuccess: (data) => {
       setCreatedRawKey(data.rawKey)
       setNewKeyName("")
-      setNewKeyScopes(["read:users", "read:health", "read:events"])
+      setNewKeyScopes(["read", "write"])
       setNewKeyExpiry("")
       queryClient.invalidateQueries({ queryKey: ["api-keys"] })
     },
@@ -130,6 +164,21 @@ export default function SettingsPage() {
     mutationFn: (id: string) => apiKeysApi.revoke(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["api-keys"] }),
   })
+
+  // ── Appearance settings ────────────────────────────────────────────────
+  const [currentTheme, setCurrentTheme] = useState<AccentTheme>("indigo")
+  const [autoSync, setAutoSync] = useState(true)
+
+  useEffect(() => {
+    setCurrentTheme(getStoredTheme())
+    setAutoSync(localStorage.getItem("vitasync_auto_sync") !== "false")
+  }, [])
+
+  function toggleAutoSync() {
+    const next = !autoSync
+    setAutoSync(next)
+    localStorage.setItem("vitasync_auto_sync", String(next))
+  }
 
   function toggleScope(scope: string) {
     setNewKeyScopes((prev) =>
@@ -145,18 +194,21 @@ export default function SettingsPage() {
   return (
     <div className="max-w-3xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Configure your workspace API access and preferences.
         </p>
       </div>
 
-      {/* ── Active API key ───────────────────────────────────────────────────── */}
-      <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-900">Active API Key</h2>
-          <p className="mt-0.5 text-xs text-gray-500">
-            Stored in <code className="rounded bg-gray-100 px-1">localStorage</code>. All dashboard
+      {/* ── Setup banner ─────────────────────────────────────────────────────── */}
+      <Suspense>
+        <SetupBanner activeKey={activeKey} />
+      </Suspense>
+      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Active API Key</h2>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+            Stored in <code className="rounded bg-gray-100 dark:bg-gray-800 px-1">localStorage</code>. All dashboard
             requests are authenticated with this key.
           </p>
         </div>
@@ -168,7 +220,7 @@ export default function SettingsPage() {
                 value={activeKey}
                 onChange={(e) => setActiveKey(e.target.value)}
                 placeholder="vs_live_xxxxxxxxxxxx…"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 pr-16 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 pr-16 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <button
                 type="button"
@@ -210,21 +262,23 @@ export default function SettingsPage() {
       </section>
 
       {/* ── API Keys list ────────────────────────────────────────────────────── */}
-      <section className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-gray-900">API Keys</h2>
-            <p className="mt-0.5 text-xs text-gray-500">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">API Keys</h2>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
               Manage credentials for programmatic access.
             </p>
           </div>
           <button
             type="button"
+            disabled={!activeKey}
             onClick={() => {
               setCreateOpen(true)
               setCreatedRawKey(null)
             }}
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+            title={!activeKey ? "Save an active API key first" : undefined}
+            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <KeyIcon />
             New Key
@@ -233,7 +287,7 @@ export default function SettingsPage() {
 
         {/* Create form */}
         {createOpen && (
-          <div className="border-b border-gray-100 bg-indigo-50/50 px-6 py-5 space-y-4">
+          <div className="border-b border-gray-100 dark:border-gray-800 bg-indigo-50/50 dark:bg-indigo-950/20 px-6 py-5 space-y-4">
             {createdRawKey ? (
               <div className="rounded-lg border border-green-200 bg-green-50 p-4">
                 <p className="text-sm font-semibold text-green-800 mb-2">
@@ -271,11 +325,11 @@ export default function SettingsPage() {
               </div>
             ) : (
               <>
-                <h3 className="text-sm font-semibold text-gray-900">Create new API key</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Create new API key</h3>
                 <div>
                   <label
                     htmlFor="settings-key-name"
-                    className="mb-1 block text-xs font-medium text-gray-600"
+                    className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400"
                   >
                     Name
                   </label>
@@ -285,11 +339,11 @@ export default function SettingsPage() {
                     placeholder="e.g. CI pipeline, Mobile app…"
                     value={newKeyName}
                     onChange={(e) => setNewKeyName(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
-                  <p className="mb-2 block text-xs font-medium text-gray-600">Scopes</p>
+                  <p className="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-400">Scopes</p>
                   <div className="flex flex-wrap gap-2">
                     {ALL_SCOPES.map(({ value, label }) => (
                       <button
@@ -299,7 +353,7 @@ export default function SettingsPage() {
                         className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
                           newKeyScopes.includes(value)
                             ? "border-indigo-500 bg-indigo-600 text-white"
-                            : "border-gray-200 bg-white text-gray-600 hover:border-indigo-300"
+                            : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-indigo-300"
                         }`}
                       >
                         {label}
@@ -310,7 +364,7 @@ export default function SettingsPage() {
                 <div>
                   <label
                     htmlFor="settings-key-expires"
-                    className="mb-1 block text-xs font-medium text-gray-600"
+                    className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400"
                   >
                     Expires (optional)
                   </label>
@@ -319,7 +373,7 @@ export default function SettingsPage() {
                     type="date"
                     value={newKeyExpiry}
                     onChange={(e) => setNewKeyExpiry(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -334,7 +388,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => setCreateOpen(false)}
-                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white"
+                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
                   >
                     Cancel
                   </button>
@@ -360,13 +414,13 @@ export default function SettingsPage() {
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
             {keys.map((key) => (
               <li key={key.id} className="flex items-start justify-between gap-4 px-6 py-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-gray-900">{key.name}</span>
-                    <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500 font-mono">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{key.name}</span>
+                    <code className="rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 font-mono">
                       {key.keyPrefix}…
                     </code>
                     {isExpired(key) && (
@@ -405,17 +459,90 @@ export default function SettingsPage() {
         )}
       </section>
 
+      {/* ── Appearance ───────────────────────────────────────────────────────── */}
+      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Appearance</h2>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+            Customise the dashboard accent colour and sync behaviour.
+          </p>
+        </div>
+        <div className="px-6 py-5 space-y-6">
+          {/* Accent colour picker */}
+          <div>
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-3">Accent colour</p>
+            <div className="flex flex-wrap gap-4">
+              {ACCENT_THEMES.map((theme) => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  title={theme.label}
+                  onClick={() => {
+                    applyTheme(theme.id)
+                    setCurrentTheme(theme.id)
+                  }}
+                  className="flex flex-col items-center gap-1.5"
+                >
+                  <span
+                    className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all ${THEME_SWATCH_BG[theme.id] ?? ""} ${
+                      currentTheme === theme.id
+                        ? "border-gray-800 scale-110 shadow-md"
+                        : "border-transparent hover:border-gray-300"
+                    }`}
+                  >
+                    {currentTheme === theme.id && (
+                      <span className="text-white text-xs font-bold">✓</span>
+                    )}
+                  </span>
+                  <span
+                    className={`text-xs ${
+                      currentTheme === theme.id ? "font-semibold text-gray-900 dark:text-gray-100" : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {theme.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Auto-sync toggle */}
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Auto-sync on connect</p>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Automatically trigger a data sync when a provider is connected via OAuth.
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label={autoSync ? "Auto-sync is on — click to disable" : "Auto-sync is off — click to enable"}
+              onClick={toggleAutoSync}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                autoSync ? "bg-indigo-600" : "bg-gray-200 dark:bg-gray-700"
+              }`}
+            >
+              <span
+                className={`h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                  autoSync ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* ── API Reference link ───────────────────────────────────────────────── */}
-      <section className="rounded-xl border border-gray-200 bg-white shadow-sm px-6 py-5">
-        <h2 className="text-sm font-semibold text-gray-900 mb-1">API Reference</h2>
-        <p className="text-xs text-gray-500 mb-3">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm px-6 py-5">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">API Reference</h2>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
           Interactive Swagger docs are available on your API instance.
         </p>
         <a
           href="http://localhost:3001/docs"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
         >
           Open API docs ↗
         </a>

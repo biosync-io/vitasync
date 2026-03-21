@@ -164,7 +164,7 @@ curl "https://api.yourdomain.com/v1/users/01JA4MNPQR8STUVWXYZ00001/health?metric
   -H "Authorization: Bearer $VITASYNC_API_KEY"
 ```
 
-See [Query Health Data](/api-reference/guides/query-health-data) for the full query API including timeseries, daily summaries, and personal records.
+See [Query Health Data](/vitasync/api-reference/guides/query-health-data) for the full query API including timeseries, daily summaries, and personal records.
 
 ## Managing Connections
 
@@ -218,4 +218,4 @@ curl -X DELETE \
 | `whoop` | WHOOP | OAuth 2.0 |
 | `strava` | Strava | OAuth 2.0 |
 
-See the [Providers](/providers/supported) section for per-provider setup instructions, OAuth app creation steps, and full metric coverage tables.
+See the [Providers](/vitasync/providers/supported) section for per-provider setup instructions, OAuth app creation steps, and full metric coverage tables.

@@ -395,6 +395,186 @@ server.tool(
   },
 )
 
+// ── Tool: get_health_context ──────────────────────────────────────────────────
+
+server.tool(
+  "get_health_context",
+  "Get a comprehensive, LLM-ready biological context summary for a user. Includes baselines (30-day stats), recent trends, active anomaly alerts, top metric correlations, and health scores — pre-formatted for AI health coaching.",
+  {
+    userId: z.string().uuid().describe("The VitaSync user ID to build context for"),
+  },
+  async ({ userId }) => {
+    const now = new Date()
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+
+    // Baselines
+    const baselineRows = await sql`
+      SELECT metric_type, value, unit
+      FROM health_metrics
+      WHERE user_id = ${userId} AND recorded_at >= ${thirtyDaysAgo}
+    `
+    const baselineMap = new Map<string, { values: number[]; unit: string }>()
+    for (const row of baselineRows) {
+      if (row.value == null) continue
+      const existing = baselineMap.get(row.metric_type)
+      if (existing) existing.values.push(Number(row.value))
+      else baselineMap.set(row.metric_type, { values: [Number(row.value)], unit: row.unit ?? "" })
+    }
+    const baselines: Record<string, { mean: number; stddev: number; unit: string; samples: number }> = {}
+    for (const [type, { values, unit }] of baselineMap) {
+      const mean = values.reduce((a, b) => a + b, 0) / values.length
+      const std = values.length > 1 ? Math.sqrt(values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length) : 0
+      baselines[type] = { mean: Math.round(mean * 100) / 100, stddev: Math.round(std * 100) / 100, unit, samples: values.length }
+    }
+
+    // Trends
+    const trendRows = await sql`
+      SELECT metric_type, recorded_at, value
+      FROM health_metrics
+      WHERE user_id = ${userId} AND recorded_at >= ${fourteenDaysAgo}
+    `
+    const trendByType = new Map<string, { recent: number[]; previous: number[] }>()
+    for (const row of trendRows) {
+      if (row.value == null) continue
+      let entry = trendByType.get(row.metric_type)
+      if (!entry) { entry = { recent: [], previous: [] }; trendByType.set(row.metric_type, entry) }
+      if (new Date(row.recorded_at) >= sevenDaysAgo) entry.recent.push(Number(row.value))
+      else entry.previous.push(Number(row.value))
+    }
+    const trends: Record<string, { direction: string; changePercent: number }> = {}
+    for (const [type, { recent, previous }] of trendByType) {
+      if (recent.length === 0 || previous.length === 0) continue
+      const rAvg = recent.reduce((a, b) => a + b, 0) / recent.length
+      const pAvg = previous.reduce((a, b) => a + b, 0) / previous.length
+      const change = pAvg === 0 ? 0 : ((rAvg - pAvg) / pAvg) * 100
+      trends[type] = { direction: change > 5 ? "rising" : change < -5 ? "falling" : "stable", changePercent: Math.round(change * 10) / 10 }
+    }
+
+    // Active anomalies
+    const anomalies = await sql`
+      SELECT metric_type, severity, title, detected_at
+      FROM anomaly_alerts
+      WHERE user_id = ${userId} AND status = 'new'
+      ORDER BY detected_at DESC LIMIT 20
+    `
+
+    // Top correlations
+    const corrs = await sql`
+      SELECT metric_a, metric_b, pearson_r, description
+      FROM correlations
+      WHERE user_id = ${userId}
+      ORDER BY abs(pearson_r) DESC LIMIT 10
+    `
+
+    // Latest health score
+    const [score] = await sql`
+      SELECT overall, sleep, activity, cardio, recovery
+      FROM health_scores
+      WHERE user_id = ${userId}
+      ORDER BY date DESC LIMIT 1
+    `
+
+    const context = {
+      userId,
+      generatedAt: now.toISOString(),
+      baselines,
+      recentTrends: trends,
+      activeAnomalies: anomalies,
+      topCorrelations: corrs,
+      healthScore: score ?? null,
+    }
+
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(context, null, 2) }],
+    }
+  },
+)
+
+// ── Tool: get_anomaly_alerts ──────────────────────────────────────────────────
+
+server.tool(
+  "get_anomaly_alerts",
+  "Get active health anomaly alerts for a user. Anomalies are AI-detected abnormal readings (e.g., unusual heart rate spikes, SpO2 drops) using statistical analysis.",
+  {
+    userId: z.string().uuid().describe("The VitaSync user ID"),
+    severity: z.string().optional().describe("Filter by severity: low, medium, high, critical"),
+    status: z.enum(["new", "acknowledged", "dismissed", "resolved"]).default("new").describe("Alert status to filter by"),
+    limit: z.number().int().min(1).max(MAX_ROWS).default(50).describe("Maximum alerts to return"),
+  },
+  async ({ userId, severity, status, limit }) => {
+    const rows = await Promise.race([
+      sql`
+        SELECT id, metric_type, severity, detection_method, observed_value, expected_value, z_score, title, description, status, detected_at
+        FROM anomaly_alerts
+        WHERE user_id = ${userId}
+          AND status = ${status}
+          ${severity ? sql`AND severity = ${severity}` : sql``}
+        ORDER BY detected_at DESC
+        LIMIT ${limit}
+      `,
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Query timeout")), QUERY_TIMEOUT_MS)),
+    ])
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: rows.length, anomalies: rows }, null, 2) }] }
+  },
+)
+
+// ── Tool: get_correlations ────────────────────────────────────────────────────
+
+server.tool(
+  "get_correlations",
+  "Get discovered metric correlations for a user. Shows which health metrics are statistically linked (e.g., 'higher steps → better sleep score').",
+  {
+    userId: z.string().uuid().describe("The VitaSync user ID"),
+    minStrength: z.enum(["weak", "moderate", "strong", "very_strong"]).optional().describe("Minimum strength filter"),
+    limit: z.number().int().min(1).max(MAX_ROWS).default(20).describe("Maximum correlations to return"),
+  },
+  async ({ userId, minStrength, limit }) => {
+    const strengthOrder = ["weak", "moderate", "strong", "very_strong"]
+    const rows = await Promise.race([
+      sql`
+        SELECT id, metric_a, metric_b, pearson_r, spearman_rho, p_value, sample_size, strength, direction, description, period_start, period_end
+        FROM correlations
+        WHERE user_id = ${userId}
+          ${minStrength ? sql`AND strength = ANY(${strengthOrder.slice(strengthOrder.indexOf(minStrength))}::text[])` : sql``}
+        ORDER BY abs(pearson_r) DESC
+        LIMIT ${limit}
+      `,
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Query timeout")), QUERY_TIMEOUT_MS)),
+    ])
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: rows.length, correlations: rows }, null, 2) }] }
+  },
+)
+
+// ── Tool: get_health_scores ───────────────────────────────────────────────────
+
+server.tool(
+  "get_health_scores",
+  "Get composite health scores over time for a user. Scores are 0-100 across categories: overall, sleep, activity, cardio, recovery.",
+  {
+    userId: z.string().uuid().describe("The VitaSync user ID"),
+    from: z.string().datetime().optional().describe("Start date (ISO 8601). Defaults to 30 days ago."),
+    to: z.string().datetime().optional().describe("End date (ISO 8601)."),
+    limit: z.number().int().min(1).max(MAX_ROWS).default(30).describe("Maximum scores to return"),
+  },
+  async ({ userId, from, to, limit }) => {
+    const fromDate = from ? new Date(from) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    const toDate = to ? new Date(to) : new Date()
+    const rows = await Promise.race([
+      sql`
+        SELECT date, overall, sleep, activity, cardio, recovery
+        FROM health_scores
+        WHERE user_id = ${userId} AND date >= ${fromDate} AND date <= ${toDate}
+        ORDER BY date DESC
+        LIMIT ${limit}
+      `,
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Query timeout")), QUERY_TIMEOUT_MS)),
+    ])
+    return { content: [{ type: "text" as const, text: JSON.stringify({ count: rows.length, scores: rows }, null, 2) }] }
+  },
+)
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 
 async function main() {

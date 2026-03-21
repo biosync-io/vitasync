@@ -28,10 +28,12 @@ export interface HealthDataQuery {
   userId: string
   workspaceId: string
   metricType?: HealthMetricType
+  providerId?: string
   from?: Date
   to?: Date
   limit?: number
   offset?: number
+  cursor?: string
 }
 
 export interface HealthDataSummary {
@@ -49,10 +51,11 @@ export class HealthDataService {
   async query(
     params: HealthDataQuery,
   ): Promise<{ data: HealthMetric[]; nextCursor?: string; hasMore: boolean }> {
-    const { userId, metricType, from, to, limit = 100, offset = 0 } = params
+    const { userId, metricType, providerId, from, to, limit = 100, offset = 0 } = params
 
     const conditions = [eq(healthMetrics.userId, userId)]
     if (metricType) conditions.push(eq(healthMetrics.metricType, metricType))
+    if (providerId) conditions.push(eq(healthMetrics.providerId, providerId))
     if (from) conditions.push(gte(healthMetrics.recordedAt, from))
     if (to) conditions.push(lte(healthMetrics.recordedAt, to))
 
@@ -83,7 +86,7 @@ export class HealthDataService {
       nextCursor = encodeCursor(last.id, new Date(last.recordedAt))
     }
 
-    return { data, nextCursor, hasMore }
+    return { data, hasMore, ...(nextCursor !== undefined && { nextCursor }) }
   }
 
   async summary(userId: string): Promise<HealthDataSummary[]> {
@@ -245,8 +248,8 @@ export class HealthDataService {
         metricType: dp.metricType,
         recordedAt: dp.recordedAt,
         value: dp.value ?? 0,
-        unit: dp.unit,
-        data: dp.data,
+        ...(dp.unit !== undefined && { unit: dp.unit }),
+        ...(dp.data !== undefined && { data: dp.data }),
       })),
     )
   }

@@ -1,6 +1,7 @@
 import { OAuth2Provider, defaultSyncWindow, providerRegistry } from "@biosync-io/provider-core"
 import type { OAuthTokens, ProviderDefinition, SyncDataPoint, SyncOptions } from "@biosync-io/types"
 import { HealthMetricType, MetricUnit } from "@biosync-io/types"
+import { createHmac, timingSafeEqual } from "node:crypto"
 import { z } from "zod"
 
 // ── Whoop API response schemas ────────────────────────────────
@@ -16,14 +17,14 @@ const WhoopTokenResponse = z.object({
 const WhoopPage = <T extends z.ZodTypeAny>(recordSchema: T) =>
   z.object({
     records: z.array(recordSchema),
-    next_token: z.string().optional(),
+    next_token: z.string().nullish(),
   })
 
 const WhoopCycle = z.object({
   id: z.number(),
   user_id: z.number(),
   start: z.string(),
-  end: z.string().optional(),
+  end: z.string().nullish(),
   score_state: z.enum(["SCORED", "PENDING_SCORE", "UNSCORABLE"]),
   score: z
     .object({
@@ -52,10 +53,10 @@ const WhoopRecovery = z.object({
 })
 
 const WhoopSleep = z.object({
-  id: z.number(),
+  id: z.string(),
   user_id: z.number(),
   start: z.string(),
-  end: z.string(),
+  end: z.string().nullable(),
   nap: z.boolean(),
   score_state: z.enum(["SCORED", "PENDING_SCORE", "UNSCORABLE"]),
   score: z
@@ -80,10 +81,10 @@ const WhoopSleep = z.object({
 })
 
 const WhoopWorkout = z.object({
-  id: z.number(),
+  id: z.string(),
   user_id: z.number(),
   start: z.string(),
-  end: z.string(),
+  end: z.string().nullable(),
   sport_id: z.number(),
   score_state: z.enum(["SCORED", "PENDING_SCORE", "UNSCORABLE"]),
   score: z
@@ -95,7 +96,7 @@ const WhoopWorkout = z.object({
       distance_meter: z.number().optional(),
       altitude_gain_meter: z.number().optional(),
       percent_recorded: z.number().optional(),
-      zone_duration: z
+      zone_durations: z
         .object({
           zone_zero_milli: z.number().optional(),
           zone_one_milli: z.number().optional(),
@@ -107,6 +108,21 @@ const WhoopWorkout = z.object({
         .optional(),
     })
     .optional(),
+})
+
+/** WHOOP webhook v2 payload schema */
+const WhoopWebhookPayload = z.object({
+  user_id: z.number(),
+  id: z.union([z.number(), z.string()]),
+  type: z.enum([
+    "workout.updated",
+    "workout.deleted",
+    "sleep.updated",
+    "sleep.deleted",
+    "recovery.updated",
+    "recovery.deleted",
+  ]),
+  trace_id: z.string().optional(),
 })
 
 // ── WHOOP sport ID → human-readable name map ────────────────
@@ -210,7 +226,7 @@ const WHOOP_DEFINITION: ProviderDefinition = {
       HealthMetricType.HEART_RATE,
       HealthMetricType.DISTANCE,
     ],
-    supportsWebhooks: false,
+    supportsWebhooks: true,
     oauth2: true,
     oauth1: false,
     minSyncIntervalSeconds: 900,
@@ -222,7 +238,7 @@ const WHOOP_DEFINITION: ProviderDefinition = {
 export class WhoopProvider extends OAuth2Provider {
   readonly definition = WHOOP_DEFINITION
 
-  private static readonly BASE_URL = "https://api.prod.whoop.com/developer/v1"
+  private static readonly BASE_URL = "https://api.prod.whoop.com/developer/v2"
   private static readonly AUTH_URL = "https://api.prod.whoop.com/oauth/oauth2/auth"
   private static readonly TOKEN_URL = "https://api.prod.whoop.com/oauth/oauth2/token"
   private static readonly SCOPES = [
@@ -314,6 +330,81 @@ export class WhoopProvider extends OAuth2Provider {
     yield* this.#syncCycles(tokens, startDate, endDate)
   }
 
+  // ── Webhook support ───────────────────────────────────────
+
+  /**
+   * WHOOP webhook signature verification.
+   *
+   * WHOOP signs webhooks by prepending the X-WHOOP-Signature-Timestamp to the
+   * raw body, then computing HMAC-SHA256 with the app's client_secret, and
+   * base64-encoding the result. The signature is sent in X-WHOOP-Signature.
+   *
+   * @see https://developer.whoop.com/docs/developing/webhooks/#webhooks-security
+   */
+  verifyWebhookSignature(payload: Buffer, signature: string, secret: string): boolean {
+    // Prepend the cached timestamp to the raw body for signature computation
+    const signatureInput = this.#webhookTimestamp + payload.toString()
+    const expected = createHmac("sha256", secret).update(signatureInput).digest("base64")
+    const expectedBuf = Buffer.from(expected)
+    const receivedBuf = Buffer.from(signature)
+
+    if (expectedBuf.length !== receivedBuf.length) return false
+    return timingSafeEqual(expectedBuf, receivedBuf)
+  }
+
+  /**
+   * Build the WHOOP signature payload: timestamp + raw body.
+   * WHOOP uses X-WHOOP-Signature and X-WHOOP-Signature-Timestamp headers.
+   */
+  extractWebhookSignature(
+    headers: Record<string, string | string[] | undefined>,
+    rawBody: Buffer,
+  ): string {
+    const signature = (headers["x-whoop-signature"] as string | undefined) ?? ""
+    const timestamp = (headers["x-whoop-signature-timestamp"] as string | undefined) ?? ""
+
+    // Store the timestamp+body composite in a class field so verifyWebhookSignature
+    // can use it. We encode it into the rawBody side of the verify call.
+    this.#webhookTimestamp = timestamp
+    return signature
+  }
+
+  /** Temporary storage for the webhook timestamp during verification */
+  #webhookTimestamp = ""
+
+  /**
+   * Extract the WHOOP user ID from the webhook body.
+   * WHOOP sends { user_id, id, type, trace_id } in the body.
+   */
+  extractProviderUserId(
+    _headers: Record<string, string | string[] | undefined>,
+    body: unknown,
+  ): string | undefined {
+    const parsed = WhoopWebhookPayload.safeParse(body)
+    if (!parsed.success) return undefined
+    return String(parsed.data.user_id)
+  }
+
+  /**
+   * Process a WHOOP webhook event.
+   *
+   * WHOOP webhooks are notification-only — they tell us WHAT changed but don't
+   * include the actual data. We return an empty array here and instead trigger
+   * a re-sync for the affected data type. The inbound handler will enqueue a
+   * sync job for the connection.
+   *
+   * For direct ingestion we'd need the user's OAuth tokens (which the inbound
+   * handler doesn't have access to). The recommended pattern is to trigger a
+   * targeted sync via the worker queue.
+   */
+  async processWebhook(payload: unknown): Promise<SyncDataPoint[]> {
+    // WHOOP webhooks are event notifications, not data payloads.
+    // Return empty — the inbound handler logs receipt and the sync scheduler
+    // will pick up the changes on the next sync cycle.
+    // A future enhancement could enqueue an immediate targeted sync here.
+    return []
+  }
+
   // ── Private sync helpers ──────────────────────────────────
 
   async *#syncSleep(tokens: OAuthTokens, start: Date, end: Date): AsyncGenerator<SyncDataPoint> {
@@ -389,8 +480,9 @@ export class WhoopProvider extends OAuth2Provider {
       if (workout.score_state !== "SCORED" || !workout.score) continue
 
       const recordedAt = new Date(workout.start)
-      const endTime = new Date(workout.end)
-      const durationSeconds = Math.round((endTime.getTime() - recordedAt.getTime()) / 1000)
+      const durationSeconds = workout.end
+        ? Math.round((new Date(workout.end).getTime() - recordedAt.getTime()) / 1000)
+        : undefined
       const sportName = WHOOP_SPORT_NAMES[workout.sport_id] ?? "Activity"
       const score = workout.score
 
@@ -409,7 +501,7 @@ export class WhoopProvider extends OAuth2Provider {
           distanceMeters: score.distance_meter,
           altitudeGainMeters: score.altitude_gain_meter,
           percentRecorded: score.percent_recorded,
-          zoneDuration: score.zone_duration,
+          zoneDuration: score.zone_durations,
           whoopWorkoutId: workout.id,
         },
       }
@@ -562,7 +654,7 @@ export class WhoopProvider extends OAuth2Provider {
     end: Date,
   ): AsyncGenerator<z.infer<T>> {
     const pageSchema = WhoopPage(schema)
-    let nextToken: string | undefined
+    let nextToken: string | null | undefined
 
     do {
       const url = new URL(`${WhoopProvider.BASE_URL}${path}`)
@@ -618,7 +710,7 @@ export function registerWhoopProvider() {
     return new WhoopProvider({
       clientId,
       clientSecret,
-      redirectUri: `${redirectBase}/v1/oauth/callback/whoop`,
+      redirectUri: `${redirectBase}/v1/oauth/whoop/callback`,
     })
   })
 }

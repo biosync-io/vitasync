@@ -6,11 +6,11 @@ hero:
   tagline: One API to access health data from Fitbit, Garmin, WHOOP, Strava, and more.
   actions:
     - text: Quickstart
-      link: /quickstart
+      link: /vitasync/quickstart
       icon: right-caret
       variant: primary
     - text: API Reference
-      link: /api-reference/introduction
+      link: /vitasync/api-reference/introduction
       icon: open-book
 ---
 
@@ -72,10 +72,31 @@ curl "https://api.yourdomain.com/v1/users/{userId}/health?from=2024-01-01&to=202
     Run anywhere with Docker Compose. You own your infrastructure and your users' data never leaves your environment.
   </Card>
   <Card title="MCP Server" icon="open-book">
-    Expose health data to AI assistants (Claude, Cursor, Copilot) via the Model Context Protocol. Ask questions about your data in natural language.
+    Expose health data and AI analytics to AI assistants (Claude, Cursor, Copilot) via the Model Context Protocol. 9 tools including LLM-ready context, anomaly alerts, and correlations.
+  </Card>
+  <Card title="AI & Analytics" icon="star">
+    Built-in correlation engine, anomaly detection (statistical + clinical thresholds), health scores, and LLM-ready context endpoints for AI-assisted health coaching.
+  </Card>
+  <Card title="Notification System" icon="forward-slash">
+    Modular multi-channel notifications — Discord, Slack, Teams, Email, Web Push, ntfy, Webhook. Define rules to route alerts by category and severity.
   </Card>
   <Card title="Grafana Dashboards" icon="bars">
     8 pre-built health dashboards — workouts, sleep, heart health, body metrics, personal records, daily activity, and provider health — provisioned automatically.
+  </Card>
+  <Card title="Goals & Achievements" icon="star">
+    Set measurable health goals tied to wearable metrics, track streaks and progress, and unlock tiered achievements automatically.
+  </Card>
+  <Card title="Health Tracking" icon="list-format">
+    Manual logging for mood, nutrition, medications, and symptoms — enriching AI analytics and correlation analysis beyond wearable data.
+  </Card>
+  <Card title="Challenges & Training Plans" icon="rocket">
+    Workspace-wide fitness challenges with leaderboards and AI-generated adaptive training plans tailored to user goals.
+  </Card>
+  <Card title="Reports & Data Export" icon="open-book">
+    Generate periodic health reports (weekly to annual) and export data in JSON, CSV, FHIR R4, or PDF for compliance and portability.
+  </Card>
+  <Card title="Sleep Analysis & Biometrics" icon="approve-check">
+    Sleep debt tracking, rolling biometric baselines, composite health scores, periodic snapshots, and AI-generated insights.
   </Card>
 </CardGrid>
 
@@ -83,12 +104,12 @@ curl "https://api.yourdomain.com/v1/users/{userId}/health?from=2024-01-01&to=202
 
 | Provider | Auth | Metrics | Sync |
 |----------|------|---------|------|
-| [Fitbit](/providers/fitbit) | OAuth 2.0 + PKCE | Steps, heart rate, sleep, body composition, SpO₂ | Every 15 min |
-| [Garmin](/providers/garmin) | OAuth 1.0a | Steps, GPS workouts, HRV, stress, body battery | Push (real-time) |
-| [WHOOP](/providers/whoop) | OAuth 2.0 | Recovery, strain, HRV, sleep performance | Every 15 min |
-| [Strava](/providers/strava) | OAuth 2.0 | Workouts, distance, calories, GPS routes | On-demand |
+| [Fitbit](/vitasync/providers/fitbit) | OAuth 2.0 + PKCE | Steps, heart rate, sleep, body composition, SpO₂ | Every 15 min |
+| [Garmin](/vitasync/providers/garmin) | OAuth 1.0a | Steps, GPS workouts, HRV, stress, body battery | Push (real-time) |
+| [WHOOP](/vitasync/providers/whoop) | OAuth 2.0 | Recovery, strain, HRV, sleep performance | Every 15 min |
+| [Strava](/vitasync/providers/strava) | OAuth 2.0 | Workouts, distance, calories, GPS routes | On-demand |
 
-See [Supported Providers](/providers/supported) for a full metric-by-metric comparison.
+See [Supported Providers](/vitasync/providers/supported) for a full metric-by-metric comparison.
 
 ## Get Started in 5 Minutes
 
@@ -98,7 +119,7 @@ See [Supported Providers](/providers/supported) for a full metric-by-metric comp
 4. **Connect a device** — redirect the user to `GET /v1/oauth/{provider}/authorize?userId={id}`
 5. **Query data** — `GET /v1/users/{userId}/health`
 
-The [Quickstart guide](/quickstart) walks through each step in detail with copy-pasteable curl commands.
+The [Quickstart guide](/vitasync/quickstart) walks through each step in detail with copy-pasteable curl commands.
 
 ## API Design
 

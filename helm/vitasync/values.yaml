@@ -261,6 +261,7 @@ config:
 
   # Web
   NEXT_PUBLIC_API_URL: ""  # e.g. https://api.vitasync.example.com
+  DEFAULT_API_KEY: ""      # pre-configured API key — avoids manual Setup page
 
 # ─────────────────────────────────────────────
 # Secrets — stored in a Kubernetes Secret.
@@ -289,3 +290,7 @@ secrets:
   POLAR_CLIENT_SECRET: ""
   STRAVA_CLIENT_ID: ""
   STRAVA_CLIENT_SECRET: ""
+
+  # Bootstrap — API creates default workspace + admin key on first boot
+  ADMIN_API_KEY: ""           # e.g. vs_test_dev0000000000000000000000000000
+  ADMIN_WORKSPACE_SLUG: "default"

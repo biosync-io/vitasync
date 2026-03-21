@@ -97,3 +97,39 @@ docker compose exec api sh
 <Aside type="tip">
   For production on a single server, use [Caddy](https://caddyserver.com/) or Nginx as a reverse proxy in front of the `api` and `web` services for automatic TLS.
 </Aside>
+
+## Pre-release Image Channels
+
+Every push to any branch triggers a Docker build. Images are tagged according to their **channel**:
+
+| Branch pattern | Channel | Available tags |
+|---------------|---------|----------------|
+| `main` | **stable** | `latest`, `1.2.3`, `1.2`, `1`, `sha-xxxxxxx` |
+| `beta/**` | **beta** | `beta`, `beta-xxxxxxx`, `sha-xxxxxxx` |
+| `feature/**`, `fix/**`, `alpha/**` | **alpha** | `alpha`, `alpha-xxxxxxx`, `sha-xxxxxxx` |
+
+Images are published to `ghcr.io/your-org/vitasync-{api,worker,web}`.
+
+```bash
+# Pull a specific pre-release build for testing
+docker pull ghcr.io/your-org/vitasync-api:beta
+
+# Pin to an exact alpha sha
+docker pull ghcr.io/your-org/vitasync-api:alpha-abc1234
+```
+
+<Aside type="caution">
+  Alpha and beta images are built from feature branches and are **not production-ready**. They may contain breaking changes, incomplete migrations, or unstable behaviour.
+</Aside>
+
+To swap a single service image in your compose file while keeping the rest on `latest`:
+
+```yaml
+services:
+  api:
+    image: ghcr.io/your-org/vitasync-api:beta   # override just the API
+  worker:
+    image: ghcr.io/your-org/vitasync-worker:latest
+  web:
+    image: ghcr.io/your-org/vitasync-web:latest
+```

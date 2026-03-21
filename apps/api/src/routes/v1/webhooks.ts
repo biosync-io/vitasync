@@ -2,16 +2,17 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { requireScope } from "../../plugins/auth.js"
 import { WebhookService } from "../../services/webhook.service.js"
+import { WebhookEvent } from "@biosync-io/types"
 
 const webhookService = new WebhookService()
 
 const WebhookEventEnum = z.enum([
-  "sync.completed",
-  "sync.failed",
-  "connection.created",
-  "connection.disconnected",
-  "user.created",
-  "user.deleted",
+  WebhookEvent.SYNC_COMPLETED,
+  WebhookEvent.SYNC_FAILED,
+  WebhookEvent.CONNECTION_CREATED,
+  WebhookEvent.CONNECTION_DISCONNECTED,
+  WebhookEvent.USER_CREATED,
+  WebhookEvent.USER_DELETED,
 ])
 
 const webhooksRoutes: FastifyPluginAsync = async (app) => {
@@ -28,7 +29,10 @@ const webhooksRoutes: FastifyPluginAsync = async (app) => {
 
     const webhook = await webhookService.create({
       workspaceId: request.workspaceId,
-      ...body,
+      url: body.url,
+      secret: body.secret,
+      events: body.events as WebhookEvent[],
+      ...(body.description !== undefined && { description: body.description }),
     })
     return reply.status(201).send(webhook)
   })

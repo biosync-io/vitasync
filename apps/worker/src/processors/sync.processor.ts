@@ -1,6 +1,7 @@
-import { getDb, healthMetrics, providerConnections, syncJobs } from "@biosync-io/db"
+import { getDb, healthMetrics, providerConnections, syncJobs, events } from "@biosync-io/db"
+import type { EventInsert } from "@biosync-io/db"
 import { providerRegistry } from "@biosync-io/provider-core"
-import type { ProviderTokens, SyncDataPoint } from "@biosync-io/types"
+import type { OAuthTokens, ProviderTokens, SyncDataPoint } from "@biosync-io/types"
 import type { Job } from "bullmq"
 import { eq } from "drizzle-orm"
 import { getConfig } from "../config.js"
@@ -67,6 +68,7 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
 
   try {
     // Decrypt and parse tokens
+    if (!connection.encryptedTokens) throw new Error(`Connection '${connectionId}' has no encrypted tokens`)
     let tokens: ProviderTokens = JSON.parse(
       decrypt(connection.encryptedTokens, config.ENCRYPTION_KEY),
     )
@@ -79,13 +81,17 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
       const oauth2Tokens = tokens as {
         accessToken: string
         refreshToken?: string
-        expiresAt?: number
+        // After JSON round-trip, expiresAt is an ISO string, not a Date or number
+        expiresAt?: string | number | Date
       }
       const bufferMs = 5 * 60 * 1000 // refresh 5 minutes before expiry
-      if (oauth2Tokens.expiresAt && oauth2Tokens.expiresAt - bufferMs < Date.now()) {
+      const expiresAtMs = oauth2Tokens.expiresAt
+        ? new Date(oauth2Tokens.expiresAt as string | number | Date).getTime()
+        : undefined
+      if (expiresAtMs && expiresAtMs - bufferMs < Date.now()) {
         if (!oauth2Tokens.refreshToken)
           throw new Error("Token expired and no refresh token available")
-        tokens = await provider.refreshTokens(oauth2Tokens.refreshToken)
+        tokens = await provider.refreshTokens(oauth2Tokens as OAuthTokens)
         // Re-encrypt and persist refreshed tokens
         const { encrypt } = await import("../lib/crypto.js")
         await db
@@ -120,6 +126,8 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
       source?: string
     }> = []
 
+    const eventBatch: EventInsert[] = []
+
     const BATCH_SIZE = 500
     let totalInserted = 0
 
@@ -135,7 +143,8 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
       await job.updateProgress(totalInserted)
     }
 
-    for await (const point of provider.syncData(tokens, { from, to })) {
+    // biome-ignore lint: provider tokens type variance
+    for await (const point of (provider as any).syncData(tokens, { from, to })) {
       const p = point as SyncDataPoint
       batch.push({
         userId,
@@ -143,16 +152,27 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
         providerId: connection.providerId,
         metricType: p.metricType,
         recordedAt: p.recordedAt,
-        value: p.value,
-        unit: p.unit,
-        data: p.data,
+        value: p.value ?? 0,
+        ...(p.unit !== undefined && { unit: p.unit }),
+        ...(p.data !== undefined && { data: p.data }),
         source: connection.providerId,
       })
+
+      const event = extractEvent(p, userId, connectionId)
+      if (event) eventBatch.push(event)
 
       if (batch.length >= BATCH_SIZE) await flush()
     }
 
     await flush()
+
+    // Bulk-upsert structured events (workout, sleep) — deduped via unique constraint
+    if (eventBatch.length > 0) {
+      await db
+        .insert(events)
+        .values(eventBatch)
+        .onConflictDoNothing({ target: [events.userId, events.providerId, events.providerEventId] })
+    }
 
     // Update connection lastSyncedAt
     await db
@@ -164,9 +184,9 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
     await db
       .update(syncJobs)
       .set({ status: "completed", completedAt: new Date(), metricsSynced: totalInserted })
-      .where(eq(syncJobs.id, jobId))
+      .where(eq(syncJobs.id, jobId!))
 
-    job.log(`Sync complete: ${totalInserted} metrics inserted for connection ${connectionId}`)
+    job.log(`Sync complete: ${totalInserted} metrics inserted, ${eventBatch.length} events upserted for connection ${connectionId}`)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
 
@@ -181,8 +201,82 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
     await db
       .update(syncJobs)
       .set({ status: "failed", completedAt: new Date(), error: message })
-      .where(eq(syncJobs.id, jobId))
+      .where(eq(syncJobs.id, jobId!))
 
     throw err // Re-throw so BullMQ records the failure and retries
+  }
+}
+
+/**
+ * Map a workout or sleep SyncDataPoint to an EventInsert row.
+ * Returns null for all other metric types.
+ *
+ * Uses `providerId::recordedAt` as a stable providerEventId for deduplication across
+ * re-syncs. Providers emit one workout/sleep record per start timestamp per user,
+ * so this composite key is unique within a (userId, providerId) pair.
+ */
+function extractEvent(
+  p: SyncDataPoint,
+  userId: string,
+  connectionId: string,
+): EventInsert | null {
+  if (p.metricType !== "workout" && p.metricType !== "sleep") return null
+
+  const data = (p.data ?? {}) as Record<string, unknown>
+  const startedAt = new Date(p.recordedAt)
+  const providerEventId = `${p.providerId}::${startedAt.toISOString()}`
+
+  if (p.metricType === "workout") {
+    const durationSeconds =
+      typeof data.durationSeconds === "number" ? Math.round(data.durationSeconds) : null
+    const endedAt = durationSeconds ? new Date(startedAt.getTime() + durationSeconds * 1000) : null
+    const activityName = typeof data.type === "string" ? data.type : null
+
+    return {
+      userId,
+      connectionId,
+      providerId: p.providerId,
+      providerEventId,
+      eventType: "workout",
+      activityType: activityName
+        ? activityName.toLowerCase().replace(/\s+/g, "_")
+        : null,
+      title: activityName,
+      startedAt,
+      endedAt: endedAt ?? undefined,
+      durationSeconds,
+      distanceMeters:
+        typeof data.distanceMeters === "number" ? data.distanceMeters : null,
+      avgHeartRate:
+        typeof data.avgHeartRate === "number" ? Math.round(data.avgHeartRate) : null,
+      maxHeartRate:
+        typeof data.maxHeartRate === "number" ? Math.round(data.maxHeartRate) : null,
+      elevationGainMeters:
+        typeof data.altitudeGainMeters === "number" ? data.altitudeGainMeters : null,
+      data: p.data as Record<string, unknown>,
+    }
+  }
+
+  // sleep
+  const sleepStart =
+    typeof data.startTime === "string" ? new Date(data.startTime) : startedAt
+  const sleepEnd =
+    typeof data.endTime === "string" ? new Date(data.endTime) : null
+  const durationMinutes =
+    typeof data.durationMinutes === "number" ? data.durationMinutes : null
+  const isNap = typeof data.nap === "boolean" ? data.nap : false
+
+  return {
+    userId,
+    connectionId,
+    providerId: p.providerId,
+    providerEventId,
+    eventType: "sleep",
+    activityType: isNap ? "nap" : "sleep",
+    title: isNap ? "Nap" : "Sleep",
+    startedAt: sleepStart,
+    endedAt: sleepEnd ?? undefined,
+    durationSeconds: durationMinutes != null ? Math.round(durationMinutes * 60) : null,
+    data: p.data as Record<string, unknown>,
   }
 }

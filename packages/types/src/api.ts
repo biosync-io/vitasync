@@ -35,6 +35,8 @@ export interface User {
   externalId?: string
   email?: string
   displayName?: string
+  /** Gender – gates gender-specific insights (e.g. womens_health) */
+  gender?: string | null
   metadata?: Record<string, unknown>
   createdAt: Date
   updatedAt: Date
@@ -52,10 +54,19 @@ export interface Webhook {
 }
 
 export const WebhookEvent = {
-  DATA_SYNCED: "data.synced",
-  CONNECTION_CREATED: "connection.created",
-  CONNECTION_REVOKED: "connection.revoked",
+  SYNC_COMPLETED: "sync.completed",
   SYNC_FAILED: "sync.failed",
+  CONNECTION_CREATED: "connection.created",
+  CONNECTION_DISCONNECTED: "connection.disconnected",
+  USER_CREATED: "user.created",
+  USER_DELETED: "user.deleted",
+  ANOMALY_DETECTED: "anomaly.detected",
+  GOAL_COMPLETED: "goal.completed",
+  ACHIEVEMENT_UNLOCKED: "achievement.unlocked",
+  HEALTH_SCORE_UPDATED: "health_score.updated",
+  REPORT_READY: "report.ready",
+  EXPORT_READY: "export.ready",
+  CHALLENGE_COMPLETED: "challenge.completed",
 } as const
 export type WebhookEvent = (typeof WebhookEvent)[keyof typeof WebhookEvent]
 
