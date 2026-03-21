@@ -779,14 +779,14 @@ export interface SymptomLogData {
   bodyLocation: string | null
   triggers: string[]
   notes: string | null
-  loggedAt: string
+  startedAt: string
+  resolvedAt: string | null
+  createdAt: string
 }
 
 export interface SymptomPatterns {
-  topSymptoms: { symptom: string; count: number }[]
-  topTriggers: { trigger: string; count: number }[]
-  topLocations: { location: string; count: number }[]
-  avgSeverity: number
+  frequentTriggers: { trigger: string; count: number }[]
+  frequentLocations: { location: string; count: number }[]
   severityTrend: string
 }
 
