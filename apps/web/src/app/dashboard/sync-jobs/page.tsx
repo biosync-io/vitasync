@@ -136,6 +136,27 @@ export default function SyncJobsPage() {
         </div>
       </div>
 
+      {/* Failed jobs alert banner */}
+      {(() => {
+        const failedJobs = allJobs.filter((j) => j.state === "failed")
+        if (failedJobs.length === 0) return null
+        return (
+          <div className="mb-4 rounded-2xl border border-red-200 dark:border-red-800/40 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/20 px-5 py-4 flex items-start gap-3">
+            <span className="text-xl shrink-0 mt-0.5">⚠️</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-red-800 dark:text-red-300">{failedJobs.length} sync job{failedJobs.length > 1 ? "s" : ""} failed</p>
+              <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                {failedJobs.slice(0, 3).map((j) => j.failedReason?.slice(0, 80) ?? "Unknown error").join(" · ")}
+                {failedJobs.length > 3 && ` and ${failedJobs.length - 3} more…`}
+              </p>
+            </div>
+            <button type="button" onClick={() => { setStateFilter("failed"); setPage(1) }} className="shrink-0 rounded-lg bg-red-100 dark:bg-red-900/30 px-3 py-1.5 text-xs font-medium text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
+              View Failed
+            </button>
+          </div>
+        )
+      })()}
+
       {/* Summary badges — clickable to filter by state */}
       <div className="mb-4 flex flex-wrap gap-2">
         {STATES.map((state) => (
@@ -309,8 +330,14 @@ export default function SyncJobsPage() {
                       <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 tabular-nums">
                         {job.attemptsMade}
                       </td>
-                      <td className="px-4 py-3 text-xs text-red-600 dark:text-red-400 max-w-[200px] truncate">
-                        {job.failedReason ?? ""}
+                      <td className="px-4 py-3 text-xs max-w-[300px]">
+                        {job.failedReason ? (
+                          <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 px-2.5 py-1.5">
+                            <p className="text-red-700 dark:text-red-400 font-medium break-words whitespace-pre-wrap">{job.failedReason}</p>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}
