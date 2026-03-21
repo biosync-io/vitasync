@@ -76,12 +76,26 @@ async function main() {
     concurrency: 8,
   })
 
+  // Notification queue — used to enqueue failure alerts from other workers
+  const notificationQueue = new Queue("notifications", { connection })
+
   syncWorker.on("completed", (job) => {
     console.info(`[sync] Job ${job.id} completed`)
   })
 
   syncWorker.on("failed", (job, err) => {
     console.error(`[sync] Job ${job?.id} failed: ${err.message}`)
+    // Enqueue a notification so the user knows about the failure
+    if (job?.data?.userId) {
+      notificationQueue.add("sync-failure", {
+        userId: job.data.userId,
+        workspaceId: job.data.workspaceId ?? "",
+        title: "Sync Failed",
+        body: `Provider sync failed: ${err.message.slice(0, 200)}`,
+        severity: "warning",
+        category: "sync",
+      }).catch((e) => console.error("[sync] Failed to enqueue failure notification:", e))
+    }
   })
 
   webhookWorker.on("completed", (job) => {
