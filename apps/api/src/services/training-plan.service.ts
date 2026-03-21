@@ -85,16 +85,15 @@ export class TrainingPlanService {
       .insert(trainingPlans)
       .values({
         userId,
-        title: `${opts.goal.charAt(0).toUpperCase() + opts.goal.slice(1)} ${opts.difficulty} Plan`,
+        name: `${opts.goal.charAt(0).toUpperCase() + opts.goal.slice(1)} ${opts.difficulty} Plan`,
         goal: opts.goal,
         difficulty: opts.difficulty,
         durationWeeks: opts.durationWeeks,
-        daysPerWeek: opts.daysPerWeek,
-        startDate,
-        endDate,
+        startsAt: startDate,
+        endsAt: endDate,
         status: "active",
-        weeklySchedule,
-        weeklyTargets,
+        schedule: weeklySchedule as Record<string, unknown>[],
+        weeklyTargets: weeklyTargets[0] ?? {},
         adaptive: true,
         currentWeek: 1,
         adherenceRate: 0,
@@ -124,11 +123,12 @@ export class TrainingPlanService {
       )
 
     const currentWeek = Math.max(1, Math.ceil(
-      (Date.now() - plan.startDate.getTime()) / (7 * 24 * 60 * 60 * 1000),
+      (Date.now() - plan.startsAt.getTime()) / (7 * 24 * 60 * 60 * 1000),
     ))
 
-    const adherenceRate = plan.daysPerWeek > 0
-      ? Math.min(100, Math.round((Number(weekStats?.workoutCount ?? 0) / plan.daysPerWeek) * 100))
+    const scheduledPerWeek = Array.isArray(plan.schedule) ? plan.schedule.length : 3
+    const adherenceRate = scheduledPerWeek > 0
+      ? Math.min(100, Math.round((Number(weekStats?.workoutCount ?? 0) / scheduledPerWeek) * 100))
       : 0
 
     const [updated] = await this.db

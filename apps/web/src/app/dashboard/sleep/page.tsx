@@ -133,15 +133,15 @@ export default function SleepPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400">Deep Sleep</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{quality.avgDeepSleepPercent}%</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{quality.avgDeepSleepPct}%</p>
             </div>
             <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400">REM Sleep</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{quality.avgRemSleepPercent}%</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{quality.avgRemSleepPct}%</p>
             </div>
             <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400">Light Sleep</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{quality.avgLightSleepPercent}%</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{quality.avgLightSleepPct}%</p>
             </div>
             <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400">Weekday Avg</p>

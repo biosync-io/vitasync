@@ -237,8 +237,6 @@ export default function HabitsPage() {
             )}
             <div className="divide-y divide-gray-100 dark:divide-gray-800 stagger-list">
               {summary.habits.map((habit) => {
-                const colorSet = COLORS[habit.icon ? "blue" : "blue"]
-                // Try to find the color from the full habits list
                 return (
                   <div key={habit.id} className="group flex items-center gap-4 px-6 py-4 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-all duration-200">
                     {/* Completion toggle */}

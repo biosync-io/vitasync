@@ -71,9 +71,9 @@ export const usersApi = {
       `/v1/users?limit=${opts?.limit ?? 50}&offset=${opts?.offset ?? 0}`,
     ),
   get: (id: string) => request<User>(`/v1/users/${id}`),
-  create: (body: { externalId: string; email?: string; displayName?: string }) =>
+  create: (body: { externalId: string; email?: string; displayName?: string; gender?: string }) =>
     request<User>("/v1/users", { method: "POST", body: JSON.stringify(body) }),
-  update: (id: string, body: { email?: string; displayName?: string }) =>
+  update: (id: string, body: { email?: string; displayName?: string; gender?: string | null }) =>
     request<User>(`/v1/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   delete: (id: string) => request<void>(`/v1/users/${id}`, { method: "DELETE" }),
 }
@@ -534,7 +534,9 @@ export interface HealthScoreData {
   cardioScore: number | null
   recoveryScore: number | null
   bodyScore: number | null
+  deltaFromPrevious: number | null
   weeklyAvg: number | null
+  breakdown: Record<string, unknown> | null
   createdAt: string
 }
 
@@ -798,10 +800,11 @@ export interface SleepDebtData {
 
 export interface SleepQualityData {
   avgSleepScore: number
-  avgDeepSleepPercent: number
-  avgRemSleepPercent: number
-  avgLightSleepPercent: number
-  avgAwakePercent: number
+  avgDurationHours: number
+  avgDeepSleepPct: number
+  avgRemSleepPct: number
+  avgLightSleepPct: number
+  avgAwakePct: number
   avgEfficiency: number
   consistencyScore: number
   weekdayVsWeekend: { weekday: number; weekend: number }

@@ -16,7 +16,7 @@ export class MedicationService {
 
   async listMedications(userId: string, opts: { activeOnly?: boolean } = {}): Promise<MedicationRow[]> {
     const conditions = [eq(medications.userId, userId)]
-    if (opts.activeOnly !== false) conditions.push(eq(medications.active, true))
+    if (opts.activeOnly !== false) conditions.push(eq(medications.isActive, true))
 
     return this.db
       .select()
