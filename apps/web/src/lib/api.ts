@@ -359,6 +359,71 @@ export const baselinesApi = {
     request<{ data: BaselineData[]; count: number }>(`/v1/users/${userId}/baselines/compute`, { method: "POST" }),
 }
 
+// ---- Advanced Analytics ----
+export const analyticsApi = {
+  context: (userId: string) =>
+    request<{ data: Record<string, unknown> }>(`/v1/users/${userId}/analytics/context`),
+  correlations: (userId: string, days?: number) =>
+    request<{ data: unknown[]; count: number }>(`/v1/users/${userId}/analytics/correlations`, { method: "POST", body: JSON.stringify({ days: days ?? 90 }) }),
+  anomalies: (userId: string, lookbackDays?: number) =>
+    request<{ data: unknown[]; count: number }>(`/v1/users/${userId}/analytics/anomalies`, { method: "POST", body: JSON.stringify({ lookbackDays: lookbackDays ?? 1 }) }),
+  recovery: (userId: string) =>
+    request<{ data: RecoveryPrediction }>(`/v1/users/${userId}/analytics/recovery`),
+  circadian: (userId: string) =>
+    request<{ data: CircadianAnalysis }>(`/v1/users/${userId}/analytics/circadian`),
+  metabolic: (userId: string) =>
+    request<{ data: MetabolicEfficiency }>(`/v1/users/${userId}/analytics/metabolic`),
+  resilience: (userId: string) =>
+    request<{ data: StressResilienceIndex }>(`/v1/users/${userId}/analytics/resilience`),
+}
+
+export interface RecoveryPrediction {
+  predictedRecoveryHours: number
+  confidence: number
+  state: "recovered" | "recovering" | "fatigued" | "overtrained"
+  factors: Array<{ name: string; impact: "positive" | "negative" | "neutral"; score: number; detail: string }>
+  nextTrainingWindow: string
+  date: string
+}
+
+export interface CircadianAnalysis {
+  chronotype: "early_bird" | "night_owl" | "intermediate"
+  consistencyScore: number
+  avgSleepOnsetMinutes: number
+  avgWakeTimeMinutes: number
+  onsetVariabilityMinutes: number
+  socialJetLagMinutes: number
+  optimalWindow: { bedtime: string; wakeTime: string }
+  confidence: number
+  date: string
+}
+
+export interface MetabolicEfficiency {
+  score: number
+  grade: string
+  components: {
+    cardiacEfficiency: { score: number; value: number; percentile: number; detail: string } | null
+    energyEfficiency: { score: number; value: number; percentile: number; detail: string } | null
+    recoveryEfficiency: { score: number; value: number; percentile: number; detail: string } | null
+    aerobicCapacity: { score: number; value: number; percentile: number; detail: string } | null
+  }
+  trend: "improving" | "declining" | "stable"
+  genderAdjusted: boolean
+  date: string
+}
+
+export interface StressResilienceIndex {
+  score: number
+  level: "elite" | "high" | "moderate" | "developing" | "low"
+  hrvRecoveryRate: number
+  rhrRecoveryRate: number
+  adaptationRatio: number
+  stressorCount: number
+  trend: "improving" | "declining" | "stable"
+  confidence: number
+  date: string
+}
+
 // ---- Shared types (local to client, not re-exported from @biosync-io/types to avoid SSR issues) ----
 export interface ProviderDef {
   id: string
