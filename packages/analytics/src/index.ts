@@ -31,3 +31,25 @@ export {
   type DailyStrain,
   type TrainingStatus,
 } from "./strain-engine.js"
+
+export {
+  predictRecovery,
+  type RecoveryPrediction,
+  type RecoveryFactor,
+} from "./recovery-prediction.js"
+
+export {
+  analyzeCircadianRhythm,
+  type CircadianAnalysis,
+} from "./circadian-analyzer.js"
+
+export {
+  computeMetabolicEfficiency,
+  type MetabolicEfficiency,
+  type ComponentDetail,
+} from "./metabolic-efficiency.js"
+
+export {
+  computeStressResilience,
+  type StressResilienceIndex,
+} from "./stress-resilience.js"
