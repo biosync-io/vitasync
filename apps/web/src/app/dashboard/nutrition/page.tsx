@@ -56,7 +56,7 @@ export default function NutritionPage() {
     mutationFn: () =>
       nutritionApi.create(selectedUserId, {
         mealType: form.mealType,
-        name: form.name,
+        description: form.name,
         calories: form.calories ? Number(form.calories) : undefined,
         proteinG: form.proteinG ? Number(form.proteinG) : undefined,
         carbsG: form.carbsG ? Number(form.carbsG) : undefined,

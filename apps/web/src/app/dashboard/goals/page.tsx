@@ -34,7 +34,15 @@ export default function GoalsPage() {
 
   const createMut = useMutation({
     mutationFn: () =>
-      goalsApi.create(selectedUserId, { ...form, targetValue: Number(form.targetValue) }),
+      goalsApi.create(selectedUserId, {
+        title: form.name,
+        category: form.metric,
+        metricType: form.metric,
+        targetValue: Number(form.targetValue),
+        targetUnit: form.unit,
+        cadence: form.goalType,
+        startDate: new Date().toISOString(),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goals", selectedUserId] })
       setShowCreate(false)
