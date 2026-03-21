@@ -3,8 +3,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import { type ApiKey, apiKeysApi, getRuntimeDefaultKey } from "../../../lib/api"
+import { type ApiKey, apiKeysApi, usersApi, getRuntimeDefaultKey } from "../../../lib/api"
 import { type AccentTheme, ACCENT_THEMES, applyTheme, getStoredTheme } from "../../../lib/ThemeProvider"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 
 const STORAGE_KEY = "vitasync_api_key"
 
@@ -204,6 +205,9 @@ export default function SettingsPage() {
       <Suspense>
         <SetupBanner activeKey={activeKey} />
       </Suspense>
+
+      {/* ── User Profile — Gender Selection ──────────────────────────────── */}
+      <UserProfileSection />
       <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Active API Key</h2>
@@ -548,5 +552,117 @@ export default function SettingsPage() {
         </a>
       </section>
     </div>
+  )
+}
+
+// ── User Profile Section ────────────────────────────────────────────────────
+
+const GENDER_OPTIONS = [
+  { value: "male", label: "Male", icon: "♂️", color: "from-blue-500 to-blue-600", description: "Male-optimized RHR/HRV baselines" },
+  { value: "female", label: "Female", icon: "♀️", color: "from-pink-500 to-rose-500", description: "Female-adjusted cardio & sleep baselines" },
+  { value: "other", label: "Other", icon: "⚧️", color: "from-purple-500 to-violet-500", description: "Default baselines applied" },
+] as const
+
+function UserProfileSection() {
+  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const queryClient = useQueryClient()
+
+  const { data: usersResult } = useQuery({
+    queryKey: ["users", 0],
+    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
+  })
+  const users = usersResult?.data ?? []
+  const selectedUser = users.find((u) => u.id === selectedUserId)
+
+  const updateGenderMut = useMutation({
+    mutationFn: (gender: string | null) => usersApi.update(selectedUserId, { gender }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] })
+    },
+  })
+
+  return (
+    <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-card overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">User Profile</h2>
+        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+          Set gender for personalized health baselines. This affects health scores, cardio assessment, sleep recommendations, and metabolic efficiency calculations.
+        </p>
+      </div>
+      <div className="px-6 py-5 space-y-4">
+        <div>
+          <label htmlFor="profile-user" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Select User</label>
+          <select id="profile-user" className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+            <option value="">Select a user…</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.displayName || u.externalId}{u.gender ? ` (${u.gender})` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {selectedUserId && (
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Gender</label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {GENDER_OPTIONS.map((opt) => {
+                const isSelected = selectedUser?.gender === opt.value
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    disabled={updateGenderMut.isPending}
+                    onClick={() => updateGenderMut.mutate(opt.value)}
+                    className={`relative rounded-2xl border-2 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 ${
+                      isSelected
+                        ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 shadow-md shadow-indigo-500/10"
+                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                    }`}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-indigo-500 flex items-center justify-center">
+                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      </div>
+                    )}
+                    <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${opt.color} flex items-center justify-center text-white text-xl shadow-lg mb-2`}>
+                      {opt.icon}
+                    </div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{opt.label}</p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{opt.description}</p>
+                  </button>
+                )
+              })}
+            </div>
+            {selectedUser?.gender && (
+              <button
+                type="button"
+                onClick={() => updateGenderMut.mutate(null)}
+                disabled={updateGenderMut.isPending}
+                className="mt-2 text-xs text-gray-400 hover:text-red-500 transition-colors"
+              >
+                Clear gender setting
+              </button>
+            )}
+            {updateGenderMut.isPending && <p className="text-xs text-indigo-500 mt-1">Saving…</p>}
+            {updateGenderMut.isSuccess && <p className="text-xs text-emerald-500 mt-1">✓ Gender updated — health scores will use adjusted baselines</p>}
+          </div>
+        )}
+
+        {!selectedUserId && (
+          <p className="text-sm text-gray-400 italic py-4">Select a user above to configure their profile.</p>
+        )}
+
+        <div className="rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200/50 dark:border-blue-800/30 p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-2">What gender affects</p>
+          <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+            <li>• <strong>Cardio Score:</strong> Female RHR baselines 55–85 bpm (vs male 50–80 bpm); HRV multiplier 1.8× (vs 1.5×)</li>
+            <li>• <strong>Sleep Analysis:</strong> Female ideal sleep 8.5h (vs 8h); deep sleep baseline 18% (vs 20%)</li>
+            <li>• <strong>Metabolic Efficiency:</strong> Gender-adjusted cardiac efficiency and energy efficiency thresholds</li>
+            <li>• <strong>Health Insights:</strong> Women&apos;s health insights shown only for female users</li>
+          </ul>
+        </div>
+      </div>
+    </section>
   )
 }
