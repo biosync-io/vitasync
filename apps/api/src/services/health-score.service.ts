@@ -42,7 +42,7 @@ export class HealthScoreService {
       .limit(limit)
   }
 
-  async computeForDate(userId: string, date: Date): Promise<HealthScoreRow> {
+  async computeForDate(userId: string, date: Date, userGender?: string | null): Promise<HealthScoreRow> {
     const dayStart = new Date(date)
     dayStart.setHours(0, 0, 0, 0)
     const dayEnd = new Date(date)
@@ -67,7 +67,7 @@ export class HealthScoreService {
     // Compute sub-scores
     const sleepScore = this.computeSleepScore(byType)
     const activityScore = this.computeActivityScore(byType)
-    const cardioScore = this.computeCardioScore(byType)
+    const cardioScore = this.computeCardioScore(byType, userGender)
 
     // Use proprietary engines for recovery & body scores
     let recoveryScore: number | null = null
@@ -185,22 +185,38 @@ export class HealthScoreService {
     return Math.round(score * 10) / 10
   }
 
-  private computeCardioScore(byType: Map<string, number[]>): number | null {
+  /**
+   * Cardio score with gender-aware resting heart rate baselines.
+   * Female average RHR is typically 2-7 bpm higher than male.
+   */
+  private computeCardioScore(byType: Map<string, number[]>, gender?: string | null): number | null {
     const rhr = byType.get("resting_heart_rate")
     const hrv = byType.get("heart_rate_variability")
     if (!rhr && !hrv) return null
     let score = 70
     if (rhr && rhr.length > 0) {
       const avg = rhr.reduce((a, b) => a + b, 0) / rhr.length
-      if (avg < 50) score = 95
-      else if (avg < 60) score = 85
-      else if (avg < 70) score = 75
-      else if (avg < 80) score = 55
-      else score = 35
+      if (gender === "female") {
+        // Female baselines: average RHR ~72-78 bpm
+        if (avg < 55) score = 95
+        else if (avg < 65) score = 85
+        else if (avg < 75) score = 75
+        else if (avg < 85) score = 55
+        else score = 35
+      } else {
+        // Male/default baselines: average RHR ~66-72 bpm
+        if (avg < 50) score = 95
+        else if (avg < 60) score = 85
+        else if (avg < 70) score = 75
+        else if (avg < 80) score = 55
+        else score = 35
+      }
     }
     if (hrv && hrv.length > 0) {
       const avg = hrv.reduce((a, b) => a + b, 0) / hrv.length
-      const hrvScore = Math.min(100, avg * 1.5)
+      // Female HRV averages tend to be lower; adjust threshold
+      const multiplier = gender === "female" ? 1.8 : 1.5
+      const hrvScore = Math.min(100, avg * multiplier)
       score = (score + hrvScore) / 2
     }
     return Math.round(score * 10) / 10

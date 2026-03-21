@@ -48,7 +48,7 @@ const healthScoresRoutes: FastifyPluginAsync = async (app) => {
 
     const body = z.object({ date: z.string().datetime().optional() }).parse(request.body)
     const date = body.date ? new Date(body.date) : new Date()
-    const score = await healthScoreService.computeForDate(userId, date)
+    const score = await healthScoreService.computeForDate(userId, date, owner.gender)
     return reply.status(201).send(score)
   })
 }
