@@ -18,6 +18,7 @@ const healthDataRoutes: FastifyPluginAsync = async (app) => {
     const query = z
       .object({
         metricType: z.string().optional(),
+        providerId: z.string().optional(),
         from: z.string().datetime().optional(),
         to: z.string().datetime().optional(),
         limit: z.coerce.number().min(1).max(1000).default(100),
@@ -32,6 +33,7 @@ const healthDataRoutes: FastifyPluginAsync = async (app) => {
       limit: query.limit,
       offset: query.cursor ? 0 : query.offset,
       ...(query.metricType !== undefined && { metricType: query.metricType as never }),
+      ...(query.providerId !== undefined && { providerId: query.providerId }),
       ...(query.from !== undefined && { from: new Date(query.from) }),
       ...(query.to !== undefined && { to: new Date(query.to) }),
       ...(query.cursor !== undefined && { cursor: query.cursor }),
