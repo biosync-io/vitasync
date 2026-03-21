@@ -842,7 +842,7 @@ export interface SymptomLogData {
   symptom: string
   severity: number
   bodyLocation: string | null
-  triggers: string[]
+  triggers: string[] | null
   notes: string | null
   startedAt: string
   resolvedAt: string | null

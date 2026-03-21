@@ -50,9 +50,9 @@ export default function SymptomsPage() {
       symptomsApi.create(selectedUserId, {
         symptom: form.symptom,
         severity: Number(form.severity),
-        bodyLocation: form.bodyLocation || null,
+        bodyLocation: form.bodyLocation || undefined,
         triggers: form.triggers ? form.triggers.split(",").map((t) => t.trim()) : [],
-        notes: form.notes || null,
+        notes: form.notes || undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["symptoms", selectedUserId] })
@@ -208,7 +208,7 @@ export default function SymptomsPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{l.bodyLocation ?? "—"}</td>
-                      <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{l.triggers.length ? l.triggers.join(", ") : "—"}</td>
+                      <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{l.triggers?.length ? l.triggers.join(", ") : "—"}</td>
                       <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(l.startedAt).toLocaleDateString()}</td>
                     </tr>
                   ))}
