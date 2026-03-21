@@ -14,15 +14,15 @@ export class NutritionService {
 
   async list(userId: string, opts: { from?: Date; to?: Date; mealType?: string; limit?: number } = {}): Promise<NutritionLogRow[]> {
     const conditions = [eq(nutritionLogs.userId, userId)]
-    if (opts.from) conditions.push(gte(nutritionLogs.loggedAt, opts.from))
-    if (opts.to) conditions.push(lte(nutritionLogs.loggedAt, opts.to))
+    if (opts.from) conditions.push(gte(nutritionLogs.consumedAt, opts.from))
+    if (opts.to) conditions.push(lte(nutritionLogs.consumedAt, opts.to))
     if (opts.mealType) conditions.push(eq(nutritionLogs.mealType, opts.mealType))
 
     return this.db
       .select()
       .from(nutritionLogs)
       .where(and(...conditions))
-      .orderBy(desc(nutritionLogs.loggedAt))
+      .orderBy(desc(nutritionLogs.consumedAt))
       .limit(opts.limit ?? 50)
   }
 
@@ -70,18 +70,18 @@ export class NutritionService {
       .select({
         meals: count(),
         totalCalories: sum(nutritionLogs.calories),
-        totalProtein: sum(nutritionLogs.proteinG),
-        totalCarbs: sum(nutritionLogs.carbsG),
-        totalFat: sum(nutritionLogs.fatG),
-        totalFiber: sum(nutritionLogs.fiberG),
+        totalProtein: sum(nutritionLogs.proteinGrams),
+        totalCarbs: sum(nutritionLogs.carbsGrams),
+        totalFat: sum(nutritionLogs.fatGrams),
+        totalFiber: sum(nutritionLogs.fiberGrams),
         totalWater: sum(nutritionLogs.waterMl),
       })
       .from(nutritionLogs)
       .where(
         and(
           eq(nutritionLogs.userId, userId),
-          gte(nutritionLogs.loggedAt, dayStart),
-          lte(nutritionLogs.loggedAt, dayEnd),
+          gte(nutritionLogs.consumedAt, dayStart),
+          lte(nutritionLogs.consumedAt, dayEnd),
         ),
       )
 
@@ -108,15 +108,15 @@ export class NutritionService {
     const [row] = await this.db
       .select({
         avgCalories: avg(nutritionLogs.calories),
-        avgProtein: avg(nutritionLogs.proteinG),
-        avgCarbs: avg(nutritionLogs.carbsG),
-        avgFat: avg(nutritionLogs.fatG),
+        avgProtein: avg(nutritionLogs.proteinGrams),
+        avgCarbs: avg(nutritionLogs.carbsGrams),
+        avgFat: avg(nutritionLogs.fatGrams),
       })
       .from(nutritionLogs)
       .where(
         and(
           eq(nutritionLogs.userId, userId),
-          gte(nutritionLogs.loggedAt, weekAgo),
+          gte(nutritionLogs.consumedAt, weekAgo),
         ),
       )
 

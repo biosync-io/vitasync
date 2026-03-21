@@ -21,7 +21,7 @@ const achievementsRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.query)
 
-    const achievements = await achievementService.list(userId, defined(query))
+    const achievements = await achievementService.listForUser(userId)
     return reply.send({ data: achievements })
   })
 

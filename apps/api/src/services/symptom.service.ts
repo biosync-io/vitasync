@@ -14,15 +14,15 @@ export class SymptomService {
 
   async list(userId: string, opts: { from?: Date; to?: Date; symptom?: string; limit?: number } = {}): Promise<SymptomLogRow[]> {
     const conditions = [eq(symptomLogs.userId, userId)]
-    if (opts.from) conditions.push(gte(symptomLogs.occurredAt, opts.from))
-    if (opts.to) conditions.push(lte(symptomLogs.occurredAt, opts.to))
-    if (opts.symptom) conditions.push(eq(symptomLogs.symptomName, opts.symptom))
+    if (opts.from) conditions.push(gte(symptomLogs.startedAt, opts.from))
+    if (opts.to) conditions.push(lte(symptomLogs.startedAt, opts.to))
+    if (opts.symptom) conditions.push(eq(symptomLogs.symptom, opts.symptom))
 
     return this.db
       .select()
       .from(symptomLogs)
       .where(and(...conditions))
-      .orderBy(desc(symptomLogs.occurredAt))
+      .orderBy(desc(symptomLogs.startedAt))
       .limit(opts.limit ?? 50)
   }
 
@@ -58,17 +58,17 @@ export class SymptomService {
 
     const rows = await this.db
       .select({
-        symptom: symptomLogs.symptomName,
+        symptom: symptomLogs.symptom,
         count: count(),
       })
       .from(symptomLogs)
       .where(
         and(
           eq(symptomLogs.userId, userId),
-          gte(symptomLogs.occurredAt, since),
+          gte(symptomLogs.startedAt, since),
         ),
       )
-      .groupBy(symptomLogs.symptomName)
+      .groupBy(symptomLogs.symptom)
       .orderBy(desc(count()))
       .limit(10)
 
@@ -89,10 +89,10 @@ export class SymptomService {
       .where(
         and(
           eq(symptomLogs.userId, userId),
-          gte(symptomLogs.occurredAt, since),
+          gte(symptomLogs.startedAt, since),
         ),
       )
-      .orderBy(symptomLogs.occurredAt)
+      .orderBy(symptomLogs.startedAt)
 
     // Analyze triggers
     const triggerCounts: Record<string, number> = {}
