@@ -53,8 +53,11 @@ const goalsRoutes: FastifyPluginAsync = async (app) => {
       userId,
       name: body.title,
       category: body.category,
+      metricType: body.metricType,
       targetValue: body.targetValue,
+      unit: body.targetUnit,
       cadence: body.cadence,
+      startDate: new Date(body.startDate),
       ...(body.description !== undefined && { description: body.description }),
       ...(body.endDate ? { endDate: new Date(body.endDate) } : {}),
     })

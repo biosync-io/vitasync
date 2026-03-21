@@ -58,6 +58,8 @@ const symptomsRoutes: FastifyPluginAsync = async (app) => {
       ...(body.bodyLocation !== undefined && { bodyLocation: body.bodyLocation }),
       ...(body.notes !== undefined && { notes: body.notes }),
       ...(body.triggers !== undefined && { triggers: body.triggers }),
+      ...(body.reliefMeasures !== undefined && { reliefMeasures: body.reliefMeasures }),
+      ...(body.duration !== undefined && { durationMinutes: Number(body.duration) || undefined }),
     })
     return reply.status(201).send(log)
   })

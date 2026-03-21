@@ -31,7 +31,6 @@ const medicationsRoutes: FastifyPluginAsync = async (app) => {
         dosage: z.string().max(100).optional(),
         frequency: z.string().max(50),
         timeOfDay: z.array(z.string().max(20)).optional(),
-        instructions: z.string().max(500).optional(),
         startDate: z.string().datetime(),
         endDate: z.string().datetime().optional(),
       })
@@ -44,6 +43,7 @@ const medicationsRoutes: FastifyPluginAsync = async (app) => {
       frequency: body.frequency,
       startDate: new Date(body.startDate),
       ...(body.endDate ? { endDate: new Date(body.endDate) } : {}),
+      ...(body.timeOfDay !== undefined && { timeOfDay: body.timeOfDay }),
       isActive: true,
     })
     return reply.status(201).send(med)
