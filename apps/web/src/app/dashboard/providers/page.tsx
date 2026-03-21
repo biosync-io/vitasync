@@ -2,9 +2,16 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useSelectedUser } from "../../../lib/user-selection-context"
-import { type ProviderDef, type Connection, providersApi, connectionsApi, usersApi } from "../../../lib/api"
+import { type ProviderDef, type Connection, providersApi, connectionsApi, usersApi, getRuntimeDefaultKey } from "../../../lib/api"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
+/** Resolve the public-facing API URL for display in docs/config sections */
+function useApiBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    // In browser: use current origin (works in any deployment)
+    return window.location.origin
+  }
+  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
+}
 
 const PROVIDER_COLORS: Record<string, { bg: string; icon: string }> = {
   fitbit: { bg: "from-teal-400 to-cyan-500", icon: "⌚" },
@@ -17,6 +24,7 @@ const PROVIDER_COLORS: Record<string, { bg: string; icon: string }> = {
 
 export default function ProvidersPage() {
   const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const apiBaseUrl = useApiBaseUrl()
 
   const { data: providers = [], isLoading } = useQuery<ProviderDef[]>({
     queryKey: ["providers"],
@@ -101,7 +109,7 @@ export default function ProvidersPage() {
           To connect a user to a provider, redirect their browser to:
         </p>
         <code className="block rounded-xl bg-gray-900 dark:bg-gray-950 px-5 py-3.5 text-sm text-emerald-400 font-mono overflow-auto">
-          {`GET ${API_URL}/v1/oauth/{providerId}/authorize?userId={userId}`}
+          {`GET ${apiBaseUrl}/v1/oauth/{providerId}/authorize?userId={userId}`}
         </code>
       </div>
 
@@ -127,7 +135,7 @@ export default function ProvidersPage() {
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Webhook URL (paste in WHOOP Developer Dashboard)</p>
                 <code className="block rounded-lg bg-gray-900 dark:bg-gray-950 px-4 py-2.5 text-xs text-emerald-400 font-mono overflow-auto select-all">
-                  {`${API_URL}/v1/inbound/whoop/webhook`}
+                  {`${apiBaseUrl}/v1/inbound/whoop/webhook`}
                 </code>
               </div>
               <div>
