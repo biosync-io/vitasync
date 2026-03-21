@@ -534,7 +534,9 @@ export interface HealthScoreData {
   cardioScore: number | null
   recoveryScore: number | null
   bodyScore: number | null
+  deltaFromPrevious: number | null
   weeklyAvg: number | null
+  breakdown: Record<string, unknown> | null
   createdAt: string
 }
 
