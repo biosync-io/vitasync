@@ -71,6 +71,20 @@ export abstract class OAuth2Provider {
    * Process a verified incoming webhook payload into data points.
    */
   processWebhook?(payload: unknown): Promise<SyncDataPoint[]>
+
+  /**
+   * Extract the provider's user ID from an inbound webhook request.
+   * Default: read from X-Provider-User-Id header.
+   * Override for providers that include user ID in the body (e.g. WHOOP).
+   */
+  extractProviderUserId?(headers: Record<string, string | string[] | undefined>, body: unknown): string | undefined
+
+  /**
+   * Extract the webhook signature from request headers.
+   * Default: read from X-Webhook-Signature header.
+   * Override for providers with custom signature headers (e.g. WHOOP uses X-WHOOP-Signature).
+   */
+  extractWebhookSignature?(headers: Record<string, string | string[] | undefined>, body: Buffer): string
 }
 
 // ── OAuth 1.0a Provider ───────────────────────────────────────
