@@ -1,6 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
 import { type ProviderDef, type Connection, providersApi, connectionsApi, usersApi, getRuntimeDefaultKey } from "../../../lib/api"
 
@@ -98,7 +99,7 @@ export default function ProvidersPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-grid">
           {providers.map((provider) => (
-            <ProviderCard key={provider.id} provider={provider} isConnected={connectedProviderIds.has(provider.id)} selectedUserId={selectedUserId} />
+            <ProviderCard key={provider.id} provider={provider} isConnected={connectedProviderIds.has(provider.id)} selectedUserId={selectedUserId} users={users} onSelectUser={setSelectedUserId} />
           ))}
         </div>
       )}
@@ -185,25 +186,44 @@ export default function ProvidersPage() {
   )
 }
 
-function ProviderCard({ provider, isConnected, selectedUserId }: { provider: ProviderDef; isConnected: boolean; selectedUserId: string }) {
+function ProviderCard({ provider, isConnected, selectedUserId, users, onSelectUser }: {
+  provider: ProviderDef
+  isConnected: boolean
+  selectedUserId: string
+  users: Array<{ id: string; displayName: string | null; externalId: string | null }>
+  onSelectUser: (id: string) => void
+}) {
   const colors = PROVIDER_COLORS[provider.id] ?? { bg: "from-gray-400 to-gray-500", icon: "🔗" }
+  const [showUserPicker, setShowUserPicker] = useState(false)
 
   const handleConnect = () => {
-    if (!selectedUserId) return
+    if (!selectedUserId) {
+      setShowUserPicker(true)
+      return
+    }
     window.open(`/api/v1/oauth/${provider.id}/authorize?userId=${selectedUserId}`, "_blank", "width=600,height=700")
+  }
+
+  const handleSelectAndConnect = (userId: string) => {
+    onSelectUser(userId)
+    setShowUserPicker(false)
+    // Small delay to let state propagate
+    setTimeout(() => {
+      window.open(`/api/v1/oauth/${provider.id}/authorize?userId=${userId}`, "_blank", "width=600,height=700")
+    }, 100)
   }
 
   return (
     <div className={`rounded-2xl border bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 group ${
-      isConnected ? "border-emerald-300 dark:border-emerald-800/60" : "border-gray-200/60 dark:border-gray-800/60"
+      isConnected ? "border-emerald-300 dark:border-emerald-800/60 ring-1 ring-emerald-200 dark:ring-emerald-800/30" : "border-gray-200/60 dark:border-gray-800/60"
     }`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center text-white text-lg shadow-lg group-hover:scale-110 transition-transform`}>
+          <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center text-white text-2xl shadow-lg group-hover:scale-110 transition-transform`}>
             {colors.icon}
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{provider.name}</h3>
+            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{provider.name}</h3>
             <span className={`text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 ${
               provider.authType === "oauth2"
                 ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
@@ -227,21 +247,42 @@ function ProviderCard({ provider, isConnected, selectedUserId }: { provider: Pro
           </span>
         ))}
       </div>
-      {/* Connect / Connected */}
-      {selectedUserId ? (
-        isConnected ? (
-          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Connected</span>
-        ) : (
+
+      {/* Connect button — always visible */}
+      {isConnected ? (
+        <div className="flex items-center justify-between rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-4 py-2.5">
+          <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">✓ Connected & Syncing</span>
+          <span className="text-[10px] text-emerald-500">Auto-sync active</span>
+        </div>
+      ) : (
+        <>
           <button
             type="button"
             onClick={handleConnect}
-            className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white hover:from-indigo-600 hover:to-purple-700 shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/30 hover:-translate-y-0.5 transition-all duration-200"
+            className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-3 text-sm font-bold text-white hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-200"
           >
-            Connect {provider.name}
+            🔗 Connect {provider.name}
           </button>
-        )
-      ) : (
-        <p className="text-[10px] text-gray-400 italic">Select a user above to connect</p>
+
+          {/* Inline user picker — shown when no user selected */}
+          {showUserPicker && !selectedUserId && (
+            <div className="mt-3 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/20 p-3 animate-fade-in">
+              <p className="text-xs text-amber-700 dark:text-amber-400 font-medium mb-2">Select a user to connect:</p>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {users.map((u) => (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => handleSelectAndConnect(u.id)}
+                    className="w-full text-left rounded-lg px-3 py-2 text-sm hover:bg-amber-100 dark:hover:bg-amber-900/30 text-gray-700 dark:text-gray-300 transition-colors"
+                  >
+                    {u.displayName || u.externalId}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

@@ -205,13 +205,7 @@ export default function UsersPage() {
                   <td className="px-5 py-3.5 text-sm text-gray-600 dark:text-gray-400">{user.email ?? "—"}</td>
                   <td className="px-5 py-3.5 text-sm text-gray-600 dark:text-gray-400">{user.displayName ?? "—"}</td>
                   <td className="px-5 py-3.5 text-sm">
-                    {user.gender && GENDER_BADGE[user.gender] ? (
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${GENDER_BADGE[user.gender]!.color}`}>
-                        {GENDER_BADGE[user.gender]!.icon} {GENDER_BADGE[user.gender]!.label}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 text-xs">—</span>
-                    )}
+                    <GenderPicker userId={user.id} currentGender={user.gender} />
                   </td>
                   <td className="px-5 py-3.5 text-sm text-gray-400 dark:text-gray-500">
                     {new Date(user.createdAt).toLocaleDateString()}
@@ -273,11 +267,7 @@ export default function UsersPage() {
                 <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
                   <span className="font-mono truncate">{user.externalId}</span>
                   <div className="flex items-center gap-2">
-                    {user.gender && GENDER_BADGE[user.gender] && (
-                      <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${GENDER_BADGE[user.gender]!.color}`}>
-                        {GENDER_BADGE[user.gender]!.icon} {GENDER_BADGE[user.gender]!.label}
-                      </span>
-                    )}
+                    <GenderPicker userId={user.id} currentGender={user.gender} />
                     <span>{new Date(user.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
@@ -287,6 +277,66 @@ export default function UsersPage() {
 
           <Pagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
         </>
+      )}
+    </div>
+  )
+}
+
+function GenderPicker({ userId, currentGender }: { userId: string; currentGender: string | null }) {
+  const [open, setOpen] = useState(false)
+  const qc = useQueryClient()
+
+  const updateMut = useMutation({
+    mutationFn: (gender: string | null) => usersApi.update(userId, { gender }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] })
+      setOpen(false)
+    },
+  })
+
+  const badge = currentGender ? GENDER_BADGE[currentGender] : null
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium hover:ring-2 hover:ring-indigo-300 transition-all cursor-pointer"
+      >
+        {badge ? (
+          <span className={badge.color}>
+            {badge.icon} {badge.label}
+          </span>
+        ) : (
+          <span className="text-gray-400 hover:text-indigo-500">+ Set gender</span>
+        )}
+      </button>
+      {open && (
+        <div className="absolute z-20 top-8 left-0 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg p-2 min-w-[140px] animate-fade-in">
+          {GENDER_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              disabled={updateMut.isPending}
+              onClick={() => updateMut.mutate(opt.value)}
+              className={`w-full text-left rounded-lg px-3 py-1.5 text-xs flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                currentGender === opt.value ? "bg-indigo-50 dark:bg-indigo-900/30 font-semibold" : ""
+              }`}
+            >
+              <span>{opt.icon}</span> {opt.label}
+            </button>
+          ))}
+          {currentGender && (
+            <button
+              type="button"
+              disabled={updateMut.isPending}
+              onClick={() => updateMut.mutate(null)}
+              className="w-full text-left rounded-lg px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 mt-1 border-t border-gray-100 dark:border-gray-800 pt-1.5"
+            >
+              ✕ Clear
+            </button>
+          )}
+        </div>
       )}
     </div>
   )
