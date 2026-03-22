@@ -23,13 +23,30 @@ const PROVIDER_COLORS: Record<string, { bg: string; icon: string }> = {
   polar: { bg: "from-red-400 to-rose-500", icon: "❤️" },
 }
 
+/** All providers VitaSync supports — shown even if not configured */
+const ALL_SUPPORTED_PROVIDERS: ProviderDef[] = [
+  { id: "fitbit", name: "Fitbit", description: "Steps, heart rate, sleep, body composition, SpO₂, workouts. Syncs every 15 minutes.", authType: "oauth2", capabilities: ["steps", "heart_rate", "sleep", "body_fat", "blood_oxygen", "workout"], logoUrl: null },
+  { id: "garmin", name: "Garmin", description: "Steps, GPS workouts, HRV, stress, body battery, sleep. Real-time push via webhooks.", authType: "oauth1" as "oauth2", capabilities: ["steps", "heart_rate", "heart_rate_variability", "sleep", "workout", "stress"], logoUrl: null },
+  { id: "whoop", name: "WHOOP", description: "Recovery scores, HRV, sleep performance, strain, workouts. Webhook support for real-time.", authType: "oauth2", capabilities: ["recovery_score", "heart_rate_variability", "sleep", "strain_score", "workout", "blood_oxygen"], logoUrl: null },
+  { id: "strava", name: "Strava", description: "Workouts, distance, calories, GPS routes, heart rate. On-demand sync.", authType: "oauth2", capabilities: ["workout", "distance", "calories", "heart_rate"], logoUrl: null },
+  { id: "withings", name: "Withings", description: "Weight, body composition, blood pressure, sleep, temperature. Coming soon.", authType: "oauth2", capabilities: ["weight", "body_fat", "blood_pressure", "sleep", "temperature"], logoUrl: null },
+  { id: "polar", name: "Polar", description: "Heart rate, workouts, sleep, recovery. Coming soon.", authType: "oauth2", capabilities: ["heart_rate", "workout", "sleep", "recovery_score"], logoUrl: null },
+]
+
 export default function ProvidersPage() {
   const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const apiBaseUrl = useApiBaseUrl()
 
-  const { data: providers = [], isLoading } = useQuery<ProviderDef[]>({
+  const { data: apiProviders = [], isLoading } = useQuery<ProviderDef[]>({
     queryKey: ["providers"],
     queryFn: () => providersApi.list(),
+  })
+
+  // Merge: show all supported providers, mark which are configured
+  const configuredIds = new Set(apiProviders.map((p) => p.id))
+  const allProviders = ALL_SUPPORTED_PROVIDERS.map((sp) => {
+    const configured = apiProviders.find((p) => p.id === sp.id)
+    return { ...sp, ...(configured ?? {}), isConfigured: configuredIds.has(sp.id) }
   })
 
   const { data: usersResult } = useQuery({
@@ -96,25 +113,10 @@ export default function ProvidersPage() {
             <div key={i} className="h-40 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
           ))}
         </div>
-      ) : providers.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20 p-8 text-center">
-          <span className="text-4xl mb-3 block">⚠️</span>
-          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">No Providers Configured</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-4">
-            Provider credentials are not set in your environment. Configure at least one provider in your <code className="bg-gray-100 dark:bg-gray-800 px-1.5 rounded text-xs">.env</code> file to see them here.
-          </p>
-          <div className="text-xs text-gray-500 dark:text-gray-400 font-mono space-y-1">
-            <p>WHOOP_CLIENT_ID=... WHOOP_CLIENT_SECRET=...</p>
-            <p>FITBIT_CLIENT_ID=... FITBIT_CLIENT_SECRET=...</p>
-            <p>GARMIN_CONSUMER_KEY=... GARMIN_CONSUMER_SECRET=...</p>
-            <p>STRAVA_CLIENT_ID=... STRAVA_CLIENT_SECRET=...</p>
-          </div>
-          <p className="text-xs text-gray-400 mt-3">Restart the API server after adding credentials.</p>
-        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-grid">
-          {providers.map((provider) => (
-            <ProviderCard key={provider.id} provider={provider} isConnected={connectedProviderIds.has(provider.id)} selectedUserId={selectedUserId} users={users} onSelectUser={setSelectedUserId} />
+          {allProviders.map((provider) => (
+            <ProviderCard key={provider.id} provider={provider} isConnected={connectedProviderIds.has(provider.id)} isConfigured={provider.isConfigured} selectedUserId={selectedUserId} users={users} onSelectUser={setSelectedUserId} />
           ))}
         </div>
       )}
@@ -201,9 +203,10 @@ export default function ProvidersPage() {
   )
 }
 
-function ProviderCard({ provider, isConnected, selectedUserId, users, onSelectUser }: {
+function ProviderCard({ provider, isConnected, isConfigured, selectedUserId, users, onSelectUser }: {
   provider: ProviderDef
   isConnected: boolean
+  isConfigured: boolean
   selectedUserId: string
   users: Array<{ id: string; displayName: string | null; externalId: string | null }>
   onSelectUser: (id: string) => void
@@ -268,6 +271,11 @@ function ProviderCard({ provider, isConnected, selectedUserId, users, onSelectUs
         <div className="flex items-center justify-between rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-4 py-2.5">
           <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">✓ Connected & Syncing</span>
           <span className="text-[10px] text-emerald-500">Auto-sync active</span>
+        </div>
+      ) : !isConfigured ? (
+        <div className="rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 px-4 py-3 text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">🔒 Not Configured</p>
+          <p className="text-[10px] text-gray-400">Add credentials to <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">.env</code> to enable</p>
         </div>
       ) : (
         <>
