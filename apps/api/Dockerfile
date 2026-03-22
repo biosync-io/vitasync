@@ -17,6 +17,7 @@ COPY packages/providers/fitbit/package.json ./packages/providers/fitbit/
 COPY packages/providers/garmin/package.json ./packages/providers/garmin/
 COPY packages/providers/strava/package.json ./packages/providers/strava/
 COPY packages/providers/whoop/package.json ./packages/providers/whoop/
+COPY packages/providers/withings/package.json ./packages/providers/withings/
 COPY packages/analytics/package.json ./packages/analytics/
 COPY packages/notifications/core/package.json ./packages/notifications/core/
 
@@ -30,6 +31,7 @@ COPY packages/providers/fitbit ./packages/providers/fitbit
 COPY packages/providers/garmin ./packages/providers/garmin
 COPY packages/providers/strava ./packages/providers/strava
 COPY packages/providers/whoop ./packages/providers/whoop
+COPY packages/providers/withings ./packages/providers/withings
 COPY packages/analytics ./packages/analytics
 COPY packages/notifications/core ./packages/notifications/core
 COPY apps/api ./apps/api
@@ -42,6 +44,7 @@ RUN pnpm --filter @biosync-io/provider-fitbit build
 RUN pnpm --filter @biosync-io/provider-garmin build
 RUN pnpm --filter @biosync-io/provider-strava build
 RUN pnpm --filter @biosync-io/provider-whoop build
+RUN pnpm --filter @biosync-io/provider-withings build
 RUN pnpm --filter @biosync-io/analytics build
 RUN pnpm --filter @biosync-io/notification-core build
 RUN pnpm --filter @biosync-io/api build
@@ -69,6 +72,7 @@ COPY --from=builder /repo/packages/providers/fitbit/package.json ./packages/prov
 COPY --from=builder /repo/packages/providers/garmin/package.json ./packages/providers/garmin/
 COPY --from=builder /repo/packages/providers/strava/package.json ./packages/providers/strava/
 COPY --from=builder /repo/packages/providers/whoop/package.json ./packages/providers/whoop/
+COPY --from=builder /repo/packages/providers/withings/package.json ./packages/providers/withings/
 COPY --from=builder /repo/packages/analytics/package.json ./packages/analytics/
 COPY --from=builder /repo/packages/notifications/core/package.json ./packages/notifications/core/
 
@@ -82,6 +86,7 @@ COPY --from=builder /repo/packages/providers/fitbit/dist ./packages/providers/fi
 COPY --from=builder /repo/packages/providers/garmin/dist ./packages/providers/garmin/dist
 COPY --from=builder /repo/packages/providers/strava/dist ./packages/providers/strava/dist
 COPY --from=builder /repo/packages/providers/whoop/dist ./packages/providers/whoop/dist
+COPY --from=builder /repo/packages/providers/withings/dist ./packages/providers/withings/dist
 COPY --from=builder /repo/packages/analytics/dist ./packages/analytics/dist
 COPY --from=builder /repo/packages/notifications/core/dist ./packages/notifications/core/dist
 
