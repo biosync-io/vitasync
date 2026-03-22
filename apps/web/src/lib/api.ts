@@ -559,7 +559,7 @@ export interface SyncJob {
   id: string | undefined
   state: "active" | "waiting" | "delayed" | "completed" | "failed"
   name: string
-  data: { connectionId?: string; userId?: string; workspaceId?: string; type?: string }
+  data: { connectionId?: string; userId?: string; workspaceId?: string; providerId?: string; type?: string }
   progress: number | object
   attemptsMade: number
   failedReason: string | null

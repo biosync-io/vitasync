@@ -70,7 +70,7 @@ export default function SyncJobsPage() {
       result = result.filter((j) => j.state === stateFilter)
     }
 
-    // Text search (job ID, connection ID, user ID, type)
+    // Text search (job ID, connection ID, user ID, provider, type)
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       result = result.filter(
@@ -78,6 +78,7 @@ export default function SyncJobsPage() {
           j.id?.toLowerCase().includes(q) ||
           j.data.connectionId?.toLowerCase().includes(q) ||
           j.data.userId?.toLowerCase().includes(q) ||
+          j.data.providerId?.toLowerCase().includes(q) ||
           j.data.type?.toLowerCase().includes(q) ||
           j.name?.toLowerCase().includes(q),
       )
@@ -146,7 +147,10 @@ export default function SyncJobsPage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-red-800 dark:text-red-300">{failedJobs.length} sync job{failedJobs.length > 1 ? "s" : ""} failed</p>
               <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
-                {failedJobs.slice(0, 3).map((j) => j.failedReason?.slice(0, 80) ?? "Unknown error").join(" · ")}
+                {failedJobs.slice(0, 3).map((j) => {
+                  const provider = j.data.providerId ? `[${j.data.providerId}] ` : ""
+                  return `${provider}${j.failedReason?.slice(0, 80) ?? "Unknown error"}`
+                }).join(" · ")}
                 {failedJobs.length > 3 && ` and ${failedJobs.length - 3} more…`}
               </p>
             </div>
@@ -228,6 +232,7 @@ export default function SyncJobsPage() {
             data={filteredJobs.map((j) => ({
               id: j.id ?? "",
               state: j.state,
+              provider: j.data.providerId ?? "",
               connectionId: j.data.connectionId ?? "",
               userId: j.data.userId ?? "",
               type: j.data.type ?? "",
@@ -279,7 +284,7 @@ export default function SyncJobsPage() {
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                 <thead className="bg-gray-50 dark:bg-gray-800/60">
                   <tr>
-                    {["Status", "Job ID", "Connection", "User", "Started", "Duration", "Attempts", "Error"].map(
+                    {["Status", "Provider", "Job ID", "Connection", "User", "Started", "Duration", "Attempts", "Error"].map(
                       (h) => (
                         <th
                           key={h}
@@ -301,6 +306,9 @@ export default function SyncJobsPage() {
                           {STATE_ICONS[job.state]}{" "}
                           <span className="capitalize">{job.state}</span>
                         </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 capitalize whitespace-nowrap">
+                        {job.data.providerId ?? job.data.type ?? "—"}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400 max-w-[120px] truncate">
                         {job.id ?? "—"}
@@ -354,11 +362,16 @@ export default function SyncJobsPage() {
                 className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATE_STYLES[job.state]}`}
-                  >
-                    {STATE_ICONS[job.state]} <span className="capitalize">{job.state}</span>
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATE_STYLES[job.state]}`}
+                    >
+                      {STATE_ICONS[job.state]} <span className="capitalize">{job.state}</span>
+                    </span>
+                    {job.data.providerId && (
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">{job.data.providerId}</span>
+                    )}
+                  </div>
                   <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
                     {job.attemptsMade} attempt{job.attemptsMade !== 1 ? "s" : ""}
                   </span>

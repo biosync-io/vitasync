@@ -86,14 +86,16 @@ async function main() {
   })
 
   syncWorker.on("failed", (job, err) => {
-    console.error(`[sync] Job ${job?.id} failed: ${err.message}`)
+    const providerId = job?.data?.providerId ?? "unknown"
+    console.error(`[sync] Job ${job?.id} failed (${providerId}): ${err.message}`)
     // Enqueue a notification so the user knows about the failure
     if (job?.data?.userId) {
+      const providerLabel = providerId.charAt(0).toUpperCase() + providerId.slice(1)
       notificationQueue.add("sync-failure", {
         userId: job.data.userId,
         workspaceId: job.data.workspaceId ?? "",
-        title: "Sync Failed",
-        body: `Provider sync failed: ${err.message.slice(0, 200)}`,
+        title: `${providerLabel} Sync Failed`,
+        body: `${providerLabel} sync failed: ${err.message.slice(0, 200)}`,
         severity: "warning",
         category: "sync",
       }).catch((e) => console.error("[sync] Failed to enqueue failure notification:", e))
