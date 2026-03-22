@@ -10,7 +10,7 @@ const WithingsTokenResponse = z.object({
   refresh_token: z.string(),
   token_type: z.string(),
   expires_in: z.number(),
-  userid: z.number(),
+  userid: z.coerce.number(),
   scope: z.string().optional(),
 })
 
