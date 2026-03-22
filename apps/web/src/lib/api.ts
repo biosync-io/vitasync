@@ -104,6 +104,18 @@ export const healthApi = {
     return request<{ data: HealthMetric[]; count: number }>(`/v1/users/${userId}/health?${params}`)
   },
   summary: (userId: string) => request<HealthSummary[]>(`/v1/users/${userId}/health/summary`),
+  timeseries: (
+    userId: string,
+    opts: { metricType: string; from: string; to: string; bucket?: string },
+  ) => {
+    const params = new URLSearchParams({
+      metricType: opts.metricType,
+      from: opts.from,
+      to: opts.to,
+    })
+    if (opts.bucket) params.set("bucket", opts.bucket)
+    return request<{ data: TimeseriesPoint[]; bucket: string }>(`/v1/users/${userId}/health/timeseries?${params}`)
+  },
 }
 
 // ---- API Keys ----
@@ -460,6 +472,7 @@ export interface HealthMetric {
   unit: string | null
   source: string | null
   providerId: string
+  data?: Record<string, unknown>
 }
 
 export interface HealthSummary {
@@ -467,6 +480,15 @@ export interface HealthSummary {
   count: number
   earliest: string
   latest: string
+}
+
+export interface TimeseriesPoint {
+  bucket: string
+  avg: number | null
+  min: number | null
+  max: number | null
+  sum: number | null
+  count: number
 }
 
 export interface ApiKey {

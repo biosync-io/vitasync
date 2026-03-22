@@ -50,6 +50,7 @@ import {
   BookText,
   Droplets,
   ListChecks,
+  Scale,
   type LucideIcon,
 } from "lucide-react"
 
@@ -78,6 +79,7 @@ const navSections: Array<{
     title: "Health Data",
     items: [
       { href: "/dashboard/health", label: "Health Data", icon: Heart, color: "text-red-500" },
+      { href: "/dashboard/body-metrics", label: "Body Metrics", icon: Scale, color: "text-blue-500" },
       { href: "/dashboard/sleep", label: "Sleep Analysis", icon: Moon, color: "text-indigo-500" },
       { href: "/dashboard/activity", label: "Activity", icon: Footprints, color: "text-orange-500" },
       { href: "/dashboard/nutrition", label: "Nutrition", icon: Apple, color: "text-lime-500" },
