@@ -25,7 +25,7 @@
     "@biosync-io/provider-garmin": "workspace:*",
     "@biosync-io/provider-strava": "workspace:*",
     "@biosync-io/provider-whoop": "workspace:*",
-    "@biosync-io/provider-withings": "workspace:^",
+    "@biosync-io/provider-withings": "workspace:*",
     "@biosync-io/types": "workspace:*",
     "bullmq": "^5.7.0",
     "drizzle-orm": "^0.45.1",
