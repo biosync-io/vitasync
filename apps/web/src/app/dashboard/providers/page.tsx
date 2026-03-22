@@ -96,6 +96,21 @@ export default function ProvidersPage() {
             <div key={i} className="h-40 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
           ))}
         </div>
+      ) : providers.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20 p-8 text-center">
+          <span className="text-4xl mb-3 block">⚠️</span>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">No Providers Configured</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-4">
+            Provider credentials are not set in your environment. Configure at least one provider in your <code className="bg-gray-100 dark:bg-gray-800 px-1.5 rounded text-xs">.env</code> file to see them here.
+          </p>
+          <div className="text-xs text-gray-500 dark:text-gray-400 font-mono space-y-1">
+            <p>WHOOP_CLIENT_ID=... WHOOP_CLIENT_SECRET=...</p>
+            <p>FITBIT_CLIENT_ID=... FITBIT_CLIENT_SECRET=...</p>
+            <p>GARMIN_CONSUMER_KEY=... GARMIN_CONSUMER_SECRET=...</p>
+            <p>STRAVA_CLIENT_ID=... STRAVA_CLIENT_SECRET=...</p>
+          </div>
+          <p className="text-xs text-gray-400 mt-3">Restart the API server after adding credentials.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-grid">
           {providers.map((provider) => (
