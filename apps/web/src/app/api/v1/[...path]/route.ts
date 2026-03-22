@@ -46,6 +46,8 @@ async function proxy(req: NextRequest, params: Promise<{ path: string[] }>) {
       method: req.method,
       headers,
       body,
+      // Pass through redirects so OAuth 302s reach the browser as-is
+      redirect: "manual",
       // @ts-expect-error — Node 18+ fetch supports duplex
       duplex: body ? "half" : undefined,
     })

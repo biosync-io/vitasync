@@ -1,7 +1,7 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
-import { useState } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
 import { type ProviderDef, type Connection, providersApi, connectionsApi, usersApi, getRuntimeDefaultKey } from "../../../lib/api"
 
@@ -226,100 +226,287 @@ function ProviderCard({ provider, isConnected, isConfigured, selectedUserId, use
 }) {
   const colors = PROVIDER_COLORS[provider.id] ?? { bg: "from-gray-400 to-gray-500", icon: "🔗" }
   const [showUserPicker, setShowUserPicker] = useState(false)
+  const [oauthModal, setOauthModal] = useState<{ userId: string } | null>(null)
 
   const handleConnect = () => {
     if (!selectedUserId) {
       setShowUserPicker(true)
       return
     }
-    window.open(`/api/v1/oauth/${provider.id}/authorize?userId=${selectedUserId}`, "_blank", "width=600,height=700")
+    setOauthModal({ userId: selectedUserId })
   }
 
   const handleSelectAndConnect = (userId: string) => {
     onSelectUser(userId)
     setShowUserPicker(false)
-    // Small delay to let state propagate
-    setTimeout(() => {
-      window.open(`/api/v1/oauth/${provider.id}/authorize?userId=${userId}`, "_blank", "width=600,height=700")
-    }, 100)
+    setOauthModal({ userId })
   }
 
   return (
-    <div className={`rounded-2xl border bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 group ${
-      isConnected ? "border-emerald-300 dark:border-emerald-800/60 ring-1 ring-emerald-200 dark:ring-emerald-800/30" : "border-gray-200/60 dark:border-gray-800/60"
-    }`}>
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center text-white text-2xl shadow-lg group-hover:scale-110 transition-transform`}>
-            {colors.icon}
+    <>
+      <div className={`rounded-2xl border bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 group ${
+        isConnected ? "border-emerald-300 dark:border-emerald-800/60 ring-1 ring-emerald-200 dark:ring-emerald-800/30" : "border-gray-200/60 dark:border-gray-800/60"
+      }`}>
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center text-white text-2xl shadow-lg group-hover:scale-110 transition-transform`}>
+              {colors.icon}
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{provider.name}</h3>
+              <span className={`text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 ${
+                provider.authType === "oauth2"
+                  ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                  : "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400"
+              }`}>
+                {provider.authType?.toUpperCase() ?? "OAUTH2"}
+              </span>
+            </div>
           </div>
-          <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{provider.name}</h3>
-            <span className={`text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 ${
-              provider.authType === "oauth2"
-                ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                : "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400"
-            }`}>
-              {provider.authType?.toUpperCase() ?? "OAUTH2"}
+          {isConnected && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2.5 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active
             </span>
-          </div>
+          )}
         </div>
-        {isConnected && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2.5 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active
-          </span>
+        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">{provider.description}</p>
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {provider.capabilities.map((cap) => (
+            <span key={cap} className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400 capitalize">
+              {cap.replace(/_/g, " ")}
+            </span>
+          ))}
+        </div>
+
+        {/* Connect button — always visible */}
+        {isConnected ? (
+          <div className="flex items-center justify-between rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-4 py-2.5">
+            <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">✓ Connected & Syncing</span>
+            <span className="text-[10px] text-emerald-500">Auto-sync active</span>
+          </div>
+        ) : !isConfigured ? (
+          <div className="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/40 px-4 py-3 text-center">
+            <p className="text-sm font-medium text-indigo-700 dark:text-indigo-400">Coming Soon</p>
+            <p className="text-[10px] text-indigo-500 dark:text-indigo-400/70 mt-0.5">{provider.name} integration is not yet enabled on this instance</p>
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={handleConnect}
+              className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-3 text-sm font-bold text-white hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-200"
+            >
+              🔗 Connect {provider.name}
+            </button>
+
+            {/* Inline user picker — shown when no user selected */}
+            {showUserPicker && !selectedUserId && (
+              <div className="mt-3 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/20 p-3 animate-fade-in">
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-medium mb-2">Select a user to connect:</p>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {users.map((u) => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => handleSelectAndConnect(u.id)}
+                      className="w-full text-left rounded-lg px-3 py-2 text-sm hover:bg-amber-100 dark:hover:bg-amber-900/30 text-gray-700 dark:text-gray-300 transition-colors"
+                    >
+                      {u.displayName || u.externalId}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
-      <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">{provider.description}</p>
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {provider.capabilities.map((cap) => (
-          <span key={cap} className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400 capitalize">
-            {cap.replace(/_/g, " ")}
-          </span>
-        ))}
-      </div>
 
-      {/* Connect button — always visible */}
-      {isConnected ? (
-        <div className="flex items-center justify-between rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-4 py-2.5">
-          <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">✓ Connected & Syncing</span>
-          <span className="text-[10px] text-emerald-500">Auto-sync active</span>
-        </div>
-      ) : !isConfigured ? (
-        <div className="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/40 px-4 py-3 text-center">
-          <p className="text-sm font-medium text-indigo-700 dark:text-indigo-400">Coming Soon</p>
-          <p className="text-[10px] text-indigo-500 dark:text-indigo-400/70 mt-0.5">{provider.name} integration is not yet enabled on this instance</p>
-        </div>
-      ) : (
-        <>
-          <button
-            type="button"
-            onClick={handleConnect}
-            className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-3 text-sm font-bold text-white hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-200"
-          >
-            🔗 Connect {provider.name}
-          </button>
+      {/* OAuth modal */}
+      {oauthModal && (
+        <OAuthModal
+          providerId={provider.id}
+          providerName={provider.name}
+          providerIcon={colors.icon}
+          providerBg={colors.bg}
+          userId={oauthModal.userId}
+          onClose={() => setOauthModal(null)}
+        />
+      )}
+    </>
+  )
+}
 
-          {/* Inline user picker — shown when no user selected */}
-          {showUserPicker && !selectedUserId && (
-            <div className="mt-3 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/20 p-3 animate-fade-in">
-              <p className="text-xs text-amber-700 dark:text-amber-400 font-medium mb-2">Select a user to connect:</p>
-              <div className="space-y-1 max-h-32 overflow-y-auto">
-                {users.map((u) => (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => handleSelectAndConnect(u.id)}
-                    className="w-full text-left rounded-lg px-3 py-2 text-sm hover:bg-amber-100 dark:hover:bg-amber-900/30 text-gray-700 dark:text-gray-300 transition-colors"
-                  >
-                    {u.displayName || u.externalId}
-                  </button>
-                ))}
-              </div>
+// ── OAuth Modal ───────────────────────────────────────────────
+
+type OAuthStatus = "idle" | "waiting" | "success" | "error"
+
+function OAuthModal({ providerId, providerName, providerIcon, providerBg, userId, onClose }: {
+  providerId: string
+  providerName: string
+  providerIcon: string
+  providerBg: string
+  userId: string
+  onClose: () => void
+}) {
+  const queryClient = useQueryClient()
+  const [status, setStatus] = useState<OAuthStatus>("idle")
+  const [errorMsg, setErrorMsg] = useState("")
+  const popupRef = useRef<Window | null>(null)
+
+  const openPopup = useCallback(() => {
+    setStatus("waiting")
+    setErrorMsg("")
+    const w = 500
+    const h = 650
+    const left = window.screenX + (window.outerWidth - w) / 2
+    const top = window.screenY + (window.outerHeight - h) / 2
+    popupRef.current = window.open(
+      `/api/v1/oauth/${providerId}/authorize?userId=${userId}`,
+      `vitasync-oauth-${providerId}`,
+      `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no`,
+    )
+  }, [providerId, userId])
+
+  // Listen for postMessage from the OAuth popup
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return
+      if (event.data?.type !== "vitasync-oauth-result") return
+
+      if (event.data.success) {
+        setStatus("success")
+        queryClient.invalidateQueries({ queryKey: ["connections"] })
+      } else {
+        setStatus("error")
+        setErrorMsg(event.data.error ?? "Connection failed")
+      }
+    }
+
+    window.addEventListener("message", handleMessage)
+    return () => window.removeEventListener("message", handleMessage)
+  }, [queryClient])
+
+  // Detect popup closed without completing OAuth
+  useEffect(() => {
+    if (status !== "waiting") return
+    const interval = setInterval(() => {
+      if (popupRef.current && popupRef.current.closed) {
+        popupRef.current = null
+        setStatus((s) => (s === "waiting" ? "error" : s))
+        setErrorMsg((m) => m || "Authorization window was closed before completing.")
+      }
+    }, 500)
+    return () => clearInterval(interval)
+  }, [status])
+
+  // Auto-close modal after success
+  useEffect(() => {
+    if (status !== "success") return
+    const timer = setTimeout(onClose, 2000)
+    return () => clearTimeout(timer)
+  }, [status, onClose])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={status !== "waiting" ? onClose : undefined} />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200/60 dark:border-gray-800/60 overflow-hidden animate-fade-in-down">
+        {/* Header */}
+        <div className={`bg-gradient-to-r ${providerBg} px-6 py-5 text-white`}>
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">{providerIcon}</span>
+            <div>
+              <h2 className="text-lg font-bold">Connect {providerName}</h2>
+              <p className="text-sm opacity-90">Authorize VitaSync to access your data</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-6">
+          {status === "idle" && (
+            <div className="text-center space-y-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                You&apos;ll be redirected to {providerName} to sign in and authorize access.
+                A small window will open for the authorization — please complete the sign-in there.
+              </p>
+              <button
+                type="button"
+                onClick={openPopup}
+                className={`w-full rounded-xl bg-gradient-to-r ${providerBg} px-4 py-3 text-sm font-bold text-white shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
+              >
+                Sign in with {providerName}
+              </button>
             </div>
           )}
-        </>
-      )}
+
+          {status === "waiting" && (
+            <div className="text-center space-y-4 py-4">
+              <div className="mx-auto h-12 w-12 rounded-full border-4 border-gray-200 dark:border-gray-700 border-t-indigo-500 animate-spin" />
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Waiting for authorization…</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Complete the sign-in in the popup window.</p>
+              </div>
+              <button
+                type="button"
+                onClick={openPopup}
+                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                Popup didn&apos;t open? Click here to try again
+              </button>
+            </div>
+          )}
+
+          {status === "success" && (
+            <div className="text-center space-y-3 py-4">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                <svg className="h-7 w-7 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{providerName} connected successfully!</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Your data will start syncing shortly.</p>
+            </div>
+          )}
+
+          {status === "error" && (
+            <div className="text-center space-y-4 py-4">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                <svg className="h-7 w-7 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-red-700 dark:text-red-400">Connection failed</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{errorMsg}</p>
+              </div>
+              <button
+                type="button"
+                onClick={openPopup}
+                className={`w-full rounded-xl bg-gradient-to-r ${providerBg} px-4 py-3 text-sm font-bold text-white shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-gray-100 dark:border-gray-800 px-6 py-3 flex justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              if (popupRef.current && !popupRef.current.closed) popupRef.current.close()
+              onClose()
+            }}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            {status === "success" ? "Done" : "Cancel"}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
