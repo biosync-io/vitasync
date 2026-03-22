@@ -109,11 +109,12 @@ const oauthRoutes: FastifyPluginAsync = async (app) => {
         ...(stored.codeVerifier !== undefined && { codeVerifier: stored.codeVerifier }),
       })
     } catch (err) {
-      app.log.error({ providerId, err }, "OAuth code exchange failed")
+      const errMsg = err instanceof Error ? err.message : String(err)
+      app.log.error({ providerId, err: errMsg }, "OAuth code exchange failed")
       return reply
         .status(200)
         .type("text/html")
-        .send(oauthResultPage({ success: false, providerId, error: "Token exchange failed. Please try again." }))
+        .send(oauthResultPage({ success: false, providerId, error: errMsg }))
     }
 
     return reply

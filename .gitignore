@@ -55,3 +55,5 @@ Thumbs.db
 
 # Drizzle
 # Migration SQL files are intentionally committed — they are the schema change history.
+
+.local-only/
