@@ -42,13 +42,12 @@ export default function ChallengesPage() {
       const start = new Date()
       const end = new Date(start.getTime() + Number(form.durationDays) * 86400000)
       return challengesApi.create({
-        name: form.name,
+        title: form.name,
         description: form.description,
-        metric: form.metric,
-        targetValue: Number(form.targetValue),
-        challengeType: form.challengeType,
-        startDate: start.toISOString().slice(0, 10),
-        endDate: end.toISOString().slice(0, 10),
+        metricType: form.metric,
+        goalValue: Number(form.targetValue),
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
       })
     },
     onSuccess: () => {

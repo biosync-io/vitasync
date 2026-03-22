@@ -60,11 +60,11 @@ const nutritionRoutes: FastifyPluginAsync = async (app) => {
       consumedAt: body.loggedAt ? new Date(body.loggedAt) : new Date(),
       ...(body.description !== undefined && { description: body.description }),
       ...(body.calories !== undefined && { calories: body.calories }),
-      ...(body.proteinG !== undefined && { proteinG: body.proteinG }),
-      ...(body.carbsG !== undefined && { carbsG: body.carbsG }),
-      ...(body.fatG !== undefined && { fatG: body.fatG }),
-      ...(body.fiberG !== undefined && { fiberG: body.fiberG }),
-      ...(body.sugarG !== undefined && { sugarG: body.sugarG }),
+      ...(body.proteinG !== undefined && { proteinGrams: body.proteinG }),
+      ...(body.carbsG !== undefined && { carbsGrams: body.carbsG }),
+      ...(body.fatG !== undefined && { fatGrams: body.fatG }),
+      ...(body.fiberG !== undefined && { fiberGrams: body.fiberG }),
+      ...(body.sugarG !== undefined && { sugarGrams: body.sugarG }),
       ...(body.sodiumMg !== undefined && { sodiumMg: body.sodiumMg }),
       ...(body.waterMl !== undefined && { waterMl: body.waterMl }),
     })
@@ -103,7 +103,14 @@ const nutritionRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.body)
 
-    const log = await nutritionService.update(logId, userId, defined(body))
+    const log = await nutritionService.update(logId, userId, {
+      ...(body.mealType !== undefined && { mealType: body.mealType }),
+      ...(body.description !== undefined && { description: body.description }),
+      ...(body.calories !== undefined && { calories: body.calories }),
+      ...(body.proteinG !== undefined && { proteinGrams: body.proteinG }),
+      ...(body.carbsG !== undefined && { carbsGrams: body.carbsG }),
+      ...(body.fatG !== undefined && { fatGrams: body.fatG }),
+    })
     if (!log) return reply.status(404).send({ code: "NOT_FOUND", message: "Nutrition log not found" })
     return reply.send(log)
   })

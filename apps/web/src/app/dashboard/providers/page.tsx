@@ -2,9 +2,16 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useSelectedUser } from "../../../lib/user-selection-context"
-import { type ProviderDef, type Connection, providersApi, connectionsApi, usersApi } from "../../../lib/api"
+import { type ProviderDef, type Connection, providersApi, connectionsApi, usersApi, getRuntimeDefaultKey } from "../../../lib/api"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
+/** Resolve the public-facing API URL for display in docs/config sections */
+function useApiBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    // In browser: use current origin (works in any deployment)
+    return window.location.origin
+  }
+  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
+}
 
 const PROVIDER_COLORS: Record<string, { bg: string; icon: string }> = {
   fitbit: { bg: "from-teal-400 to-cyan-500", icon: "⌚" },
@@ -17,6 +24,7 @@ const PROVIDER_COLORS: Record<string, { bg: string; icon: string }> = {
 
 export default function ProvidersPage() {
   const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const apiBaseUrl = useApiBaseUrl()
 
   const { data: providers = [], isLoading } = useQuery<ProviderDef[]>({
     queryKey: ["providers"],
@@ -101,8 +109,77 @@ export default function ProvidersPage() {
           To connect a user to a provider, redirect their browser to:
         </p>
         <code className="block rounded-xl bg-gray-900 dark:bg-gray-950 px-5 py-3.5 text-sm text-emerald-400 font-mono overflow-auto">
-          {`GET ${API_URL}/v1/oauth/{providerId}/authorize?userId={userId}`}
+          {`GET ${apiBaseUrl}/v1/oauth/{providerId}/authorize?userId={userId}`}
         </code>
+      </div>
+
+      {/* Inbound Provider Webhooks */}
+      <div className="rounded-2xl border border-blue-200/60 dark:border-blue-800/40 bg-gradient-to-br from-blue-50/60 to-indigo-50/30 dark:from-blue-950/30 dark:to-indigo-950/15 backdrop-blur-xl p-6 shadow-card">
+        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1">Inbound Provider Webhooks</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Some providers can push real-time updates to VitaSync instead of waiting for scheduled syncs.
+          Configure the webhook URL in each provider&apos;s developer dashboard.
+        </p>
+
+        <div className="space-y-4">
+          {/* WHOOP */}
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-sm shadow-md">💪</div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">WHOOP Webhooks</h3>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Supported</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Webhook URL (paste in WHOOP Developer Dashboard)</p>
+                <code className="block rounded-lg bg-gray-900 dark:bg-gray-950 px-4 py-2.5 text-xs text-emerald-400 font-mono overflow-auto select-all">
+                  {`${apiBaseUrl}/v1/inbound/whoop/webhook`}
+                </code>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Events received</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {["workout.updated", "workout.deleted", "sleep.updated", "sleep.deleted", "recovery.updated", "recovery.deleted"].map((evt) => (
+                    <span key={evt} className="rounded-full bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-400">{evt}</span>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Setup steps</p>
+                <ol className="text-xs text-gray-600 dark:text-gray-400 space-y-1 list-decimal list-inside">
+                  <li>Go to <a href="https://developer-dashboard.whoop.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline">WHOOP Developer Dashboard</a></li>
+                  <li>Open your app settings → Webhooks section</li>
+                  <li>Paste the URL above and select <strong>v2</strong> model version</li>
+                  <li>Set <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded text-[10px]">WHOOP_WEBHOOK_SECRET</code> env var to your app&apos;s client secret</li>
+                  <li>Save — WHOOP will now push real-time workout/sleep/recovery events</li>
+                </ol>
+              </div>
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-3 py-2">
+                <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                  <strong>Signature verification:</strong> VitaSync validates every incoming webhook using HMAC-SHA256 with <code className="bg-amber-100 dark:bg-amber-800/30 px-1 rounded">X-WHOOP-Signature</code> and <code className="bg-amber-100 dark:bg-amber-800/30 px-1 rounded">X-WHOOP-Signature-Timestamp</code> headers.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Other providers */}
+          <div className="rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-gray-50/50 dark:bg-gray-800/30 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-1">
+                {["⌚", "🏔️", "🏃"].map((icon, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static icons
+                  <div key={i} className="h-6 w-6 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs border-2 border-white dark:border-gray-900">{icon}</div>
+                ))}
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Fitbit, Garmin, Strava — use scheduled polling (every 15 min)</p>
+                <p className="text-[10px] text-gray-400">Webhook support can be added per provider. See the developer docs for extending.</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -113,7 +190,6 @@ function ProviderCard({ provider, isConnected, selectedUserId }: { provider: Pro
 
   const handleConnect = () => {
     if (!selectedUserId) return
-    // Open OAuth flow in a new window — the API will redirect to the provider's OAuth page
     window.open(`/api/v1/oauth/${provider.id}/authorize?userId=${selectedUserId}`, "_blank", "width=600,height=700")
   }
 
@@ -151,12 +227,10 @@ function ProviderCard({ provider, isConnected, selectedUserId }: { provider: Pro
           </span>
         ))}
       </div>
-      {/* Connect/Disconnect button */}
+      {/* Connect / Connected */}
       {selectedUserId ? (
         isConnected ? (
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Connected</span>
-          </div>
+          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ Connected</span>
         ) : (
           <button
             type="button"

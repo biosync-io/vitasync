@@ -50,9 +50,9 @@ export default function SymptomsPage() {
       symptomsApi.create(selectedUserId, {
         symptom: form.symptom,
         severity: Number(form.severity),
-        bodyLocation: form.bodyLocation || null,
+        bodyLocation: form.bodyLocation || undefined,
         triggers: form.triggers ? form.triggers.split(",").map((t) => t.trim()) : [],
-        notes: form.notes || null,
+        notes: form.notes || undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["symptoms", selectedUserId] })
@@ -125,32 +125,32 @@ export default function SymptomsPage() {
       {selectedUserId && patterns && (
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Avg Severity</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{patterns.avgSeverity.toFixed(1)}<span className="text-sm text-gray-400">/5</span></p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Severity Trend</p>
+            <p className={`text-2xl font-bold ${patterns.severityTrend === "improving" ? "text-emerald-600" : patterns.severityTrend === "worsening" ? "text-red-600" : "text-gray-500"}`}>
+              {patterns.severityTrend === "improving" ? "↓ Better" : patterns.severityTrend === "worsening" ? "↑ Worse" : "→ Stable"}
+            </p>
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Trend</p>
-            <p className={`text-2xl font-bold ${patterns.severityTrend === "improving" ? "text-emerald-600" : patterns.severityTrend === "worsening" ? "text-red-600" : "text-gray-500"}`}>
-              {patterns.severityTrend === "improving" ? "↓ Improving" : patterns.severityTrend === "worsening" ? "↑ Worsening" : "→ Stable"}
-            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Stressors</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{patterns.frequentTriggers.length}</p>
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Top Triggers</p>
-            {patterns.topTriggers.slice(0, 3).map((t) => (
+            {patterns.frequentTriggers.slice(0, 3).map((t) => (
               <div key={t.trigger} className="flex justify-between text-xs text-gray-700 dark:text-gray-300">
                 <span>{t.trigger}</span><span className="font-medium">{t.count}</span>
               </div>
             ))}
-            {patterns.topTriggers.length === 0 && <p className="text-xs text-gray-400">None recorded</p>}
+            {patterns.frequentTriggers.length === 0 && <p className="text-xs text-gray-400">None recorded</p>}
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Top Locations</p>
-            {patterns.topLocations.slice(0, 3).map((l) => (
+            {patterns.frequentLocations.slice(0, 3).map((l) => (
               <div key={l.location} className="flex justify-between text-xs text-gray-700 dark:text-gray-300">
                 <span>{l.location}</span><span className="font-medium">{l.count}</span>
               </div>
             ))}
-            {patterns.topLocations.length === 0 && <p className="text-xs text-gray-400">None recorded</p>}
+            {patterns.frequentLocations.length === 0 && <p className="text-xs text-gray-400">None recorded</p>}
           </div>
         </div>
       )}
@@ -208,8 +208,8 @@ export default function SymptomsPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{l.bodyLocation ?? "—"}</td>
-                      <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{l.triggers.length ? l.triggers.join(", ") : "—"}</td>
-                      <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(l.loggedAt).toLocaleDateString()}</td>
+                      <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{l.triggers?.length ? l.triggers.join(", ") : "—"}</td>
+                      <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(l.startedAt).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>

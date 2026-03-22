@@ -284,7 +284,7 @@ export default function UserDetailPage() {
                     <p className="text-xs text-gray-400">
                       {conn.lastSyncedAt
                         ? `Last sync: ${new Date(conn.lastSyncedAt).toLocaleString()}`
-                        : `Connected: ${new Date(conn.connectedAt).toLocaleString()}`}
+                        : conn.connectedAt ? `Connected: ${new Date(conn.connectedAt).toLocaleString()}` : "Never connected"}
                     </p>
                   </div>
                 </div>

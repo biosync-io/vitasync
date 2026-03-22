@@ -33,7 +33,10 @@ export default function MedicationsPage() {
 
   const createMut = useMutation({
     mutationFn: () => medicationsApi.create(selectedUserId, {
-      name: form.name, dosage: form.dosage || null, frequency: form.frequency, startDate: form.startDate || null,
+      name: form.name,
+      dosage: form.dosage || undefined,
+      frequency: form.frequency,
+      startDate: form.startDate ? new Date(form.startDate).toISOString() : new Date().toISOString(),
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["medications", selectedUserId] })

@@ -39,25 +39,27 @@ const symptomsRoutes: FastifyPluginAsync = async (app) => {
 
     const body = z
       .object({
-        symptomName: z.string().min(1).max(200),
+        symptom: z.string().min(1).max(200),
         severity: z.number().min(1).max(10),
         bodyLocation: z.string().max(100).optional(),
         duration: z.string().max(100).optional(),
         notes: z.string().max(2000).optional(),
         triggers: z.array(z.string().max(100)).max(10).optional(),
         reliefMeasures: z.array(z.string().max(200)).max(10).optional(),
-        occurredAt: z.string().datetime().optional(),
+        startedAt: z.string().datetime().optional(),
       })
       .parse(request.body)
 
     const log = await symptomService.create({
       userId,
-      symptom: body.symptomName,
+      symptom: body.symptom,
       severity: body.severity,
-      startedAt: body.occurredAt ? new Date(body.occurredAt) : new Date(),
+      startedAt: body.startedAt ? new Date(body.startedAt) : new Date(),
       ...(body.bodyLocation !== undefined && { bodyLocation: body.bodyLocation }),
       ...(body.notes !== undefined && { notes: body.notes }),
       ...(body.triggers !== undefined && { triggers: body.triggers }),
+      ...(body.reliefMeasures !== undefined && { reliefMeasures: body.reliefMeasures }),
+      ...(body.duration !== undefined && { durationMinutes: Number(body.duration) || undefined }),
     })
     return reply.status(201).send(log)
   })

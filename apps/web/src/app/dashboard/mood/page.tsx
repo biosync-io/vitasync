@@ -52,7 +52,8 @@ export default function MoodPage() {
   const createMut = useMutation({
     mutationFn: () =>
       moodApi.create(selectedUserId, {
-        mood: Number(form.mood),
+        mood: "neutral",
+        score: Number(form.mood),
         energy: Number(form.energy),
         stress: Number(form.stress),
         ...(form.notes ? { notes: form.notes } : {}),
