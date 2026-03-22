@@ -28,12 +28,12 @@ const WhoopCycle = z.object({
   score_state: z.enum(["SCORED", "PENDING_SCORE", "UNSCORABLE"]),
   score: z
     .object({
-      strain: z.number().optional(),
-      kilojoule: z.number().optional(),
-      average_heart_rate: z.number().optional(),
-      max_heart_rate: z.number().optional(),
+      strain: z.number().nullish(),
+      kilojoule: z.number().nullish(),
+      average_heart_rate: z.number().nullish(),
+      max_heart_rate: z.number().nullish(),
     })
-    .optional(),
+    .nullish(),
 })
 
 const WhoopRecovery = z.object({
@@ -43,20 +43,20 @@ const WhoopRecovery = z.object({
   score_state: z.enum(["SCORED", "PENDING_SCORE", "UNSCORABLE"]),
   score: z
     .object({
-      recovery_score: z.number().optional(),
-      resting_heart_rate: z.number().optional(),
-      hrv_rmssd_milli: z.number().optional(),
-      spo2_percentage: z.number().optional(),
-      skin_temp_celsius: z.number().optional(),
+      recovery_score: z.number().nullish(),
+      resting_heart_rate: z.number().nullish(),
+      hrv_rmssd_milli: z.number().nullish(),
+      spo2_percentage: z.number().nullish(),
+      skin_temp_celsius: z.number().nullish(),
     })
-    .optional(),
+    .nullish(),
 })
 
 const WhoopSleep = z.object({
   id: z.string(),
   user_id: z.number(),
   start: z.string(),
-  end: z.string().nullable(),
+  end: z.string().nullish(),
   nap: z.boolean(),
   score_state: z.enum(["SCORED", "PENDING_SCORE", "UNSCORABLE"]),
   score: z
@@ -68,46 +68,46 @@ const WhoopSleep = z.object({
           total_light_sleep_time_milli: z.number(),
           total_slow_wave_sleep_time_milli: z.number(),
           total_rem_sleep_time_milli: z.number(),
-          disturbance_count: z.number().optional(),
-          sleep_cycle_count: z.number().optional(),
+          disturbance_count: z.number().nullish(),
+          sleep_cycle_count: z.number().nullish(),
         })
-        .optional(),
-      respiratory_rate: z.number().optional(),
-      sleep_performance_percentage: z.number().optional(),
-      sleep_consistency_percentage: z.number().optional(),
-      sleep_efficiency_percentage: z.number().optional(),
+        .nullish(),
+      respiratory_rate: z.number().nullish(),
+      sleep_performance_percentage: z.number().nullish(),
+      sleep_consistency_percentage: z.number().nullish(),
+      sleep_efficiency_percentage: z.number().nullish(),
     })
-    .optional(),
+    .nullish(),
 })
 
 const WhoopWorkout = z.object({
   id: z.string(),
   user_id: z.number(),
   start: z.string(),
-  end: z.string().nullable(),
+  end: z.string().nullish(),
   sport_id: z.number(),
   score_state: z.enum(["SCORED", "PENDING_SCORE", "UNSCORABLE"]),
   score: z
     .object({
-      strain: z.number().optional(),
-      average_heart_rate: z.number().optional(),
-      max_heart_rate: z.number().optional(),
-      kilojoule: z.number().optional(),
-      distance_meter: z.number().optional(),
-      altitude_gain_meter: z.number().optional(),
-      percent_recorded: z.number().optional(),
+      strain: z.number().nullish(),
+      average_heart_rate: z.number().nullish(),
+      max_heart_rate: z.number().nullish(),
+      kilojoule: z.number().nullish(),
+      distance_meter: z.number().nullish(),
+      altitude_gain_meter: z.number().nullish(),
+      percent_recorded: z.number().nullish(),
       zone_durations: z
         .object({
-          zone_zero_milli: z.number().optional(),
-          zone_one_milli: z.number().optional(),
-          zone_two_milli: z.number().optional(),
-          zone_three_milli: z.number().optional(),
-          zone_four_milli: z.number().optional(),
-          zone_five_milli: z.number().optional(),
+          zone_zero_milli: z.number().nullish(),
+          zone_one_milli: z.number().nullish(),
+          zone_two_milli: z.number().nullish(),
+          zone_three_milli: z.number().nullish(),
+          zone_four_milli: z.number().nullish(),
+          zone_five_milli: z.number().nullish(),
         })
-        .optional(),
+        .nullish(),
     })
-    .optional(),
+    .nullish(),
 })
 
 /** WHOOP webhook v2 payload schema */
