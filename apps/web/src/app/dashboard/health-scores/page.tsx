@@ -41,14 +41,14 @@ function ScoreRing({ score, size = 180 }: { score: number; size?: number }) {
             <stop offset="100%" stopColor={color} stopOpacity="0.5" />
           </linearGradient>
         </defs>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" className="text-gray-100 dark:text-gray-800" strokeWidth="12" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" className="text-gray-200 dark:text-gray-800" strokeWidth="12" />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="url(#scoreGrad)" strokeWidth="12"
           strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round"
           className="transition-all duration-1000 ease-out" />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="bg-white/80 dark:bg-gray-900/80 rounded-full px-4 py-2 backdrop-blur-sm">
-          <span className="text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-100">{score}</span>
+          <span className="text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-50">{score}</span>
           <span className="text-xs text-gray-500 dark:text-gray-400 block text-center mt-0.5">/ 100</span>
         </div>
       </div>
@@ -66,9 +66,9 @@ function SubScoreCard({ label, icon, value, gradient }: { label: string; icon: s
           <span className="text-lg group-hover:scale-110 transition-transform">{icon}</span>
           <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{label}</span>
         </div>
-        <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{v}</span>
+        <span className="text-lg font-bold text-gray-900 dark:text-gray-50">{v}</span>
       </div>
-      <div className="h-2.5 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
         <div className={`h-full rounded-full bg-gradient-to-r ${gradient} transition-all duration-700`} style={{ width: `${pct}%` }} />
       </div>
     </div>
@@ -160,7 +160,7 @@ export default function HealthScoresPage() {
                 Grade {latest.grade}
               </div>
               {latest.deltaFromPrevious != null && (
-                <p className={`mt-2 text-sm font-medium ${latest.deltaFromPrevious > 0 ? "text-emerald-500" : latest.deltaFromPrevious < 0 ? "text-red-500" : "text-gray-400"}`}>
+                <p className={`mt-2 text-sm font-medium ${latest.deltaFromPrevious > 0 ? "text-emerald-700 dark:text-emerald-500" : latest.deltaFromPrevious < 0 ? "text-red-700 dark:text-red-500" : "text-gray-500 dark:text-gray-400"}`}>
                   {latest.deltaFromPrevious > 0 ? "↑" : latest.deltaFromPrevious < 0 ? "↓" : "→"} {Math.abs(latest.deltaFromPrevious).toFixed(1)} from previous
                 </p>
               )}

@@ -41,19 +41,27 @@ spec:
             - configMapRef:
                 name: {{ include "vitasync.configMapName" . }}
           env:
-            - name: INTERNAL_API_URL
-              value: "http://{{ include "vitasync.fullname" . }}-api:{{ .Values.api.service.port }}"
-            {{- if .Values.secrets.existingSecret }}
+            - name: HOSTNAME
+              value: {{ .Values.web.hostname | quote }}
+            - name: PORT
+              value: {{ .Values.web.service.port | quote }}
+            # NEXT_PUBLIC_DEFAULT_API_KEY and DEFAULT_API_KEY both point to
+            # ADMIN_API_KEY — the one key actually seeded into the database.
+            # NEXT_PUBLIC_* is a build-time concept so has no effect in a
+            # pre-built image; DEFAULT_API_KEY is read at runtime by /api/config.
+            - name: NEXT_PUBLIC_DEFAULT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "vitasync.secretName" . }}
+                  key: NEXT_PUBLIC_DEFAULT_API_KEY
+            # DEFAULT_API_KEY is the server-side counterpart: readable by the
+            # Next.js Node.js process at runtime (unlike NEXT_PUBLIC_* which
+            # is baked into the bundle at image build time).
             - name: DEFAULT_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.secrets.existingSecret }}
-                  key: DEFAULT_API_KEY
-                  optional: true
-            {{- else if .Values.config.DEFAULT_API_KEY }}
-            - name: DEFAULT_API_KEY
-              value: {{ .Values.config.DEFAULT_API_KEY | quote }}
-            {{- end }}
+                  name: {{ include "vitasync.secretName" . }}
+                  key: NEXT_PUBLIC_DEFAULT_API_KEY
             {{- with .Values.web.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

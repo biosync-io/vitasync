@@ -1,0 +1,60 @@
+# Auto-label PRs based on changed files
+api:
+  - changed-files:
+    - any-glob-to-any-file: "apps/api/**"
+
+web:
+  - changed-files:
+    - any-glob-to-any-file: "apps/web/**"
+
+worker:
+  - changed-files:
+    - any-glob-to-any-file: "apps/worker/**"
+
+docs:
+  - changed-files:
+    - any-glob-to-any-file: ["apps/docs/**", "*.md"]
+
+mcp:
+  - changed-files:
+    - any-glob-to-any-file: "apps/mcp/**"
+
+database:
+  - changed-files:
+    - any-glob-to-any-file: "packages/db/**"
+
+providers:
+  - changed-files:
+    - any-glob-to-any-file: "packages/providers/**"
+
+analytics:
+  - changed-files:
+    - any-glob-to-any-file: "packages/analytics/**"
+
+notifications:
+  - changed-files:
+    - any-glob-to-any-file: "packages/notifications/**"
+
+types:
+  - changed-files:
+    - any-glob-to-any-file: "packages/types/**"
+
+helm:
+  - changed-files:
+    - any-glob-to-any-file: "helm/**"
+
+ci:
+  - changed-files:
+    - any-glob-to-any-file: ".github/**"
+
+docker:
+  - changed-files:
+    - any-glob-to-any-file: ["Dockerfile*", "docker-compose*", ".dockerignore"]
+
+monitoring:
+  - changed-files:
+    - any-glob-to-any-file: "monitoring/**"
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file: ["**/package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"]

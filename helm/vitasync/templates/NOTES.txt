@@ -1,11 +1,11 @@
 Thank you for installing {{ .Chart.Name }} v{{ .Chart.AppVersion }}!
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   VitaSync — Wearable Health Data Aggregation Platform
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Release name : {{ .Release.Name }}
-Namespace    : {{ .Release.Namespace }}
+Release   : {{ .Release.Name }}
+Namespace : {{ .Release.Namespace }}
 
 Components deployed:
 {{- if .Values.api.enabled }}
@@ -18,22 +18,30 @@ Components deployed:
   ✓ Web (Next.js)   — {{ include "vitasync.web.image" . }}
 {{- end }}
 {{- if .Values.migrations.enabled }}
-  ✓ Migration job ran as a pre-install/pre-upgrade hook
+  ✓ Migration job   — runs as a post-install/post-upgrade hook
+{{- end }}
+{{- if .Values.postgresql.enabled }}
+  ✓ PostgreSQL      — bundled ({{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }})
+{{- else }}
+  • PostgreSQL       — external ({{ .Values.externalPostgresql.host }}:{{ .Values.externalPostgresql.port }})
+{{- end }}
+{{- if .Values.redis.enabled }}
+  ✓ Redis           — bundled ({{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }})
+{{- else }}
+  • Redis            — external ({{ .Values.externalRedis.host }}:{{ .Values.externalRedis.port }})
 {{- end }}
 
-──────────────────────────────────────────────────
+──────────────────────────────────────────────────────
   Accessing the services
-──────────────────────────────────────────────────
-
+──────────────────────────────────────────────────────
 {{- if .Values.ingress.enabled }}
 
-API:  https://{{ .Values.ingress.api.host }}
-Web:  https://{{ .Values.ingress.web.host }}
-Docs: https://{{ .Values.ingress.api.host }}/docs
-
+  API:  http{{ if .Values.ingress.api.tls }}s{{ end }}://{{ .Values.ingress.api.host }}
+  Web:  http{{ if .Values.ingress.web.tls }}s{{ end }}://{{ .Values.ingress.web.host }}
+  Docs: http{{ if .Values.ingress.api.tls }}s{{ end }}://{{ .Values.ingress.api.host }}/docs
 {{- else }}
 
-Ingress is disabled. Use port-forward to access locally:
+  Ingress is disabled. Use port-forward to access locally:
 
   # API
   kubectl port-forward -n {{ .Release.Namespace }} \
@@ -43,34 +51,36 @@ Ingress is disabled. Use port-forward to access locally:
   kubectl port-forward -n {{ .Release.Namespace }} \
     svc/{{ include "vitasync.fullname" . }}-web {{ .Values.web.service.port }}:{{ .Values.web.service.port }}
 
-Then open:  http://localhost:{{ .Values.web.service.port }}
-API docs:   http://localhost:{{ .Values.api.service.port }}/docs
-
+  Then open:
+    Web dashboard : http://localhost:{{ .Values.web.service.port }}
+    API docs      : http://localhost:{{ .Values.api.service.port }}/docs
 {{- end }}
 
-──────────────────────────────────────────────────
-  First steps
-──────────────────────────────────────────────────
+──────────────────────────────────────────────────────
+  Secrets
+──────────────────────────────────────────────────────
+{{- if .Values.secrets.existingSecret }}
 
-1. Create your first API key via the API:
+  Using pre-existing secret: {{ .Values.secrets.existingSecret }}
+{{- else }}
 
-   curl -X POST http://localhost:{{ .Values.api.service.port }}/v1/api-keys \
-     -H "Authorization: Bearer <admin-key>" \
-     -H "Content-Type: application/json" \
-     -d '{"name":"My Key","scopes":["admin"]}'
+  A Secret named {{ include "vitasync.fullname" . }}-secrets was created.
+  DATABASE_URL and REDIS_URL are set from postgresql/redis values.
 
-2. List available providers:
+  ⚠  Change secrets.JWT_SECRET, secrets.ENCRYPTION_KEY, and
+     postgresql.auth.password before exposing this to the network.
+     For production, provide a pre-created secret via secrets.existingSecret.
+{{- end }}
 
-   curl http://localhost:{{ .Values.api.service.port }}/v1/providers
-
-3. Full documentation: https://github.com/your-org/vitasync#readme
-
-──────────────────────────────────────────────────
+──────────────────────────────────────────────────────
   Troubleshooting
-──────────────────────────────────────────────────
+──────────────────────────────────────────────────────
 
-View logs:
-  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }} -f
+  View all logs:
+    kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }} --prefix -f
 
-Check migration job:
-  kubectl get jobs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+  Check migration job:
+    kubectl get jobs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+  Check pod status:
+    kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}

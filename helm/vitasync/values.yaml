@@ -1,28 +1,28 @@
 # Default values for vitasync.
-# Override with: helm install vitasync ./helm/vitasync -f my-values.yaml
+# Override with: helm install vitasync ./charts/stable/vitasync -f my-values.yaml
 
 # -- Global image settings
 global:
   imageRegistry: ""
   imagePullSecrets: []
 
-# -- Image pull secrets for private registries
+# -- Additional image pull secrets
 imagePullSecrets: []
 
 # -- Override the release name
 nameOverride: ""
 fullnameOverride: ""
 
-# ─────────────────────────────────────────────
-# API service (Fastify)
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# API service (Fastify + REST)
+# ─────────────────────────────────────────────────────────────────────────────
 api:
   enabled: true
-  replicaCount: 2
+  replicaCount: 1
 
   image:
-    repository: ghcr.io/your-org/vitasync-api
-    tag: ""  # defaults to .Chart.AppVersion
+    repository: ghcr.io/biosync-io/vitasync-api
+    tag: ""        # defaults to .Chart.AppVersion
     pullPolicy: IfNotPresent
 
   service:
@@ -39,12 +39,12 @@ api:
 
   autoscaling:
     enabled: false
-    minReplicas: 2
+    minReplicas: 1
     maxReplicas: 10
     targetCPUUtilizationPercentage: 70
 
   podDisruptionBudget:
-    enabled: true
+    enabled: false
     minAvailable: 1
 
   livenessProbe:
@@ -79,19 +79,20 @@ api:
   tolerations: []
   affinity: {}
 
+  # Extra environment variables injected directly into the container
   extraEnv: []
-  # - name: EXTRA_VAR
-  #   value: "foo"
+  # - name: MY_VAR
+  #   value: "my-value"
 
-# ─────────────────────────────────────────────
-# Worker service (BullMQ)
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# Worker service (BullMQ background job processor)
+# ─────────────────────────────────────────────────────────────────────────────
 worker:
   enabled: true
   replicaCount: 1
 
   image:
-    repository: ghcr.io/your-org/vitasync-worker
+    repository: ghcr.io/biosync-io/vitasync-worker
     tag: ""
     pullPolicy: IfNotPresent
 
@@ -131,15 +132,19 @@ worker:
 
   extraEnv: []
 
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 # Web dashboard (Next.js)
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 web:
   enabled: true
   replicaCount: 1
 
+  # -- Hostname the Next.js standalone server binds to.
+  # Must be 0.0.0.0 in Kubernetes so liveness/readiness probes can reach the container.
+  hostname: "0.0.0.0"
+
   image:
-    repository: ghcr.io/your-org/vitasync-web
+    repository: ghcr.io/biosync-io/vitasync-web
     tag: ""
     pullPolicy: IfNotPresent
 
@@ -189,7 +194,7 @@ web:
 
   securityContext:
     allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: false
+    readOnlyRootFilesystem: false   # Next.js writes .next cache at runtime
     capabilities:
       drop: ["ALL"]
 
@@ -199,24 +204,120 @@ web:
 
   extraEnv: []
 
-# ─────────────────────────────────────────────
-# Database migration Job (runs on install/upgrade)
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# Database migration Job (pre-install / pre-upgrade hook)
+# ─────────────────────────────────────────────────────────────────────────────
 migrations:
   enabled: true
+
   image:
-    repository: ghcr.io/your-org/vitasync-api
+    repository: ghcr.io/biosync-io/vitasync-api
     tag: ""
     pullPolicy: IfNotPresent
-  # Annotations to trigger migration on upgrade (ArgoCD / Flux compatible)
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-weight: "-5"
-    helm.sh/hook-delete-policy: hook-succeeded
 
-# ─────────────────────────────────────────────
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+
+  # Helm hook annotations — compatible with ArgoCD / Flux
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PostgreSQL
+#
+# Set enabled: true  → a PostgreSQL pod is deployed as part of this release.
+# Set enabled: false → supply connection details via externalPostgresql below,
+#                      or provide a full DATABASE_URL via secrets.existingSecret.
+# ─────────────────────────────────────────────────────────────────────────────
+postgresql:
+  enabled: true
+
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+
+  auth:
+    database: vitasync
+    username: vitasync
+    # Change in production, or supply via --set or a sealed secret
+    password: "changeme"
+
+  service:
+    type: ClusterIP
+    port: 5432
+
+  resources: {}
+
+  persistence:
+    enabled: false
+    size: 8Gi
+    storageClassName: ""
+    accessModes:
+      - ReadWriteOnce
+
+# External PostgreSQL — used when postgresql.enabled is false.
+# The chart constructs DATABASE_URL as:
+#   postgresql://<username>:<password>@<host>:<port>/<database>
+externalPostgresql:
+  host: "postgresql"
+  port: 5432
+  database: vitasync
+  username: vitasync
+  # Leave empty and use secrets.existingSecret for production
+  password: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Redis
+#
+# Set enabled: true  → a Redis pod is deployed as part of this release.
+# Set enabled: false → supply connection details via externalRedis below,
+#                      or provide a full REDIS_URL via secrets.existingSecret.
+# ─────────────────────────────────────────────────────────────────────────────
+redis:
+  enabled: true
+
+  image:
+    repository: redis
+    tag: "7-alpine"
+    pullPolicy: IfNotPresent
+
+  # Redis launch arguments
+  command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+
+  service:
+    type: ClusterIP
+    port: 6379
+
+  resources: {}
+
+  persistence:
+    enabled: false
+    size: 1Gi
+    storageClassName: ""
+    accessModes:
+      - ReadWriteOnce
+
+# External Redis — used when redis.enabled is false.
+# Set password if your Redis instance requires AUTH.
+# The chart constructs REDIS_URL as:
+#   redis://:password@host:port  (with auth)
+#   redis://host:port            (no auth)
+externalRedis:
+  host: "redis"
+  port: 6379
+  password: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Ingress
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 ingress:
   enabled: false
   className: ""
@@ -224,9 +325,7 @@ ingress:
   # kubernetes.io/ingress.class: nginx
   # cert-manager.io/cluster-issuer: letsencrypt-prod
 
-  # Routing rules
-  # api.example.com → api service
-  # app.example.com → web service
+  # Two separate virtual hosts: one for the API, one for the web dashboard
   api:
     host: api.vitasync.example.com
     tls: false
@@ -236,61 +335,158 @@ ingress:
     tls: false
     secretName: vitasync-web-tls
 
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# Traefik IngressRoute (alternative to standard Ingress)
+# Set enabled: true and configure routes when using Traefik as your ingress
+# controller. Both the web dashboard and the API can share one IngressRoute
+# with separate Host() match rules.
+# ─────────────────────────────────────────────────────────────────────────────
+ingressRoute:
+  enabled: false
+  namespace: ""
+  annotations: {}
+  entryPoints:
+    - websecure
+  routes:
+    # Web dashboard (Next.js)
+    - match: Host(`app.vitasync.example.com`)
+      kind: Rule
+      middlewares: []
+      services:
+        - name: ""   # leave empty → set to <release>-web at deploy time
+          port: 3000
+    # REST API (Fastify)
+    - match: Host(`api.vitasync.example.com`)
+      kind: Rule
+      middlewares: []
+      services:
+        - name: ""   # leave empty → set to <release>-api at deploy time
+          port: 3001
+  tls:
+    enabled: false
+    secretName: vitasync-tls
+    certResolver: ""
+    domains: []
+    # - main: app.vitasync.example.com
+    #   sans:
+    #     - api.vitasync.example.com
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Service Account
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 serviceAccount:
   create: true
   automount: false
   annotations: {}
   name: ""
 
-# ─────────────────────────────────────────────
-# Application configuration
-# These become a ConfigMap; secrets go in `secrets` below.
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# Non-sensitive application configuration
+# These keys are stored in a ConfigMap and injected as environment variables
+# into every application container.
+# ─────────────────────────────────────────────────────────────────────────────
 config:
-  # API
   NODE_ENV: "production"
   PORT: "3001"
+  HOST: "0.0.0.0"
   LOG_LEVEL: "info"
-  CORS_ORIGINS: ""         # comma-separated allowed origins
+  # Comma-separated list of allowed CORS origins (e.g. https://app.vitasync.example.com)
+  CORS_ORIGINS: ""
   RATE_LIMIT_MAX: "100"
   RATE_LIMIT_WINDOW_MS: "60000"
-  OAUTH_REDIRECT_BASE_URL: ""  # e.g. https://api.vitasync.example.com
+  # Base URL the API is publicly reachable at — used to build OAuth callback URLs
+  OAUTH_REDIRECT_BASE_URL: ""
+  # Internal (server-side) URL the Next.js proxy route handler uses to reach
+  # the API. Never exposed to the browser — no build-time baking required.
+  # In K8s this is the ClusterIP service name; in docker-compose it's the
+  # service name on the shared network.
+  INTERNAL_API_URL: "http://vitasync-api:3001"
+  # Public-facing API URL baked into the Next.js bundle at build time for
+  # client-side calls. Falls back in the proxy route if INTERNAL_API_URL is
+  # not set. e.g. https://api.vitasync.example.com
+  NEXT_PUBLIC_API_URL: ""
+  # Slug of the admin workspace auto-created on first boot
+  ADMIN_WORKSPACE_SLUG: "default"
+  # Minimum number of DB connections in the pool (postgres.js `min` option)
+  DATABASE_POOL_MIN: "2"
+  # Maximum number of DB connections in the pool (postgres.js `max` option)
+  DATABASE_POOL_MAX: "20"
 
-  # Web
-  NEXT_PUBLIC_API_URL: ""  # e.g. https://api.vitasync.example.com
-  DEFAULT_API_KEY: ""      # pre-configured API key — avoids manual Setup page
-
-# ─────────────────────────────────────────────
-# Secrets — stored in a Kubernetes Secret.
-# In production, use Sealed Secrets / External Secrets Operator instead
-# and set existingSecret below.
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# Secrets
+#
+# Option A (recommended for production):
+#   Set existingSecret to the name of a pre-created Kubernetes Secret that
+#   contains the keys: DATABASE_URL, REDIS_URL, JWT_SECRET, ENCRYPTION_KEY,
+#   ADMIN_API_KEY, and any provider OAuth credentials you need.
+#   The chart will not create a Secret in this case.
+#
+# Option B (dev / homelab):
+#   Leave existingSecret empty and fill in the values below.
+#   The chart creates a Secret named <release>-secrets from these values.
+#   DATABASE_URL and REDIS_URL are automatically computed from the
+#   postgresql / externalPostgresql and redis / externalRedis settings above.
+#   NEVER commit real secrets to version control.
+# ─────────────────────────────────────────────────────────────────────────────
 secrets:
-  # Leave empty and use existingSecret for production
+  # Name of a pre-existing Kubernetes Secret to use instead of letting the
+  # chart create one.  The Secret MUST contain ALL of the following keys:
+  #
+  #   DATABASE_URL       postgresql://<user>:<pass>@<host>:<port>/<db>
+  #   REDIS_URL          redis://[:<pass>@]<host>:<port>
+  #   JWT_SECRET         ≥32 random characters  (openssl rand -hex 32)
+  #   ENCRYPTION_KEY     64-char hex string      (openssl rand -hex 32)
+  #   ADMIN_API_KEY      any strong API key
+  #
+  # Optional keys (include only the providers you have registered apps for):
+  #   FITBIT_CLIENT_ID / FITBIT_CLIENT_SECRET
+  #   GARMIN_CONSUMER_KEY / GARMIN_CONSUMER_SECRET
+  #   STRAVA_CLIENT_ID / STRAVA_CLIENT_SECRET
+  #   WHOOP_CLIENT_ID / WHOOP_CLIENT_SECRET
+  #   WITHINGS_CLIENT_ID / WITHINGS_CLIENT_SECRET
+  #
+  # Optional per-provider inbound webhook secrets:
+  #   FITBIT_WEBHOOK_SECRET
+  #   GARMIN_WEBHOOK_SECRET
+  #   STRAVA_WEBHOOK_SECRET
+  #   WHOOP_WEBHOOK_SECRET
+  #
+  # When existingSecret is set the values below are IGNORED and the chart
+  # will NOT create a Secret resource.
   existingSecret: ""
 
-  # If existingSecret is empty, the chart creates a secret from these values.
-  # NEVER commit real values to version control.
-  DATABASE_URL: ""        # postgresql://user:pass@host:5432/vitasync
-  REDIS_URL: ""           # redis://:pass@host:6379
-  JWT_SECRET: ""          # min 32 chars random string
-  ENCRYPTION_KEY: ""      # 64-char hex (256-bit) for AES-256-GCM
+  # ── Values below are only used when existingSecret is empty ──────────────
+  # The chart will REFUSE to install if these are left at their placeholder
+  # defaults — change them before running `helm install`.
 
-  # Provider OAuth credentials (only include providers you have credentials for)
+  # Minimum 32 random characters — generate with: openssl rand -hex 32
+  JWT_SECRET: "change-me-to-a-long-random-string"
+  # 64-char hex string (256-bit key) — generate with: openssl rand -hex 32
+  ENCRYPTION_KEY: "change-me-32-byte-hex-encoded-key"
+  # Initial admin API key seeded on first boot.
+  # The web dashboard also uses this key as its default credential — do NOT
+  # set NEXT_PUBLIC_DEFAULT_API_KEY to a different value; that key would not
+  # exist in the database and every dashboard request would return 401.
+  # Generate with: openssl rand -hex 20  (then prefix with "vs_live_")
+  ADMIN_API_KEY: "vs_live_changeme_for_production"
+
+  # Provider OAuth credentials — only the providers you have registered apps for.
   FITBIT_CLIENT_ID: ""
   FITBIT_CLIENT_SECRET: ""
   GARMIN_CONSUMER_KEY: ""
   GARMIN_CONSUMER_SECRET: ""
-  WITHINGS_CLIENT_ID: ""
-  WITHINGS_CLIENT_SECRET: ""
-  POLAR_CLIENT_ID: ""
-  POLAR_CLIENT_SECRET: ""
   STRAVA_CLIENT_ID: ""
   STRAVA_CLIENT_SECRET: ""
+  WHOOP_CLIENT_ID: ""
+  WHOOP_CLIENT_SECRET: ""
+  WITHINGS_CLIENT_ID: ""
+  WITHINGS_CLIENT_SECRET: ""
 
-  # Bootstrap — API creates default workspace + admin key on first boot
-  ADMIN_API_KEY: ""           # e.g. vs_test_dev0000000000000000000000000000
-  ADMIN_WORKSPACE_SLUG: "default"
+  # Per-provider inbound webhook secrets — used to verify HMAC signatures on
+  # push notifications from the provider to POST /v1/inbound/:providerId/webhook.
+  # Only required if you register inbound webhook subscriptions with the provider.
+  # Generate with: openssl rand -hex 32
+  FITBIT_WEBHOOK_SECRET: ""
+  GARMIN_WEBHOOK_SECRET: ""
+  STRAVA_WEBHOOK_SECRET: ""
+  WHOOP_WEBHOOK_SECRET: ""

@@ -15,14 +15,8 @@ spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
   {{- end }}
-  {{- $tlsHosts := list }}
-  {{- if .Values.ingress.api.tls }}
-  {{- $tlsHosts = append $tlsHosts .Values.ingress.api.host }}
-  {{- end }}
-  {{- if .Values.ingress.web.tls }}
-  {{- $tlsHosts = append $tlsHosts .Values.ingress.web.host }}
-  {{- end }}
-  {{- if $tlsHosts }}
+  {{- $hasTls := or .Values.ingress.api.tls .Values.ingress.web.tls }}
+  {{- if $hasTls }}
   tls:
     {{- if .Values.ingress.api.tls }}
     - hosts:

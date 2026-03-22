@@ -21,6 +21,7 @@ import {
   usersApi,
   webhooksApi,
   type GoalData,
+  type HealthScoreData,
   type Insight,
   type InsightCategory,
   type InsightSeverity,
@@ -43,15 +44,17 @@ import {
   Flame,
   Target,
   CalendarDays,
+  CheckCircle2,
+  Circle,
 } from "lucide-react"
 
 /* ─── Helpers ─── */
 function getScoreLabel(score: number): { text: string; color: string } {
-  if (score >= 85) return { text: "Excellent", color: "text-emerald-500" }
-  if (score >= 70) return { text: "Good", color: "text-blue-500" }
-  if (score >= 50) return { text: "Fair", color: "text-amber-500" }
-  if (score >= 30) return { text: "Low", color: "text-orange-500" }
-  return { text: "Critical", color: "text-red-500" }
+  if (score >= 85) return { text: "Excellent", color: "text-emerald-700 dark:text-emerald-500" }
+  if (score >= 70) return { text: "Good", color: "text-blue-700 dark:text-blue-500" }
+  if (score >= 50) return { text: "Fair", color: "text-amber-700 dark:text-amber-500" }
+  if (score >= 30) return { text: "Low", color: "text-orange-700 dark:text-orange-500" }
+  return { text: "Critical", color: "text-red-700 dark:text-red-500" }
 }
 
 function getGreeting(): string {
@@ -82,7 +85,7 @@ function ScoreRing({ value, max = 100, size = 100, label, color, icon: Icon }: {
     <div className="flex flex-col items-center gap-2">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="transform -rotate-90">
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" className="text-gray-100 dark:text-gray-800" strokeWidth={6} />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" className="text-gray-200 dark:text-gray-800" strokeWidth={6} />
           <circle
             cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={6}
             strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
@@ -90,7 +93,7 @@ function ScoreRing({ value, max = 100, size = 100, label, color, icon: Icon }: {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{Math.round(value)}</span>
+          <span className="text-2xl font-bold text-gray-900 dark:text-gray-50">{Math.round(value)}</span>
         </div>
       </div>
       <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color }}>
@@ -371,6 +374,104 @@ function GoalProgress({ goals }: { goals: GoalData[] }) {
   )
 }
 
+/* ─── Daily Target vs Actual Score ─── */
+const DAILY_SCORE_TARGETS = [
+  { key: "overallScore" as const, label: "Overall", target: 80, icon: Heart, color: "#ef4444" },
+  { key: "sleepScore" as const, label: "Sleep", target: 75, icon: Moon, color: "#6366f1" },
+  { key: "activityScore" as const, label: "Activity", target: 70, icon: Activity, color: "#f59e0b" },
+  { key: "recoveryScore" as const, label: "Recovery", target: 70, icon: Shield, color: "#10b981" },
+]
+
+function DailyTargetActual({ healthScore, goals }: { healthScore: HealthScoreData | null | undefined; goals: GoalData[] }) {
+  const dailyGoals = goals.filter((g) => g.status === "active" && g.goalType === "daily").slice(0, 4)
+
+  if (!healthScore && dailyGoals.length === 0) return null
+
+  return (
+    <DashCard>
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <Target className="h-4 w-4 text-accent-600 dark:text-accent-400" />
+          Daily Target vs Actual
+        </h2>
+        <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+          {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+        </span>
+      </div>
+
+      {/* Health Score Targets */}
+      {healthScore && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
+          {DAILY_SCORE_TARGETS.map(({ key, label, target, icon: Icon, color }) => {
+            const actual = (key === "overallScore" ? healthScore.overallScore : (healthScore as unknown as Record<string, number | null>)[key]) as number | null
+            const value = actual ?? 0
+            const pct = Math.min(100, Math.round((value / target) * 100))
+            const met = value >= target
+            return (
+              <div key={key} className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 p-3 transition-all hover:shadow-sm">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Icon className="h-3.5 w-3.5" style={{ color }} />
+                  <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">{label}</span>
+                  {met && <CheckCircle2 className="h-3 w-3 text-emerald-500 ml-auto" />}
+                  {!met && <Circle className="h-3 w-3 text-gray-300 dark:text-gray-600 ml-auto" />}
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-bold text-gray-900 dark:text-gray-50">{value}</span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">/ {target}</span>
+                </div>
+                <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${pct}%`, backgroundColor: met ? "#10b981" : color }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Daily Goal Targets */}
+      {dailyGoals.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Daily Goals</p>
+          {dailyGoals.map((g) => {
+            const actual = g.currentValue ?? 0
+            const pct = g.targetValue > 0 ? Math.min(100, Math.round((actual / g.targetValue) * 100)) : 0
+            const met = actual >= g.targetValue
+            return (
+              <div key={g.id} className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{g.name}</span>
+                    <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                      <span className="text-xs font-bold text-gray-900 dark:text-gray-50">{actual.toLocaleString()}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500">/ {g.targetValue.toLocaleString()}{g.unit ? ` ${g.unit}` : ""}</span>
+                      {met ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> : <Circle className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />}
+                    </div>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${met ? "bg-gradient-to-r from-emerald-400 to-emerald-500" : "bg-gradient-to-r from-accent-400 to-accent-500"}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {healthScore && !dailyGoals.length && (
+        <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-2">
+          <a href="/dashboard/goals" className="text-accent-600 dark:text-accent-400 hover:underline">Create daily goals</a> to track more targets
+        </p>
+      )}
+    </DashCard>
+  )
+}
+
 export default function DashboardPage() {
   const { selectedUserId, setSelectedUserId } = useSelectedUser()
 
@@ -612,6 +713,9 @@ export default function DashboardPage() {
               <ScoreRing value={healthScore?.recoveryScore ?? 0} label="Recovery" color="#8b5cf6" icon={Activity} />
             </DashCard>
           </div>
+
+          {/* ──────────── Daily Target vs Actual ──────────── */}
+          <DailyTargetActual healthScore={healthScore} goals={goalsResult?.data ?? []} />
 
           {/* ──────────── Daily Biometric Timeline ──────────── */}
           <BiometricTimeline metrics={timelineData} />

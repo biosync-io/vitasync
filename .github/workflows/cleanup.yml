@@ -1,0 +1,56 @@
+name: Maintenance
+
+on:
+  schedule:
+    - cron: "0 3 * * 0"
+  workflow_dispatch:
+
+permissions:
+  packages: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  maintenance:
+    name: Cleanup & Stale
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup API images
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: vitasync-api
+          package-type: container
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: true
+
+      - name: Cleanup Worker images
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: vitasync-worker
+          package-type: container
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: true
+
+      - name: Cleanup Web images
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: vitasync-web
+          package-type: container
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: true
+
+      - name: Mark stale issues and PRs
+        uses: actions/stale@v9
+        with:
+          stale-issue-message: >-
+            This issue has been automatically marked as stale because it has not had
+            recent activity. It will be closed in 14 days if no further activity occurs.
+          stale-pr-message: >-
+            This pull request has been automatically marked as stale because it has not had
+            recent activity. It will be closed in 14 days if no further activity occurs.
+          stale-issue-label: stale
+          stale-pr-label: stale
+          days-before-stale: 60
+          days-before-close: 14
+          exempt-issue-labels: "pinned,security,bug"
+          exempt-pr-labels: "pinned,security"
