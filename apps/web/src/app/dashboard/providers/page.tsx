@@ -282,9 +282,9 @@ function ProviderCard({ provider, isConnected, isConfigured, selectedUserId, use
           <span className="text-[10px] text-emerald-500">Auto-sync active</span>
         </div>
       ) : !isConfigured ? (
-        <div className="rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 px-4 py-3 text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">🔒 Not Available</p>
-          <p className="text-[10px] text-gray-400">Platform admin needs to add {provider.name} API credentials to enable this provider for all users.</p>
+        <div className="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/40 px-4 py-3 text-center">
+          <p className="text-sm font-medium text-indigo-700 dark:text-indigo-400">Coming Soon</p>
+          <p className="text-[10px] text-indigo-500 dark:text-indigo-400/70 mt-0.5">{provider.name} integration is not yet enabled on this instance</p>
         </div>
       ) : (
         <>
