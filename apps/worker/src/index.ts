@@ -3,6 +3,7 @@ import { registerFitbitProvider } from "@biosync-io/provider-fitbit"
 import { registerGarminProvider } from "@biosync-io/provider-garmin"
 import { registerStravaProvider } from "@biosync-io/provider-strava"
 import { registerWhoopProvider } from "@biosync-io/provider-whoop"
+import { registerWithingsProvider } from "@biosync-io/provider-withings"
 import { registerDiscordChannel } from "@biosync-io/notification-discord"
 import { registerSlackChannel } from "@biosync-io/notification-slack"
 import { registerTeamsChannel } from "@biosync-io/notification-teams"
@@ -28,6 +29,7 @@ async function main() {
   registerGarminProvider()
   registerStravaProvider()
   registerWhoopProvider()
+  registerWithingsProvider()
 
   // Register notification channels
   registerDiscordChannel()

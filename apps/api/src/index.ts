@@ -5,6 +5,7 @@ import { registerFitbitProvider } from "@biosync-io/provider-fitbit"
 import { registerGarminProvider } from "@biosync-io/provider-garmin"
 import { registerStravaProvider } from "@biosync-io/provider-strava"
 import { registerWhoopProvider } from "@biosync-io/provider-whoop"
+import { registerWithingsProvider } from "@biosync-io/provider-withings"
 import { eq } from "drizzle-orm"
 import { config } from "./config.js"
 import { buildServer } from "./server.js"
@@ -66,6 +67,7 @@ async function main() {
   registerGarminProvider()
   registerStravaProvider()
   registerWhoopProvider()
+  registerWithingsProvider()
 
   // ── Initialize database connection ───────────────────────────
   initDb(config.DATABASE_URL)
