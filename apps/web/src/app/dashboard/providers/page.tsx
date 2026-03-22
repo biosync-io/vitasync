@@ -283,8 +283,8 @@ function ProviderCard({ provider, isConnected, isConfigured, selectedUserId, use
         </div>
       ) : !isConfigured ? (
         <div className="rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 px-4 py-3 text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">🔒 Not Configured</p>
-          <p className="text-[10px] text-gray-400">Add credentials to <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">.env</code> to enable</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">🔒 Not Available</p>
+          <p className="text-[10px] text-gray-400">Platform admin needs to add {provider.name} API credentials to enable this provider for all users.</p>
         </div>
       ) : (
         <>
