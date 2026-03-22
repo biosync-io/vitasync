@@ -367,23 +367,42 @@ function OAuthModal({ providerId, providerName, providerIcon, providerBg, userId
     )
   }, [providerId, userId])
 
-  // Listen for postMessage from the OAuth popup
+  // Listen for result via postMessage OR localStorage (fallback when window.opener is null)
   useEffect(() => {
-    function handleMessage(event: MessageEvent) {
-      if (event.origin !== window.location.origin) return
-      if (event.data?.type !== "vitasync-oauth-result") return
-
-      if (event.data.success) {
+    function handleResult(data: { type?: string; success?: boolean; error?: string }) {
+      if (data?.type !== "vitasync-oauth-result") return
+      if (data.success) {
         setStatus("success")
         queryClient.invalidateQueries({ queryKey: ["connections"] })
       } else {
         setStatus("error")
-        setErrorMsg(event.data.error ?? "Connection failed")
+        setErrorMsg(data.error ?? "Connection failed")
       }
     }
 
+    function handleMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return
+      handleResult(event.data)
+    }
+
+    function handleStorage(event: StorageEvent) {
+      if (event.key !== "vitasync-oauth-result" || !event.newValue) return
+      try {
+        handleResult(JSON.parse(event.newValue))
+      } catch {}
+      // Clean up so it works on next connect attempt
+      localStorage.removeItem("vitasync-oauth-result")
+    }
+
+    // Clear any stale result before starting
+    localStorage.removeItem("vitasync-oauth-result")
+
     window.addEventListener("message", handleMessage)
-    return () => window.removeEventListener("message", handleMessage)
+    window.addEventListener("storage", handleStorage)
+    return () => {
+      window.removeEventListener("message", handleMessage)
+      window.removeEventListener("storage", handleStorage)
+    }
   }, [queryClient])
 
   // Detect popup closed without completing OAuth

@@ -157,9 +157,17 @@ function oauthResultPage(result: { success: boolean; providerId: string; connect
     (function () {
       var data = ${payload};
       data.type = "vitasync-oauth-result";
-      if (window.opener) {
-        window.opener.postMessage(data, window.location.origin);
-      }
+      // Use localStorage as primary channel — works even when window.opener
+      // is nullified after cross-origin redirect chains (app → provider → app).
+      try {
+        localStorage.setItem("vitasync-oauth-result", JSON.stringify(data));
+      } catch (e) {}
+      // Also try postMessage as a fallback
+      try {
+        if (window.opener) {
+          window.opener.postMessage(data, window.location.origin);
+        }
+      } catch (e) {}
       setTimeout(function () { window.close(); }, 1500);
     })();
   </script>
