@@ -40,11 +40,24 @@ export default function ExportsPage() {
   const exports = exportsResult?.data ?? []
 
   const createMut = useMutation({
-    mutationFn: () =>
-      exportsApi.create(selectedUserId, {
-        format: form.format,
-        dateRange: form.dateRange !== "all" ? form.dateRange : undefined,
-      }),
+    mutationFn: () => {
+      const formatMap: Record<string, string> = { fhir: "fhir_r4" }
+      const apiFormat = formatMap[form.format] ?? form.format
+
+      const now = new Date()
+      const ranges: Record<string, { from?: string; to?: string }> = {
+        "7d": { from: new Date(now.getTime() - 7 * 86400000).toISOString(), to: now.toISOString() },
+        "30d": { from: new Date(now.getTime() - 30 * 86400000).toISOString(), to: now.toISOString() },
+        "90d": { from: new Date(now.getTime() - 90 * 86400000).toISOString(), to: now.toISOString() },
+        all: {},
+      }
+      const dateParams = ranges[form.dateRange] ?? {}
+
+      return exportsApi.create(selectedUserId, {
+        format: apiFormat,
+        ...dateParams,
+      })
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["exports", selectedUserId] })
       setShowCreate(false)

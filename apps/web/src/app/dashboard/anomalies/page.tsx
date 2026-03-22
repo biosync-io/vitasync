@@ -136,9 +136,9 @@ export default function AnomaliesPage() {
                 <tbody>
                   {anomalies.map((a) => (
                     <tr key={a.id} className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                      <td className="px-5 py-3 font-medium text-gray-900 dark:text-gray-100">{a.metric}</td>
-                      <td className="px-5 py-3 text-red-600 font-mono">{a.value.toFixed(1)}</td>
-                      <td className="px-5 py-3 text-gray-600 dark:text-gray-400 font-mono">{a.expectedValue.toFixed(1)}</td>
+                      <td className="px-5 py-3 font-medium text-gray-900 dark:text-gray-100 capitalize">{a.metricType?.replace(/_/g, " ")}</td>
+                      <td className="px-5 py-3 text-red-600 font-mono">{(a.observedValue ?? 0).toFixed(1)}</td>
+                      <td className="px-5 py-3 text-gray-600 dark:text-gray-400 font-mono">{(a.expectedValue ?? 0).toFixed(1)}</td>
                       <td className="px-5 py-3 font-mono text-gray-600 dark:text-gray-400">{a.zScore.toFixed(2)}σ</td>
                       <td className="px-5 py-3">
                         <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${SEVERITY_STYLES[a.severity] ?? ""}`}>{a.severity}</span>

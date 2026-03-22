@@ -95,17 +95,15 @@ export default function SleepPage() {
             </div>
             <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-4 text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Daily Target</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatHours(debt.dailyTarget)}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatHours(debt.idealSleepHours)}</p>
             </div>
             <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-4 text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Avg Actual</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatHours(debt.avgActualHours)}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatHours(debt.avgSleepHours)}</p>
             </div>
             <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-4 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Trend</p>
-              <p className={`text-2xl font-bold ${debt.trend === "improving" ? "text-emerald-600" : debt.trend === "worsening" ? "text-red-600" : "text-gray-500"}`}>
-                {debt.trend === "improving" ? "↑ Better" : debt.trend === "worsening" ? "↓ Worse" : "→ Stable"}
-              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Recommendation</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{debt.recommendation}</p>
             </div>
           </div>
         </div>

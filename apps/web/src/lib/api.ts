@@ -779,14 +779,17 @@ export interface MedicationStats {
 export interface AnomalyData {
   id: string
   userId: string
-  metric: string
-  value: number
+  metricType: string
+  observedValue: number
   expectedValue: number
   zScore: number
   severity: string
   status: string
   detectionMethod: string
+  title: string
+  description: string
   detectedAt: string
+  createdAt: string
 }
 
 export interface CorrelationData {
@@ -856,11 +859,11 @@ export interface SymptomPatterns {
 }
 
 export interface SleepDebtData {
+  idealSleepHours: number
+  avgSleepHours: number
   totalDebtHours: number
-  dailyTarget: number
-  avgActualHours: number
-  days: number
-  trend: string
+  dailyDebt: Array<{ date: string; hoursSlept: number; debt: number }>
+  recommendation: string
 }
 
 export interface SleepQualityData {

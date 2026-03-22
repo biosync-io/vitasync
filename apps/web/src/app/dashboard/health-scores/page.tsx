@@ -47,8 +47,10 @@ function ScoreRing({ score, size = 180 }: { score: number; size?: number }) {
           className="transition-all duration-1000 ease-out" />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-100">{score}</span>
-        <span className="text-xs text-gray-400 mt-0.5">/ 100</span>
+        <div className="bg-white/80 dark:bg-gray-900/80 rounded-full px-4 py-2 backdrop-blur-sm">
+          <span className="text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-100">{score}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 block text-center mt-0.5">/ 100</span>
+        </div>
       </div>
     </div>
   )

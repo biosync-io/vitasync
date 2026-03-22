@@ -47,16 +47,21 @@ const reportsRoutes: FastifyPluginAsync = async (app) => {
     const body = z
       .object({
         reportType: z.enum(["weekly", "monthly", "quarterly", "annual"]),
-        periodStart: z.string().datetime(),
-        periodEnd: z.string().datetime(),
+        periodStart: z.string().datetime().optional(),
+        periodEnd: z.string().datetime().optional(),
       })
       .parse(request.body)
+
+    // Auto-compute period if not provided
+    const periodEnd = body.periodEnd ? new Date(body.periodEnd) : new Date()
+    const periodDays = { weekly: 7, monthly: 30, quarterly: 90, annual: 365 }[body.reportType]
+    const periodStart = body.periodStart ? new Date(body.periodStart) : new Date(periodEnd.getTime() - periodDays * 86400000)
 
     const report = await reportService.generate(
       userId,
       body.reportType,
-      new Date(body.periodStart),
-      new Date(body.periodEnd),
+      periodStart,
+      periodEnd,
     )
     return reply.status(201).send(report)
   })
