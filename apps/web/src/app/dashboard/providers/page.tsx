@@ -179,6 +179,15 @@ export default function ProvidersPage() {
                   <strong>Signature verification:</strong> VitaSync validates every incoming webhook using HMAC-SHA256 with <code className="bg-amber-100 dark:bg-amber-800/30 px-1 rounded">X-WHOOP-Signature</code> and <code className="bg-amber-100 dark:bg-amber-800/30 px-1 rounded">X-WHOOP-Signature-Timestamp</code> headers.
                 </p>
               </div>
+              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-3 py-2">
+                <p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 mb-1">How to verify it&apos;s working:</p>
+                <ol className="text-[10px] text-emerald-600 dark:text-emerald-400 space-y-0.5 list-decimal list-inside">
+                  <li>Check <a href="/dashboard/sync-jobs" className="underline font-medium">Sync Jobs</a> — webhook-triggered syncs appear here</li>
+                  <li>Check API server logs: <code className="bg-emerald-100 dark:bg-emerald-800/30 px-1 rounded">docker compose logs api | grep &quot;inbound webhook&quot;</code></li>
+                  <li>Check <a href="/dashboard/notification-logs" className="underline font-medium">Notification Logs</a> — sync failures appear if notification rules are set</li>
+                  <li>In WHOOP app: log an activity or edit sleep → webhook fires within seconds</li>
+                </ol>
+              </div>
             </div>
           </div>
 
