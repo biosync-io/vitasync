@@ -15,6 +15,11 @@ const nextConfig = {
     // Next.js 16: enable React compiler for automatic memoization
     reactCompiler: true,
   },
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
+  compress: true,
+  poweredByHeader: false,
 }
 
 export default nextConfig

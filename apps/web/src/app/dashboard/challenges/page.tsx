@@ -116,7 +116,7 @@ export default function ChallengesPage() {
             const st = STATUS_STYLES[c.status] ?? { bg: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-400" }
             const daysLeft = Math.max(0, Math.ceil((new Date(c.endDate).getTime() - Date.now()) / 86400000))
             return (
-              <div key={c.id} className={`rounded-xl border p-5 shadow-sm cursor-pointer transition-colors ${selectedChallenge === c.id ? "border-indigo-400 dark:border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20" : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"}`} onClick={() => setSelectedChallenge(c.id)}>
+              <div key={c.id} role="button" tabIndex={0} aria-label={`Select challenge: ${c.name}`} className={`rounded-xl border p-5 shadow-sm cursor-pointer transition-colors ${selectedChallenge === c.id ? "border-indigo-400 dark:border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20" : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"}`} onClick={() => setSelectedChallenge(c.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedChallenge(c.id) } }}>
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100">{c.name}</h3>

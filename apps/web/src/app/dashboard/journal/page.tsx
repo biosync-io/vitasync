@@ -294,7 +294,7 @@ export default function JournalPage() {
                   <div className={`shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br ${MOOD_COLORS[mScore]} flex items-center justify-center text-lg text-white shadow-md ${MOOD_GLOW[mScore]} transition-transform duration-200 group-hover:scale-110`}>
                     {MOOD_EMOJI[mScore]}
                   </div>
-                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : entry.id)}>
+                  <div className="flex-1 min-w-0 cursor-pointer" role="button" tabIndex={0} aria-label={entry.title ? `Expand entry: ${entry.title}` : "Expand journal entry"} onClick={() => setExpandedId(isExpanded ? null : entry.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpandedId(isExpanded ? null : entry.id) } }}>
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                         {new Date(entry.entryDate).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
