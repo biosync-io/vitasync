@@ -21,6 +21,8 @@ const PROVIDER_COLORS: Record<string, { bg: string; icon: string }> = {
   strava: { bg: "from-orange-500 to-orange-600", icon: "🏃" },
   withings: { bg: "from-green-400 to-emerald-500", icon: "🩺" },
   polar: { bg: "from-red-400 to-rose-500", icon: "❤️" },
+  google_health_connect: { bg: "from-green-500 to-blue-500", icon: "🤖" },
+  apple_health: { bg: "from-pink-400 to-red-400", icon: "🍎" },
 }
 
 /** All providers VitaSync supports — shown even if not configured */
@@ -29,8 +31,10 @@ const ALL_SUPPORTED_PROVIDERS: ProviderDef[] = [
   { id: "garmin", name: "Garmin", description: "Steps, GPS workouts, HRV, stress, body battery, sleep. Real-time push via webhooks.", authType: "oauth1" as "oauth2", capabilities: ["steps", "heart_rate", "heart_rate_variability", "sleep", "workout", "stress"], logoUrl: null },
   { id: "whoop", name: "WHOOP", description: "Recovery scores, HRV, sleep performance, strain, workouts. Webhook support for real-time.", authType: "oauth2", capabilities: ["recovery_score", "heart_rate_variability", "sleep", "strain_score", "workout", "blood_oxygen"], logoUrl: null },
   { id: "strava", name: "Strava", description: "Workouts, distance, calories, GPS routes, heart rate. On-demand sync.", authType: "oauth2", capabilities: ["workout", "distance", "calories", "heart_rate"], logoUrl: null },
-  { id: "withings", name: "Withings", description: "Weight, body composition, blood pressure, sleep, temperature. Coming soon.", authType: "oauth2", capabilities: ["weight", "body_fat", "blood_pressure", "sleep", "temperature"], logoUrl: null },
-  { id: "polar", name: "Polar", description: "Heart rate, workouts, sleep, recovery. Coming soon.", authType: "oauth2", capabilities: ["heart_rate", "workout", "sleep", "recovery_score"], logoUrl: null },
+  { id: "withings", name: "Withings", description: "Weight, body composition, blood pressure, sleep, temperature.", authType: "oauth2", capabilities: ["weight", "body_fat", "blood_pressure", "sleep", "temperature"], logoUrl: null },
+  { id: "polar", name: "Polar", description: "Heart rate, workouts, sleep, recovery.", authType: "oauth2", capabilities: ["heart_rate", "workout", "sleep", "recovery_score"], logoUrl: null },
+  { id: "google_health_connect", name: "Google Health Connect", description: "Android on-device health hub. Aggregates data from Samsung Health, Fitbit, and 100+ apps. Requires companion app.", authType: "oauth2", capabilities: ["steps", "heart_rate", "sleep", "workout", "weight", "blood_oxygen"], logoUrl: null },
+  { id: "apple_health", name: "Apple Health", description: "iOS health data hub. Aggregates data from Apple Watch, apps, and medical records. Requires companion app.", authType: "oauth2", capabilities: ["steps", "heart_rate", "sleep", "workout", "weight", "blood_oxygen", "heart_rate_variability"], logoUrl: null },
 ]
 
 export default function ProvidersPage() {
