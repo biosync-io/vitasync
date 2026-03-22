@@ -561,10 +561,10 @@ pnpm db:studio      # Open Drizzle Studio
 | ORM | Drizzle ORM 0.38 + postgres.js |
 | Database | PostgreSQL 16 |
 | Queue | BullMQ 5 + Redis 7 |
-| Dashboard | Next.js 15 App Router + Tailwind CSS |
+| Dashboard | Next.js 16 App Router + Tailwind CSS |
 | MCP | @modelcontextprotocol/sdk 1.x |
 | Analytics | Custom correlation engine + anomaly detector |
-| Notifications | 7 channel providers (Discord, Slack, Teams, Email, Push, ntfy, Webhook) |
+| Notifications | 8 channel providers (Discord, Slack, Teams, Email, Push, ntfy, Webhook, Generic) |
 | Observability | Grafana 10.4 + Prometheus 2.51 |
 | Monorepo | pnpm workspaces + Turborepo |
 | Lint/format | Biome |
@@ -572,6 +572,56 @@ pnpm db:studio      # Open Drizzle Studio
 | Containers | Docker + docker compose |
 | Kubernetes | Helm 3 |
 | CI/CD | GitHub Actions · Docker Publish (stable / beta / alpha channels) |
+
+---
+
+## Troubleshooting
+
+### Common issues
+
+| Problem | Solution |
+|---------|----------|
+| `ENCRYPTION_KEY` validation error on startup | Must be exactly 64 hex characters (32 bytes). Generate with `openssl rand -hex 32` |
+| `JWT_SECRET` too short | Minimum 32 characters. Generate with `openssl rand -base64 48` |
+| Database connection refused | Ensure PostgreSQL is running on port 5432. Check `DATABASE_URL` in `.env` |
+| Redis connection error | Ensure Redis is running on port 6379. Check `REDIS_URL` in `.env` |
+| OAuth callback fails | Verify `OAUTH_REDIRECT_BASE_URL` matches your domain (e.g. `http://localhost:3001`) |
+| Docker build fails | Run `docker compose build --no-cache` to rebuild from scratch |
+| `pnpm install` fails | Ensure pnpm ≥ 10 and Node.js ≥ 22. Try `corepack enable && corepack prepare pnpm@latest --activate` |
+| Health score returns 0 | Compute score first via `POST /v1/users/:id/health-scores/compute`. Requires synced health data |
+| Dashboard shows no data | Ensure an API key is configured in Settings. Check browser console for auth errors |
+| Helm install fails | Verify `kubectl` context is set. Check secret values with `helm template` before installing |
+
+### Debug mode
+
+```bash
+# Enable verbose API logging
+LOG_LEVEL=debug pnpm --filter @biosync-io/api dev
+
+# Check worker queue status
+# Visit http://localhost:3001/admin/queues (requires admin API key)
+
+# Run database studio
+pnpm db:studio
+```
+
+### Getting help
+
+- [Documentation site](https://vitasync-docs.example.com) — full guides and API reference
+- [GitHub Issues](https://github.com/biosync-io/vitasync/issues) — bug reports and feature requests
+- [Discussions](https://github.com/biosync-io/vitasync/discussions) — questions and community support
+
+---
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feat/my-feature`
+3. Follow [conventional commits](https://www.conventionalcommits.org/) for commit messages
+4. Run linting and tests: `pnpm lint && pnpm test`
+5. Open a pull request against `main`
+
+See [Contributing Guide](apps/docs/src/content/docs/dev-guides/contributing.md) for detailed development setup and guidelines.
 
 ---
 
