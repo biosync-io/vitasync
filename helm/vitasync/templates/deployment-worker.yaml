@@ -66,10 +66,12 @@ spec:
                 name: {{ include "vitasync.configMapName" . }}
             - secretRef:
                 name: {{ include "vitasync.secretName" . }}
-          {{- with .Values.worker.extraEnv }}
           env:
+            - name: WORKER_QUEUES
+              value: {{ .Values.worker.queues | default "sync,analytics,webhooks" | quote }}
+            {{- with .Values.worker.extraEnv }}
             {{- toYaml . | nindent 12 }}
-          {{- end }}
+            {{- end }}
           resources:
             {{- toYaml .Values.worker.resources | nindent 12 }}
           volumeMounts:

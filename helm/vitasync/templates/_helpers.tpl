@@ -71,6 +71,26 @@ app.kubernetes.io/component: worker
 app.kubernetes.io/component: worker
 {{- end }}
 
+{{- define "vitasync.notificationWorker.labels" -}}
+{{ include "vitasync.labels" . }}
+app.kubernetes.io/component: notification-worker
+{{- end }}
+
+{{- define "vitasync.notificationWorker.selectorLabels" -}}
+{{ include "vitasync.selectorLabels" . }}
+app.kubernetes.io/component: notification-worker
+{{- end }}
+
+{{- define "vitasync.reportWorker.labels" -}}
+{{ include "vitasync.labels" . }}
+app.kubernetes.io/component: report-worker
+{{- end }}
+
+{{- define "vitasync.reportWorker.selectorLabels" -}}
+{{ include "vitasync.selectorLabels" . }}
+app.kubernetes.io/component: report-worker
+{{- end }}
+
 {{- define "vitasync.web.labels" -}}
 {{ include "vitasync.labels" . }}
 app.kubernetes.io/component: web

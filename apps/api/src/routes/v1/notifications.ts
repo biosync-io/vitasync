@@ -181,6 +181,36 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
     const logs = await notificationService.listLogs(userId, query)
     return reply.send({ data: logs })
   })
+
+  // ─── In-App Notification Inbox ─────────────────────────────────
+
+  // GET /v1/users/:userId/notifications/inbox
+  app.get("/:userId/notifications/inbox", async (request, reply) => {
+    const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
+    const owner = await userService.findById(userId, request.workspaceId)
+    if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
+
+    const query = z
+      .object({ limit: z.coerce.number().min(1).max(100).default(20) })
+      .parse(request.query)
+
+    const { notifications, unreadCount } = await notificationService.getInbox(userId, query.limit)
+    return reply.send({ data: notifications, unreadCount })
+  })
+
+  // PATCH /v1/users/:userId/notifications/inbox/read
+  app.patch("/:userId/notifications/inbox/read", async (request, reply) => {
+    const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
+    const owner = await userService.findById(userId, request.workspaceId)
+    if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
+
+    const body = z
+      .object({ ids: z.array(z.string().uuid()).optional() })
+      .parse(request.body ?? {})
+
+    await notificationService.markRead(userId, body.ids)
+    return reply.send({ message: "Notifications marked as read" })
+  })
 }
 
 export default notificationsRoutes

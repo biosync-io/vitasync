@@ -1,5 +1,6 @@
 import {
   getDb,
+  inAppNotifications,
   notificationChannels,
   notificationLogs,
   notificationRules,
@@ -10,8 +11,9 @@ import type {
   NotificationRuleInsert,
   NotificationRuleRow,
   NotificationLogRow,
+  InAppNotificationRow,
 } from "@biosync-io/db"
-import { and, desc, eq } from "drizzle-orm"
+import { and, desc, eq, inArray, sql } from "drizzle-orm"
 
 /**
  * Notification Service — CRUD for notification channels, rules, and logs.
@@ -163,5 +165,45 @@ export class NotificationService {
       ...data,
       deliveredAt: data.status === "delivered" ? new Date() : undefined,
     })
+  }
+
+  // ─── In-App Inbox ──────────────────────────────────────────────
+
+  async getInbox(
+    userId: string,
+    limit: number,
+  ): Promise<{ notifications: InAppNotificationRow[]; unreadCount: number }> {
+    const [notifications, countResult] = await Promise.all([
+      this.db
+        .select()
+        .from(inAppNotifications)
+        .where(eq(inAppNotifications.userId, userId))
+        .orderBy(desc(inAppNotifications.createdAt))
+        .limit(limit),
+      this.db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(inAppNotifications)
+        .where(and(eq(inAppNotifications.userId, userId), eq(inAppNotifications.read, false))),
+    ])
+
+    return {
+      notifications,
+      unreadCount: countResult[0]?.count ?? 0,
+    }
+  }
+
+  async markRead(userId: string, ids?: string[]): Promise<void> {
+    if (ids && ids.length > 0) {
+      await this.db
+        .update(inAppNotifications)
+        .set({ read: true })
+        .where(and(eq(inAppNotifications.userId, userId), inArray(inAppNotifications.id, ids)))
+    } else {
+      // Mark all as read
+      await this.db
+        .update(inAppNotifications)
+        .set({ read: true })
+        .where(eq(inAppNotifications.userId, userId))
+    }
   }
 }

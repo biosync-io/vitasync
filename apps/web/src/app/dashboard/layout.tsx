@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   type AppearanceMode,
   applyAppearance,
@@ -10,6 +11,8 @@ import {
 } from "../../lib/ThemeProvider"
 import { ThemeSettingsPanel } from "../../lib/ThemeSettingsPanel"
 import { CommandPalette } from "../../lib/CommandPalette"
+import { useSelectedUser } from "../../lib/user-selection-context"
+import { notificationsApi, type InAppNotification } from "../../lib/api"
 import {
   LayoutDashboard,
   Activity,
@@ -420,12 +423,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <kbd className="ml-auto text-[10px] font-mono opacity-50">⌘K</kbd>
             </button>
             {/* Notifications */}
-            <Link
-              href="/dashboard/notifications"
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative"
-            >
-              <Bell className="h-5 w-5" />
-            </Link>
+            <NotificationBell />
             {/* User avatar */}
             <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-accent-500/20">
               V
@@ -440,5 +438,146 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
     </div>
   )
+}
+
+// ── Notification Bell ─────────────────────────────────────────────────────
+
+const SEVERITY_COLORS: Record<string, string> = {
+  info: "text-blue-500",
+  warning: "text-amber-500",
+  critical: "text-red-500",
+}
+
+const CATEGORY_ICONS: Record<string, string> = {
+  sync: "🔄",
+  report: "📊",
+  anomaly: "⚠️",
+  achievement: "🏆",
+  goal: "🎯",
+  insight: "💡",
+  system: "⚙️",
+}
+
+function NotificationBell() {
+  const { selectedUserId } = useSelectedUser()
+  const queryClient = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const bellRef = useRef<HTMLDivElement>(null)
+
+  const { data } = useQuery({
+    queryKey: ["inbox", selectedUserId],
+    queryFn: () => notificationsApi.getInbox(selectedUserId, { limit: 15 }),
+    enabled: !!selectedUserId,
+    refetchInterval: 30_000,
+  })
+
+  const notifications = data?.data ?? []
+  const unreadCount = data?.unreadCount ?? 0
+
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e: MouseEvent) {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [open])
+
+  const handleMarkAllRead = async () => {
+    if (!selectedUserId) return
+    await notificationsApi.markRead(selectedUserId)
+    queryClient.invalidateQueries({ queryKey: ["inbox"] })
+  }
+
+  return (
+    <div ref={bellRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative"
+      >
+        <Bell className="h-5 w-5" />
+        {unreadCount > 0 && (
+          <span className="absolute top-1 right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-12 z-50 w-96 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl overflow-hidden animate-fade-in-down">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Notifications</h3>
+            {unreadCount > 0 && (
+              <button type="button" onClick={handleMarkAllRead} className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline">
+                Mark all read
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-80 overflow-y-auto divide-y divide-gray-50 dark:divide-gray-800">
+            {notifications.length === 0 ? (
+              <div className="px-4 py-8 text-center">
+                <Bell className="mx-auto h-8 w-8 text-gray-300 dark:text-gray-600 mb-2" />
+                <p className="text-xs text-gray-400">No notifications yet</p>
+              </div>
+            ) : (
+              notifications.map((n) => (
+                <NotificationItem key={n.id} notification={n} onClose={() => setOpen(false)} />
+              ))
+            )}
+          </div>
+
+          <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-2">
+            <Link
+              href="/dashboard/notifications"
+              onClick={() => setOpen(false)}
+              className="block text-center text-xs text-indigo-600 dark:text-indigo-400 hover:underline py-1"
+            >
+              View all notifications
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function NotificationItem({ notification: n, onClose }: { notification: InAppNotification; onClose: () => void }) {
+  const ago = formatTimeAgo(n.createdAt)
+  const content = (
+    <div className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${!n.read ? "bg-indigo-50/50 dark:bg-indigo-950/20" : ""}`}>
+      <div className="flex items-start gap-2.5">
+        <span className="text-base mt-0.5 shrink-0">{CATEGORY_ICONS[n.category] ?? "🔔"}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className={`text-xs font-semibold truncate ${!n.read ? "text-gray-900 dark:text-gray-100" : "text-gray-600 dark:text-gray-400"}`}>
+              {n.title}
+            </p>
+            {!n.read && <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />}
+          </div>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">{n.body}</p>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{ago}</p>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (n.link) {
+    return <a href={n.link} onClick={onClose}>{content}</a>
+  }
+  return content
+}
+
+function formatTimeAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime()
+  const sec = Math.floor(ms / 1000)
+  if (sec < 60) return "just now"
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `${min}m ago`
+  const hr = Math.floor(min / 60)
+  if (hr < 24) return `${hr}h ago`
+  const days = Math.floor(hr / 24)
+  return `${days}d ago`
 }
 

@@ -1013,6 +1013,30 @@ export const notificationsApi = {
     if (opts?.limit) params.set("limit", String(opts.limit))
     return request<{ data: NotificationLog[] }>(`/v1/users/${userId}/notifications/logs?${params}`)
   },
+
+  // Inbox (in-app notifications)
+  getInbox: (userId: string, opts?: { limit?: number }) => {
+    const params = new URLSearchParams()
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    return request<{ data: InAppNotification[]; unreadCount: number }>(`/v1/users/${userId}/notifications/inbox?${params}`)
+  },
+  markRead: (userId: string, ids?: string[]) =>
+    request<{ message: string }>(`/v1/users/${userId}/notifications/inbox/read`, {
+      method: "PATCH",
+      body: JSON.stringify(ids ? { ids } : {}),
+    }),
+}
+
+export interface InAppNotification {
+  id: string
+  userId: string
+  title: string
+  body: string
+  category: string
+  severity: string
+  link: string | null
+  read: boolean
+  createdAt: string
 }
 
 // ---- Journal ----

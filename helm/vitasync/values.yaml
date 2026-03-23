@@ -85,11 +85,16 @@ api:
   #   value: "my-value"
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Worker service (BullMQ background job processor)
+# Worker service (BullMQ background job processor — sync, analytics, webhooks)
 # ─────────────────────────────────────────────────────────────────────────────
 worker:
   enabled: true
   replicaCount: 1
+
+  # Comma-separated list of BullMQ queues this worker processes.
+  # Default handles sync, analytics, and webhooks. Notification and report
+  # processing are delegated to dedicated workers below.
+  queues: "sync,analytics,webhooks"
 
   image:
     repository: ghcr.io/biosync-io/vitasync-worker
@@ -129,6 +134,76 @@ worker:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+
+  extraEnv: []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Notification Worker (dedicated pod for alert delivery)
+#
+# Uses the same worker image with WORKER_QUEUES=notifications.
+# Scale independently from sync workers for burst notification loads.
+# ─────────────────────────────────────────────────────────────────────────────
+notificationWorker:
+  enabled: true
+  replicaCount: 1
+
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    fsGroup: 1001
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: ["ALL"]
+
+  nodeSelector: {}
+  tolerations: []
+
+  extraEnv: []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Report Worker (dedicated pod for report generation)
+#
+# Uses the same worker image with WORKER_QUEUES=reports.
+# Reports are CPU-intensive; isolating them prevents sync job starvation.
+# ─────────────────────────────────────────────────────────────────────────────
+reportWorker:
+  enabled: true
+  replicaCount: 1
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    fsGroup: 1001
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: ["ALL"]
+
+  nodeSelector: {}
+  tolerations: []
 
   extraEnv: []
 

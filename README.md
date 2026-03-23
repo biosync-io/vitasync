@@ -49,7 +49,7 @@ VitaSync is a fully TypeScript monorepo that gives you a production-ready, multi
 vitasync/
 ├── apps/
 │   ├── api/        # Fastify 5 REST API — routes, services, auth plugin
-│   ├── worker/     # BullMQ worker — sync, analytics, notifications
+│   ├── worker/     # BullMQ worker — sync, analytics, notifications, reports
 │   ├── web/        # Next.js 16 App Router dashboard
 │   ├── mcp/        # MCP server — expose health data + AI analytics to AI assistants
 │   └── docs/       # Astro Starlight documentation site
@@ -116,14 +116,26 @@ API (Fastify)
   Sync trigger → BullMQ sync queue
                       │
                       ▼
-               Worker process
-                  ├─ resolves provider from registry
-                  ├─ decrypts OAuth tokens
-                  ├─ streams data via provider.syncData()
-                  ├─ bulk-inserts to health_metrics (idempotent)
-                  ├─ enqueues webhook delivery
-                  ├─ runs anomaly detection → triggers notification if threshold met
-                  └─ dispatches notifications via registered channels
+  ┌─────────────────────────────────────────────────────┐
+  │  Worker Pods (same image, different WORKER_QUEUES)   │
+  │                                                     │
+  │  sync-worker pod          WORKER_QUEUES=sync,       │
+  │   ├─ resolves provider       analytics,webhooks     │
+  │   ├─ decrypts OAuth tokens                          │
+  │   ├─ streams data via provider.syncData()           │
+  │   ├─ bulk-inserts to health_metrics (idempotent)    │
+  │   ├─ enqueues webhook delivery                      │
+  │   └─ runs anomaly detection                         │
+  │                                                     │
+  │  notification-worker pod  WORKER_QUEUES=notifications│
+  │   ├─ creates in-app notification row                │
+  │   ├─ resolves configured channels (Discord, etc.)   │
+  │   └─ dispatches to all channels in parallel         │
+  │                                                     │
+  │  report-worker pod        WORKER_QUEUES=reports     │
+  │   ├─ generates health reports + snapshots           │
+  │   └─ enqueues "report ready" notification           │
+  └─────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -145,7 +157,7 @@ cp .env.example .env
 docker compose up -d
 
 # 4. Watch logs
-docker compose logs -f api worker
+docker compose logs -f api worker notification-worker report-worker
 ```
 
 - **Web dashboard**: http://localhost:3000
@@ -329,8 +341,9 @@ VitaSync includes a modular notification system supporting 7 channel types. User
 
 1. **Register a channel** — `POST /v1/users/:id/notifications/channels` with `channelType` and channel-specific `config` (e.g. webhook URL, SMTP settings).
 2. **Create rules** — `POST /v1/users/:id/notifications/rules` to map categories (`anomaly`, `goal`, `achievement`, `sync`, `report`, `system`, `insight`) and minimum severity (`info`, `warning`, `critical`) to one or more channels.
-3. **Automatic dispatch** — When an event occurs (e.g. anomaly detected), the worker resolves matching rules and dispatches to all configured channels in parallel via the `notifications` BullMQ queue.
-4. **Test delivery** — `POST /v1/users/:id/notifications/channels/:cid/test` sends a test message through the worker.
+3. **Automatic dispatch** — When an event occurs (e.g. anomaly detected), the worker resolves matching rules and dispatches to all configured channels in parallel via the `notifications` BullMQ queue. Every notification also creates an in-app notification visible in the dashboard bell icon.
+4. **In-app inbox** — `GET /v1/users/:id/notifications/inbox` returns recent notifications with unread count. `PATCH /v1/users/:id/notifications/inbox/read` marks notifications as read.
+5. **Test delivery** — `POST /v1/users/:id/notifications/channels/:cid/test` sends a test message through the worker.
 5. **Audit log** — Every delivery is recorded in `notification_logs` and queryable via `GET /v1/users/:id/notifications/logs`.
 
 ### Adding a notification channel
@@ -338,6 +351,45 @@ VitaSync includes a modular notification system supporting 7 channel types. User
 1. Create `packages/notifications/<name>/` with a class extending `NotificationChannel` from `@biosync-io/notification-core`.
 2. Implement `send(payload, config)` and `validateConfig(config)`.
 3. Register with `channelRegistry.register("myChannel", new MyChannel())` in the worker.
+
+---
+
+## Worker Architecture
+
+The worker uses a single Docker image (`ghcr.io/biosync-io/vitasync-worker`) that can be configured via the `WORKER_QUEUES` environment variable to process specific BullMQ queues. This enables independent scaling via dedicated Kubernetes pods.
+
+### Default deployment (3 worker pods)
+
+| Pod | `WORKER_QUEUES` | Purpose | Concurrency |
+|-----|-----------------|---------|-------------|
+| **sync-worker** | `sync,analytics,webhooks` | Provider data sync, analytics computation, webhook delivery | 5 / 3 / 10 |
+| **notification-worker** | `notifications` | Alert delivery (Discord, Slack, email, etc.) + in-app notifications | 8 |
+| **report-worker** | `reports` | Health report + snapshot generation | 2 |
+
+### Configuration
+
+```bash
+# Single worker handling everything (dev/small deployments)
+WORKER_QUEUES=sync,analytics,webhooks,notifications,reports
+
+# Or split across pods for independent scaling
+WORKER_QUEUES=sync,analytics,webhooks    # sync-worker pod
+WORKER_QUEUES=notifications              # notification-worker pod
+WORKER_QUEUES=reports                    # report-worker pod
+```
+
+### Helm values
+
+```yaml
+worker:
+  queues: "sync,analytics,webhooks"  # Main sync worker
+notificationWorker:
+  enabled: true                      # Dedicated notification pod
+  replicaCount: 1
+reportWorker:
+  enabled: true                      # Dedicated report pod
+  replicaCount: 1
+```
 
 ---
 
@@ -474,6 +526,7 @@ helm install vitasync ./helm/vitasync \
 
 - Use [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets) or [External Secrets Operator](https://external-secrets.io) and set `secrets.existingSecret`.
 - Enable HPA: `api.autoscaling.enabled=true`, `worker.autoscaling.enabled=true`.
+- Scale notification/report workers independently: `notificationWorker.replicaCount`, `reportWorker.replicaCount`.
 - Enable PDB: `api.podDisruptionBudget.enabled=true` (already on by default).
 - The migration Job runs automatically as a `pre-install,pre-upgrade` Helm hook.
 

@@ -1,0 +1,62 @@
+{{- if .Values.reportWorker.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vitasync.fullname" . }}-report-worker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "vitasync.reportWorker.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.reportWorker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "vitasync.reportWorker.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.reportWorker.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "vitasync.reportWorker.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- include "vitasync.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "vitasync.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.reportWorker.podSecurityContext | nindent 8 }}
+      containers:
+        - name: report-worker
+          image: {{ include "vitasync.worker.image" . }}
+          imagePullPolicy: {{ .Values.worker.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.reportWorker.securityContext | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "vitasync.configMapName" . }}
+            - secretRef:
+                name: {{ include "vitasync.secretName" . }}
+          env:
+            - name: WORKER_QUEUES
+              value: "reports"
+            {{- with .Values.reportWorker.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.reportWorker.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.reportWorker.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.reportWorker.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

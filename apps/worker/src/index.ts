@@ -21,24 +21,33 @@ import { processSyncJob } from "./processors/sync.processor.js"
 import { processWebhookJob } from "./processors/webhook.processor.js"
 import { startPeriodicScheduler } from "./schedulers/periodic-sync.js"
 
+type QueueName = "sync" | "analytics" | "webhooks" | "notifications" | "reports"
+
 async function main() {
   const config = getConfig()
+  const enabledQueues = new Set(
+    config.WORKER_QUEUES.split(",").map((q) => q.trim().toLowerCase()) as QueueName[],
+  )
 
-  // Register data providers
-  registerFitbitProvider()
-  registerGarminProvider()
-  registerStravaProvider()
-  registerWhoopProvider()
-  registerWithingsProvider()
+  // Register data providers (needed by sync + analytics workers)
+  if (enabledQueues.has("sync") || enabledQueues.has("analytics")) {
+    registerFitbitProvider()
+    registerGarminProvider()
+    registerStravaProvider()
+    registerWhoopProvider()
+    registerWithingsProvider()
+  }
 
-  // Register notification channels
-  registerDiscordChannel()
-  registerSlackChannel()
-  registerTeamsChannel()
-  registerEmailChannel()
-  registerPushChannel()
-  registerNtfyChannel()
-  registerWebhookNotificationChannel()
+  // Register notification channels (needed by notification worker)
+  if (enabledQueues.has("notifications")) {
+    registerDiscordChannel()
+    registerSlackChannel()
+    registerTeamsChannel()
+    registerEmailChannel()
+    registerPushChannel()
+    registerNtfyChannel()
+    registerWebhookNotificationChannel()
+  }
 
   // Connect to the database
   await initDb(config.DATABASE_URL)
@@ -48,109 +57,143 @@ async function main() {
     enableReadyCheck: false,
   })
 
-  // Sync worker — concurrency 5: process up to 5 connections in parallel
-  const syncWorker = new Worker("sync", processSyncJob, {
-    connection,
-    concurrency: 5,
-  })
+  const workers: Worker[] = []
+  let stopScheduler: (() => Promise<void>) | null = null
 
-  // Webhook worker — concurrency 10: webhooks are fast HTTP calls
-  const webhookWorker = new Worker("webhooks", processWebhookJob, {
-    connection,
-    concurrency: 10,
-  })
-
-  // Analytics worker — runs post-sync analytics (health scores, anomalies, achievements)
-  const analyticsWorker = new Worker("analytics", processAnalyticsJob, {
-    connection,
-    concurrency: 3,
-  })
-
-  // Report worker — generates periodic health reports and snapshots
-  const reportWorker = new Worker("reports", processReportJob, {
-    connection,
-    concurrency: 2,
-  })
-
-  // Notification worker — delivers alerts to Discord, Slack, Teams, Email, etc.
-  const notificationWorker = new Worker("notifications", processNotificationJob, {
-    connection,
-    concurrency: 8,
-  })
-
-  // Notification queue — used to enqueue failure alerts from other workers
+  // Notification queue — used to enqueue failure alerts from sync worker
   const notificationQueue = new Queue("notifications", { connection })
 
-  syncWorker.on("completed", (job) => {
-    console.info(`[sync] Job ${job.id} completed`)
-  })
+  // ── Sync worker ────────────────────────────────────────────────
+  if (enabledQueues.has("sync")) {
+    const syncWorker = new Worker("sync", processSyncJob, {
+      connection,
+      concurrency: 5,
+    })
+    workers.push(syncWorker)
 
-  syncWorker.on("failed", (job, err) => {
-    const providerId = job?.data?.providerId ?? "unknown"
-    console.error(`[sync] Job ${job?.id} failed (${providerId}): ${err.message}`)
-    // Enqueue a notification so the user knows about the failure
-    if (job?.data?.userId) {
-      const providerLabel = providerId.charAt(0).toUpperCase() + providerId.slice(1)
-      notificationQueue.add("sync-failure", {
-        userId: job.data.userId,
-        workspaceId: job.data.workspaceId ?? "",
-        title: `${providerLabel} Sync Failed`,
-        body: `${providerLabel} sync failed: ${err.message.slice(0, 200)}`,
-        severity: "warning",
-        category: "sync",
-      }).catch((e) => console.error("[sync] Failed to enqueue failure notification:", e))
-    }
-  })
+    syncWorker.on("completed", (job) => {
+      console.info(`[sync] Job ${job.id} completed`)
+    })
 
-  webhookWorker.on("completed", (job) => {
-    console.info(`[webhook] Job ${job.id} delivered`)
-  })
+    syncWorker.on("failed", (job, err) => {
+      const providerId = job?.data?.providerId ?? "unknown"
+      console.error(`[sync] Job ${job?.id} failed (${providerId}): ${err.message}`)
+      if (job?.data?.userId) {
+        const providerLabel = providerId.charAt(0).toUpperCase() + providerId.slice(1)
+        notificationQueue.add("sync-failure", {
+          userId: job.data.userId,
+          workspaceId: job.data.workspaceId ?? "",
+          title: `${providerLabel} Sync Failed`,
+          body: `${providerLabel} sync failed: ${err.message.slice(0, 200)}`,
+          severity: "warning",
+          category: "sync",
+        }).catch((e) => console.error("[sync] Failed to enqueue failure notification:", e))
+      }
+    })
 
-  webhookWorker.on("failed", (job, err) => {
-    console.error(`[webhook] Job ${job?.id} failed: ${err.message}`)
-  })
+    // Start periodic sync scheduler
+    const syncQueue = new Queue("sync", {
+      connection,
+      defaultJobOptions: {
+        removeOnComplete: { count: 100 },
+        removeOnFail: { count: 500 },
+      },
+    })
+    stopScheduler = await startPeriodicScheduler(syncQueue, connection)
+    console.info("[worker] Sync queue enabled (concurrency: 5)")
+  }
 
-  analyticsWorker.on("completed", (job) => {
-    console.info(`[analytics] Job ${job.id} completed`)
-  })
+  // ── Webhook worker ─────────────────────────────────────────────
+  if (enabledQueues.has("webhooks")) {
+    const webhookWorker = new Worker("webhooks", processWebhookJob, {
+      connection,
+      concurrency: 10,
+    })
+    workers.push(webhookWorker)
 
-  analyticsWorker.on("failed", (job, err) => {
-    console.error(`[analytics] Job ${job?.id} failed: ${err.message}`)
-  })
+    webhookWorker.on("completed", (job) => {
+      console.info(`[webhook] Job ${job.id} delivered`)
+    })
+    webhookWorker.on("failed", (job, err) => {
+      console.error(`[webhook] Job ${job?.id} failed: ${err.message}`)
+    })
+    console.info("[worker] Webhooks queue enabled (concurrency: 10)")
+  }
 
-  reportWorker.on("completed", (job) => {
-    console.info(`[report] Job ${job.id} completed`)
-  })
+  // ── Analytics worker ───────────────────────────────────────────
+  if (enabledQueues.has("analytics")) {
+    const analyticsWorker = new Worker("analytics", processAnalyticsJob, {
+      connection,
+      concurrency: 3,
+    })
+    workers.push(analyticsWorker)
 
-  reportWorker.on("failed", (job, err) => {
-    console.error(`[report] Job ${job?.id} failed: ${err.message}`)
-  })
+    analyticsWorker.on("completed", (job) => {
+      console.info(`[analytics] Job ${job.id} completed`)
+    })
+    analyticsWorker.on("failed", (job, err) => {
+      console.error(`[analytics] Job ${job?.id} failed: ${err.message}`)
+    })
+    console.info("[worker] Analytics queue enabled (concurrency: 3)")
+  }
 
-  notificationWorker.on("completed", (job) => {
-    console.info(`[notification] Job ${job.id} delivered`)
-  })
+  // ── Report worker ──────────────────────────────────────────────
+  if (enabledQueues.has("reports")) {
+    const reportWorker = new Worker("reports", processReportJob, {
+      connection,
+      concurrency: 2,
+    })
+    workers.push(reportWorker)
 
-  notificationWorker.on("failed", (job, err) => {
-    console.error(`[notification] Job ${job?.id} failed: ${err.message}`)
-  })
+    reportWorker.on("completed", (job) => {
+      console.info(`[report] Job ${job.id} completed`)
+      // Notify user that report is ready
+      if (job?.data?.userId) {
+        const reportType = (job.data.reportType as string)?.charAt(0).toUpperCase() + (job.data.reportType as string)?.slice(1)
+        notificationQueue.add("report-ready", {
+          userId: job.data.userId,
+          workspaceId: job.data.workspaceId ?? "",
+          title: `${reportType || "Health"} Report Ready`,
+          body: `Your ${(reportType || "health").toLowerCase()} report has been generated and is ready to view.`,
+          severity: "info",
+          category: "report",
+          metadata: { reportId: job.data.reportId },
+        }).catch((e) => console.error("[report] Failed to enqueue ready notification:", e))
+      }
+    })
+    reportWorker.on("failed", (job, err) => {
+      console.error(`[report] Job ${job?.id} failed: ${err.message}`)
+    })
+    console.info("[worker] Reports queue enabled (concurrency: 2)")
+  }
 
-  console.info("VitaSync Worker started. Listening for jobs...")
+  // ── Notification worker ────────────────────────────────────────
+  if (enabledQueues.has("notifications")) {
+    const notificationWorker = new Worker("notifications", processNotificationJob, {
+      connection,
+      concurrency: 8,
+    })
+    workers.push(notificationWorker)
 
-  // Start periodic sync scheduler
-  const syncQueue = new Queue("sync", {
-    connection,
-    defaultJobOptions: {
-      removeOnComplete: { count: 100 },
-      removeOnFail: { count: 500 },
-    },
-  })
-  const stopScheduler = await startPeriodicScheduler(syncQueue, connection)
+    notificationWorker.on("completed", (job) => {
+      console.info(`[notification] Job ${job.id} delivered`)
+    })
+    notificationWorker.on("failed", (job, err) => {
+      console.error(`[notification] Job ${job?.id} failed: ${err.message}`)
+    })
+    console.info("[worker] Notifications queue enabled (concurrency: 8)")
+  }
+
+  console.info(`VitaSync Worker started. Queues: [${[...enabledQueues].join(", ")}]`)
 
   // Graceful shutdown
   async function shutdown(signal: string) {
     console.info(`Received ${signal}. Draining workers...`)
-    await stopScheduler()
-    await Promise.all([syncWorker.close(), webhookWorker.close(), analyticsWorker.close(), reportWorker.close(), notificationWorker.close(), syncQueue.close()])
+    if (stopScheduler) await stopScheduler()
+    await Promise.all([
+      ...workers.map((w) => w.close()),
+      notificationQueue.close(),
+    ])
     await connection.quit()
     await closeDb()
     console.info("Worker shut down cleanly.")

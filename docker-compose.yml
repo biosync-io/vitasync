@@ -97,7 +97,7 @@ services:
       - internal
       - external
 
-  # ── Worker ─────────────────────────────────────────────────────────────────
+  # ── Worker (sync, analytics, webhooks) ────────────────────────────────────
   worker:
     build:
       context: .
@@ -108,12 +108,57 @@ services:
       DATABASE_URL: postgresql://vitasync:${POSTGRES_PASSWORD:-changeme}@postgres:5432/vitasync
       REDIS_URL: redis://redis:6379
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      WORKER_QUEUES: sync,analytics,webhooks
       FITBIT_CLIENT_ID: ${FITBIT_CLIENT_ID:-}
       FITBIT_CLIENT_SECRET: ${FITBIT_CLIENT_SECRET:-}
       GARMIN_CONSUMER_KEY: ${GARMIN_CONSUMER_KEY:-}
       GARMIN_CONSUMER_SECRET: ${GARMIN_CONSUMER_SECRET:-}
       WHOOP_CLIENT_ID: ${WHOOP_CLIENT_ID:-}
       WHOOP_CLIENT_SECRET: ${WHOOP_CLIENT_SECRET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - internal
+
+  # ── Notification Worker ─────────────────────────────────────────────────
+  notification-worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://vitasync:${POSTGRES_PASSWORD:-changeme}@postgres:5432/vitasync
+      REDIS_URL: redis://redis:6379
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      WORKER_QUEUES: notifications
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - internal
+
+  # ── Report Worker ───────────────────────────────────────────────────────
+  report-worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://vitasync:${POSTGRES_PASSWORD:-changeme}@postgres:5432/vitasync
+      REDIS_URL: redis://redis:6379
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      WORKER_QUEUES: reports
     depends_on:
       postgres:
         condition: service_healthy

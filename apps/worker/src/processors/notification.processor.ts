@@ -1,6 +1,7 @@
 import type { Job } from "bullmq"
 import {
   getDb,
+  inAppNotifications,
   notificationChannels,
   notificationLogs,
 } from "@biosync-io/db"
@@ -20,6 +21,15 @@ interface NotificationJobData {
   channelId?: string
 }
 
+const CATEGORY_LINKS: Record<string, string> = {
+  report: "/dashboard/reports",
+  sync: "/dashboard/sync-jobs",
+  anomaly: "/dashboard/anomalies",
+  achievement: "/dashboard/achievements",
+  goal: "/dashboard/goals",
+  insight: "/dashboard/insights",
+}
+
 const manager = new NotificationManager()
 
 /**
@@ -29,10 +39,23 @@ const manager = new NotificationManager()
  * provided, only that channel receives it (test notifications). Otherwise,
  * the processor resolves all enabled channels for the user and dispatches
  * to all of them.
+ *
+ * Every notification also creates an in-app notification row so it appears
+ * in the dashboard notification bell.
  */
 export async function processNotificationJob(job: Job<NotificationJobData>): Promise<void> {
   const { userId, title, body, severity, category, url, metadata, channelId } = job.data
   const db = getDb()
+
+  // Always create an in-app notification
+  await db.insert(inAppNotifications).values({
+    userId,
+    title,
+    body,
+    category,
+    severity,
+    link: url ?? CATEGORY_LINKS[category],
+  })
 
   // Resolve target channels
   let channelRows
@@ -49,7 +72,7 @@ export async function processNotificationJob(job: Job<NotificationJobData>): Pro
   }
 
   if (channelRows.length === 0) {
-    console.info(`[notification] No channels configured for user ${userId}`)
+    console.info(`[notification] In-app only for user ${userId} (no external channels)`)
     return
   }
 
@@ -92,5 +115,5 @@ export async function processNotificationJob(job: Job<NotificationJobData>): Pro
   }
 
   const successCount = results.filter((r) => r.success).length
-  console.info(`[notification] Delivered ${successCount}/${results.length} for user ${userId}`)
+  console.info(`[notification] Delivered ${successCount}/${results.length} + in-app for user ${userId}`)
 }

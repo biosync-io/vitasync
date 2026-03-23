@@ -5,6 +5,11 @@ const EnvSchema = z.object({
   REDIS_URL: z.string().url(),
   ENCRYPTION_KEY: z.string().length(64, "Must be 64 hex chars (32 bytes)"),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
+  // Comma-separated list of queues this worker instance should process.
+  // Default: all queues. Example: "sync,analytics,webhooks" or "notifications" or "reports"
+  WORKER_QUEUES: z.string().default("sync,analytics,webhooks,notifications,reports"),
+  // Periodic sync interval in milliseconds (only used when "sync" queue is active)
+  SYNC_INTERVAL_MS: z.coerce.number().int().positive().default(900_000),
   // Provider credentials (optional — providers self-disable if missing)
   FITBIT_CLIENT_ID: z.string().optional(),
   FITBIT_CLIENT_SECRET: z.string().optional(),
