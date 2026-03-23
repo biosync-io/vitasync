@@ -18,7 +18,7 @@ async function fetchMetric(
     .where(
       and(
         eq(healthMetrics.userId, userId),
-        eq(healthMetrics.name, metricName),
+        eq(healthMetrics.metricType, metricName),
         gte(healthMetrics.recordedAt, startDate),
         lte(healthMetrics.recordedAt, endDate),
       ),
@@ -122,7 +122,7 @@ export async function analyzeHeatAcclimation(
 
   const avgTemp = mean(temps)
   const heatDays = temps.filter((t) => t >= 30).length
-  const hrTrend = heartRates.length >= 2 ? heartRates[heartRates.length - 1] - heartRates[0] : 0
+  const hrTrend = heartRates.length >= 2 ? heartRates[heartRates.length - 1]! - heartRates[0]! : 0
   const sweatEff = mean(sweatRate) > 0 ? normalize(mean(sweatRate), 200, 1500) : 0.5
 
   const acclimationScore = clamp(
@@ -262,7 +262,7 @@ export async function analyzeJetLagSeverity(
   const sleepQuality = await fetchMetric(userId, "sleep_quality", daysAgo(date, 3), date)
 
   const current = tzOffsets[0] ?? 0
-  const previous = tzOffsets.length > 1 ? tzOffsets[tzOffsets.length - 1] : current
+  const previous = tzOffsets.length > 1 ? tzOffsets[tzOffsets.length - 1]! : current
   const shift = current - previous
   const absShift = Math.abs(shift)
   const direction: "east" | "west" | "none" = shift > 0 ? "east" : shift < 0 ? "west" : "none"
@@ -337,8 +337,8 @@ export async function analyzeSeasonalAffectiveRisk(
   const energy = await fetchMetric(userId, "energy_level", daysAgo(date, 14), date)
 
   const avgDaylight = mean(daylight)
-  const moodTrend = mood.length >= 2 ? mood[0] - mood[mood.length - 1] : 0
-  const energyTrend = energy.length >= 2 ? energy[0] - energy[energy.length - 1] : 0
+  const moodTrend = mood.length >= 2 ? mood[0]! - mood[mood.length - 1]! : 0
+  const energyTrend = energy.length >= 2 ? energy[0]! - energy[energy.length - 1]! : 0
   const riskScore = clamp(
     (1 - normalize(avgDaylight, 0, 120)) * 0.4 + (moodTrend < 0 ? normalize(Math.abs(moodTrend), 0, 50) * 0.3 : 0) + (energyTrend < 0 ? normalize(Math.abs(energyTrend), 0, 50) * 0.3 : 0),
     0,
@@ -486,7 +486,7 @@ export async function analyzeStepCountPatterns(
   const avg = mean(steps)
   const consistency = 1 - normalize(stddev(steps), 0, avg || 1)
   const peakH = Math.round(mean(peakHours))
-  const trend = steps.length >= 2 ? (steps[0] - steps[steps.length - 1]) / (avg || 1) : 0
+  const trend = steps.length >= 2 ? (steps[0]! - steps[steps.length - 1]!) / (avg || 1) : 0
   const trendScore = clamp(0.5 + trend * 0.5, 0, 1)
 
   return {
@@ -595,7 +595,7 @@ export async function analyzeNatureExposureBenefit(
 
   const totalNature = natureMin.reduce((a, b) => a + b, 0)
   const totalVisits = visits.reduce((a, b) => a + b, 0)
-  const stressReduction = stress.length >= 2 ? stress[stress.length - 1] - stress[0] : 0
+  const stressReduction = stress.length >= 2 ? stress[stress.length - 1]! - stress[0]! : 0
   const benefitScore = clamp(normalize(totalNature, 0, 300) * 0.5 + normalize(totalVisits, 0, 5) * 0.3 + (stressReduction > 0 ? normalize(stressReduction, 0, 30) * 0.2 : 0), 0, 1)
 
   return {
@@ -1008,7 +1008,7 @@ export async function analyzeWeatherSensitivity(
     const mb = mean(b.slice(0, n))
     let num = 0, da = 0, db = 0
     for (let i = 0; i < n; i++) {
-      const x = a[i] - ma, y = b[i] - mb
+      const x = a[i]! - ma, y = b[i]! - mb
       num += x * y; da += x * x; db += y * y
     }
     return da > 0 && db > 0 ? num / Math.sqrt(da * db) : 0
@@ -1051,7 +1051,7 @@ export async function analyzeBarometricPressureImpact(
   const pVar = stddev(pressure)
   let rapidChanges = 0
   for (let i = 1; i < pressure.length; i++) {
-    if (Math.abs(pressure[i] - pressure[i - 1]) > 5) rapidChanges++
+    if (Math.abs(pressure[i]! - pressure[i - 1]!) > 5) rapidChanges++
   }
 
   const impactScore = clamp(
@@ -1091,7 +1091,7 @@ export async function analyzeAltitudeSicknessRisk(
   const headache = await fetchMetric(userId, "headache_score", daysAgo(date, 3), date)
 
   const current = altitude[0] ?? 0
-  const oldest = altitude.length > 1 ? altitude[altitude.length - 1] : current
+  const oldest = altitude.length > 1 ? altitude[altitude.length - 1]! : current
   const ascentRate = Math.max(current - oldest, 0) / Math.max(altitude.length, 1)
   const currentSpo2 = spo2[0] ?? 98
 
@@ -1430,7 +1430,7 @@ export async function analyzeTimeZoneAdaptation(
 
   let daysSince = 0
   for (let i = 1; i < tzHistory.length; i++) {
-    if (Math.abs(tzHistory[i] - tzHistory[i - 1]) > 1) { daysSince = i; break }
+    if (Math.abs(tzHistory[i]! - tzHistory[i - 1]!) > 1) { daysSince = i; break }
   }
 
   const expectedDays = diff * 1.3

@@ -1441,7 +1441,6 @@ export async function assessDehydrationRisk(userId: string, date: Date = new Dat
   const score = clamp(Math.round(60 + avgHRV * 0.2 - avgStress * 0.3 + (avgSpO2 - 93) * 4 + linearSlope(hrvVals) * 50), 0, 100)
   const _sc33 = clamp(Math.round(avgHRV * 0.4 + (100 - avgRHR) * 0.3 + avgDeep / 5 + (avgSpO2 - 92) * 2), 0, 100)
   const risk = _sc33 >= 75 ? "low" : _sc33 >= 45 ? "moderate" : "high"
-  const _sc33 = clamp(Math.round(avgHRV * 0.4 + (100 - avgRHR) * 0.3 + avgDeep / 5 + (avgSpO2 - 92) * 2), 0, 100)
   const urgency = _sc33 >= 75 ? "low" : _sc33 >= 45 ? "moderate" : "high"
   return { riskScore, score, risk, urgency, date: date.toISOString().slice(0, 10) }
 }

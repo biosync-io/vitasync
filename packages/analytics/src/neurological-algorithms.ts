@@ -18,12 +18,12 @@ async function fetchMetric(
     .where(
       and(
         eq(healthMetrics.userId, userId),
-        eq(healthMetrics.metric, metric),
-        gte(healthMetrics.timestamp, start),
-        lte(healthMetrics.timestamp, end),
+        eq(healthMetrics.metricType, metric),
+        gte(healthMetrics.recordedAt, start),
+        lte(healthMetrics.recordedAt, end),
       ),
     )
-    .orderBy(desc(healthMetrics.timestamp))
+    .orderBy(desc(healthMetrics.recordedAt))
   return rows.map((r) => Number(r.value))
 }
 

@@ -18,12 +18,12 @@ async function fetchMetric(
     .where(
       and(
         eq(healthMetrics.userId, userId),
-        eq(healthMetrics.metric, metric),
-        gte(healthMetrics.timestamp, start),
-        lte(healthMetrics.timestamp, end),
+        eq(healthMetrics.metricType, metric),
+        gte(healthMetrics.recordedAt, start),
+        lte(healthMetrics.recordedAt, end),
       ),
     )
-    .orderBy(desc(healthMetrics.timestamp))
+    .orderBy(desc(healthMetrics.recordedAt))
   return rows.map((r) => Number(r.value))
 }
 
@@ -35,17 +35,17 @@ async function fetchMetricWithTimestamps(
 ): Promise<{ value: number; timestamp: Date }[]> {
   const db = getDb()
   const rows = await db
-    .select({ value: healthMetrics.value, timestamp: healthMetrics.timestamp })
+    .select({ value: healthMetrics.value, timestamp: healthMetrics.recordedAt })
     .from(healthMetrics)
     .where(
       and(
         eq(healthMetrics.userId, userId),
-        eq(healthMetrics.metric, metric),
-        gte(healthMetrics.timestamp, start),
-        lte(healthMetrics.timestamp, end),
+        eq(healthMetrics.metricType, metric),
+        gte(healthMetrics.recordedAt, start),
+        lte(healthMetrics.recordedAt, end),
       ),
     )
-    .orderBy(healthMetrics.timestamp)
+    .orderBy(healthMetrics.recordedAt)
   return rows.map((r) => ({ value: Number(r.value), timestamp: new Date(r.timestamp) }))
 }
 
@@ -90,7 +90,7 @@ function slope(values: number[]): number {
   let num = 0
   let den = 0
   for (let i = 0; i < n; i++) {
-    num += (i - xMean) * (values[i] - yMean)
+    num += (i - xMean) * (values[i]! - yMean)
     den += (i - xMean) ** 2
   }
   return den === 0 ? 0 : num / den
@@ -100,7 +100,7 @@ function median(values: number[]): number {
   if (values.length === 0) return 0
   const sorted = [...values].sort((a, b) => a - b)
   const mid = Math.floor(sorted.length / 2)
-  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+  return sorted.length % 2 !== 0 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2
 }
 
 function exponentialDecay(value: number, halfLife: number, elapsed: number): number {

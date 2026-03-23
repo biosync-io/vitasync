@@ -22,18 +22,18 @@ function median(v: number[]): number {
   if (!v.length) return 0
   const sorted = [...v].sort((a, b) => a - b)
   const mid = Math.floor(sorted.length / 2)
-  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+  return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2
 }
 function iqr(v: number[]): number {
   if (v.length < 4) return 0
   const sorted = [...v].sort((a, b) => a - b)
-  const q1 = sorted[Math.floor(sorted.length * 0.25)]
-  const q3 = sorted[Math.floor(sorted.length * 0.75)]
+  const q1 = sorted[Math.floor(sorted.length * 0.25)]!
+  const q3 = sorted[Math.floor(sorted.length * 0.75)]!
   return q3 - q1
 }
 function exponentialDecay(v: number[], alpha: number): number {
   let result = v[0] ?? 0
-  for (let i = 1; i < v.length; i++) result = alpha * v[i] + (1 - alpha) * result
+  for (let i = 1; i < v.length; i++) result = alpha * v[i]! + (1 - alpha) * result
   return result
 }
 function percentAboveThreshold(v: number[], threshold: number): number {
@@ -1024,7 +1024,7 @@ export async function analyzeFeverResponse(userId: string, since: Date, until: D
   const spo2Vals = spo2.map((r: any) => Number(r.value))
 
   const peakTemperature = Math.max(...tempVals, 36.5)
-  const feverReadings = tempVals.filter(t => t > 37.5)
+  const feverReadings = tempVals.filter((t: number) => t > 37.5)
   const duration = tempVals.length > 0 ? feverReadings.length / tempVals.length : 0
   const heartRateCorrelation = clamp((mean(hrVals) - 70) / 40, 0, 1)
   const hydrationStatus = clamp(mean(waterVals) / 2500, 0, 1)

@@ -1,4 +1,4 @@
-﻿// metabolic-algorithms.ts — 60+ metabolic & body-composition algorithms
+// metabolic-algorithms.ts — 60+ metabolic & body-composition algorithms
 // Auto-generated suite of clinical-grade estimation functions
 
 import { getDb, healthMetrics } from "@biosync-io/db";
@@ -50,12 +50,12 @@ async function fetchMetric(
     .where(
       and(
         eq(healthMetrics.userId, userId),
-        eq(healthMetrics.name, metricName),
-        gte(healthMetrics.date, startDate),
-        lte(healthMetrics.date, endDate),
+        eq(healthMetrics.metricType, metricName),
+        gte(healthMetrics.recordedAt, startDate),
+        lte(healthMetrics.recordedAt, endDate),
       ),
     )
-    .orderBy(desc(healthMetrics.date));
+    .orderBy(desc(healthMetrics.recordedAt));
   return rows.map((r) => Number(r.value)).filter((v) => !isNaN(v));
 }
 
@@ -70,13 +70,13 @@ async function fetchLatestMetric(
     .where(
       and(
         eq(healthMetrics.userId, userId),
-        eq(healthMetrics.name, metricName),
+        eq(healthMetrics.metricType, metricName),
       ),
     )
-    .orderBy(desc(healthMetrics.date))
+    .orderBy(desc(healthMetrics.recordedAt))
     .limit(1);
   if (rows.length === 0) return null;
-  const v = Number(rows[0].value);
+  const v = Number(rows[0]!.value);
   return isNaN(v) ? null : v;
 }
 
@@ -88,17 +88,17 @@ async function fetchMetricWithDates(
 ): Promise<{ value: number; date: Date }[]> {
   const db = getDb();
   const rows = await db
-    .select({ value: healthMetrics.value, date: healthMetrics.date })
+    .select({ value: healthMetrics.value, date: healthMetrics.recordedAt })
     .from(healthMetrics)
     .where(
       and(
         eq(healthMetrics.userId, userId),
-        eq(healthMetrics.name, metricName),
-        gte(healthMetrics.date, startDate),
-        lte(healthMetrics.date, endDate),
+        eq(healthMetrics.metricType, metricName),
+        gte(healthMetrics.recordedAt, startDate),
+        lte(healthMetrics.recordedAt, endDate),
       ),
     )
-    .orderBy(desc(healthMetrics.date));
+    .orderBy(desc(healthMetrics.recordedAt));
   return rows
     .map((r) => ({ value: Number(r.value), date: new Date(r.date) }))
     .filter((r) => !isNaN(r.value));
@@ -150,8 +150,8 @@ function percentile(values: number[], p: number): number {
   const idx = (p / 100) * (sorted.length - 1);
   const lower = Math.floor(idx);
   const upper = Math.ceil(idx);
-  if (lower === upper) return sorted[lower];
-  return sorted[lower] + (sorted[upper] - sorted[lower]) * (idx - lower);
+  if (lower === upper) return sorted[lower]!;
+  return sorted[lower]! + (sorted[upper]! - sorted[lower]!) * (idx - lower);
 }
 
 function coefficientOfVariation(values: number[]): number {
@@ -162,9 +162,9 @@ function coefficientOfVariation(values: number[]): number {
 
 function exponentialMovingAverage(values: number[], alpha: number = 0.3): number[] {
   if (values.length === 0) return [];
-  const ema: number[] = [values[0]];
+  const ema: number[] = [values[0]!];
   for (let i = 1; i < values.length; i++) {
-    ema.push(alpha * values[i] + (1 - alpha) * ema[i - 1]);
+    ema.push(alpha * values[i]! + (1 - alpha) * ema[i - 1]!);
   }
   return ema;
 }
@@ -731,7 +731,7 @@ export async function calculateFatOxidationRate(
       estimatedRER: Math.round(rer * 1000) / 1000,
       maxHR: Math.round(maxHR),
       avgExerciseHR: Math.round(avgExerciseHR),
-      inMFOZone,
+      inMFOZone: inMFOZone ? 1 : 0,
     },
   };
 }
@@ -1033,7 +1033,7 @@ export async function calculateBodyCompositionTrend(
     };
   }
 
-  const refDate = weightData[weightData.length - 1].date.getTime();
+  const refDate = weightData[weightData.length - 1]!.date.getTime();
   const weightPoints = weightData.map((d) => ({
     x: (d.date.getTime() - refDate) / (7 * 24 * 3600 * 1000), // weeks
     y: d.value,
@@ -1320,7 +1320,7 @@ export async function calculateWaistHipProxy(
     riskLevel,
     factors,
     recommendations,
-    details: { waist, hip, isEstimated, genderThreshold: threshold },
+    details: { waist, hip, isEstimated: isEstimated ? 1 : 0, genderThreshold: threshold },
   };
 }
 
@@ -1652,7 +1652,7 @@ export async function calculateWeightVelocity(
     };
   }
 
-  const refDate = weightData[weightData.length - 1].date.getTime();
+  const refDate = weightData[weightData.length - 1]!.date.getTime();
   const points = weightData.map((d) => ({
     x: (d.date.getTime() - refDate) / (7 * 24 * 3600 * 1000),
     y: d.value,
@@ -1660,7 +1660,7 @@ export async function calculateWeightVelocity(
 
   const reg = linearRegression(points);
   const weeklyChange = reg.slope;
-  const currentWeight = weightData[0].value;
+  const currentWeight = weightData[0]!.value;
   const projected4w = currentWeight + weeklyChange * 4;
   const projected12w = currentWeight + weeklyChange * 12;
 
@@ -1700,7 +1700,7 @@ export async function calculateWeightVelocity(
       projected4Weeks: Math.round(projected4w * 10) / 10,
       projected12Weeks: Math.round(projected12w * 10) / 10,
       r2: Math.round(reg.r2 * 100) / 100,
-      totalChange: Math.round((weightData[0].value - weightData[weightData.length - 1].value) * 10) / 10,
+      totalChange: Math.round((weightData[0]!.value - weightData[weightData.length - 1]!.value) * 10) / 10,
     },
   };
 }
@@ -2201,7 +2201,7 @@ export async function calculateSetPointWeight(
   const totalWeight = topBuckets.reduce((s, [_, c]) => s + c, 0);
   const weightedSetPoint = topBuckets.reduce((s, [w, c]) => s + w * c, 0) / totalWeight;
 
-  const currentWeight = weightData[0];
+  const currentWeight = weightData[0]!;
   const deviation = currentWeight - weightedSetPoint;
 
   let interpretation: string;
@@ -2995,7 +2995,7 @@ export async function calculateGlucoseVariability(
   // MAGE approximation (simplified)
   const excursions: number[] = [];
   for (let i = 1; i < glucoseReadings.length; i++) {
-    const diff = Math.abs(glucoseReadings[i] - glucoseReadings[i - 1]);
+    const diff = Math.abs(glucoseReadings[i]! - glucoseReadings[i - 1]!);
     if (diff > sd) excursions.push(diff);
   }
   const mage = excursions.length > 0 ? mean(excursions) : 0;
@@ -3505,7 +3505,7 @@ export async function calculateFrailtyIndex(
   else if (frailtyCount <= 3) { riskLevel = "high"; interpretation = `Frail (${frailtyCount}/5 criteria met). Comprehensive geriatric assessment recommended.`; recommendations.push("Geriatric medicine referral", "Structured exercise program", "Nutritional supplementation review"); }
   else { riskLevel = "very-high"; interpretation = `Severely frail (${frailtyCount}/5 criteria). Urgent comprehensive assessment needed.`; recommendations.push("Urgent geriatric consultation", "Multi-disciplinary care team", "Fall prevention and safety assessment"); }
 
-  return { value: frailtyCount, unit: "criteria met (of 5)", label: "Frailty Index (Fried)", interpretation, confidence: 0.55, riskLevel, factors, recommendations, details: { age, isGeriatric: age ? age >= 65 : null } };
+  return { value: frailtyCount, unit: "criteria met (of 5)", label: "Frailty Index (Fried)", interpretation, confidence: 0.55, riskLevel, factors, recommendations, details: { age, isGeriatric: age ? (age >= 65 ? 1 : 0) : null } };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3836,28 +3836,28 @@ export async function calculateWeightCycling(
   // Count direction changes exceeding threshold
   let cycles = 0;
   let direction = 0; // 0=unknown, 1=gaining, -1=losing
-  let lastPeak = smoothed[0];
-  let lastValley = smoothed[0];
+  let lastPeak = smoothed[0]!;
+  let lastValley = smoothed[0]!;
 
   for (let i = 1; i < smoothed.length; i++) {
-    const diff = smoothed[i] - smoothed[i - 1];
+    const diff = smoothed[i]! - smoothed[i - 1]!;
     if (diff > 0 && direction !== 1) {
-      if (direction === -1 && (lastPeak - smoothed[i - 1]) > threshold) {
+      if (direction === -1 && (lastPeak - smoothed[i - 1]!) > threshold) {
         cycles++;
-        lastValley = smoothed[i - 1];
+        lastValley = smoothed[i - 1]!;
       }
       direction = 1;
     } else if (diff < 0 && direction !== -1) {
-      if (direction === 1 && (smoothed[i - 1] - lastValley) > threshold) {
+      if (direction === 1 && (smoothed[i - 1]! - lastValley) > threshold) {
         cycles++;
-        lastPeak = smoothed[i - 1];
+        lastPeak = smoothed[i - 1]!;
       }
       direction = -1;
     }
   }
 
   // Annualize
-  const spanDays = (weightData[0].date.getTime() - weightData[weightData.length - 1].date.getTime()) / (24 * 3600 * 1000);
+  const spanDays = (weightData[0]!.date.getTime() - weightData[weightData.length - 1]!.date.getTime()) / (24 * 3600 * 1000);
   const annualizedCycles = spanDays > 30 ? (cycles / spanDays) * 365 : cycles;
   const totalVariation = stddev(rawWeights);
 

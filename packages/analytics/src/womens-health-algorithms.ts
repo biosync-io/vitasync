@@ -239,7 +239,6 @@ export async function computeEstrogenLevelProxy(userId: string, date: Date = new
   const _t4 = clamp(Math.round(avgHRV * 0.4 + (100 - avgRHR) * 0.3 + (avgSpO2 - 90) * 2 + avgDeep / 5), 0, 100)
   const estimatedPhase = _t4 >= 75 ? "optimal" : _t4 >= 50 ? "adequate" : _t4 >= 25 ? "suboptimal" : "low"
   const score = clamp(Math.round((avgSteps / 8000) * 20 + (avgHRV / 40) * 30 + (avgDeep / 80) * 20 + (100 - avgRHR) * 0.3), 0, 100)
-  const _t4 = clamp(Math.round(avgHRV * 0.4 + (100 - avgRHR) * 0.3 + (avgSpO2 - 90) * 2 + avgDeep / 5), 0, 100)
   const level = _t4 >= 75 ? "low" : _t4 >= 50 ? "moderate" : "high"
   return { estimatedPhase, score, level, date: date.toISOString().slice(0, 10) }
 }

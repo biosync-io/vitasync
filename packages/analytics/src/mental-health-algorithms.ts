@@ -18,12 +18,12 @@ async function fetchMetric(
     .where(
       and(
         eq(healthMetrics.userId, userId),
-        eq(healthMetrics.name, metricName),
-        gte(healthMetrics.timestamp, startDate),
-        lte(healthMetrics.timestamp, endDate),
+        eq(healthMetrics.metricType, metricName),
+        gte(healthMetrics.recordedAt, startDate),
+        lte(healthMetrics.recordedAt, endDate),
       ),
     )
-    .orderBy(desc(healthMetrics.timestamp))
+    .orderBy(desc(healthMetrics.recordedAt))
   return rows.map((r) => Number(r.value))
 }
 
@@ -67,7 +67,7 @@ function linearDecay(values: number[]): number {
   if (values.length === 0) return 0
   const weights = values.map((_, i) => 1 - i / (values.length + 1))
   const totalWeight = weights.reduce((a, b) => a + b, 0)
-  return values.reduce((s, v, i) => s + v * weights[i], 0) / totalWeight
+  return values.reduce((s, v, i) => s + v * weights[i]!, 0) / totalWeight
 }
 
 function slope(values: number[]): number {
@@ -76,7 +76,7 @@ function slope(values: number[]): number {
   const xs = values.map((_, i) => i)
   const xMean = mean(xs)
   const yMean = mean(values)
-  const num = xs.reduce((s, x, i) => s + (x - xMean) * (values[i] - yMean), 0)
+  const num = xs.reduce((s, x, i) => s + (x - xMean) * (values[i]! - yMean), 0)
   const den = xs.reduce((s, x) => s + (x - xMean) ** 2, 0)
   return den === 0 ? 0 : num / den
 }
@@ -88,8 +88,8 @@ function pearson(a: number[], b: number[]): number {
   const mb = mean(b.slice(0, n))
   let num = 0, da = 0, db = 0
   for (let i = 0; i < n; i++) {
-    const diffA = a[i] - ma
-    const diffB = b[i] - mb
+    const diffA = a[i]! - ma
+    const diffB = b[i]! - mb
     num += diffA * diffB
     da += diffA ** 2
     db += diffB ** 2
