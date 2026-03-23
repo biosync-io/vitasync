@@ -33,6 +33,7 @@ import readinessRoutes from "./readiness.js"
 import journalRoutes from "./journal.js"
 import waterRoutes from "./water.js"
 import habitsRoutes from "./habits.js"
+import systemRoutes from "./system.js"
 
 /**
  * Registers all v1 API routes under the `/v1` prefix.
@@ -144,6 +145,9 @@ export async function registerV1Routes(app: FastifyInstance): Promise<void> {
 
       // Habits tracking — /v1/users/:userId/habits
       await v1.register(habitsRoutes, { prefix: "/users" })
+
+      // System status — /v1/system/status
+      await v1.register(systemRoutes, { prefix: "/system" })
     },
     { prefix: "/v1" },
   )

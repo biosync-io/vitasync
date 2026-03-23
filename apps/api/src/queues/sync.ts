@@ -6,6 +6,8 @@ let _connection: Redis | null = null
 let _syncQueue: Queue | null = null
 let _webhookQueue: Queue | null = null
 let _notificationQueue: Queue | null = null
+let _analyticsQueue: Queue | null = null
+let _reportsQueue: Queue | null = null
 
 function getConnection(): Redis {
   if (!_connection) {
@@ -17,10 +19,11 @@ function getConnection(): Redis {
   return _connection
 }
 
-/**
- * Queue for scheduled and on-demand provider sync jobs.
- * Workers pull from this queue to run data synchronization.
- */
+/** Expose the raw Redis connection for health checks */
+export function getRedisConnection(): Redis {
+  return getConnection()
+}
+
 export function getSyncQueue(): Queue {
   if (!_syncQueue) {
     _syncQueue = new Queue("sync", { connection: getConnection() as never })
@@ -28,10 +31,6 @@ export function getSyncQueue(): Queue {
   return _syncQueue
 }
 
-/**
- * Queue for outbound webhook deliveries.
- * Workers pull from this queue to dispatch HTTP notifications.
- */
 export function getWebhookQueue(): Queue {
   if (!_webhookQueue) {
     _webhookQueue = new Queue("webhooks", { connection: getConnection() as never })
@@ -39,15 +38,25 @@ export function getWebhookQueue(): Queue {
   return _webhookQueue
 }
 
-/**
- * Queue for notification deliveries (Discord, Slack, Teams, Email, etc.).
- * Workers pull from this queue to dispatch user-configured alerts.
- */
 export function getNotificationQueue(): Queue {
   if (!_notificationQueue) {
     _notificationQueue = new Queue("notifications", { connection: getConnection() as never })
   }
   return _notificationQueue
+}
+
+export function getAnalyticsQueue(): Queue {
+  if (!_analyticsQueue) {
+    _analyticsQueue = new Queue("analytics", { connection: getConnection() as never })
+  }
+  return _analyticsQueue
+}
+
+export function getReportsQueue(): Queue {
+  if (!_reportsQueue) {
+    _reportsQueue = new Queue("reports", { connection: getConnection() as never })
+  }
+  return _reportsQueue
 }
 
 // Named export used by connections route
@@ -60,5 +69,12 @@ export const webhookQueue = {
 }
 
 export async function closeQueues(): Promise<void> {
-  await Promise.all([_syncQueue?.close(), _webhookQueue?.close(), _notificationQueue?.close(), _connection?.quit()])
+  await Promise.all([
+    _syncQueue?.close(),
+    _webhookQueue?.close(),
+    _notificationQueue?.close(),
+    _analyticsQueue?.close(),
+    _reportsQueue?.close(),
+    _connection?.quit(),
+  ])
 }

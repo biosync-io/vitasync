@@ -1179,3 +1179,34 @@ export const habitsApi = {
     return request<HabitsSummary>(`/v1/users/${userId}/habits/summary?${params}`)
   },
 }
+
+// ---- System Status ----
+export interface SystemStatus {
+  status: "healthy" | "degraded" | "down"
+  timestamp: string
+  uptime: number
+  version: string
+  components: SystemComponent[]
+  queues: QueueStats[]
+}
+
+export interface SystemComponent {
+  name: string
+  status: "healthy" | "degraded" | "down"
+  latencyMs?: number
+  details?: Record<string, unknown>
+}
+
+export interface QueueStats {
+  name: string
+  waiting: number
+  active: number
+  completed: number
+  failed: number
+  delayed: number
+  paused: boolean
+}
+
+export const systemApi = {
+  status: () => request<SystemStatus>("/v1/system/status"),
+}

@@ -23,7 +23,7 @@ declare module "fastify" {
 const authPlugin: FastifyPluginAsync = async (app) => {
   app.addHook("onRequest", async (request: FastifyRequest, reply: FastifyReply) => {
     // Skip auth for docs, health checks, and inbound provider webhooks
-    const skipPaths = ["/docs", "/health", "/v1/inbound"]
+    const skipPaths = ["/docs", "/health", "/v1/inbound", "/v1/system"]
     if (skipPaths.some((p) => request.url.startsWith(p))) return
     // OAuth authorize and callbacks are browser redirects — no API key in this flow
     if (/^\/v1\/oauth\/[^/]+\/(authorize|callback)(\?|$)/.test(request.url)) return

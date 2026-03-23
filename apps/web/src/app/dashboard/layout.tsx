@@ -119,6 +119,7 @@ const navSections: Array<{
       { href: "/dashboard/notifications", label: "Notifications", icon: Megaphone, color: "text-rose-500" },
       { href: "/dashboard/notification-logs", label: "Notification Logs", icon: ScrollText, color: "text-slate-500" },
       { href: "/dashboard/api-keys", label: "API Keys", icon: KeyRound, color: "text-amber-500" },
+      { href: "/dashboard/system", label: "System Status", icon: Activity, color: "text-emerald-500" },
       { href: "/dashboard/settings", label: "Settings", icon: Settings, color: "text-gray-500" },
     ],
   },
