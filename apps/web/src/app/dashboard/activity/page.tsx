@@ -114,7 +114,7 @@ export default function ActivityPage() {
   const { data: tableResult, isLoading } = useQuery({
     queryKey: ["activity-table", selectedUserId, eventType, from, to, cursor],
     queryFn: async () => {
-      const p: Parameters<typeof eventsApi.list>[1] = { limit: 50 }
+      const p: Parameters<typeof eventsApi.list>[1] = { limit: 200 }
       if (eventType) p.eventType = eventType
       if (from) p.from = new Date(from).toISOString()
       if (to) p.to = new Date(to).toISOString()
@@ -129,7 +129,7 @@ export default function ActivityPage() {
   const { data: chartResult } = useQuery({
     queryKey: ["activity-chart", selectedUserId, eventType, from, to],
     queryFn: () => {
-      const p: Parameters<typeof eventsApi.list>[1] = { limit: 200 }
+      const p: Parameters<typeof eventsApi.list>[1] = { limit: 500 }
       if (eventType) p.eventType = eventType
       if (from) p.from = new Date(from).toISOString()
       if (to) p.to = new Date(to).toISOString()
@@ -144,7 +144,7 @@ export default function ActivityPage() {
       healthApi.query(selectedUserId, {
         ...(from ? { from: new Date(from).toISOString() } : {}),
         ...(to ? { to: new Date(to).toISOString() } : {}),
-        limit: 500,
+        limit: 1000,
       }),
     enabled: !!selectedUserId && view === "charts",
   })
@@ -350,7 +350,7 @@ function TableView({ events, result, isLoading, cursor, setCursor, eventType }: 
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800/60">
               <tr>
-                {["Type", "Activity", "Title", "Duration", "Distance", "Calories", "Avg HR", "Provider", "Date"].map((h) => (
+                {["Type", "Activity", "Title", "Duration", "Distance", "Calories", "Avg HR", "Max HR", "Speed", "Elevation", "Provider", "Date", "Details"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
                     {h}
                   </th>
@@ -383,6 +383,10 @@ function TableView({ events, result, isLoading, cursor, setCursor, eventType }: 
 }
 
 function EventRow({ event: ev }: { event: WorkoutEvent }) {
+  const hasData = ev.data && Object.keys(ev.data).length > 0
+  const dataEntries = hasData ? Object.entries(ev.data!).filter(([k]) => !["source", "providerId"].includes(k)) : []
+  const speedKmh = ev.avgSpeedMps != null ? Math.round(ev.avgSpeedMps * 3.6 * 10) / 10 : null
+
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
       <td className="px-4 py-3 whitespace-nowrap">
@@ -406,9 +410,33 @@ function EventRow({ event: ev }: { event: WorkoutEvent }) {
       <td className="px-4 py-3 text-gray-600 dark:text-gray-400 tabular-nums whitespace-nowrap">
         {ev.avgHeartRate != null ? `${ev.avgHeartRate} bpm` : "—"}
       </td>
+      <td className="px-4 py-3 text-gray-600 dark:text-gray-400 tabular-nums whitespace-nowrap">
+        {ev.maxHeartRate != null ? `${ev.maxHeartRate} bpm` : "—"}
+      </td>
+      <td className="px-4 py-3 text-gray-600 dark:text-gray-400 tabular-nums whitespace-nowrap">
+        {speedKmh != null ? `${speedKmh} km/h` : "—"}
+      </td>
+      <td className="px-4 py-3 text-gray-600 dark:text-gray-400 tabular-nums whitespace-nowrap">
+        {ev.elevationGainMeters != null ? `${Math.round(ev.elevationGainMeters)} m` : "—"}
+      </td>
       <td className="px-4 py-3 text-xs text-gray-400 dark:text-gray-500 capitalize">{ev.providerId}</td>
       <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
         {new Date(ev.startedAt).toLocaleString()}
+      </td>
+      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+        {hasData ? (
+          <div className="flex flex-wrap gap-1 max-w-xs">
+            {dataEntries.slice(0, 8).map(([k, v]) => (
+              <span key={k} className="inline-flex rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[10px]">
+                <span className="font-medium text-gray-600 dark:text-gray-300">{k}:</span>
+                <span className="ml-1 text-gray-500 dark:text-gray-400">{typeof v === "number" ? v.toLocaleString(undefined, { maximumFractionDigits: 1 }) : String(v ?? "—")}</span>
+              </span>
+            ))}
+            {dataEntries.length > 8 && <span className="text-[10px] text-gray-400">+{dataEntries.length - 8} more</span>}
+          </div>
+        ) : ev.notes ? (
+          <span className="text-gray-500 dark:text-gray-400 max-w-[150px] truncate block">{ev.notes}</span>
+        ) : "—"}
       </td>
     </tr>
   )

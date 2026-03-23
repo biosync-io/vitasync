@@ -11,15 +11,32 @@ const METRIC_LABELS: Record<string, string> = {
   distance_meters: "Distance (m)",
   calories: "Calories",
   heart_rate_bpm: "Heart Rate (bpm)",
+  heart_rate: "Heart Rate",
+  resting_heart_rate: "Resting HR",
+  hrv: "HRV",
+  heart_rate_variability: "HRV",
+  sleep_duration: "Sleep Duration",
   sleep_duration_minutes: "Sleep (min)",
+  deep_sleep: "Deep Sleep",
+  rem_sleep: "REM Sleep",
+  light_sleep: "Light Sleep",
   active_minutes: "Active Minutes",
+  blood_pressure: "Blood Pressure",
   blood_pressure_systolic: "BP Systolic",
   blood_pressure_diastolic: "BP Diastolic",
+  blood_oxygen: "SpO₂",
+  weight: "Weight",
   weight_kg: "Weight (kg)",
-  spo2_percent: "SpO2 (%)",
+  body_fat: "Body Fat",
+  spo2_percent: "SpO₂ (%)",
+  temperature: "Temperature",
+  body_temperature: "Temperature",
+  respiratory_rate: "Respiratory Rate",
+  stress: "Stress",
+  vo2max: "VO₂ Max",
 }
 
-const PAGE_SIZE = 100
+const PAGE_SIZE = 500
 
 export default function HealthDataPage() {
   const { selectedUserId, setSelectedUserId } = useSelectedUser()
@@ -212,7 +229,7 @@ export default function HealthDataPage() {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800/60">
               <tr>
-                {["Metric", "Value", "Unit", "Recorded At", "Source"].map((h) => (
+                {["Metric", "Value", "Unit", "Recorded At", "Source", "Extra Data"].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
@@ -261,6 +278,9 @@ export default function HealthDataPage() {
 }
 
 function MetricRow({ metric }: { metric: HealthMetric }) {
+  const hasData = metric.data && Object.keys(metric.data).length > 0
+  const dataEntries = hasData ? Object.entries(metric.data!) : []
+
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
       <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
@@ -274,6 +294,18 @@ function MetricRow({ metric }: { metric: HealthMetric }) {
       <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{metric.unit ?? "—"}</td>
       <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{new Date(metric.recordedAt).toLocaleString()}</td>
       <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{metric.source ?? metric.providerId ?? "—"}</td>
+      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+        {hasData ? (
+          <div className="flex flex-wrap gap-1 max-w-xs">
+            {dataEntries.map(([k, v]) => (
+              <span key={k} className="inline-flex rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[10px]">
+                <span className="font-medium text-gray-600 dark:text-gray-300">{k}:</span>
+                <span className="ml-1 text-gray-500 dark:text-gray-400">{typeof v === "number" ? v.toLocaleString(undefined, { maximumFractionDigits: 2 }) : String(v)}</span>
+              </span>
+            ))}
+          </div>
+        ) : "—"}
+      </td>
     </tr>
   )
 }
