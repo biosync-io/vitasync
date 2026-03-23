@@ -1,8 +1,18 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMemo } from "react"
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts"
 import { useSelectedUser } from "../../../lib/user-selection-context"
 import { correlationsApi, usersApi, type CorrelationData } from "../../../lib/api"
+
+const TICK_STYLE = { fill: "#9ca3af", fontSize: 11 }
+const GRID_PROPS = { strokeDasharray: "3 3", stroke: "#6b7280", strokeOpacity: 0.18 }
+const TOOLTIP_STYLE = {
+  contentStyle: { backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: "8px", fontSize: "12px", color: "#f3f4f6" },
+  itemStyle: { color: "#e5e7eb" },
+  labelStyle: { color: "#9ca3af", marginBottom: "4px" },
+}
 
 function strengthColor(strength: string) {
   switch (strength) {
@@ -59,6 +69,18 @@ export default function CorrelationsPage() {
   const strongCorrelations = correlations.filter((c) => c.strength === "strong")
   const avgCoeff = correlations.length > 0 ? correlations.reduce((acc, c) => acc + Math.abs(c.coefficient ?? 0), 0) / correlations.length : 0
 
+  const topCorrelationsChart = useMemo(() => {
+    if (!correlations.length) return []
+    return [...correlations]
+      .sort((a, b) => Math.abs(b.coefficient ?? 0) - Math.abs(a.coefficient ?? 0))
+      .slice(0, 15)
+      .map((c) => ({
+        pair: `${c.metricA} ↔ ${c.metricB}`,
+        coefficient: c.coefficient ?? 0,
+      }))
+      .reverse()
+  }, [correlations])
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -99,6 +121,27 @@ export default function CorrelationsPage() {
             <p className="text-xs text-gray-500 dark:text-gray-400">Avg |Coefficient|</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{avgCoeff.toFixed(3)}</p>
           </div>
+        </div>
+      )}
+
+      {/* Correlation strength chart */}
+      {selectedUserId && topCorrelationsChart.length > 0 && (
+        <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Strongest Correlations</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Top 15 metric pairs by absolute coefficient</p>
+          <ResponsiveContainer width="100%" height={Math.max(280, topCorrelationsChart.length * 28)}>
+            <BarChart data={topCorrelationsChart} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 120 }}>
+              <CartesianGrid {...GRID_PROPS} />
+              <XAxis type="number" domain={[-1, 1]} tick={TICK_STYLE} />
+              <YAxis type="category" dataKey="pair" tick={TICK_STYLE} width={115} />
+              <Tooltip {...TOOLTIP_STYLE} />
+              <Bar dataKey="coefficient" radius={[0, 4, 4, 0]} name="Coefficient">
+                {topCorrelationsChart.map((entry, idx) => (
+                  <Cell key={idx} fill={entry.coefficient >= 0 ? "#22c55e" : "#ef4444"} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       )}
 

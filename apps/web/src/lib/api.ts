@@ -71,7 +71,7 @@ export const usersApi = {
       `/v1/users?limit=${opts?.limit ?? 50}&offset=${opts?.offset ?? 0}`,
     ),
   get: (id: string) => request<User>(`/v1/users/${id}`),
-  create: (body: { externalId: string; email?: string; displayName?: string; gender?: string }) =>
+  create: (body: { externalId: string; email?: string; displayName?: string }) =>
     request<User>("/v1/users", { method: "POST", body: JSON.stringify(body) }),
   update: (id: string, body: { email?: string; displayName?: string; gender?: string | null }) =>
     request<User>(`/v1/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
@@ -108,11 +108,10 @@ export const healthApi = {
     userId: string,
     opts: { metricType: string; from: string; to: string; bucket?: string },
   ) => {
-    const params = new URLSearchParams({
-      metricType: opts.metricType,
-      from: opts.from,
-      to: opts.to,
-    })
+    const params = new URLSearchParams()
+    params.set("metricType", opts.metricType)
+    params.set("from", opts.from)
+    params.set("to", opts.to)
     if (opts.bucket) params.set("bucket", opts.bucket)
     return request<{ data: TimeseriesPoint[]; bucket: string }>(`/v1/users/${userId}/health/timeseries?${params}`)
   },
@@ -371,71 +370,6 @@ export const baselinesApi = {
     request<{ data: BaselineData[]; count: number }>(`/v1/users/${userId}/baselines/compute`, { method: "POST" }),
 }
 
-// ---- Advanced Analytics ----
-export const analyticsApi = {
-  context: (userId: string) =>
-    request<{ data: Record<string, unknown> }>(`/v1/users/${userId}/analytics/context`),
-  correlations: (userId: string, days?: number) =>
-    request<{ data: unknown[]; count: number }>(`/v1/users/${userId}/analytics/correlations`, { method: "POST", body: JSON.stringify({ days: days ?? 90 }) }),
-  anomalies: (userId: string, lookbackDays?: number) =>
-    request<{ data: unknown[]; count: number }>(`/v1/users/${userId}/analytics/anomalies`, { method: "POST", body: JSON.stringify({ lookbackDays: lookbackDays ?? 1 }) }),
-  recovery: (userId: string) =>
-    request<{ data: RecoveryPrediction }>(`/v1/users/${userId}/analytics/recovery`),
-  circadian: (userId: string) =>
-    request<{ data: CircadianAnalysis }>(`/v1/users/${userId}/analytics/circadian`),
-  metabolic: (userId: string) =>
-    request<{ data: MetabolicEfficiency }>(`/v1/users/${userId}/analytics/metabolic`),
-  resilience: (userId: string) =>
-    request<{ data: StressResilienceIndex }>(`/v1/users/${userId}/analytics/resilience`),
-}
-
-export interface RecoveryPrediction {
-  predictedRecoveryHours: number
-  confidence: number
-  state: "recovered" | "recovering" | "fatigued" | "overtrained"
-  factors: Array<{ name: string; impact: "positive" | "negative" | "neutral"; score: number; detail: string }>
-  nextTrainingWindow: string
-  date: string
-}
-
-export interface CircadianAnalysis {
-  chronotype: "early_bird" | "night_owl" | "intermediate"
-  consistencyScore: number
-  avgSleepOnsetMinutes: number
-  avgWakeTimeMinutes: number
-  onsetVariabilityMinutes: number
-  socialJetLagMinutes: number
-  optimalWindow: { bedtime: string; wakeTime: string }
-  confidence: number
-  date: string
-}
-
-export interface MetabolicEfficiency {
-  score: number
-  grade: string
-  components: {
-    cardiacEfficiency: { score: number; value: number; percentile: number; detail: string } | null
-    energyEfficiency: { score: number; value: number; percentile: number; detail: string } | null
-    recoveryEfficiency: { score: number; value: number; percentile: number; detail: string } | null
-    aerobicCapacity: { score: number; value: number; percentile: number; detail: string } | null
-  }
-  trend: "improving" | "declining" | "stable"
-  genderAdjusted: boolean
-  date: string
-}
-
-export interface StressResilienceIndex {
-  score: number
-  level: "elite" | "high" | "moderate" | "developing" | "low"
-  hrvRecoveryRate: number
-  rhrRecoveryRate: number
-  adaptationRatio: number
-  stressorCount: number
-  trend: "improving" | "declining" | "stable"
-  confidence: number
-  date: string
-}
-
 // ---- Shared types (local to client, not re-exported from @biosync-io/types to avoid SSR issues) ----
 export interface ProviderDef {
   id: string
@@ -472,7 +406,7 @@ export interface HealthMetric {
   unit: string | null
   source: string | null
   providerId: string
-  data?: Record<string, unknown>
+  data: Record<string, unknown> | null
 }
 
 export interface HealthSummary {
@@ -559,7 +493,7 @@ export interface SyncJob {
   id: string | undefined
   state: "active" | "waiting" | "delayed" | "completed" | "failed"
   name: string
-  data: { connectionId?: string; userId?: string; workspaceId?: string; providerId?: string; type?: string }
+  data: { connectionId?: string; userId?: string; workspaceId?: string; type?: string; providerId?: string }
   progress: number | object
   attemptsMade: number
   failedReason: string | null
@@ -621,9 +555,8 @@ export interface HealthScoreData {
   cardioScore: number | null
   recoveryScore: number | null
   bodyScore: number | null
-  deltaFromPrevious: number | null
   weeklyAvg: number | null
-  breakdown: Record<string, unknown> | null
+  deltaFromPrevious: number | null
   createdAt: string
 }
 
@@ -801,17 +734,16 @@ export interface MedicationStats {
 export interface AnomalyData {
   id: string
   userId: string
+  metric: string
   metricType: string
+  value: number
   observedValue: number
   expectedValue: number
   zScore: number
   severity: string
   status: string
   detectionMethod: string
-  title: string
-  description: string
   detectedAt: string
-  createdAt: string
 }
 
 export interface CorrelationData {
@@ -867,34 +799,42 @@ export interface SymptomLogData {
   symptom: string
   severity: number
   bodyLocation: string | null
-  triggers: string[] | null
+  triggers: string[]
   notes: string | null
-  startedAt: string
-  resolvedAt: string | null
-  createdAt: string
+  loggedAt: string
+  startedAt: string | null
 }
 
 export interface SymptomPatterns {
+  topSymptoms: { symptom: string; count: number }[]
+  topTriggers: { trigger: string; count: number }[]
+  topLocations: { location: string; count: number }[]
   frequentTriggers: { trigger: string; count: number }[]
   frequentLocations: { location: string; count: number }[]
+  avgSeverity: number
   severityTrend: string
 }
 
 export interface SleepDebtData {
-  idealSleepHours: number
-  avgSleepHours: number
   totalDebtHours: number
-  dailyDebt: Array<{ date: string; hoursSlept: number; debt: number }>
+  dailyTarget: number
+  idealSleepHours: number
+  avgActualHours: number
+  avgSleepHours: number
+  days: number
+  trend: string
   recommendation: string
 }
 
 export interface SleepQualityData {
   avgSleepScore: number
-  avgDurationHours: number
+  avgDeepSleepPercent: number
   avgDeepSleepPct: number
+  avgRemSleepPercent: number
   avgRemSleepPct: number
+  avgLightSleepPercent: number
   avgLightSleepPct: number
-  avgAwakePct: number
+  avgAwakePercent: number
   avgEfficiency: number
   consistencyScore: number
   weekdayVsWeekend: { weekday: number; weekend: number }
@@ -970,6 +910,18 @@ export interface NotificationLog {
   createdAt: string
 }
 
+export interface InAppNotification {
+  id: string
+  userId: string
+  category: string
+  severity: string
+  title: string
+  body: string
+  link: string | null
+  read: boolean
+  createdAt: string
+}
+
 // ---- Notification API ----
 
 export const notificationsApi = {
@@ -1014,29 +966,14 @@ export const notificationsApi = {
     return request<{ data: NotificationLog[] }>(`/v1/users/${userId}/notifications/logs?${params}`)
   },
 
-  // Inbox (in-app notifications)
+  // In-app inbox
   getInbox: (userId: string, opts?: { limit?: number }) => {
     const params = new URLSearchParams()
     if (opts?.limit) params.set("limit", String(opts.limit))
     return request<{ data: InAppNotification[]; unreadCount: number }>(`/v1/users/${userId}/notifications/inbox?${params}`)
   },
-  markRead: (userId: string, ids?: string[]) =>
-    request<{ message: string }>(`/v1/users/${userId}/notifications/inbox/read`, {
-      method: "PATCH",
-      body: JSON.stringify(ids ? { ids } : {}),
-    }),
-}
-
-export interface InAppNotification {
-  id: string
-  userId: string
-  title: string
-  body: string
-  category: string
-  severity: string
-  link: string | null
-  read: boolean
-  createdAt: string
+  markRead: (userId: string) =>
+    request<void>(`/v1/users/${userId}/notifications/inbox/read`, { method: "POST" }),
 }
 
 // ---- Journal ----
@@ -1180,21 +1117,14 @@ export const habitsApi = {
   },
 }
 
-// ---- System Status ----
-export interface SystemStatus {
-  status: "healthy" | "degraded" | "down"
-  timestamp: string
-  uptime: number
-  version: string
-  components: SystemComponent[]
-  queues: QueueStats[]
-}
+// ---- System ----
 
 export interface SystemComponent {
   name: string
   status: "healthy" | "degraded" | "down"
-  latencyMs?: number
-  details?: Record<string, unknown>
+  latencyMs: number | null
+  message: string | null
+  details: Record<string, unknown> | null
 }
 
 export interface QueueStats {
@@ -1208,5 +1138,12 @@ export interface QueueStats {
 }
 
 export const systemApi = {
-  status: () => request<SystemStatus>("/v1/system/status"),
+  status: () =>
+    request<{
+      status: "healthy" | "degraded" | "down"
+      components: SystemComponent[]
+      queues: QueueStats[]
+      uptime: number
+      version: string
+    }>("/v1/system/status"),
 }

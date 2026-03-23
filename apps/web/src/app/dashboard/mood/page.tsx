@@ -1,9 +1,18 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useState, useMemo } from "react"
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts"
 import { useSelectedUser } from "../../../lib/user-selection-context"
 import { type MoodLogData, type MoodStats, moodApi, usersApi } from "../../../lib/api"
+
+const TICK_STYLE = { fill: "#9ca3af", fontSize: 11 }
+const GRID_PROPS = { strokeDasharray: "3 3", stroke: "#6b7280", strokeOpacity: 0.18 }
+const TOOLTIP_STYLE = {
+  contentStyle: { backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: "8px", fontSize: "12px", color: "#f3f4f6" },
+  itemStyle: { color: "#e5e7eb" },
+  labelStyle: { color: "#9ca3af", marginBottom: "4px" },
+}
 
 const MOOD_EMOJI: Record<number, string> = { 1: "😢", 2: "😟", 3: "😐", 4: "🙂", 5: "😄" }
 
@@ -42,6 +51,16 @@ export default function MoodPage() {
     enabled: !!selectedUserId,
   })
   const logs = logsResult?.data ?? []
+
+  const chartData = useMemo(() => {
+    if (!logs.length) return []
+    return [...logs].reverse().map((l) => ({
+      date: new Date(l.loggedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      mood: l.mood,
+      energy: l.energy ?? null,
+      stress: l.stress ?? null,
+    }))
+  }, [logs])
 
   const { data: stats } = useQuery({
     queryKey: ["mood-stats", selectedUserId],
@@ -153,6 +172,26 @@ export default function MoodPage() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Mood trend chart */}
+      {selectedUserId && chartData.length > 1 && (
+        <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Mood Trend</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Mood, energy, and stress over time</p>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+              <CartesianGrid {...GRID_PROPS} />
+              <XAxis dataKey="date" tick={TICK_STYLE} />
+              <YAxis domain={[0, 5]} tick={TICK_STYLE} />
+              <Tooltip {...TOOLTIP_STYLE} />
+              <Legend wrapperStyle={{ fontSize: "12px" }} />
+              <Line type="monotone" dataKey="mood" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} name="Mood" />
+              <Line type="monotone" dataKey="energy" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} name="Energy" />
+              <Line type="monotone" dataKey="stress" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} name="Stress" />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       )}
 

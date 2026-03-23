@@ -1,9 +1,18 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useState, useMemo } from "react"
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts"
 import { useSelectedUser } from "../../../lib/user-selection-context"
 import { type NutritionLogData, type NutritionSummary, type NutritionWeeklyAvg, nutritionApi, usersApi } from "../../../lib/api"
+
+const TICK_STYLE = { fill: "#9ca3af", fontSize: 11 }
+const GRID_PROPS = { strokeDasharray: "3 3", stroke: "#6b7280", strokeOpacity: 0.18 }
+const TOOLTIP_STYLE = {
+  contentStyle: { backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: "8px", fontSize: "12px", color: "#f3f4f6" },
+  itemStyle: { color: "#e5e7eb" },
+  labelStyle: { color: "#9ca3af", marginBottom: "4px" },
+}
 
 const MEAL_ICONS: Record<string, string> = { breakfast: "🌅", lunch: "☀️", dinner: "🌙", snack: "🍿", other: "🍽️" }
 
@@ -39,6 +48,21 @@ export default function NutritionPage() {
     enabled: !!selectedUserId,
   })
   const logs = logsResult?.data ?? []
+
+  const dailyChartData = useMemo(() => {
+    if (!logs.length) return []
+    const byDate = new Map<string, { calories: number; protein: number; carbs: number; fat: number }>()
+    for (const l of logs) {
+      const date = new Date(l.loggedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+      const entry = byDate.get(date) ?? { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      entry.calories += l.calories ?? 0
+      entry.protein += l.proteinG ?? 0
+      entry.carbs += l.carbsG ?? 0
+      entry.fat += l.fatG ?? 0
+      byDate.set(date, entry)
+    }
+    return Array.from(byDate, ([date, vals]) => ({ date, ...vals })).reverse()
+  }, [logs])
 
   const { data: daily } = useQuery({
     queryKey: ["nutrition-daily", selectedUserId],
@@ -175,6 +199,41 @@ export default function NutritionPage() {
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* Calorie & macro charts */}
+      {selectedUserId && dailyChartData.length > 0 && (
+        <div className="mb-6 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Daily Calories</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Total calorie intake per day</p>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={dailyChartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                <CartesianGrid {...GRID_PROPS} />
+                <XAxis dataKey="date" tick={TICK_STYLE} />
+                <YAxis tick={TICK_STYLE} />
+                <Tooltip {...TOOLTIP_STYLE} />
+                <Bar dataKey="calories" fill="#f97316" radius={[4, 4, 0, 0]} name="Calories" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Macro Breakdown</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Protein, carbs, and fat per day</p>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={dailyChartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                <CartesianGrid {...GRID_PROPS} />
+                <XAxis dataKey="date" tick={TICK_STYLE} />
+                <YAxis tick={TICK_STYLE} />
+                <Tooltip {...TOOLTIP_STYLE} />
+                <Legend wrapperStyle={{ fontSize: "12px" }} />
+                <Bar dataKey="protein" stackId="macros" fill="#22c55e" name="Protein (g)" />
+                <Bar dataKey="carbs" stackId="macros" fill="#3b82f6" name="Carbs (g)" />
+                <Bar dataKey="fat" stackId="macros" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Fat (g)" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 

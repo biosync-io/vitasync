@@ -209,7 +209,7 @@ export default function SymptomsPage() {
                       </td>
                       <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{l.bodyLocation ?? "—"}</td>
                       <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{l.triggers?.length ? l.triggers.join(", ") : "—"}</td>
-                      <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(l.startedAt).toLocaleDateString()}</td>
+                      <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{l.startedAt ? new Date(l.startedAt).toLocaleDateString() : new Date(l.loggedAt).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -1,9 +1,19 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useState, useMemo } from "react"
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts"
 import { useSelectedUser } from "../../../lib/user-selection-context"
 import { anomaliesApi, usersApi, type AnomalyData } from "../../../lib/api"
+
+const TICK_STYLE = { fill: "#9ca3af", fontSize: 11 }
+const GRID_PROPS = { strokeDasharray: "3 3", stroke: "#6b7280", strokeOpacity: 0.18 }
+const TOOLTIP_STYLE = {
+  contentStyle: { backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: "8px", fontSize: "12px", color: "#f3f4f6" },
+  itemStyle: { color: "#e5e7eb" },
+  labelStyle: { color: "#9ca3af", marginBottom: "4px" },
+}
+const SEVERITY_COLORS: Record<string, string> = { low: "#3b82f6", medium: "#f59e0b", high: "#f97316", critical: "#ef4444" }
 
 const SEVERITY_STYLES: Record<string, string> = {
   low: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
@@ -35,6 +45,17 @@ export default function AnomaliesPage() {
     enabled: !!selectedUserId,
   })
   const anomalies = anomaliesResult?.data ?? []
+
+  const severityChartData = useMemo(() => {
+    if (!anomalies.length) return []
+    const counts = new Map<string, number>()
+    for (const a of anomalies) {
+      counts.set(a.severity, (counts.get(a.severity) ?? 0) + 1)
+    }
+    return ["low", "medium", "high", "critical"]
+      .filter((s) => counts.has(s))
+      .map((severity) => ({ severity, count: counts.get(severity) ?? 0 }))
+  }, [anomalies])
 
   const detectMut = useMutation({
     mutationFn: () => anomaliesApi.detect(selectedUserId),
@@ -107,6 +128,27 @@ export default function AnomaliesPage() {
             <p className="text-xs text-gray-500 dark:text-gray-400">High/Critical</p>
             <p className="text-2xl font-bold text-orange-600">{criticalCount}</p>
           </div>
+        </div>
+      )}
+
+      {/* Severity distribution chart */}
+      {selectedUserId && severityChartData.length > 0 && (
+        <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Severity Distribution</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Anomaly count by severity level</p>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={severityChartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+              <CartesianGrid {...GRID_PROPS} />
+              <XAxis dataKey="severity" tick={TICK_STYLE} />
+              <YAxis allowDecimals={false} tick={TICK_STYLE} />
+              <Tooltip {...TOOLTIP_STYLE} />
+              <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Count">
+                {severityChartData.map((entry) => (
+                  <Cell key={entry.severity} fill={SEVERITY_COLORS[entry.severity] ?? "#6b7280"} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       )}
 
