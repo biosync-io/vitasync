@@ -102,6 +102,44 @@ html.midnight .dark\:border-gray-800 { border-color: #181818 !important; }
 html.midnight .dark\:border-gray-700 { border-color: #1a1a1a !important; }
 html.midnight .border-gray-100 { border-color: #111 !important; }
 
+/* Accent-colored light backgrounds in midnight */
+html.midnight .bg-indigo-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-indigo-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-emerald-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-emerald-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-green-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-green-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-amber-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-amber-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-rose-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-rose-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-red-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-red-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-blue-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-blue-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-yellow-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-yellow-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-purple-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-purple-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-orange-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-orange-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-cyan-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-cyan-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-teal-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-teal-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-pink-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-pink-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-violet-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-violet-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-lime-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-lime-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-sky-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-sky-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-slate-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-slate-100 { background-color: #0a0a0a !important; }
+html.midnight .bg-fuchsia-50 { background-color: #0a0a0a !important; }
+html.midnight .bg-fuchsia-100 { background-color: #0a0a0a !important; }
+
 /* ── Dim mode — softer, muted dark ─────────────────────────────────── */
 html.dim {
   --background: 220 16% 12%;
@@ -123,6 +161,44 @@ html.dim .dark\:bg-gray-800 { background-color: hsl(220 14% 16%) !important; }
 html.dim .dark\:border-gray-800 { border-color: hsl(220 12% 22%) !important; }
 html.dim .dark\:text-gray-100 { color: hsl(215 20% 80%) !important; }
 html.dim .dark\:text-gray-400 { color: hsl(215 14% 52%) !important; }
+
+/* Accent-colored light backgrounds in dim */
+html.dim .bg-indigo-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-indigo-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-emerald-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-emerald-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-green-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-green-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-amber-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-amber-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-rose-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-rose-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-red-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-red-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-blue-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-blue-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-yellow-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-yellow-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-purple-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-purple-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-orange-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-orange-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-cyan-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-cyan-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-teal-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-teal-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-pink-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-pink-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-violet-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-violet-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-lime-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-lime-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-sky-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-sky-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-slate-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-slate-100 { background-color: hsl(220 14% 18%) !important; }
+html.dim .bg-fuchsia-50 { background-color: hsl(220 14% 16%) !important; }
+html.dim .bg-fuchsia-100 { background-color: hsl(220 14% 18%) !important; }
 
 html.dark input,
 html.dark textarea,
