@@ -1,0 +1,679 @@
+<!DOCTYPE html><html lang="en" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-4g2lxwa2"> <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>AI & Analytics | VitaSync</title><link rel="canonical" href="https://biosync-io.github.io/vitasync/dev-guides/analytics/"/><link rel="sitemap" href="/vitasync/sitemap-index.xml"/><script src="/vitasync/particles.js" defer></script><script src="/vitasync/scroll-reveal.js" defer></script><link rel="shortcut icon" href="/vitasync/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v6.0.4"/><meta name="generator" content="Starlight v0.38.1"/><meta property="og:title" content="AI &#38; Analytics"/><meta property="og:type" content="article"/><meta property="og:url" content="https://biosync-io.github.io/vitasync/dev-guides/analytics/"/><meta property="og:locale" content="en"/><meta property="og:description" content="Correlation engine, anomaly detection, health scores, and LLM-ready context for AI-assisted health coaching."/><meta property="og:site_name" content="VitaSync"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="Correlation engine, anomaly detection, health scores, and LLM-ready context for AI-assisted health coaching."/><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/vitasync/_astro/print.DNXP8c50.css" media="print"><link rel="stylesheet" href="/vitasync/_astro/common.B6zblJox.css">
+<link rel="stylesheet" href="/vitasync/_astro/Code.DIU321-3.css"><script type="module" src="/vitasync/_astro/page.BIhdncjw.js"></script></head> <body class="astro-4g2lxwa2"> <a href="#_top" class="astro-cdmew7ep">Skip to content</a> <div class="page sl-flex astro-six4cu34"> <header class="header astro-six4cu34"><div class="header astro-cbzmqx6o"> <div class="title-wrapper sl-flex astro-cbzmqx6o"> <a href="/vitasync/" class="site-title sl-flex astro-3ka6hon7">  <img class="light:sl-hidden print:hidden astro-3ka6hon7" alt="VitaSync" src="/vitasync/_astro/logo-dark.B9kFz7Vo.svg" width="200" height="40"> <img class="dark:sl-hidden print:block astro-3ka6hon7" alt="VitaSync" src="/vitasync/_astro/logo-light.XOvriKMU.svg" width="200" height="40"> <span class="sr-only astro-3ka6hon7" translate="no"> VitaSync </span> </a> </div> <div class="sl-flex print:hidden astro-cbzmqx6o"> <site-search class="astro-cbzmqx6o astro-wacbyr2x" data-translations="{&#34;placeholder&#34;:&#34;Search&#34;}"> <button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-wacbyr2x"> <svg aria-hidden="true" class="astro-wacbyr2x astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg> <span class="sl-hidden md:sl-block astro-wacbyr2x" aria-hidden="true">Search</span> <kbd class="sl-hidden md:sl-flex astro-wacbyr2x" style="display: none;"> <kbd class="astro-wacbyr2x">Ctrl</kbd><kbd class="astro-wacbyr2x">K</kbd> </kbd> </button> <dialog style="padding:0" aria-label="Search" class="astro-wacbyr2x"> <div class="dialog-frame sl-flex astro-wacbyr2x">  <button data-close-modal class="sl-flex md:sl-hidden astro-wacbyr2x"> Cancel </button> <div class="search-container astro-wacbyr2x"> <div id="starlight__search" class="astro-wacbyr2x"></div> </div> </div> </dialog> </site-search>  <script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script> <script type="module" src="/vitasync/_astro/Search.astro_astro_type_script_index_0_lang.BbKRpevv.js"></script>  </div> <div class="sl-hidden md:sl-flex print:hidden right-group astro-cbzmqx6o"> <div class="sl-flex social-icons astro-cbzmqx6o"> <a href="https://github.com/your-org/vitasync" rel="me" class="sl-flex astro-muw53q76"><span class="sr-only astro-muw53q76">GitHub</span><svg aria-hidden="true" class="astro-muw53q76 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a> </div> <starlight-theme-select>  <label style="--sl-select-width: 6.25em" class="astro-dnfevk6i"> <span class="sr-only astro-dnfevk6i">Select theme</span> <svg aria-hidden="true" class="icon label-icon astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg> <select autocomplete="off" class="astro-dnfevk6i"> <option value="dark" class="astro-dnfevk6i">Dark</option><option value="light" class="astro-dnfevk6i">Light</option><option value="auto" selected class="astro-dnfevk6i">Auto</option> </select> <svg aria-hidden="true" class="icon caret astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg> </label> </starlight-theme-select>  <script>
+	StarlightThemeProvider.updatePickers();
+</script> <script type="module">const r="starlight-theme",o=e=>e==="auto"||e==="dark"||e==="light"?e:"auto",c=()=>o(typeof localStorage<"u"&&localStorage.getItem(r));function n(e){typeof localStorage<"u"&&localStorage.setItem(r,e==="light"||e==="dark"?e:"")}const l=()=>matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";function t(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e==="auto"?l():e,n(e)}matchMedia("(prefers-color-scheme: light)").addEventListener("change",()=>{c()==="auto"&&t("auto")});class s extends HTMLElement{constructor(){super(),t(c()),this.querySelector("select")?.addEventListener("change",a=>{a.currentTarget instanceof HTMLSelectElement&&t(o(a.currentTarget.value))})}}customElements.define("starlight-theme-select",s);</script> <script type="module">class s extends HTMLElement{constructor(){super();const e=this.querySelector("select");e&&(e.addEventListener("change",t=>{t.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=t.currentTarget.value)}),window.addEventListener("pageshow",t=>{if(!t.persisted)return;const n=e.querySelector("option[selected]")?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}}customElements.define("starlight-lang-select",s);</script> </div> </div></header> <nav class="sidebar print:hidden astro-six4cu34" aria-label="Main"> <starlight-menu-button class="print:hidden astro-h22a6god"> <button aria-expanded="false" aria-label="Menu" aria-controls="starlight__sidebar" class="sl-flex md:sl-hidden astro-h22a6god"> <svg aria-hidden="true" class="open-menu astro-h22a6god astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg> <svg aria-hidden="true" class="close-menu astro-h22a6god astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg> </button> </starlight-menu-button> <script type="module">class s extends HTMLElement{constructor(){super(),this.btn=this.querySelector("button"),this.btn.addEventListener("click",()=>this.toggleExpanded());const t=this.closest("nav");t&&t.addEventListener("keyup",e=>this.closeOnEscape(e))}setExpanded(t){this.setAttribute("aria-expanded",String(t)),document.body.toggleAttribute("data-mobile-menu-expanded",t)}toggleExpanded(){this.setExpanded(this.getAttribute("aria-expanded")!=="true")}closeOnEscape(t){t.code==="Escape"&&(this.setExpanded(!1),this.btn.focus())}}customElements.define("starlight-menu-button",s);</script>  <div id="starlight__sidebar" class="sidebar-pane astro-six4cu34"> <div class="sidebar-content sl-flex astro-six4cu34"> <sl-sidebar-state-persist data-hash="0jzuicd" class="astro-7wabrxus"> <script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script>  <ul class="top-level astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Getting Started</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="0"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Introduction</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/quickstart/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Quickstart</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Architecture</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="1"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/overview/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Overview</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/data-model/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Data Model</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/sync-pipeline/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Sync Pipeline</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/security/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Security</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Providers</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="2"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/providers/supported/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Supported Providers</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/fitbit/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Fitbit</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/garmin/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Garmin</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/whoop/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Whoop</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/strava/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Strava</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/withings/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Withings</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">API Reference</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="3"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/introduction/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Introduction</span>  </a> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Guides</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="4"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/authentication/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Authentication</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/connect-a-user/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Connect a User</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/query-health-data/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Query Health Data</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/webhooks/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Webhooks</span>  </a> </li> </ul> </details> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Developer Guides</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="5"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/adding-a-provider/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Adding a Provider</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/api-keys/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">API Keys</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/webhooks/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Webhooks</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/mcp/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">MCP Server</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/notifications/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Notifications</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/dashboard/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Dashboard</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/analytics/" aria-current="page" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">AI &amp; Analytics</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/grafana-dashboards/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Grafana Dashboards</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Features</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="6"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/goals-achievements/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Goals &amp; Achievements</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/health-tracking/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Health Tracking</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/challenges/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Challenges &amp; Training</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/reports-exports/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Reports &amp; Data Exports</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/sleep-biometrics/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Sleep Analysis &amp; Biometrics</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Deployment</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="7"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/deployment/docker/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Docker Compose</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/deployment/kubernetes/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Kubernetes / Helm</span>  </a> </li> </ul> </details> </li> </ul>  <script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script> </sl-sidebar-state-persist> <div class="md:sl-hidden"> <div class="mobile-preferences sl-flex astro-6mxfo6em"> <div class="social-icons astro-6mxfo6em"> <a href="https://github.com/your-org/vitasync" rel="me" class="sl-flex astro-muw53q76"><span class="sr-only astro-muw53q76">GitHub</span><svg aria-hidden="true" class="astro-muw53q76 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a> </div> <starlight-theme-select>  <label style="--sl-select-width: 6.25em" class="astro-dnfevk6i"> <span class="sr-only astro-dnfevk6i">Select theme</span> <svg aria-hidden="true" class="icon label-icon astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg> <select autocomplete="off" class="astro-dnfevk6i"> <option value="dark" class="astro-dnfevk6i">Dark</option><option value="light" class="astro-dnfevk6i">Light</option><option value="auto" selected class="astro-dnfevk6i">Auto</option> </select> <svg aria-hidden="true" class="icon caret astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg> </label> </starlight-theme-select>  <script>
+	StarlightThemeProvider.updatePickers();
+</script>   </div> </div> </div> </div> </nav> <div class="main-frame astro-six4cu34">  <script type="module">const a=document.getElementById("starlight__sidebar"),n=a?.querySelector("sl-sidebar-state-persist"),o="sl-sidebar-state",i=()=>{let t=[];const e=n?.dataset.hash||"";try{const s=sessionStorage.getItem(o),r=JSON.parse(s||"{}");Array.isArray(r.open)&&r.hash===e&&(t=r.open)}catch{}return{hash:e,open:t,scroll:a?.scrollTop||0}},c=t=>{try{sessionStorage.setItem(o,JSON.stringify(t))}catch{}},d=()=>c(i()),l=(t,e)=>{const s=i();s.open[e]=t,c(s)};n?.addEventListener("click",t=>{if(!(t.target instanceof Element))return;const e=t.target.closest("summary")?.closest("details");if(!e)return;const s=e.querySelector("sl-sidebar-restore"),r=parseInt(s?.dataset.index||"");isNaN(r)||l(!e.open,r)});addEventListener("visibilitychange",()=>{document.visibilityState==="hidden"&&d()});addEventListener("pageHide",d);</script> <div class="lg:sl-flex astro-fcbywwi3"> <aside class="right-sidebar-container print:hidden astro-fcbywwi3"> <div class="right-sidebar astro-fcbywwi3"> <script type="module" src="/vitasync/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.hwBsy0Mo.js"></script><script type="module" src="/vitasync/_astro/TableOfContents.astro_astro_type_script_index_0_lang.FuRcXuRY.js"></script><div class="lg:sl-hidden astro-wmmpr6yz"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-ehgd637q"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-ehgd637q"><details id="starlight__mobile-toc" class="astro-ehgd637q"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-ehgd637q"><span class="toggle sl-flex astro-ehgd637q">On this page<svg aria-hidden="true" class="caret astro-ehgd637q astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-ehgd637q"></span></summary><div class="dropdown astro-ehgd637q"><ul class="isMobile astro-7uqxqiej" style="--depth: 0;"> <li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#_top" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Overview</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#correlation-engine" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Correlation Engine</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#how-it-works" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">How It Works</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#api" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">API</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mcp-tool" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">MCP Tool</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#anomaly-detection" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Anomaly Detection</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#detection-methods" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Detection Methods</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#clinical-thresholds" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Clinical Thresholds</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#api-1" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">API</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#automatic-notifications" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Automatic Notifications</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mcp-tool-1" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">MCP Tool</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#llm-ready-context" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">LLM-Ready Context</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#whats-included" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">What’s Included</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#api-2" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">API</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mcp-tool-2" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">MCP Tool</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#usage-in-ai-prompts" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Usage in AI Prompts</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#health-score" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Health Score</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#sub-scores" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Sub-Scores</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#calculation" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Calculation</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mcp-tool-3" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">MCP Tool</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#readiness-score" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Readiness Score</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#signal-weights" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Signal Weights</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#auto-personalization" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Auto-Personalization</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#training-recommendations" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Training Recommendations</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#body-score" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Body Score</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#components" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Components</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#formula" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Formula</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#metabolic-efficiency" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Metabolic Efficiency</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#sub-indices" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Sub-Indices</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#composite-formula" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Composite Formula</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#training-load" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Training Load</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#metrics" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Metrics</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#ewma-formula" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">EWMA Formula</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#status-classification" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Status Classification</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#recovery-prediction" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Recovery Prediction</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#banister-model" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Banister Model</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#4-factor-adjustment" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">4-Factor Adjustment</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#stress-resilience-index" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Stress Resilience Index</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#components-1" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Components</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#scoring" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Scoring</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#circadian-rhythm-analysis" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Circadian Rhythm Analysis</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#outputs" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Outputs</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mctq-mid-sleep-calculation" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">MCTQ Mid-Sleep Calculation</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#chronotype-classification" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Chronotype Classification</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#worker-queues" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Worker Queues</span> </a>  </li> </ul></div></details></nav></mobile-starlight-toc></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-wmmpr6yz"><div class="sl-container astro-wmmpr6yz"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">On this page</h2><ul class="astro-7uqxqiej" style="--depth: 0;"> <li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#_top" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Overview</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#correlation-engine" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Correlation Engine</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#how-it-works" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">How It Works</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#api" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">API</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mcp-tool" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">MCP Tool</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#anomaly-detection" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Anomaly Detection</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#detection-methods" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Detection Methods</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#clinical-thresholds" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Clinical Thresholds</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#api-1" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">API</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#automatic-notifications" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Automatic Notifications</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mcp-tool-1" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">MCP Tool</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#llm-ready-context" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">LLM-Ready Context</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#whats-included" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">What’s Included</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#api-2" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">API</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mcp-tool-2" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">MCP Tool</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#usage-in-ai-prompts" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Usage in AI Prompts</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#health-score" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Health Score</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#sub-scores" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Sub-Scores</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#calculation" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Calculation</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mcp-tool-3" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">MCP Tool</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#readiness-score" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Readiness Score</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#signal-weights" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Signal Weights</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#auto-personalization" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Auto-Personalization</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#training-recommendations" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Training Recommendations</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#body-score" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Body Score</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#components" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Components</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#formula" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Formula</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#metabolic-efficiency" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Metabolic Efficiency</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#sub-indices" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Sub-Indices</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#composite-formula" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Composite Formula</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#training-load" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Training Load</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#metrics" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Metrics</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#ewma-formula" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">EWMA Formula</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#status-classification" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Status Classification</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#recovery-prediction" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Recovery Prediction</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#banister-model" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Banister Model</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#4-factor-adjustment" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">4-Factor Adjustment</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#stress-resilience-index" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Stress Resilience Index</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#components-1" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Components</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#scoring" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Scoring</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#circadian-rhythm-analysis" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Circadian Rhythm Analysis</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#outputs" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Outputs</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mctq-mid-sleep-calculation" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">MCTQ Mid-Sleep Calculation</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#chronotype-classification" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Chronotype Classification</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#worker-queues" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Worker Queues</span> </a>  </li> </ul></nav></starlight-toc></div></div> </div> </aside> <div class="main-pane astro-fcbywwi3">  <main data-pagefind-body class="astro-4g2lxwa2" lang="en" dir="ltr">    <div class="content-panel astro-zwhrulx7"> <div class="sl-container astro-zwhrulx7"> <h1 id="_top" class="astro-2tcylr3h">AI &amp; Analytics</h1> </div> </div> <div class="content-panel astro-zwhrulx7"> <div class="sl-container astro-zwhrulx7"> <div class="sl-markdown-content"> <p>import { Aside } from ‘@astrojs/starlight/components’;</p>
+<p>The <code dir="auto">@biosync-io/analytics</code> package provides built-in health data analytics that power AI-assisted coaching. It includes a correlation engine, anomaly detector, and an LLM context builder designed to produce structured data for AI assistants.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="correlation-engine">Correlation Engine</h2><a class="sl-anchor-link" href="#correlation-engine"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Correlation Engine”</span></a></div>
+<p>Automatically discovers relationships between health metrics using statistical analysis.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="how-it-works">How It Works</h3><a class="sl-anchor-link" href="#how-it-works"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “How It Works”</span></a></div>
+<ol>
+<li>Aggregates daily metric values over a configurable window (7–365 days)</li>
+<li>Computes <strong>Pearson</strong> (linear) and <strong>Spearman</strong> (rank-based) correlation coefficients for every metric pair</li>
+<li>Filters for statistical significance: |r| > 0.3 and p &#x3C; 0.05</li>
+<li>Persists results to the <code dir="auto">metric_correlations</code> table for trend tracking</li>
+</ol>
+<div class="sl-heading-wrapper level-h3"><h3 id="api">API</h3><a class="sl-anchor-link" href="#api"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “API”</span></a></div>
+<div class="expressive-code"><link rel="stylesheet" href="/vitasync/_astro/ec.v4551.css"><script type="module" src="/vitasync/_astro/ec.0vx5m.js"></script><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">POST /v1/users/:userId/analytics/correlations</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="POST /v1/users/:userId/analytics/correlations"><div></div></button></div></figure></div>
+<p><strong>Request body:</strong></p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="json"><code><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"days"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">90</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="{  &#x22;days&#x22;: 90}"><div></div></button></div></figure></div>
+<p><strong>Response:</strong></p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="json"><code><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"data"</span><span style="--0:#D6DEEB;--1:#403F53">: [</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"metricA"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">resting_heart_rate</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"metricB"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">sleep_score</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"pearson"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">-0.62</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"spearman"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">-0.58</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"pValue"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">0.001</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"sampleSize"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">87</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"strength"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">moderate</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"direction"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">negative</span><span style="--0:#D9F5DD;--1:#111111">"</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">],</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"count"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">12</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="{  &#x22;data&#x22;: [    {      &#x22;metricA&#x22;: &#x22;resting_heart_rate&#x22;,      &#x22;metricB&#x22;: &#x22;sleep_score&#x22;,      &#x22;pearson&#x22;: -0.62,      &#x22;spearman&#x22;: -0.58,      &#x22;pValue&#x22;: 0.001,      &#x22;sampleSize&#x22;: 87,      &#x22;strength&#x22;: &#x22;moderate&#x22;,      &#x22;direction&#x22;: &#x22;negative&#x22;    }  ],  &#x22;count&#x22;: 12}"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="mcp-tool">MCP Tool</h3><a class="sl-anchor-link" href="#mcp-tool"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “MCP Tool”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">get_correlations(userId, minStrength?, days?)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="get_correlations(userId, minStrength?, days?)"><div></div></button></div></figure></div>
+<p>Returns discovered correlations with optional minimum strength filter.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="anomaly-detection">Anomaly Detection</h2><a class="sl-anchor-link" href="#anomaly-detection"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Anomaly Detection”</span></a></div>
+<p>Multi-method anomaly detection identifies unusual health patterns using three approaches.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="detection-methods">Detection Methods</h3><a class="sl-anchor-link" href="#detection-methods"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Detection Methods”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Method</th><th>Description</th><th>Threshold</th></tr></thead><tbody><tr><td><strong>Z-Score</strong></td><td>Standard deviation from the mean</td><td>> 2.5σ</td></tr><tr><td><strong>IQR</strong></td><td>Interquartile range outlier detection</td><td>1.5 × IQR beyond Q1/Q3</td></tr><tr><td><strong>Clinical</strong></td><td>Hard-coded medical thresholds</td><td>See table below</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="clinical-thresholds">Clinical Thresholds</h3><a class="sl-anchor-link" href="#clinical-thresholds"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Clinical Thresholds”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Metric</th><th>Threshold</th><th>Severity</th></tr></thead><tbody><tr><td>SpO₂</td><td>&#x3C; 92%</td><td><code dir="auto">critical</code></td></tr><tr><td>Heart Rate</td><td>> 120 bpm (resting)</td><td><code dir="auto">critical</code></td></tr><tr><td>Heart Rate</td><td>&#x3C; 40 bpm (resting)</td><td><code dir="auto">critical</code></td></tr><tr><td>Temperature</td><td>> 39.5°C</td><td><code dir="auto">critical</code></td></tr><tr><td>Temperature</td><td>&#x3C; 35.0°C</td><td><code dir="auto">warning</code></td></tr><tr><td>Blood Glucose</td><td>> 11.1 mmol/L</td><td><code dir="auto">warning</code></td></tr><tr><td>Blood Glucose</td><td>&#x3C; 3.9 mmol/L</td><td><code dir="auto">critical</code></td></tr><tr><td>Respiratory Rate</td><td>> 25 breaths/min</td><td><code dir="auto">warning</code></td></tr><tr><td>Respiratory Rate</td><td>&#x3C; 8 breaths/min</td><td><code dir="auto">critical</code></td></tr></tbody></table>
+<aside type="caution">
+Clinical thresholds are informational and not intended as medical advice. They are based on commonly accepted clinical ranges and should be reviewed with a healthcare provider.
+</aside>
+<div class="sl-heading-wrapper level-h3"><h3 id="api-1">API</h3><a class="sl-anchor-link" href="#api-1"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “API”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">POST /v1/users/:userId/analytics/anomalies</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="POST /v1/users/:userId/analytics/anomalies"><div></div></button></div></figure></div>
+<p><strong>Request body:</strong></p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="json"><code><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"lookbackDays"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">1</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="{  &#x22;lookbackDays&#x22;: 1}"><div></div></button></div></figure></div>
+<p><strong>Response:</strong></p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="json"><code><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"data"</span><span style="--0:#D6DEEB;--1:#403F53">: [</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"metricType"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">blood_oxygen</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"value"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">89</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"method"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">clinical_threshold</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"severity"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">critical</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"message"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">SpO2 89% is below clinical threshold of 92%</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"recordedAt"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">2025-06-15T03:00:00.000Z</span><span style="--0:#D9F5DD;--1:#111111">"</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">],</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"count"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">1</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="{  &#x22;data&#x22;: [    {      &#x22;metricType&#x22;: &#x22;blood_oxygen&#x22;,      &#x22;value&#x22;: 89,      &#x22;method&#x22;: &#x22;clinical_threshold&#x22;,      &#x22;severity&#x22;: &#x22;critical&#x22;,      &#x22;message&#x22;: &#x22;SpO2 89% is below clinical threshold of 92%&#x22;,      &#x22;recordedAt&#x22;: &#x22;2025-06-15T03:00:00.000Z&#x22;    }  ],  &#x22;count&#x22;: 1}"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="automatic-notifications">Automatic Notifications</h3><a class="sl-anchor-link" href="#automatic-notifications"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Automatic Notifications”</span></a></div>
+<p>When anomalies are detected during background analytics processing, the worker automatically enqueues notification jobs with category <code dir="auto">anomaly</code> and the appropriate severity. Users who have configured notification rules matching the <code dir="auto">anomaly</code> category will receive alerts through their configured channels.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="mcp-tool-1">MCP Tool</h3><a class="sl-anchor-link" href="#mcp-tool-1"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “MCP Tool”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">get_anomaly_alerts(userId, severity?, status?, limit?)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="get_anomaly_alerts(userId, severity?, status?, limit?)"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h2"><h2 id="llm-ready-context">LLM-Ready Context</h2><a class="sl-anchor-link" href="#llm-ready-context"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “LLM-Ready Context”</span></a></div>
+<p>The <code dir="auto">buildLLMContext()</code> function produces a comprehensive biological context package optimized for AI assistants.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="whats-included">What’s Included</h3><a class="sl-anchor-link" href="#whats-included"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “What’s Included”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Section</th><th>Content</th></tr></thead><tbody><tr><td><strong>Baselines</strong></td><td>30-day rolling averages for all key metrics</td></tr><tr><td><strong>Trends</strong></td><td>Direction and magnitude of recent metric changes</td></tr><tr><td><strong>Anomalies</strong></td><td>Active anomaly alerts with severity and detection method</td></tr><tr><td><strong>Correlations</strong></td><td>Top metric correlations with strength and direction</td></tr><tr><td><strong>Health Scores</strong></td><td>Latest composite scores (overall, sleep, activity, cardio, recovery)</td></tr><tr><td><strong>Summary</strong></td><td>Natural language paragraph summarizing the user’s current health state</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="api-2">API</h3><a class="sl-anchor-link" href="#api-2"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “API”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">GET /v1/users/:userId/analytics/context</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="GET /v1/users/:userId/analytics/context"><div></div></button></div></figure></div>
+<p><strong>Response:</strong></p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="json"><code><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"data"</span><span style="--0:#D6DEEB;--1:#403F53">: {</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"baselines"</span><span style="--0:#D6DEEB;--1:#403F53">: {</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"resting_heart_rate"</span><span style="--0:#D6DEEB;--1:#403F53">: { </span><span style="--0:#7FDBCA;--1:#096E72">"mean"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">58.2</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"stdDev"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">3.1</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"sampleSize"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">30</span><span style="--0:#D6DEEB;--1:#403F53"> },</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"sleep_score"</span><span style="--0:#D6DEEB;--1:#403F53">: { </span><span style="--0:#7FDBCA;--1:#096E72">"mean"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">78.5</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"stdDev"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">8.2</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"sampleSize"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">28</span><span style="--0:#D6DEEB;--1:#403F53"> }</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">},</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"trends"</span><span style="--0:#D6DEEB;--1:#403F53">: [</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">      </span></span><span style="--0:#D6DEEB;--1:#403F53">{ </span><span style="--0:#7FDBCA;--1:#096E72">"metric"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">resting_heart_rate</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"direction"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">decreasing</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"changePercent"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">-4.2</span><span style="--0:#D6DEEB;--1:#403F53"> }</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">],</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"anomalies"</span><span style="--0:#D6DEEB;--1:#403F53">: [],</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"correlations"</span><span style="--0:#D6DEEB;--1:#403F53">: [</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">      </span></span><span style="--0:#D6DEEB;--1:#403F53">{ </span><span style="--0:#7FDBCA;--1:#096E72">"metricA"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">sleep_score</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"metricB"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">recovery_score</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"pearson"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">0.72</span><span style="--0:#D6DEEB;--1:#403F53"> }</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">],</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"healthScores"</span><span style="--0:#D6DEEB;--1:#403F53">: {</span></div></div><div class="ec-line"><div class="code"><span class="indent">      </span><span style="--0:#7FDBCA;--1:#096E72">"overall"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">82</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"sleep"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">78</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"activity"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">85</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"cardio"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">80</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"recovery"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">84</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">},</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"summary"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">Overall health is good. Resting heart rate has been trending down over the past 2 weeks. Sleep quality and recovery scores are strongly correlated. No anomalies detected.</span><span style="--0:#D9F5DD;--1:#111111">"</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="{  &#x22;data&#x22;: {    &#x22;baselines&#x22;: {      &#x22;resting_heart_rate&#x22;: { &#x22;mean&#x22;: 58.2, &#x22;stdDev&#x22;: 3.1, &#x22;sampleSize&#x22;: 30 },      &#x22;sleep_score&#x22;: { &#x22;mean&#x22;: 78.5, &#x22;stdDev&#x22;: 8.2, &#x22;sampleSize&#x22;: 28 }    },    &#x22;trends&#x22;: [      { &#x22;metric&#x22;: &#x22;resting_heart_rate&#x22;, &#x22;direction&#x22;: &#x22;decreasing&#x22;, &#x22;changePercent&#x22;: -4.2 }    ],    &#x22;anomalies&#x22;: [],    &#x22;correlations&#x22;: [      { &#x22;metricA&#x22;: &#x22;sleep_score&#x22;, &#x22;metricB&#x22;: &#x22;recovery_score&#x22;, &#x22;pearson&#x22;: 0.72 }    ],    &#x22;healthScores&#x22;: {      &#x22;overall&#x22;: 82, &#x22;sleep&#x22;: 78, &#x22;activity&#x22;: 85, &#x22;cardio&#x22;: 80, &#x22;recovery&#x22;: 84    },    &#x22;summary&#x22;: &#x22;Overall health is good. Resting heart rate has been trending down over the past 2 weeks. Sleep quality and recovery scores are strongly correlated. No anomalies detected.&#x22;  }}"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="mcp-tool-2">MCP Tool</h3><a class="sl-anchor-link" href="#mcp-tool-2"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “MCP Tool”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">get_health_context(userId)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="get_health_context(userId)"><div></div></button></div></figure></div>
+<p>This is the recommended first tool call when an AI assistant needs to understand a user’s health state. The structured context + natural language summary provides everything needed for informed health coaching responses.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="usage-in-ai-prompts">Usage in AI Prompts</h3><a class="sl-anchor-link" href="#usage-in-ai-prompts"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Usage in AI Prompts”</span></a></div>
+<p>When connected via MCP, an AI assistant can use the context like this:</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">User: "How am I doing health-wise this week?"</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">AI calls: get_health_context(userId)</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">AI receives: structured baselines, trends, anomalies, scores, summary</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">AI responds with personalized, data-driven health insights</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="User: &#x22;How am I doing health-wise this week?&#x22;AI calls: get_health_context(userId)AI receives: structured baselines, trends, anomalies, scores, summaryAI responds with personalized, data-driven health insights"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h2"><h2 id="health-score">Health Score</h2><a class="sl-anchor-link" href="#health-score"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Health Score”</span></a></div>
+<p>The composite health score provides a single 0–100 number summarizing overall wellness, derived from five weighted sub-scores.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="sub-scores">Sub-Scores</h3><a class="sl-anchor-link" href="#sub-scores"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Sub-Scores”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Sub-Score</th><th>Weight</th><th>Derived From</th></tr></thead><tbody><tr><td><strong>Sleep</strong></td><td>25%</td><td>Sleep duration, efficiency, stage balance, consistency</td></tr><tr><td><strong>Activity</strong></td><td>20%</td><td>Steps, active minutes, calories, workout frequency</td></tr><tr><td><strong>Cardio</strong></td><td>20%</td><td>Resting HR, HRV, VO₂ max trends</td></tr><tr><td><strong>Recovery</strong></td><td>20%</td><td>Recovery score, strain balance, readiness</td></tr><tr><td><strong>Body</strong></td><td>15%</td><td>Weight stability, body composition, BMI</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="calculation">Calculation</h3><a class="sl-anchor-link" href="#calculation"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Calculation”</span></a></div>
+<p>Each sub-score is computed independently on a 0–100 scale, then combined:</p>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">healthScore = (sleep × 0.25) + (activity × 0.20) + (cardio × 0.20)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">            </span></span><span style="--0:#d6deeb;--1:#403f53">+ (recovery × 0.20) + (body × 0.15)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="healthScore = (sleep × 0.25) + (activity × 0.20) + (cardio × 0.20)            + (recovery × 0.20) + (body × 0.15)"><div></div></button></div></figure></div>
+<p>A <strong>7-day rolling average</strong> is applied to smooth day-to-day fluctuations and surface meaningful trends rather than noise.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="mcp-tool-3">MCP Tool</h3><a class="sl-anchor-link" href="#mcp-tool-3"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “MCP Tool”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">get_health_scores(userId, from?, to?, limit?)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="get_health_scores(userId, from?, to?, limit?)"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h2"><h2 id="readiness-score">Readiness Score</h2><a class="sl-anchor-link" href="#readiness-score"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Readiness Score”</span></a></div>
+<p>The readiness score (0–100) assesses daily recovery and training readiness using a 5-signal weighted model.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="signal-weights">Signal Weights</h3><a class="sl-anchor-link" href="#signal-weights"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Signal Weights”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Signal</th><th>Weight</th><th>Description</th></tr></thead><tbody><tr><td><strong>HRV</strong></td><td>30%</td><td>Overnight HRV (RMSSD) relative to personal baseline</td></tr><tr><td><strong>Sleep</strong></td><td>25%</td><td>Composite of duration, efficiency, and stage balance</td></tr><tr><td><strong>Strain Recovery</strong></td><td>20%</td><td>Previous-day strain vs. recovery response</td></tr><tr><td><strong>Resting Heart Rate</strong></td><td>15%</td><td>Deviation from personal baseline RHR</td></tr><tr><td><strong>Physiological</strong></td><td>10%</td><td>SpO₂, respiratory rate, skin temperature deviation</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="auto-personalization">Auto-Personalization</h3><a class="sl-anchor-link" href="#auto-personalization"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Auto-Personalization”</span></a></div>
+<p>After <strong>14 days</strong> of data collection, baselines shift from population defaults to personalized rolling averages. This adapts the scoring model to each individual’s physiology.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="training-recommendations">Training Recommendations</h3><a class="sl-anchor-link" href="#training-recommendations"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Training Recommendations”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Readiness Range</th><th>Status</th><th>Recommendation</th></tr></thead><tbody><tr><td>80–100</td><td><strong>Peak</strong></td><td>High-intensity training, competition ready</td></tr><tr><td>60–79</td><td><strong>Moderate</strong></td><td>Moderate training, maintain load</td></tr><tr><td>40–59</td><td><strong>Low</strong></td><td>Light activity, prioritize recovery</td></tr><tr><td>0–39</td><td><strong>Rest</strong></td><td>Active recovery only, possible illness/overtraining</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h2"><h2 id="body-score">Body Score</h2><a class="sl-anchor-link" href="#body-score"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Body Score”</span></a></div>
+<p>The body score evaluates body composition health using three components.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="components">Components</h3><a class="sl-anchor-link" href="#components"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Components”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Component</th><th>Metric</th><th>Scoring</th></tr></thead><tbody><tr><td><strong>Weight Stability</strong></td><td>14-day coefficient of variation (CV)</td><td>CV &#x3C; 1% = 100; CV > 5% = 0; linear interpolation between</td></tr><tr><td><strong>Body Composition</strong></td><td>Body fat percentage</td><td>Scored against age- and gender-adjusted healthy ranges</td></tr><tr><td><strong>BMI</strong></td><td>Body mass index</td><td>18.5–24.9 = optimal; tapered scoring outside range</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="formula">Formula</h3><a class="sl-anchor-link" href="#formula"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Formula”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">bodyScore = (weightStability × 0.40) + (bodyComposition × 0.35) + (bmiScore × 0.25)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="bodyScore = (weightStability × 0.40) + (bodyComposition × 0.35) + (bmiScore × 0.25)"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h2"><h2 id="metabolic-efficiency">Metabolic Efficiency</h2><a class="sl-anchor-link" href="#metabolic-efficiency"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Metabolic Efficiency”</span></a></div>
+<p>A composite index measuring how efficiently the body converts physiological inputs into performance, with gender-adjusted reference ranges.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="sub-indices">Sub-Indices</h3><a class="sl-anchor-link" href="#sub-indices"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Sub-Indices”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Sub-Index</th><th>Method</th><th>Description</th></tr></thead><tbody><tr><td><strong>Cardiac Efficiency</strong></td><td>Buchheit method</td><td>Ratio of HRV to resting HR — higher values indicate more efficient cardiac autonomic regulation</td></tr><tr><td><strong>Energy Efficiency</strong></td><td>Activity-to-calorie ratio</td><td>How effectively active effort translates to energy expenditure</td></tr><tr><td><strong>Recovery Efficiency</strong></td><td>Cole model</td><td>Speed and completeness of HRV and RHR return to baseline after strain</td></tr><tr><td><strong>Aerobic Capacity Proxy</strong></td><td>Estimated VO₂ max scaling</td><td>Derived from HR/workload relationship when direct VO₂ max is unavailable</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="composite-formula">Composite Formula</h3><a class="sl-anchor-link" href="#composite-formula"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Composite Formula”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">metabolicEfficiency = (cardiac × 0.30) + (energy × 0.25)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">                    </span></span><span style="--0:#d6deeb;--1:#403f53">+ (recovery × 0.25) + (aerobic × 0.20)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="metabolicEfficiency = (cardiac × 0.30) + (energy × 0.25)                    + (recovery × 0.25) + (aerobic × 0.20)"><div></div></button></div></figure></div>
+<p>All sub-indices are normalized to 0–100 and adjusted for gender using population reference data.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="training-load">Training Load</h2><a class="sl-anchor-link" href="#training-load"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Training Load”</span></a></div>
+<p>An impulse-response EWMA (Exponentially Weighted Moving Average) model that tracks training stress accumulation and dissipation.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="metrics">Metrics</h3><a class="sl-anchor-link" href="#metrics"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Metrics”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Metric</th><th>Window</th><th>Description</th></tr></thead><tbody><tr><td><strong>Daily Strain</strong></td><td>—</td><td>TRIMP-like impulse from workout intensity and duration</td></tr><tr><td><strong>ATL</strong> (Acute Training Load)</td><td>7-day EWMA</td><td>Recent training stress — “fatigue”</td></tr><tr><td><strong>CTL</strong> (Chronic Training Load)</td><td>42-day EWMA</td><td>Long-term fitness adaptation — “fitness”</td></tr><tr><td><strong>TSB</strong> (Training Stress Balance)</td><td>CTL − ATL</td><td>Net balance — “form”</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="ewma-formula">EWMA Formula</h3><a class="sl-anchor-link" href="#ewma-formula"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “EWMA Formula”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">EWMAₜ = EWMAₜ₋₁ + α × (valueₜ − EWMAₜ₋₁)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">  </span></span><span style="--0:#d6deeb;--1:#403f53">where α = 2 / (window + 1)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="EWMAₜ = EWMAₜ₋₁ + α × (valueₜ − EWMAₜ₋₁)  where α = 2 / (window + 1)"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="status-classification">Status Classification</h3><a class="sl-anchor-link" href="#status-classification"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Status Classification”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>TSB Range</th><th>Status</th><th>Interpretation</th></tr></thead><tbody><tr><td>> 25</td><td><strong>Transition</strong></td><td>Detraining — fitness declining</td></tr><tr><td>5 to 25</td><td><strong>Fresh</strong></td><td>Optimal performance window</td></tr><tr><td>−10 to 5</td><td><strong>Neutral</strong></td><td>Balanced training load</td></tr><tr><td>−25 to −10</td><td><strong>Tired</strong></td><td>Accumulated fatigue, manage recovery</td></tr><tr><td>&#x3C; −25</td><td><strong>Overreaching</strong></td><td>High injury/burnout risk</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h2"><h2 id="recovery-prediction">Recovery Prediction</h2><a class="sl-anchor-link" href="#recovery-prediction"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Recovery Prediction”</span></a></div>
+<p>Uses the <strong>Banister Fitness-Fatigue</strong> model with a 4-factor adjustment to predict recovery timelines.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="banister-model">Banister Model</h3><a class="sl-anchor-link" href="#banister-model"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Banister Model”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">performance(t) = fitness(t) − fatigue(t)</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">fitness(t)  = Σ w(i) × e^(−(t−i)/τ₁)     τ₁ = 42 days</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">fatigue(t)  = Σ w(i) × e^(−(t−i)/τ₂)     τ₂ = 7 days</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="performance(t) = fitness(t) − fatigue(t)fitness(t)  = Σ w(i) × e^(−(t−i)/τ₁)     τ₁ = 42 daysfatigue(t)  = Σ w(i) × e^(−(t−i)/τ₂)     τ₂ = 7 days"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="4-factor-adjustment">4-Factor Adjustment</h3><a class="sl-anchor-link" href="#4-factor-adjustment"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “4-Factor Adjustment”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Factor</th><th>Weight</th><th>Signal</th></tr></thead><tbody><tr><td><strong>Training Load Decay</strong></td><td>30%</td><td>Rate of ATL reduction since last session</td></tr><tr><td><strong>Sleep Quality</strong></td><td>25%</td><td>Composite sleep score over recovery window</td></tr><tr><td><strong>HRV Trajectory</strong></td><td>25%</td><td>Direction and slope of HRV trend (rising = recovering)</td></tr><tr><td><strong>RHR Elevation</strong></td><td>20%</td><td>How far above baseline RHR remains (lower = more recovered)</td></tr></tbody></table>
+<p>The model outputs a predicted recovery percentage (0–100%) and estimated hours to full recovery.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="stress-resilience-index">Stress Resilience Index</h2><a class="sl-anchor-link" href="#stress-resilience-index"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Stress Resilience Index”</span></a></div>
+<p>Measures autonomic nervous system resilience — the body’s ability to absorb and recover from stressors.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="components-1">Components</h3><a class="sl-anchor-link" href="#components-1"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Components”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Component</th><th>Description</th></tr></thead><tbody><tr><td><strong>Stressor Identification</strong></td><td>Detects training, sleep deficit, and physiological stress events</td></tr><tr><td><strong>HRV Recovery Days</strong></td><td>Number of days for HRV to return to baseline after a stressor</td></tr><tr><td><strong>Supercompensation Ratio</strong></td><td>Magnitude of HRV overshoot above baseline post-recovery (higher = more resilient)</td></tr><tr><td><strong>Allostatic Load</strong></td><td>Cumulative stress burden — sustained deviation of RHR, HRV, and sleep from baselines</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="scoring">Scoring</h3><a class="sl-anchor-link" href="#scoring"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Scoring”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">resilience = (recoverySpeed × 0.35) + (supercompensation × 0.30)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">           </span></span><span style="--0:#d6deeb;--1:#403f53">+ (1 − allostatic × 0.20) + (stressorAdaptation × 0.15)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="resilience = (recoverySpeed × 0.35) + (supercompensation × 0.30)           + (1 − allostatic × 0.20) + (stressorAdaptation × 0.15)"><div></div></button></div></figure></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Score Range</th><th>Rating</th></tr></thead><tbody><tr><td>80–100</td><td><strong>Excellent</strong> — rapid recovery, strong adaptation</td></tr><tr><td>60–79</td><td><strong>Good</strong> — adequate resilience, room for improvement</td></tr><tr><td>40–59</td><td><strong>Moderate</strong> — slow recovery, watch for overtraining</td></tr><tr><td>0–39</td><td><strong>Low</strong> — poor resilience, reduce stressors and prioritize rest</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h2"><h2 id="circadian-rhythm-analysis">Circadian Rhythm Analysis</h2><a class="sl-anchor-link" href="#circadian-rhythm-analysis"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Circadian Rhythm Analysis”</span></a></div>
+<p>Uses the <strong>Munich Chronotype Questionnaire (MCTQ)</strong> methodology to classify chronotype and detect circadian misalignment.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="outputs">Outputs</h3><a class="sl-anchor-link" href="#outputs"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Outputs”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Output</th><th>Description</th></tr></thead><tbody><tr><td><strong>Chronotype</strong></td><td>Classification based on mid-sleep on free days (MSF): early, moderate-early, intermediate, moderate-late, late</td></tr><tr><td><strong>Social Jet Lag</strong></td><td>Difference between work-day and free-day mid-sleep — values > 1 hour indicate circadian misalignment</td></tr><tr><td><strong>Optimal Sleep Window</strong></td><td>Recommended bed and wake times aligned with the user’s natural circadian phase</td></tr><tr><td><strong>Circadian Alignment Score</strong></td><td>0–100 score measuring how well actual sleep timing matches the user’s chronotype</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="mctq-mid-sleep-calculation">MCTQ Mid-Sleep Calculation</h3><a class="sl-anchor-link" href="#mctq-mid-sleep-calculation"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “MCTQ Mid-Sleep Calculation”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">MSF = sleep_onset_free + (sleep_duration_free / 2)</span></div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">MSFsc = MSF − 0.5 × (sleep_duration_free − average_sleep_need)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">(sleep-corrected mid-sleep on free days)</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="MSF = sleep_onset_free + (sleep_duration_free / 2)MSFsc = MSF − 0.5 × (sleep_duration_free − average_sleep_need)          (sleep-corrected mid-sleep on free days)"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="chronotype-classification">Chronotype Classification</h3><a class="sl-anchor-link" href="#chronotype-classification"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Chronotype Classification”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>MSFsc</th><th>Chronotype</th></tr></thead><tbody><tr><td>&#x3C; 02:30</td><td>Early (“lark”)</td></tr><tr><td>02:30–03:30</td><td>Moderate early</td></tr><tr><td>03:30–04:30</td><td>Intermediate</td></tr><tr><td>04:30–05:30</td><td>Moderate late</td></tr><tr><td>> 05:30</td><td>Late (“owl”)</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h2"><h2 id="worker-queues">Worker Queues</h2><a class="sl-anchor-link" href="#worker-queues"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Worker Queues”</span></a></div>
+<p>Analytics processing runs on dedicated BullMQ queues:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Queue</th><th>Concurrency</th><th>Purpose</th></tr></thead><tbody><tr><td><code dir="auto">analytics</code></td><td>3</td><td>Correlation computation, health score calculation</td></tr><tr><td><code dir="auto">notifications</code></td><td>8</td><td>Dispatching anomaly alerts + other notifications</td></tr></tbody></table>
+<p>The analytics queue processes jobs after each sync completes, ensuring correlations and health scores are always up to date.</p> </div> <footer class="sl-flex astro-odjls6mg"> <div class="meta sl-flex astro-odjls6mg"> <a href="https://github.com/your-org/vitasync/edit/main/apps/docs/src/content/docs/dev-guides/analytics.md" class="sl-flex print:hidden astro-vti6hags"><svg aria-hidden="true" class="astro-vti6hags astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.2em;"><path d="M22 7.24a1 1 0 0 0-.29-.71l-4.24-4.24a1 1 0 0 0-1.1-.22 1 1 0 0 0-.32.22l-2.83 2.83L2.29 16.05a1 1 0 0 0-.29.71V21a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .76-.29l10.87-10.93L21.71 8c.1-.1.17-.2.22-.33a1 1 0 0 0 0-.24v-.14l.07-.05ZM6.83 20H4v-2.83l9.93-9.93 2.83 2.83L6.83 20ZM18.17 8.66l-2.83-2.83 1.42-1.41 2.82 2.82-1.41 1.42Z"/></svg>Edit page</a>  </div> <div class="pagination-links print:hidden astro-lueoyfe6" dir="ltr"> <a href="/vitasync/dev-guides/dashboard/" rel="prev" class="astro-lueoyfe6"> <svg aria-hidden="true" class="astro-lueoyfe6 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17 11H9.41l3.3-3.29a1.004 1.004 0 1 0-1.42-1.42l-5 5a1 1 0 0 0-.21.33 1 1 0 0 0 0 .76 1 1 0 0 0 .21.33l5 5a1.002 1.002 0 0 0 1.639-.325 1 1 0 0 0-.219-1.095L9.41 13H17a1 1 0 0 0 0-2Z"/></svg> <span class="astro-lueoyfe6"> Previous <br class="astro-lueoyfe6"> <span class="link-title astro-lueoyfe6">Dashboard</span> </span> </a> <a href="/vitasync/dev-guides/grafana-dashboards/" rel="next" class="astro-lueoyfe6"> <svg aria-hidden="true" class="astro-lueoyfe6 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg> <span class="astro-lueoyfe6"> Next <br class="astro-lueoyfe6"> <span class="link-title astro-lueoyfe6">Grafana Dashboards</span> </span> </a> </div>  </footer> </div> </div>  </main> </div> </div> </div> </div> </body></html>

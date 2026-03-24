@@ -1,0 +1,465 @@
+<!DOCTYPE html><html lang="en" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-4g2lxwa2"> <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Web Dashboard | VitaSync</title><link rel="canonical" href="https://biosync-io.github.io/vitasync/dev-guides/dashboard/"/><link rel="sitemap" href="/vitasync/sitemap-index.xml"/><script src="/vitasync/particles.js" defer></script><script src="/vitasync/scroll-reveal.js" defer></script><link rel="shortcut icon" href="/vitasync/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v6.0.4"/><meta name="generator" content="Starlight v0.38.1"/><meta property="og:title" content="Web Dashboard"/><meta property="og:type" content="article"/><meta property="og:url" content="https://biosync-io.github.io/vitasync/dev-guides/dashboard/"/><meta property="og:locale" content="en"/><meta property="og:description" content="Using the VitaSync web dashboard — Sync Jobs, notifications, theme picker, and settings."/><meta property="og:site_name" content="VitaSync"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="Using the VitaSync web dashboard — Sync Jobs, notifications, theme picker, and settings."/><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/vitasync/_astro/print.DNXP8c50.css" media="print"><link rel="stylesheet" href="/vitasync/_astro/common.B6zblJox.css">
+<link rel="stylesheet" href="/vitasync/_astro/Code.DIU321-3.css"><script type="module" src="/vitasync/_astro/page.BIhdncjw.js"></script></head> <body class="astro-4g2lxwa2"> <a href="#_top" class="astro-cdmew7ep">Skip to content</a> <div class="page sl-flex astro-six4cu34"> <header class="header astro-six4cu34"><div class="header astro-cbzmqx6o"> <div class="title-wrapper sl-flex astro-cbzmqx6o"> <a href="/vitasync/" class="site-title sl-flex astro-3ka6hon7">  <img class="light:sl-hidden print:hidden astro-3ka6hon7" alt="VitaSync" src="/vitasync/_astro/logo-dark.B9kFz7Vo.svg" width="200" height="40"> <img class="dark:sl-hidden print:block astro-3ka6hon7" alt="VitaSync" src="/vitasync/_astro/logo-light.XOvriKMU.svg" width="200" height="40"> <span class="sr-only astro-3ka6hon7" translate="no"> VitaSync </span> </a> </div> <div class="sl-flex print:hidden astro-cbzmqx6o"> <site-search class="astro-cbzmqx6o astro-wacbyr2x" data-translations="{&#34;placeholder&#34;:&#34;Search&#34;}"> <button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-wacbyr2x"> <svg aria-hidden="true" class="astro-wacbyr2x astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg> <span class="sl-hidden md:sl-block astro-wacbyr2x" aria-hidden="true">Search</span> <kbd class="sl-hidden md:sl-flex astro-wacbyr2x" style="display: none;"> <kbd class="astro-wacbyr2x">Ctrl</kbd><kbd class="astro-wacbyr2x">K</kbd> </kbd> </button> <dialog style="padding:0" aria-label="Search" class="astro-wacbyr2x"> <div class="dialog-frame sl-flex astro-wacbyr2x">  <button data-close-modal class="sl-flex md:sl-hidden astro-wacbyr2x"> Cancel </button> <div class="search-container astro-wacbyr2x"> <div id="starlight__search" class="astro-wacbyr2x"></div> </div> </div> </dialog> </site-search>  <script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script> <script type="module" src="/vitasync/_astro/Search.astro_astro_type_script_index_0_lang.BbKRpevv.js"></script>  </div> <div class="sl-hidden md:sl-flex print:hidden right-group astro-cbzmqx6o"> <div class="sl-flex social-icons astro-cbzmqx6o"> <a href="https://github.com/your-org/vitasync" rel="me" class="sl-flex astro-muw53q76"><span class="sr-only astro-muw53q76">GitHub</span><svg aria-hidden="true" class="astro-muw53q76 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a> </div> <starlight-theme-select>  <label style="--sl-select-width: 6.25em" class="astro-dnfevk6i"> <span class="sr-only astro-dnfevk6i">Select theme</span> <svg aria-hidden="true" class="icon label-icon astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg> <select autocomplete="off" class="astro-dnfevk6i"> <option value="dark" class="astro-dnfevk6i">Dark</option><option value="light" class="astro-dnfevk6i">Light</option><option value="auto" selected class="astro-dnfevk6i">Auto</option> </select> <svg aria-hidden="true" class="icon caret astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg> </label> </starlight-theme-select>  <script>
+	StarlightThemeProvider.updatePickers();
+</script> <script type="module">const r="starlight-theme",o=e=>e==="auto"||e==="dark"||e==="light"?e:"auto",c=()=>o(typeof localStorage<"u"&&localStorage.getItem(r));function n(e){typeof localStorage<"u"&&localStorage.setItem(r,e==="light"||e==="dark"?e:"")}const l=()=>matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";function t(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e==="auto"?l():e,n(e)}matchMedia("(prefers-color-scheme: light)").addEventListener("change",()=>{c()==="auto"&&t("auto")});class s extends HTMLElement{constructor(){super(),t(c()),this.querySelector("select")?.addEventListener("change",a=>{a.currentTarget instanceof HTMLSelectElement&&t(o(a.currentTarget.value))})}}customElements.define("starlight-theme-select",s);</script> <script type="module">class s extends HTMLElement{constructor(){super();const e=this.querySelector("select");e&&(e.addEventListener("change",t=>{t.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=t.currentTarget.value)}),window.addEventListener("pageshow",t=>{if(!t.persisted)return;const n=e.querySelector("option[selected]")?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}}customElements.define("starlight-lang-select",s);</script> </div> </div></header> <nav class="sidebar print:hidden astro-six4cu34" aria-label="Main"> <starlight-menu-button class="print:hidden astro-h22a6god"> <button aria-expanded="false" aria-label="Menu" aria-controls="starlight__sidebar" class="sl-flex md:sl-hidden astro-h22a6god"> <svg aria-hidden="true" class="open-menu astro-h22a6god astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg> <svg aria-hidden="true" class="close-menu astro-h22a6god astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg> </button> </starlight-menu-button> <script type="module">class s extends HTMLElement{constructor(){super(),this.btn=this.querySelector("button"),this.btn.addEventListener("click",()=>this.toggleExpanded());const t=this.closest("nav");t&&t.addEventListener("keyup",e=>this.closeOnEscape(e))}setExpanded(t){this.setAttribute("aria-expanded",String(t)),document.body.toggleAttribute("data-mobile-menu-expanded",t)}toggleExpanded(){this.setExpanded(this.getAttribute("aria-expanded")!=="true")}closeOnEscape(t){t.code==="Escape"&&(this.setExpanded(!1),this.btn.focus())}}customElements.define("starlight-menu-button",s);</script>  <div id="starlight__sidebar" class="sidebar-pane astro-six4cu34"> <div class="sidebar-content sl-flex astro-six4cu34"> <sl-sidebar-state-persist data-hash="0jzuicd" class="astro-7wabrxus"> <script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script>  <ul class="top-level astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Getting Started</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="0"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Introduction</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/quickstart/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Quickstart</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Architecture</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="1"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/overview/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Overview</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/data-model/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Data Model</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/sync-pipeline/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Sync Pipeline</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/security/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Security</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Providers</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="2"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/providers/supported/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Supported Providers</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/fitbit/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Fitbit</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/garmin/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Garmin</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/whoop/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Whoop</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/strava/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Strava</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/withings/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Withings</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">API Reference</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="3"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/introduction/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Introduction</span>  </a> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Guides</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="4"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/authentication/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Authentication</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/connect-a-user/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Connect a User</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/query-health-data/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Query Health Data</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/webhooks/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Webhooks</span>  </a> </li> </ul> </details> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Developer Guides</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="5"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/adding-a-provider/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Adding a Provider</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/api-keys/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">API Keys</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/webhooks/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Webhooks</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/mcp/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">MCP Server</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/notifications/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Notifications</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/dashboard/" aria-current="page" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Dashboard</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/analytics/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">AI &amp; Analytics</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/grafana-dashboards/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Grafana Dashboards</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Features</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="6"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/goals-achievements/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Goals &amp; Achievements</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/health-tracking/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Health Tracking</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/challenges/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Challenges &amp; Training</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/reports-exports/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Reports &amp; Data Exports</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/sleep-biometrics/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Sleep Analysis &amp; Biometrics</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Deployment</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="7"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/deployment/docker/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Docker Compose</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/deployment/kubernetes/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Kubernetes / Helm</span>  </a> </li> </ul> </details> </li> </ul>  <script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script> </sl-sidebar-state-persist> <div class="md:sl-hidden"> <div class="mobile-preferences sl-flex astro-6mxfo6em"> <div class="social-icons astro-6mxfo6em"> <a href="https://github.com/your-org/vitasync" rel="me" class="sl-flex astro-muw53q76"><span class="sr-only astro-muw53q76">GitHub</span><svg aria-hidden="true" class="astro-muw53q76 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a> </div> <starlight-theme-select>  <label style="--sl-select-width: 6.25em" class="astro-dnfevk6i"> <span class="sr-only astro-dnfevk6i">Select theme</span> <svg aria-hidden="true" class="icon label-icon astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg> <select autocomplete="off" class="astro-dnfevk6i"> <option value="dark" class="astro-dnfevk6i">Dark</option><option value="light" class="astro-dnfevk6i">Light</option><option value="auto" selected class="astro-dnfevk6i">Auto</option> </select> <svg aria-hidden="true" class="icon caret astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg> </label> </starlight-theme-select>  <script>
+	StarlightThemeProvider.updatePickers();
+</script>   </div> </div> </div> </div> </nav> <div class="main-frame astro-six4cu34">  <script type="module">const a=document.getElementById("starlight__sidebar"),n=a?.querySelector("sl-sidebar-state-persist"),o="sl-sidebar-state",i=()=>{let t=[];const e=n?.dataset.hash||"";try{const s=sessionStorage.getItem(o),r=JSON.parse(s||"{}");Array.isArray(r.open)&&r.hash===e&&(t=r.open)}catch{}return{hash:e,open:t,scroll:a?.scrollTop||0}},c=t=>{try{sessionStorage.setItem(o,JSON.stringify(t))}catch{}},d=()=>c(i()),l=(t,e)=>{const s=i();s.open[e]=t,c(s)};n?.addEventListener("click",t=>{if(!(t.target instanceof Element))return;const e=t.target.closest("summary")?.closest("details");if(!e)return;const s=e.querySelector("sl-sidebar-restore"),r=parseInt(s?.dataset.index||"");isNaN(r)||l(!e.open,r)});addEventListener("visibilitychange",()=>{document.visibilityState==="hidden"&&d()});addEventListener("pageHide",d);</script> <div class="lg:sl-flex astro-fcbywwi3"> <aside class="right-sidebar-container print:hidden astro-fcbywwi3"> <div class="right-sidebar astro-fcbywwi3"> <script type="module" src="/vitasync/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.hwBsy0Mo.js"></script><script type="module" src="/vitasync/_astro/TableOfContents.astro_astro_type_script_index_0_lang.FuRcXuRY.js"></script><div class="lg:sl-hidden astro-wmmpr6yz"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-ehgd637q"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-ehgd637q"><details id="starlight__mobile-toc" class="astro-ehgd637q"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-ehgd637q"><span class="toggle sl-flex astro-ehgd637q">On this page<svg aria-hidden="true" class="caret astro-ehgd637q astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-ehgd637q"></span></summary><div class="dropdown astro-ehgd637q"><ul class="isMobile astro-7uqxqiej" style="--depth: 0;"> <li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#_top" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Overview</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#navigation" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Navigation</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#sync-jobs" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Sync Jobs</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#status-badges" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Status badges</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#theme-picker" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Theme Picker</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#auto-sync-on-provider-connect" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Auto-sync on Provider Connect</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#how-it-works" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">How it works</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#disabling-auto-sync" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Disabling auto-sync</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#settings-page" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Settings Page</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#api-reference" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">API Reference</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#api-keys" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">API Keys</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#appearance" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Appearance</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#notification-settings" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Notification Settings</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#channels-tab" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Channels Tab</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#routing-rules-tab" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Routing Rules Tab</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#algorithms" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Algorithms</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#features" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Features</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#partner-events" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Partner Events</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#features-1" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Features</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#body-metrics" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Body Metrics</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#chart-types" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Chart Types</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#activity" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Activity</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#card-types" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Card Types</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#notification-logs" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Notification Logs</span> </a>  </li> </ul></div></details></nav></mobile-starlight-toc></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-wmmpr6yz"><div class="sl-container astro-wmmpr6yz"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">On this page</h2><ul class="astro-7uqxqiej" style="--depth: 0;"> <li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#_top" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Overview</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#navigation" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Navigation</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#sync-jobs" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Sync Jobs</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#status-badges" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Status badges</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#theme-picker" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Theme Picker</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#auto-sync-on-provider-connect" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Auto-sync on Provider Connect</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#how-it-works" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">How it works</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#disabling-auto-sync" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Disabling auto-sync</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#settings-page" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Settings Page</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#api-reference" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">API Reference</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#api-keys" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">API Keys</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#appearance" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Appearance</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#notification-settings" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Notification Settings</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#channels-tab" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Channels Tab</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#routing-rules-tab" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Routing Rules Tab</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#algorithms" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Algorithms</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#features" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Features</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#partner-events" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Partner Events</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#features-1" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Features</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#body-metrics" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Body Metrics</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#chart-types" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Chart Types</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#activity" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Activity</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#card-types" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Card Types</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#notification-logs" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Notification Logs</span> </a>  </li> </ul></nav></starlight-toc></div></div> </div> </aside> <div class="main-pane astro-fcbywwi3">  <main data-pagefind-body class="astro-4g2lxwa2" lang="en" dir="ltr">    <div class="content-panel astro-zwhrulx7"> <div class="sl-container astro-zwhrulx7"> <h1 id="_top" class="astro-2tcylr3h">Web Dashboard</h1> </div> </div> <div class="content-panel astro-zwhrulx7"> <div class="sl-container astro-zwhrulx7"> <div class="sl-markdown-content"> <p>import { Aside } from ‘@astrojs/starlight/components’;</p>
+<p>The VitaSync web dashboard (<code dir="auto">apps/web</code>) is a Next.js 16 App Router application available at <strong><a href="http://localhost:3000">http://localhost:3000</a></strong> (or your configured domain). It provides a management UI for users, provider connections, sync jobs, notifications, settings, and more.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="navigation">Navigation</h2><a class="sl-anchor-link" href="#navigation"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Navigation”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Section</th><th>Path</th><th>Description</th></tr></thead><tbody><tr><td>Dashboard</td><td><code dir="auto">/dashboard</code></td><td>Overview with health scores, recent workouts, goals, insights</td></tr><tr><td>Health Score</td><td><code dir="auto">/dashboard/health-scores</code></td><td>Composite wellness score visualization</td></tr><tr><td>Readiness</td><td><code dir="auto">/dashboard/readiness</code></td><td>Recovery readiness and training load</td></tr><tr><td>Insights</td><td><code dir="auto">/dashboard/insights</code></td><td>AI-generated health insights</td></tr><tr><td>Reports</td><td><code dir="auto">/dashboard/reports</code></td><td>Health report generation</td></tr><tr><td>Anomalies</td><td><code dir="auto">/dashboard/anomalies</code></td><td>Detected health anomalies</td></tr><tr><td>Correlations</td><td><code dir="auto">/dashboard/correlations</code></td><td>Metric relationship discovery</td></tr><tr><td>Health Data</td><td><code dir="auto">/dashboard/health</code></td><td>Raw health metric explorer</td></tr><tr><td>Sleep</td><td><code dir="auto">/dashboard/sleep</code></td><td>Sleep analysis and tracking</td></tr><tr><td>Activity</td><td><code dir="auto">/dashboard/activity</code></td><td>Workout history and training</td></tr><tr><td>Nutrition</td><td><code dir="auto">/dashboard/nutrition</code></td><td>Nutrition and meal logging</td></tr><tr><td>Mood</td><td><code dir="auto">/dashboard/mood</code></td><td>Mood and mental wellness tracking</td></tr><tr><td>Journal</td><td><code dir="auto">/dashboard/journal</code></td><td>Daily journal with gratitude and mood tagging</td></tr><tr><td>Water Intake</td><td><code dir="auto">/dashboard/water</code></td><td>Hydration tracking with daily goals</td></tr><tr><td>Habits</td><td><code dir="auto">/dashboard/habits</code></td><td>Daily habit tracking with streaks</td></tr><tr><td>Symptoms</td><td><code dir="auto">/dashboard/symptoms</code></td><td>Symptom logging</td></tr><tr><td>Medications</td><td><code dir="auto">/dashboard/medications</code></td><td>Medication tracking</td></tr><tr><td>Training</td><td><code dir="auto">/dashboard/training</code></td><td>Training plans and load</td></tr><tr><td>Goals</td><td><code dir="auto">/dashboard/goals</code></td><td>Health goal tracking</td></tr><tr><td>Achievements</td><td><code dir="auto">/dashboard/achievements</code></td><td>Unlocked badges</td></tr><tr><td>Challenges</td><td><code dir="auto">/dashboard/challenges</code></td><td>Workspace-wide challenges</td></tr><tr><td>Providers</td><td><code dir="auto">/dashboard/providers</code></td><td>Connected devices and OAuth</td></tr><tr><td>Users</td><td><code dir="auto">/dashboard/users</code></td><td>Workspace user management</td></tr><tr><td>Sync Jobs</td><td><code dir="auto">/dashboard/sync-jobs</code></td><td>Live BullMQ job queue monitor</td></tr><tr><td>Exports</td><td><code dir="auto">/dashboard/exports</code></td><td>Data export management</td></tr><tr><td>Webhooks</td><td><code dir="auto">/dashboard/webhooks</code></td><td>Webhook CRUD and delivery history</td></tr><tr><td>Notifications</td><td><code dir="auto">/dashboard/notifications</code></td><td>Notification channel setup and rules</td></tr><tr><td>Notification Logs</td><td><code dir="auto">/dashboard/notification-logs</code></td><td>Delivery history</td></tr><tr><td>API Keys</td><td><code dir="auto">/dashboard/api-keys</code></td><td>API key management</td></tr><tr><td>Algorithms</td><td><code dir="auto">/dashboard/algorithms</code></td><td>Browsable catalog of analytics algorithms</td></tr><tr><td>Partner Events</td><td><code dir="auto">/dashboard/partner-events</code></td><td>Inbound webhook log viewer</td></tr><tr><td>Body Metrics</td><td><code dir="auto">/dashboard/body-metrics</code></td><td>Body composition with clinical charts</td></tr><tr><td>Settings</td><td><code dir="auto">/dashboard/settings</code></td><td>Theme, preferences, auto-sync toggle</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h2"><h2 id="sync-jobs">Sync Jobs</h2><a class="sl-anchor-link" href="#sync-jobs"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Sync Jobs”</span></a></div>
+<p>The <strong>Sync Jobs</strong> page (<code dir="auto">/dashboard/sync-jobs</code>) shows a live view of all BullMQ sync jobs across the queue.</p>
+<p>![Sync Jobs screenshot placeholder]</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="status-badges">Status badges</h3><a class="sl-anchor-link" href="#status-badges"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Status badges”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Badge</th><th>Meaning</th></tr></thead><tbody><tr><td><code dir="auto">completed</code> (green)</td><td>Sync finished successfully</td></tr><tr><td><code dir="auto">failed</code> (red)</td><td>Sync encountered an error</td></tr><tr><td><code dir="auto">active</code> (blue)</td><td>Sync is currently running</td></tr><tr><td><code dir="auto">waiting</code> (yellow)</td><td>Job is queued, waiting for a worker</td></tr><tr><td><code dir="auto">delayed</code> (grey)</td><td>Job is scheduled for future execution</td></tr></tbody></table>
+<p>The page <strong>auto-refreshes every 5 seconds</strong> so you can watch jobs progress in real time. Use the <strong>Refresh</strong> button to force an immediate reload.</p>
+<aside type="tip">
+  If a job is stuck in `active` state the worker may have crashed. Restart the worker service: `docker compose restart worker`.
+</aside>
+<div class="sl-heading-wrapper level-h2"><h2 id="theme-picker">Theme Picker</h2><a class="sl-anchor-link" href="#theme-picker"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Theme Picker”</span></a></div>
+<p>VitaSync’s dashboard supports <strong>five accent colour themes</strong>. The selected theme is saved in <code dir="auto">localStorage</code> and applied instantly without a page reload.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Theme</th><th>Colour</th></tr></thead><tbody><tr><td>Indigo</td><td><code dir="auto">#4f46e5</code> (default)</td></tr><tr><td>Blue</td><td><code dir="auto">#2563eb</code></td></tr><tr><td>Green</td><td><code dir="auto">#16a34a</code></td></tr><tr><td>Purple</td><td><code dir="auto">#9333ea</code></td></tr><tr><td>Rose</td><td><code dir="auto">#e11d48</code></td></tr></tbody></table>
+<p>To change the theme, go to <strong>Settings → Appearance</strong> and click a colour swatch. The entire dashboard (buttons, links, focus rings, active states) updates immediately.</p>
+<p>The preference is stored under the <code dir="auto">vitasync_accent</code> key in <code dir="auto">localStorage</code> and is <strong>per-browser</strong> — different users on different browsers can each have their own theme.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="auto-sync-on-provider-connect">Auto-sync on Provider Connect</h2><a class="sl-anchor-link" href="#auto-sync-on-provider-connect"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Auto-sync on Provider Connect”</span></a></div>
+<p>When a user connects a new provider via OAuth (e.g. Fitbit, Garmin, Strava), the dashboard automatically triggers an initial sync <strong>without any extra click</strong>. This means health data starts flowing as soon as the OAuth callback completes.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="how-it-works">How it works</h3><a class="sl-anchor-link" href="#how-it-works"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “How it works”</span></a></div>
+<p>The user detail page (<code dir="auto">/dashboard/users/:id</code>) tracks previously-seen connection IDs. After the user returns from the OAuth tab, the page detects the new connection and calls <code dir="auto">POST /v1/users/:id/connections/:cid/sync</code> automatically.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="disabling-auto-sync">Disabling auto-sync</h3><a class="sl-anchor-link" href="#disabling-auto-sync"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Disabling auto-sync”</span></a></div>
+<p>Auto-sync can be toggled per-browser in <strong>Settings → Appearance</strong>:</p>
+<ol>
+<li>Navigate to <strong>Settings</strong> in the sidebar.</li>
+<li>Find the <strong>Appearance</strong> section.</li>
+<li>Toggle <strong>Auto-sync on connect</strong> off.</li>
+</ol>
+<p>The preference is stored under the <code dir="auto">vitasync_auto_sync</code> key in <code dir="auto">localStorage</code>. Setting the value to <code dir="auto">"false"</code> disables auto-sync. Any other value (or the key being absent) is treated as enabled.</p>
+<aside>
+  The auto-sync toggle is a browser-local preference. It does not affect server-side behaviour or scheduled syncs — only the automatic trigger that fires when a new OAuth connection is detected on the user detail page.
+</aside>
+<div class="sl-heading-wrapper level-h2"><h2 id="settings-page">Settings Page</h2><a class="sl-anchor-link" href="#settings-page"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Settings Page”</span></a></div>
+<p>The <strong>Settings</strong> page (<code dir="auto">/dashboard/settings</code>) is divided into three sections:</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="api-reference">API Reference</h3><a class="sl-anchor-link" href="#api-reference"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “API Reference”</span></a></div>
+<p>Lists the API base URL and links to the Swagger UI at <code dir="auto">/docs</code>.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="api-keys">API Keys</h3><a class="sl-anchor-link" href="#api-keys"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “API Keys”</span></a></div>
+<p>Create and manage API keys for programmatic access. Keys are shown in full <strong>once</strong> at creation time; the plaintext is never stored again.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="appearance">Appearance</h3><a class="sl-anchor-link" href="#appearance"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Appearance”</span></a></div>
+<ul>
+<li><strong>Accent colour</strong> — pick from five themes; saved to <code dir="auto">localStorage</code>.</li>
+<li><strong>Auto-sync on connect</strong> — enable or disable automatic sync when a new provider connection is detected.</li>
+</ul>
+<div class="sl-heading-wrapper level-h2"><h2 id="notification-settings">Notification Settings</h2><a class="sl-anchor-link" href="#notification-settings"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Notification Settings”</span></a></div>
+<p>The <strong>Notification Settings</strong> page (<code dir="auto">/dashboard/notifications</code>) lets you manage notification channels and define routing rules — all stored in the database per user, no environment variables needed.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="channels-tab">Channels Tab</h3><a class="sl-anchor-link" href="#channels-tab"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Channels Tab”</span></a></div>
+<p>Manage delivery channels (Discord, Slack, Email, ntfy, Webhook, etc.):</p>
+<ul>
+<li><strong>Add Channel</strong> — select a channel type, enter a name, and provide the channel-specific configuration (e.g. webhook URL, SMTP settings).</li>
+<li><strong>Test</strong> — send a test message to verify the channel works before saving routing rules.</li>
+<li><strong>Enable / Disable</strong> — toggle channels on or off without deleting them.</li>
+<li><strong>Delete</strong> — remove a channel permanently.</li>
+</ul>
+<div class="sl-heading-wrapper level-h3"><h3 id="routing-rules-tab">Routing Rules Tab</h3><a class="sl-anchor-link" href="#routing-rules-tab"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Routing Rules Tab”</span></a></div>
+<p>Define which notifications go to which channels:</p>
+<ul>
+<li><strong>Add Rule</strong> — select a channel, then choose matching criteria: <strong>category</strong> (e.g. <code dir="auto">sync</code>, <code dir="auto">anomaly</code>, <code dir="auto">achievement</code>), <strong>severity</strong> (e.g. <code dir="auto">critical</code>, <code dir="auto">warning</code>, <code dir="auto">info</code>), or both.</li>
+<li>Rules are evaluated for every notification — if a notification matches a rule’s criteria, it is delivered to that rule’s channel.</li>
+<li>Priority ordering lets you control which rule takes precedence when multiple rules match.</li>
+</ul>
+<aside type="tip">
+  See the [Notification System guide](/vitasync/dev-guides/notifications/) for channel configuration examples and the full API reference.
+</aside>
+<div class="sl-heading-wrapper level-h2"><h2 id="algorithms">Algorithms</h2><a class="sl-anchor-link" href="#algorithms"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Algorithms”</span></a></div>
+<p>The <strong>Algorithms</strong> page (<code dir="auto">/dashboard/algorithms</code>) provides a browsable catalog of all 54 analytics algorithms used by VitaSync’s scoring engines.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="features">Features</h3><a class="sl-anchor-link" href="#features"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Features”</span></a></div>
+<ul>
+<li><strong>Search</strong> — find algorithms by name or description</li>
+<li><strong>Category filtering</strong> — filter by category (health score, readiness, training load, metabolic, recovery, stress, circadian, body)</li>
+<li><strong>Algorithm cards</strong> — each card shows the algorithm name, description, category, signal weights, and key thresholds</li>
+<li><strong>Expandable details</strong> — click a card to view the full formula, input signals, and scoring ranges</li>
+</ul>
+<p>This page is read-only and reflects the algorithm definitions used by the analytics engine. It serves as a reference for understanding how scores and metrics are calculated.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="partner-events">Partner Events</h2><a class="sl-anchor-link" href="#partner-events"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Partner Events”</span></a></div>
+<p>The <strong>Partner Events</strong> page (<code dir="auto">/dashboard/partner-events</code>) displays a real-time log of inbound webhooks received from connected providers (e.g. Garmin push notifications, Withings data updates).</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="features-1">Features</h3><a class="sl-anchor-link" href="#features-1"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Features”</span></a></div>
+<ul>
+<li><strong>Provider filter</strong> — narrow by provider (Garmin, Withings, etc.)</li>
+<li><strong>Status filter</strong> — filter by processing status (<code dir="auto">received</code>, <code dir="auto">processed</code>, <code dir="auto">failed</code>, <code dir="auto">ignored</code>)</li>
+<li><strong>Event details</strong> — expandable rows showing the raw webhook payload, processing result, and timestamps</li>
+<li><strong>Auto-refresh</strong> — the log refreshes every 10 seconds to show new events</li>
+</ul>
+<p>Partner events are logged to the <code dir="auto">partner_events</code> table and provide an audit trail for debugging sync issues with push-based providers.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="body-metrics">Body Metrics</h2><a class="sl-anchor-link" href="#body-metrics"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Body Metrics”</span></a></div>
+<p>The <strong>Body Metrics</strong> page (<code dir="auto">/dashboard/body-metrics</code>) provides full-size charts for body composition and clinical vitals.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="chart-types">Chart Types</h3><a class="sl-anchor-link" href="#chart-types"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Chart Types”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Chart</th><th>Reference Lines</th></tr></thead><tbody><tr><td><strong>SpO₂</strong></td><td>Normal (≥ 95%), concerning (92–94%), critical (&#x3C; 92%)</td></tr><tr><td><strong>Temperature</strong></td><td>Normal range (36.1–37.2°C), fever threshold (38.0°C)</td></tr><tr><td><strong>Respiratory Rate</strong></td><td>Normal (12–20 breaths/min), tachypnea (> 25)</td></tr><tr><td><strong>Body Fat %</strong></td><td>Age- and gender-adjusted healthy ranges</td></tr><tr><td><strong>Weight</strong></td><td>Trend line with 14-day moving average</td></tr><tr><td><strong>BMI</strong></td><td>WHO categories (underweight / normal / overweight / obese)</td></tr></tbody></table>
+<p>All charts include <strong>clinical reference lines</strong> so users can quickly see whether their values fall within healthy ranges.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="activity">Activity</h2><a class="sl-anchor-link" href="#activity"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Activity”</span></a></div>
+<p>The <strong>Activity</strong> page (<code dir="auto">/dashboard/activity</code>) now features event-type-specific expandable cards that display detailed information based on the activity type.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="card-types">Card Types</h3><a class="sl-anchor-link" href="#card-types"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Card Types”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Event Type</th><th>Expanded Details</th></tr></thead><tbody><tr><td><strong>Workout</strong></td><td>Duration, calories, heart rate zones, peak HR, sport type, route map (if GPS available)</td></tr><tr><td><strong>Sleep</strong></td><td>Duration, efficiency, stage breakdown (deep/light/REM/awake), sleep score</td></tr><tr><td><strong>Activity</strong></td><td>Steps, distance, active minutes, floors, hourly breakdown</td></tr></tbody></table>
+<p>Each card shows a summary row with key metrics and can be expanded to reveal the full dataset. Cards are sorted by date with infinite scroll pagination.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="notification-logs">Notification Logs</h2><a class="sl-anchor-link" href="#notification-logs"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Notification Logs”</span></a></div>
+<p>The <strong>Notification Logs</strong> page (<code dir="auto">/dashboard/notification-logs</code>) provides a searchable, filterable activity log of every notification the system has attempted to deliver.</p>
+<p>Each log entry shows:</p>
+<ul>
+<li><strong>Status</strong> — <code dir="auto">delivered</code>, <code dir="auto">failed</code>, or <code dir="auto">pending</code></li>
+<li><strong>Channel</strong> — which channel was used</li>
+<li><strong>Category &#x26; Severity</strong> — the notification’s classification</li>
+<li><strong>Timestamp</strong> — when the delivery was attempted</li>
+<li><strong>Error</strong> — if the delivery failed, the error message is shown</li>
+</ul>
+<p>Use the filters at the top to narrow by status, channel, or date range. Failed deliveries include the error message to help debug configuration issues.</p> </div> <footer class="sl-flex astro-odjls6mg"> <div class="meta sl-flex astro-odjls6mg"> <a href="https://github.com/your-org/vitasync/edit/main/apps/docs/src/content/docs/dev-guides/dashboard.md" class="sl-flex print:hidden astro-vti6hags"><svg aria-hidden="true" class="astro-vti6hags astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.2em;"><path d="M22 7.24a1 1 0 0 0-.29-.71l-4.24-4.24a1 1 0 0 0-1.1-.22 1 1 0 0 0-.32.22l-2.83 2.83L2.29 16.05a1 1 0 0 0-.29.71V21a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .76-.29l10.87-10.93L21.71 8c.1-.1.17-.2.22-.33a1 1 0 0 0 0-.24v-.14l.07-.05ZM6.83 20H4v-2.83l9.93-9.93 2.83 2.83L6.83 20ZM18.17 8.66l-2.83-2.83 1.42-1.41 2.82 2.82-1.41 1.42Z"/></svg>Edit page</a>  </div> <div class="pagination-links print:hidden astro-lueoyfe6" dir="ltr"> <a href="/vitasync/dev-guides/notifications/" rel="prev" class="astro-lueoyfe6"> <svg aria-hidden="true" class="astro-lueoyfe6 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17 11H9.41l3.3-3.29a1.004 1.004 0 1 0-1.42-1.42l-5 5a1 1 0 0 0-.21.33 1 1 0 0 0 0 .76 1 1 0 0 0 .21.33l5 5a1.002 1.002 0 0 0 1.639-.325 1 1 0 0 0-.219-1.095L9.41 13H17a1 1 0 0 0 0-2Z"/></svg> <span class="astro-lueoyfe6"> Previous <br class="astro-lueoyfe6"> <span class="link-title astro-lueoyfe6">Notifications</span> </span> </a> <a href="/vitasync/dev-guides/analytics/" rel="next" class="astro-lueoyfe6"> <svg aria-hidden="true" class="astro-lueoyfe6 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg> <span class="astro-lueoyfe6"> Next <br class="astro-lueoyfe6"> <span class="link-title astro-lueoyfe6">AI &amp; Analytics</span> </span> </a> </div>  </footer> </div> </div>  </main> </div> </div> </div> </div> </body></html>

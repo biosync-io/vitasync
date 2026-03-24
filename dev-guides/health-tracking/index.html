@@ -1,0 +1,493 @@
+<!DOCTYPE html><html lang="en" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-4g2lxwa2"> <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Health Tracking | VitaSync</title><link rel="canonical" href="https://biosync-io.github.io/vitasync/dev-guides/health-tracking/"/><link rel="sitemap" href="/vitasync/sitemap-index.xml"/><script src="/vitasync/particles.js" defer></script><script src="/vitasync/scroll-reveal.js" defer></script><link rel="shortcut icon" href="/vitasync/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v6.0.4"/><meta name="generator" content="Starlight v0.38.1"/><meta property="og:title" content="Health Tracking"/><meta property="og:type" content="article"/><meta property="og:url" content="https://biosync-io.github.io/vitasync/dev-guides/health-tracking/"/><meta property="og:locale" content="en"/><meta property="og:description" content="Log mood, nutrition, medications, and symptoms alongside your wearable data."/><meta property="og:site_name" content="VitaSync"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="Log mood, nutrition, medications, and symptoms alongside your wearable data."/><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/vitasync/_astro/print.DNXP8c50.css" media="print"><link rel="stylesheet" href="/vitasync/_astro/common.B6zblJox.css">
+<link rel="stylesheet" href="/vitasync/_astro/Code.DIU321-3.css"><script type="module" src="/vitasync/_astro/page.BIhdncjw.js"></script></head> <body class="astro-4g2lxwa2"> <a href="#_top" class="astro-cdmew7ep">Skip to content</a> <div class="page sl-flex astro-six4cu34"> <header class="header astro-six4cu34"><div class="header astro-cbzmqx6o"> <div class="title-wrapper sl-flex astro-cbzmqx6o"> <a href="/vitasync/" class="site-title sl-flex astro-3ka6hon7">  <img class="light:sl-hidden print:hidden astro-3ka6hon7" alt="VitaSync" src="/vitasync/_astro/logo-dark.B9kFz7Vo.svg" width="200" height="40"> <img class="dark:sl-hidden print:block astro-3ka6hon7" alt="VitaSync" src="/vitasync/_astro/logo-light.XOvriKMU.svg" width="200" height="40"> <span class="sr-only astro-3ka6hon7" translate="no"> VitaSync </span> </a> </div> <div class="sl-flex print:hidden astro-cbzmqx6o"> <site-search class="astro-cbzmqx6o astro-wacbyr2x" data-translations="{&#34;placeholder&#34;:&#34;Search&#34;}"> <button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-wacbyr2x"> <svg aria-hidden="true" class="astro-wacbyr2x astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg> <span class="sl-hidden md:sl-block astro-wacbyr2x" aria-hidden="true">Search</span> <kbd class="sl-hidden md:sl-flex astro-wacbyr2x" style="display: none;"> <kbd class="astro-wacbyr2x">Ctrl</kbd><kbd class="astro-wacbyr2x">K</kbd> </kbd> </button> <dialog style="padding:0" aria-label="Search" class="astro-wacbyr2x"> <div class="dialog-frame sl-flex astro-wacbyr2x">  <button data-close-modal class="sl-flex md:sl-hidden astro-wacbyr2x"> Cancel </button> <div class="search-container astro-wacbyr2x"> <div id="starlight__search" class="astro-wacbyr2x"></div> </div> </div> </dialog> </site-search>  <script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script> <script type="module" src="/vitasync/_astro/Search.astro_astro_type_script_index_0_lang.BbKRpevv.js"></script>  </div> <div class="sl-hidden md:sl-flex print:hidden right-group astro-cbzmqx6o"> <div class="sl-flex social-icons astro-cbzmqx6o"> <a href="https://github.com/your-org/vitasync" rel="me" class="sl-flex astro-muw53q76"><span class="sr-only astro-muw53q76">GitHub</span><svg aria-hidden="true" class="astro-muw53q76 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a> </div> <starlight-theme-select>  <label style="--sl-select-width: 6.25em" class="astro-dnfevk6i"> <span class="sr-only astro-dnfevk6i">Select theme</span> <svg aria-hidden="true" class="icon label-icon astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg> <select autocomplete="off" class="astro-dnfevk6i"> <option value="dark" class="astro-dnfevk6i">Dark</option><option value="light" class="astro-dnfevk6i">Light</option><option value="auto" selected class="astro-dnfevk6i">Auto</option> </select> <svg aria-hidden="true" class="icon caret astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg> </label> </starlight-theme-select>  <script>
+	StarlightThemeProvider.updatePickers();
+</script> <script type="module">const r="starlight-theme",o=e=>e==="auto"||e==="dark"||e==="light"?e:"auto",c=()=>o(typeof localStorage<"u"&&localStorage.getItem(r));function n(e){typeof localStorage<"u"&&localStorage.setItem(r,e==="light"||e==="dark"?e:"")}const l=()=>matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";function t(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e==="auto"?l():e,n(e)}matchMedia("(prefers-color-scheme: light)").addEventListener("change",()=>{c()==="auto"&&t("auto")});class s extends HTMLElement{constructor(){super(),t(c()),this.querySelector("select")?.addEventListener("change",a=>{a.currentTarget instanceof HTMLSelectElement&&t(o(a.currentTarget.value))})}}customElements.define("starlight-theme-select",s);</script> <script type="module">class s extends HTMLElement{constructor(){super();const e=this.querySelector("select");e&&(e.addEventListener("change",t=>{t.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=t.currentTarget.value)}),window.addEventListener("pageshow",t=>{if(!t.persisted)return;const n=e.querySelector("option[selected]")?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}}customElements.define("starlight-lang-select",s);</script> </div> </div></header> <nav class="sidebar print:hidden astro-six4cu34" aria-label="Main"> <starlight-menu-button class="print:hidden astro-h22a6god"> <button aria-expanded="false" aria-label="Menu" aria-controls="starlight__sidebar" class="sl-flex md:sl-hidden astro-h22a6god"> <svg aria-hidden="true" class="open-menu astro-h22a6god astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg> <svg aria-hidden="true" class="close-menu astro-h22a6god astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg> </button> </starlight-menu-button> <script type="module">class s extends HTMLElement{constructor(){super(),this.btn=this.querySelector("button"),this.btn.addEventListener("click",()=>this.toggleExpanded());const t=this.closest("nav");t&&t.addEventListener("keyup",e=>this.closeOnEscape(e))}setExpanded(t){this.setAttribute("aria-expanded",String(t)),document.body.toggleAttribute("data-mobile-menu-expanded",t)}toggleExpanded(){this.setExpanded(this.getAttribute("aria-expanded")!=="true")}closeOnEscape(t){t.code==="Escape"&&(this.setExpanded(!1),this.btn.focus())}}customElements.define("starlight-menu-button",s);</script>  <div id="starlight__sidebar" class="sidebar-pane astro-six4cu34"> <div class="sidebar-content sl-flex astro-six4cu34"> <sl-sidebar-state-persist data-hash="0jzuicd" class="astro-7wabrxus"> <script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script>  <ul class="top-level astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Getting Started</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="0"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Introduction</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/quickstart/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Quickstart</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Architecture</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="1"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/overview/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Overview</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/data-model/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Data Model</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/sync-pipeline/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Sync Pipeline</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/security/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Security</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Providers</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="2"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/providers/supported/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Supported Providers</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/fitbit/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Fitbit</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/garmin/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Garmin</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/whoop/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Whoop</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/strava/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Strava</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/withings/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Withings</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">API Reference</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="3"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/introduction/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Introduction</span>  </a> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Guides</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="4"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/authentication/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Authentication</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/connect-a-user/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Connect a User</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/query-health-data/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Query Health Data</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/webhooks/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Webhooks</span>  </a> </li> </ul> </details> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Developer Guides</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="5"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/adding-a-provider/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Adding a Provider</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/api-keys/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">API Keys</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/webhooks/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Webhooks</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/mcp/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">MCP Server</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/notifications/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Notifications</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/dashboard/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Dashboard</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/analytics/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">AI &amp; Analytics</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/grafana-dashboards/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Grafana Dashboards</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Features</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="6"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/goals-achievements/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Goals &amp; Achievements</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/health-tracking/" aria-current="page" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Health Tracking</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/challenges/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Challenges &amp; Training</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/reports-exports/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Reports &amp; Data Exports</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/sleep-biometrics/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Sleep Analysis &amp; Biometrics</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Deployment</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="7"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/deployment/docker/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Docker Compose</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/deployment/kubernetes/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Kubernetes / Helm</span>  </a> </li> </ul> </details> </li> </ul>  <script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script> </sl-sidebar-state-persist> <div class="md:sl-hidden"> <div class="mobile-preferences sl-flex astro-6mxfo6em"> <div class="social-icons astro-6mxfo6em"> <a href="https://github.com/your-org/vitasync" rel="me" class="sl-flex astro-muw53q76"><span class="sr-only astro-muw53q76">GitHub</span><svg aria-hidden="true" class="astro-muw53q76 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a> </div> <starlight-theme-select>  <label style="--sl-select-width: 6.25em" class="astro-dnfevk6i"> <span class="sr-only astro-dnfevk6i">Select theme</span> <svg aria-hidden="true" class="icon label-icon astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg> <select autocomplete="off" class="astro-dnfevk6i"> <option value="dark" class="astro-dnfevk6i">Dark</option><option value="light" class="astro-dnfevk6i">Light</option><option value="auto" selected class="astro-dnfevk6i">Auto</option> </select> <svg aria-hidden="true" class="icon caret astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg> </label> </starlight-theme-select>  <script>
+	StarlightThemeProvider.updatePickers();
+</script>   </div> </div> </div> </div> </nav> <div class="main-frame astro-six4cu34">  <script type="module">const a=document.getElementById("starlight__sidebar"),n=a?.querySelector("sl-sidebar-state-persist"),o="sl-sidebar-state",i=()=>{let t=[];const e=n?.dataset.hash||"";try{const s=sessionStorage.getItem(o),r=JSON.parse(s||"{}");Array.isArray(r.open)&&r.hash===e&&(t=r.open)}catch{}return{hash:e,open:t,scroll:a?.scrollTop||0}},c=t=>{try{sessionStorage.setItem(o,JSON.stringify(t))}catch{}},d=()=>c(i()),l=(t,e)=>{const s=i();s.open[e]=t,c(s)};n?.addEventListener("click",t=>{if(!(t.target instanceof Element))return;const e=t.target.closest("summary")?.closest("details");if(!e)return;const s=e.querySelector("sl-sidebar-restore"),r=parseInt(s?.dataset.index||"");isNaN(r)||l(!e.open,r)});addEventListener("visibilitychange",()=>{document.visibilityState==="hidden"&&d()});addEventListener("pageHide",d);</script> <div class="lg:sl-flex astro-fcbywwi3"> <aside class="right-sidebar-container print:hidden astro-fcbywwi3"> <div class="right-sidebar astro-fcbywwi3"> <script type="module" src="/vitasync/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.hwBsy0Mo.js"></script><script type="module" src="/vitasync/_astro/TableOfContents.astro_astro_type_script_index_0_lang.FuRcXuRY.js"></script><div class="lg:sl-hidden astro-wmmpr6yz"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-ehgd637q"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-ehgd637q"><details id="starlight__mobile-toc" class="astro-ehgd637q"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-ehgd637q"><span class="toggle sl-flex astro-ehgd637q">On this page<svg aria-hidden="true" class="caret astro-ehgd637q astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-ehgd637q"></span></summary><div class="dropdown astro-ehgd637q"><ul class="isMobile astro-7uqxqiej" style="--depth: 0;"> <li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#_top" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Overview</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#mood-tracking" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Mood Tracking</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#log-a-mood-entry" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Log a Mood Entry</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mood-fields" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Mood Fields</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#endpoints" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Endpoints</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mood-stats-response" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Mood Stats Response</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#nutrition-tracking" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Nutrition Tracking</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#log-a-meal" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Log a Meal</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#nutrition-fields" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Nutrition Fields</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#endpoints-1" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Endpoints</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#medication-tracking" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Medication Tracking</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#add-a-medication" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Add a Medication</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#log-adherence" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Log Adherence</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#adherence-statuses" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Adherence Statuses</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#endpoints-2" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Endpoints</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#symptom-tracking" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Symptom Tracking</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#log-a-symptom" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Log a Symptom</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#symptom-fields" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Symptom Fields</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#endpoints-3" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Endpoints</span> </a>  </li> </ul> </li> </ul></div></details></nav></mobile-starlight-toc></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-wmmpr6yz"><div class="sl-container astro-wmmpr6yz"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">On this page</h2><ul class="astro-7uqxqiej" style="--depth: 0;"> <li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#_top" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Overview</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#mood-tracking" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Mood Tracking</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#log-a-mood-entry" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Log a Mood Entry</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mood-fields" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Mood Fields</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#endpoints" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Endpoints</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#mood-stats-response" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Mood Stats Response</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#nutrition-tracking" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Nutrition Tracking</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#log-a-meal" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Log a Meal</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#nutrition-fields" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Nutrition Fields</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#endpoints-1" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Endpoints</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#medication-tracking" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Medication Tracking</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#add-a-medication" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Add a Medication</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#log-adherence" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Log Adherence</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#adherence-statuses" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Adherence Statuses</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#endpoints-2" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Endpoints</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#symptom-tracking" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Symptom Tracking</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#log-a-symptom" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Log a Symptom</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#symptom-fields" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Symptom Fields</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#endpoints-3" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Endpoints</span> </a>  </li> </ul> </li> </ul></nav></starlight-toc></div></div> </div> </aside> <div class="main-pane astro-fcbywwi3">  <main data-pagefind-body class="astro-4g2lxwa2" lang="en" dir="ltr">    <div class="content-panel astro-zwhrulx7"> <div class="sl-container astro-zwhrulx7"> <h1 id="_top" class="astro-2tcylr3h">Health Tracking</h1> </div> </div> <div class="content-panel astro-zwhrulx7"> <div class="sl-container astro-zwhrulx7"> <div class="sl-markdown-content"> <p>import { Aside, Tabs, TabItem } from ‘@astrojs/starlight/components’;</p>
+<p>Beyond synced wearable data, VitaSync provides manual health tracking APIs for mood, nutrition, medications, and symptoms. These self-reported data points enrich AI analytics and correlation analysis.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="mood-tracking">Mood Tracking</h2><a class="sl-anchor-link" href="#mood-tracking"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Mood Tracking”</span></a></div>
+<p>Log daily mood with scores, energy levels, stress, and tags.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="log-a-mood-entry">Log a Mood Entry</h3><a class="sl-anchor-link" href="#log-a-mood-entry"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Log a Mood Entry”</span></a></div>
+<div class="expressive-code"><link rel="stylesheet" href="/vitasync/_astro/ec.v4551.css"><script type="module" src="/vitasync/_astro/ec.0vx5m.js"></script><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">Terminal window</span></figcaption><pre data-language="bash"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">curl</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-X</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">POST</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">http://localhost:3001/v1/users/</span><span style="--0:#C5E478;--1:#3B61B0">$USER_ID</span><span style="--0:#ECC48D;--1:#3B61B0">/mood</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-H</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">Authorization: Bearer </span><span style="--0:#C5E478;--1:#3B61B0">$API_KEY</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-H</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">Content-Type: application/json</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-d</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">'</span><span style="--0:#ECC48D;--1:#984E4D">{</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"mood": "happy",</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"score": 8,</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"energy": 7,</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"stress": 3,</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"tags": ["exercise", "good_sleep"],</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"notes": "Great morning run, felt energized all day"</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">  </span></span><span style="--0:#ECC48D;--1:#984E4D">}</span><span style="--0:#D9F5DD;--1:#111111">'</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="curl -X POST http://localhost:3001/v1/users/$USER_ID/mood \  -H &#x22;Authorization: Bearer $API_KEY&#x22; \  -H &#x22;Content-Type: application/json&#x22; \  -d &#x27;{    &#x22;mood&#x22;: &#x22;happy&#x22;,    &#x22;score&#x22;: 8,    &#x22;energy&#x22;: 7,    &#x22;stress&#x22;: 3,    &#x22;tags&#x22;: [&#x22;exercise&#x22;, &#x22;good_sleep&#x22;],    &#x22;notes&#x22;: &#x22;Great morning run, felt energized all day&#x22;  }&#x27;"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="mood-fields">Mood Fields</h3><a class="sl-anchor-link" href="#mood-fields"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Mood Fields”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">mood</code></td><td>string</td><td>Yes</td><td>Mood label (e.g. <code dir="auto">happy</code>, <code dir="auto">anxious</code>, <code dir="auto">neutral</code>, <code dir="auto">tired</code>)</td></tr><tr><td><code dir="auto">score</code></td><td>number</td><td>Yes</td><td>Overall mood score (1–10)</td></tr><tr><td><code dir="auto">energy</code></td><td>number</td><td>No</td><td>Energy level (1–10)</td></tr><tr><td><code dir="auto">stress</code></td><td>number</td><td>No</td><td>Stress level (1–10)</td></tr><tr><td><code dir="auto">tags</code></td><td>string[]</td><td>No</td><td>Context tags (max 10)</td></tr><tr><td><code dir="auto">factors</code></td><td>string[]</td><td>No</td><td>Contributing factors (max 10)</td></tr><tr><td><code dir="auto">notes</code></td><td>string</td><td>No</td><td>Free-text notes (max 2000 chars)</td></tr><tr><td><code dir="auto">recordedAt</code></td><td>ISO 8601</td><td>No</td><td>Defaults to now</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="endpoints">Endpoints</h3><a class="sl-anchor-link" href="#endpoints"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Endpoints”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/mood</code></td><td>List mood logs (filter by <code dir="auto">from</code>, <code dir="auto">to</code>, <code dir="auto">mood</code>)</td></tr><tr><td><code dir="auto">POST</code></td><td><code dir="auto">/v1/users/:userId/mood</code></td><td>Create a mood entry</td></tr><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/mood/stats</code></td><td>Mood statistics for a period (<code dir="auto">days</code> param, default 30)</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="mood-stats-response">Mood Stats Response</h3><a class="sl-anchor-link" href="#mood-stats-response"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Mood Stats Response”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="json"><code><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"averageScore"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">7.2</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"averageEnergy"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">6.8</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"averageStress"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">4.1</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"moodDistribution"</span><span style="--0:#D6DEEB;--1:#403F53">: { </span><span style="--0:#7FDBCA;--1:#096E72">"happy"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">12</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"neutral"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">8</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"anxious"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">3</span><span style="--0:#D6DEEB;--1:#403F53"> },</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"topTags"</span><span style="--0:#D6DEEB;--1:#403F53">: [</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">exercise</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">good_sleep</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">social</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">],</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"trend"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">improving</span><span style="--0:#D9F5DD;--1:#111111">"</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="{  &#x22;averageScore&#x22;: 7.2,  &#x22;averageEnergy&#x22;: 6.8,  &#x22;averageStress&#x22;: 4.1,  &#x22;moodDistribution&#x22;: { &#x22;happy&#x22;: 12, &#x22;neutral&#x22;: 8, &#x22;anxious&#x22;: 3 },  &#x22;topTags&#x22;: [&#x22;exercise&#x22;, &#x22;good_sleep&#x22;, &#x22;social&#x22;],  &#x22;trend&#x22;: &#x22;improving&#x22;}"><div></div></button></div></figure></div>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="nutrition-tracking">Nutrition Tracking</h2><a class="sl-anchor-link" href="#nutrition-tracking"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Nutrition Tracking”</span></a></div>
+<p>Log meals with full macronutrient breakdown and get daily/weekly summaries.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="log-a-meal">Log a Meal</h3><a class="sl-anchor-link" href="#log-a-meal"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Log a Meal”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">Terminal window</span></figcaption><pre data-language="bash"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">curl</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-X</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">POST</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">http://localhost:3001/v1/users/</span><span style="--0:#C5E478;--1:#3B61B0">$USER_ID</span><span style="--0:#ECC48D;--1:#3B61B0">/nutrition</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-H</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">Authorization: Bearer </span><span style="--0:#C5E478;--1:#3B61B0">$API_KEY</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-H</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">Content-Type: application/json</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-d</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">'</span><span style="--0:#ECC48D;--1:#984E4D">{</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"mealType": "lunch",</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"description": "Grilled chicken salad",</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"calories": 520,</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"proteinG": 42,</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"carbsG": 30,</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"fatG": 22,</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"fiberG": 8,</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"waterMl": 500</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">  </span></span><span style="--0:#ECC48D;--1:#984E4D">}</span><span style="--0:#D9F5DD;--1:#111111">'</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="curl -X POST http://localhost:3001/v1/users/$USER_ID/nutrition \  -H &#x22;Authorization: Bearer $API_KEY&#x22; \  -H &#x22;Content-Type: application/json&#x22; \  -d &#x27;{    &#x22;mealType&#x22;: &#x22;lunch&#x22;,    &#x22;description&#x22;: &#x22;Grilled chicken salad&#x22;,    &#x22;calories&#x22;: 520,    &#x22;proteinG&#x22;: 42,    &#x22;carbsG&#x22;: 30,    &#x22;fatG&#x22;: 22,    &#x22;fiberG&#x22;: 8,    &#x22;waterMl&#x22;: 500  }&#x27;"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="nutrition-fields">Nutrition Fields</h3><a class="sl-anchor-link" href="#nutrition-fields"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Nutrition Fields”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">mealType</code></td><td>string</td><td>Yes</td><td><code dir="auto">breakfast</code>, <code dir="auto">lunch</code>, <code dir="auto">dinner</code>, <code dir="auto">snack</code>, <code dir="auto">supplement</code></td></tr><tr><td><code dir="auto">description</code></td><td>string</td><td>No</td><td>Meal description (max 500 chars)</td></tr><tr><td><code dir="auto">calories</code></td><td>number</td><td>No</td><td>Total calories</td></tr><tr><td><code dir="auto">proteinG</code></td><td>number</td><td>No</td><td>Protein in grams</td></tr><tr><td><code dir="auto">carbsG</code></td><td>number</td><td>No</td><td>Carbohydrates in grams</td></tr><tr><td><code dir="auto">fatG</code></td><td>number</td><td>No</td><td>Fat in grams</td></tr><tr><td><code dir="auto">fiberG</code></td><td>number</td><td>No</td><td>Fiber in grams</td></tr><tr><td><code dir="auto">sugarG</code></td><td>number</td><td>No</td><td>Sugar in grams</td></tr><tr><td><code dir="auto">sodiumMg</code></td><td>number</td><td>No</td><td>Sodium in milligrams</td></tr><tr><td><code dir="auto">waterMl</code></td><td>number</td><td>No</td><td>Water intake in milliliters</td></tr><tr><td><code dir="auto">loggedAt</code></td><td>ISO 8601</td><td>No</td><td>Defaults to now</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="endpoints-1">Endpoints</h3><a class="sl-anchor-link" href="#endpoints-1"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Endpoints”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/nutrition</code></td><td>List nutrition logs (filter by <code dir="auto">from</code>, <code dir="auto">to</code>, <code dir="auto">mealType</code>)</td></tr><tr><td><code dir="auto">POST</code></td><td><code dir="auto">/v1/users/:userId/nutrition</code></td><td>Log a meal</td></tr><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/nutrition/:logId</code></td><td>Get a specific log</td></tr><tr><td><code dir="auto">PUT</code></td><td><code dir="auto">/v1/users/:userId/nutrition/:logId</code></td><td>Update a log</td></tr><tr><td><code dir="auto">DELETE</code></td><td><code dir="auto">/v1/users/:userId/nutrition/:logId</code></td><td>Delete a log</td></tr><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/nutrition/summary/daily</code></td><td>Daily macro totals (<code dir="auto">date</code> param)</td></tr><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/nutrition/summary/weekly</code></td><td>Weekly averages</td></tr></tbody></table>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="medication-tracking">Medication Tracking</h2><a class="sl-anchor-link" href="#medication-tracking"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Medication Tracking”</span></a></div>
+<p>Track prescriptions, supplements, and adherence.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="add-a-medication">Add a Medication</h3><a class="sl-anchor-link" href="#add-a-medication"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Add a Medication”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">Terminal window</span></figcaption><pre data-language="bash"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">curl</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-X</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">POST</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">http://localhost:3001/v1/users/</span><span style="--0:#C5E478;--1:#3B61B0">$USER_ID</span><span style="--0:#ECC48D;--1:#3B61B0">/medications</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-H</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">Authorization: Bearer </span><span style="--0:#C5E478;--1:#3B61B0">$API_KEY</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-H</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">Content-Type: application/json</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-d</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">'</span><span style="--0:#ECC48D;--1:#984E4D">{</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"name": "Vitamin D3",</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"dosage": "5000 IU",</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"frequency": "daily",</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"timeOfDay": ["morning"],</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"startDate": "2025-01-01T00:00:00Z"</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">  </span></span><span style="--0:#ECC48D;--1:#984E4D">}</span><span style="--0:#D9F5DD;--1:#111111">'</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="curl -X POST http://localhost:3001/v1/users/$USER_ID/medications \  -H &#x22;Authorization: Bearer $API_KEY&#x22; \  -H &#x22;Content-Type: application/json&#x22; \  -d &#x27;{    &#x22;name&#x22;: &#x22;Vitamin D3&#x22;,    &#x22;dosage&#x22;: &#x22;5000 IU&#x22;,    &#x22;frequency&#x22;: &#x22;daily&#x22;,    &#x22;timeOfDay&#x22;: [&#x22;morning&#x22;],    &#x22;startDate&#x22;: &#x22;2025-01-01T00:00:00Z&#x22;  }&#x27;"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="log-adherence">Log Adherence</h3><a class="sl-anchor-link" href="#log-adherence"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Log Adherence”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">Terminal window</span></figcaption><pre data-language="bash"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">curl</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-X</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">POST</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">http://localhost:3001/v1/users/</span><span style="--0:#C5E478;--1:#3B61B0">$USER_ID</span><span style="--0:#ECC48D;--1:#3B61B0">/medications/</span><span style="--0:#C5E478;--1:#3B61B0">$MED_ID</span><span style="--0:#ECC48D;--1:#3B61B0">/log</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-H</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">Authorization: Bearer </span><span style="--0:#C5E478;--1:#3B61B0">$API_KEY</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-H</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">Content-Type: application/json</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-d</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">'</span><span style="--0:#ECC48D;--1:#984E4D">{</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"status": "taken",</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"scheduledAt": "2025-03-18T08:00:00Z",</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"takenAt": "2025-03-18T08:15:00Z"</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">  </span></span><span style="--0:#ECC48D;--1:#984E4D">}</span><span style="--0:#D9F5DD;--1:#111111">'</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="curl -X POST http://localhost:3001/v1/users/$USER_ID/medications/$MED_ID/log \  -H &#x22;Authorization: Bearer $API_KEY&#x22; \  -H &#x22;Content-Type: application/json&#x22; \  -d &#x27;{    &#x22;status&#x22;: &#x22;taken&#x22;,    &#x22;scheduledAt&#x22;: &#x22;2025-03-18T08:00:00Z&#x22;,    &#x22;takenAt&#x22;: &#x22;2025-03-18T08:15:00Z&#x22;  }&#x27;"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="adherence-statuses">Adherence Statuses</h3><a class="sl-anchor-link" href="#adherence-statuses"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Adherence Statuses”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Status</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">taken</code></td><td>Medication was taken</td></tr><tr><td><code dir="auto">missed</code></td><td>Dose was missed</td></tr><tr><td><code dir="auto">skipped</code></td><td>Intentionally skipped</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="endpoints-2">Endpoints</h3><a class="sl-anchor-link" href="#endpoints-2"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Endpoints”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/medications</code></td><td>List medications (<code dir="auto">activeOnly</code> filter, default <code dir="auto">true</code>)</td></tr><tr><td><code dir="auto">POST</code></td><td><code dir="auto">/v1/users/:userId/medications</code></td><td>Add a medication</td></tr><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/medications/:medId</code></td><td>Get medication details</td></tr><tr><td><code dir="auto">PUT</code></td><td><code dir="auto">/v1/users/:userId/medications/:medId</code></td><td>Update a medication</td></tr><tr><td><code dir="auto">DELETE</code></td><td><code dir="auto">/v1/users/:userId/medications/:medId</code></td><td>Delete a medication</td></tr><tr><td><code dir="auto">POST</code></td><td><code dir="auto">/v1/users/:userId/medications/:medId/log</code></td><td>Log adherence</td></tr><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/medications/:medId/logs</code></td><td>List adherence logs</td></tr><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/medications/:medId/stats</code></td><td>Adherence stats (<code dir="auto">days</code> param, default 30)</td></tr></tbody></table>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="symptom-tracking">Symptom Tracking</h2><a class="sl-anchor-link" href="#symptom-tracking"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Symptom Tracking”</span></a></div>
+<p>Log symptoms with severity, body location, triggers, and relief measures. The system also analyzes patterns over time.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="log-a-symptom">Log a Symptom</h3><a class="sl-anchor-link" href="#log-a-symptom"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Log a Symptom”</span></a></div>
+<div class="expressive-code"><figure class="frame is-terminal not-content"><figcaption class="header"><span class="title"></span><span class="sr-only">Terminal window</span></figcaption><pre data-language="bash"><code><div class="ec-line"><div class="code"><span style="--0:#82AAFF;--1:#3B61B0">curl</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#82AAFF;--1:#3B61B0">-X</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">POST</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#ECC48D;--1:#3B61B0">http://localhost:3001/v1/users/</span><span style="--0:#C5E478;--1:#3B61B0">$USER_ID</span><span style="--0:#ECC48D;--1:#3B61B0">/symptoms</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-H</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">Authorization: Bearer </span><span style="--0:#C5E478;--1:#3B61B0">$API_KEY</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-H</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#ECC48D;--1:#984E4D">Content-Type: application/json</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#F78C6C;--1:#AA0982">\</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#82AAFF;--1:#3B61B0">-d</span><span style="--0:#D6DEEB;--1:#403F53"> </span><span style="--0:#D9F5DD;--1:#111111">'</span><span style="--0:#ECC48D;--1:#984E4D">{</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"symptomName": "Headache",</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"severity": 6,</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"bodyLocation": "frontal",</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"triggers": ["poor_sleep", "screen_time"],</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"reliefMeasures": ["ibuprofen", "rest"],</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">    </span></span><span style="--0:#ECC48D;--1:#984E4D">"notes": "Started after 4 hours of continuous screen time"</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#ECC48D;--1:#984E4D">  </span></span><span style="--0:#ECC48D;--1:#984E4D">}</span><span style="--0:#D9F5DD;--1:#111111">'</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="curl -X POST http://localhost:3001/v1/users/$USER_ID/symptoms \  -H &#x22;Authorization: Bearer $API_KEY&#x22; \  -H &#x22;Content-Type: application/json&#x22; \  -d &#x27;{    &#x22;symptomName&#x22;: &#x22;Headache&#x22;,    &#x22;severity&#x22;: 6,    &#x22;bodyLocation&#x22;: &#x22;frontal&#x22;,    &#x22;triggers&#x22;: [&#x22;poor_sleep&#x22;, &#x22;screen_time&#x22;],    &#x22;reliefMeasures&#x22;: [&#x22;ibuprofen&#x22;, &#x22;rest&#x22;],    &#x22;notes&#x22;: &#x22;Started after 4 hours of continuous screen time&#x22;  }&#x27;"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="symptom-fields">Symptom Fields</h3><a class="sl-anchor-link" href="#symptom-fields"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Symptom Fields”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">symptomName</code></td><td>string</td><td>Yes</td><td>Name of the symptom (max 200 chars)</td></tr><tr><td><code dir="auto">severity</code></td><td>number</td><td>Yes</td><td>Severity scale (1–10)</td></tr><tr><td><code dir="auto">bodyLocation</code></td><td>string</td><td>No</td><td>Body area affected (max 100 chars)</td></tr><tr><td><code dir="auto">duration</code></td><td>string</td><td>No</td><td>Duration description (max 100 chars)</td></tr><tr><td><code dir="auto">triggers</code></td><td>string[]</td><td>No</td><td>Known triggers (max 10)</td></tr><tr><td><code dir="auto">reliefMeasures</code></td><td>string[]</td><td>No</td><td>Measures tried (max 10)</td></tr><tr><td><code dir="auto">notes</code></td><td>string</td><td>No</td><td>Free-text notes (max 2000 chars)</td></tr><tr><td><code dir="auto">occurredAt</code></td><td>ISO 8601</td><td>No</td><td>Defaults to now</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="endpoints-3">Endpoints</h3><a class="sl-anchor-link" href="#endpoints-3"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Endpoints”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/symptoms</code></td><td>List symptom logs (filter by <code dir="auto">from</code>, <code dir="auto">to</code>, <code dir="auto">symptom</code>)</td></tr><tr><td><code dir="auto">POST</code></td><td><code dir="auto">/v1/users/:userId/symptoms</code></td><td>Log a symptom</td></tr><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/symptoms/:logId</code></td><td>Get a specific log</td></tr><tr><td><code dir="auto">DELETE</code></td><td><code dir="auto">/v1/users/:userId/symptoms/:logId</code></td><td>Delete a log</td></tr><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/symptoms/top</code></td><td>Top symptoms by frequency (<code dir="auto">days</code> param, default 30)</td></tr><tr><td><code dir="auto">GET</code></td><td><code dir="auto">/v1/users/:userId/symptoms/patterns</code></td><td>Pattern analysis (<code dir="auto">days</code> param, default 90)</td></tr></tbody></table>
+<aside type="tip">
+  Symptom patterns are analyzed by the correlation engine. If headaches consistently follow poor sleep, this relationship will surface in the analytics correlations.
+</aside> </div> <footer class="sl-flex astro-odjls6mg"> <div class="meta sl-flex astro-odjls6mg"> <a href="https://github.com/your-org/vitasync/edit/main/apps/docs/src/content/docs/dev-guides/health-tracking.md" class="sl-flex print:hidden astro-vti6hags"><svg aria-hidden="true" class="astro-vti6hags astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.2em;"><path d="M22 7.24a1 1 0 0 0-.29-.71l-4.24-4.24a1 1 0 0 0-1.1-.22 1 1 0 0 0-.32.22l-2.83 2.83L2.29 16.05a1 1 0 0 0-.29.71V21a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .76-.29l10.87-10.93L21.71 8c.1-.1.17-.2.22-.33a1 1 0 0 0 0-.24v-.14l.07-.05ZM6.83 20H4v-2.83l9.93-9.93 2.83 2.83L6.83 20ZM18.17 8.66l-2.83-2.83 1.42-1.41 2.82 2.82-1.41 1.42Z"/></svg>Edit page</a>  </div> <div class="pagination-links print:hidden astro-lueoyfe6" dir="ltr"> <a href="/vitasync/dev-guides/goals-achievements/" rel="prev" class="astro-lueoyfe6"> <svg aria-hidden="true" class="astro-lueoyfe6 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17 11H9.41l3.3-3.29a1.004 1.004 0 1 0-1.42-1.42l-5 5a1 1 0 0 0-.21.33 1 1 0 0 0 0 .76 1 1 0 0 0 .21.33l5 5a1.002 1.002 0 0 0 1.639-.325 1 1 0 0 0-.219-1.095L9.41 13H17a1 1 0 0 0 0-2Z"/></svg> <span class="astro-lueoyfe6"> Previous <br class="astro-lueoyfe6"> <span class="link-title astro-lueoyfe6">Goals &amp; Achievements</span> </span> </a> <a href="/vitasync/dev-guides/challenges/" rel="next" class="astro-lueoyfe6"> <svg aria-hidden="true" class="astro-lueoyfe6 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg> <span class="astro-lueoyfe6"> Next <br class="astro-lueoyfe6"> <span class="link-title astro-lueoyfe6">Challenges &amp; Training</span> </span> </a> </div>  </footer> </div> </div>  </main> </div> </div> </div> </div> </body></html>

@@ -1,0 +1,1310 @@
+<!DOCTYPE html><html lang="en" dir="ltr" data-theme="dark" data-has-toc data-has-sidebar class="astro-4g2lxwa2"> <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Data Model | VitaSync</title><link rel="canonical" href="https://biosync-io.github.io/vitasync/architecture/data-model/"/><link rel="sitemap" href="/vitasync/sitemap-index.xml"/><script src="/vitasync/particles.js" defer></script><script src="/vitasync/scroll-reveal.js" defer></script><link rel="shortcut icon" href="/vitasync/favicon.svg" type="image/svg+xml"/><meta name="generator" content="Astro v6.0.4"/><meta name="generator" content="Starlight v0.38.1"/><meta property="og:title" content="Data Model"/><meta property="og:type" content="article"/><meta property="og:url" content="https://biosync-io.github.io/vitasync/architecture/data-model/"/><meta property="og:locale" content="en"/><meta property="og:description" content="How VitaSync stores users, providers, health metrics, events, and personal records."/><meta property="og:site_name" content="VitaSync"/><meta name="twitter:card" content="summary_large_image"/><meta name="description" content="How VitaSync stores users, providers, health metrics, events, and personal records."/><script>
+	window.StarlightThemeProvider = (() => {
+		const storedTheme =
+			typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+		const theme =
+			storedTheme ||
+			(window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+		document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+		return {
+			updatePickers(theme = storedTheme || 'auto') {
+				document.querySelectorAll('starlight-theme-select').forEach((picker) => {
+					const select = picker.querySelector('select');
+					if (select) select.value = theme;
+					/** @type {HTMLTemplateElement | null} */
+					const tmpl = document.querySelector(`#theme-icons`);
+					const newIcon = tmpl && tmpl.content.querySelector('.' + theme);
+					if (newIcon) {
+						const oldIcon = picker.querySelector('svg.label-icon');
+						if (oldIcon) {
+							oldIcon.replaceChildren(...newIcon.cloneNode(true).childNodes);
+						}
+					}
+				});
+			},
+		};
+	})();
+</script><template id="theme-icons"><svg aria-hidden="true" class="light astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm.64 5-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM12 5a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1Zm5.66 2.34a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41l-.66.71a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29Zm-12-.29a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.71-.71a1.004 1.004 0 1 0-1.43 1.41l.73.71ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-2.64 6A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41l-.76-.66ZM12 6.5a5.5 5.5 0 1 0 5.5 5.5A5.51 5.51 0 0 0 12 6.5Zm0 9a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0 3.5a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1Z"/></svg><svg aria-hidden="true" class="dark astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.049 8.049 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05Zm-9.5 6.69A8.14 8.14 0 0 1 7.08 5.22v.27a10.15 10.15 0 0 0 10.14 10.14 9.784 9.784 0 0 0 2.1-.22 8.11 8.11 0 0 1-7.18 4.32v-.04Z"/></svg><svg aria-hidden="true" class="auto astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg></template><link rel="stylesheet" href="/vitasync/_astro/print.DNXP8c50.css" media="print"><link rel="stylesheet" href="/vitasync/_astro/common.B6zblJox.css">
+<link rel="stylesheet" href="/vitasync/_astro/Code.DIU321-3.css"><script type="module" src="/vitasync/_astro/page.BIhdncjw.js"></script></head> <body class="astro-4g2lxwa2"> <a href="#_top" class="astro-cdmew7ep">Skip to content</a> <div class="page sl-flex astro-six4cu34"> <header class="header astro-six4cu34"><div class="header astro-cbzmqx6o"> <div class="title-wrapper sl-flex astro-cbzmqx6o"> <a href="/vitasync/" class="site-title sl-flex astro-3ka6hon7">  <img class="light:sl-hidden print:hidden astro-3ka6hon7" alt="VitaSync" src="/vitasync/_astro/logo-dark.B9kFz7Vo.svg" width="200" height="40"> <img class="dark:sl-hidden print:block astro-3ka6hon7" alt="VitaSync" src="/vitasync/_astro/logo-light.XOvriKMU.svg" width="200" height="40"> <span class="sr-only astro-3ka6hon7" translate="no"> VitaSync </span> </a> </div> <div class="sl-flex print:hidden astro-cbzmqx6o"> <site-search class="astro-cbzmqx6o astro-wacbyr2x" data-translations="{&#34;placeholder&#34;:&#34;Search&#34;}"> <button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-wacbyr2x"> <svg aria-hidden="true" class="astro-wacbyr2x astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29 18 16.61A9 9 0 1 0 16.61 18l3.68 3.68a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.39ZM11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg> <span class="sl-hidden md:sl-block astro-wacbyr2x" aria-hidden="true">Search</span> <kbd class="sl-hidden md:sl-flex astro-wacbyr2x" style="display: none;"> <kbd class="astro-wacbyr2x">Ctrl</kbd><kbd class="astro-wacbyr2x">K</kbd> </kbd> </button> <dialog style="padding:0" aria-label="Search" class="astro-wacbyr2x"> <div class="dialog-frame sl-flex astro-wacbyr2x">  <button data-close-modal class="sl-flex md:sl-hidden astro-wacbyr2x"> Cancel </button> <div class="search-container astro-wacbyr2x"> <div id="starlight__search" class="astro-wacbyr2x"></div> </div> </div> </dialog> </site-search>  <script>
+	(() => {
+		const openBtn = document.querySelector('button[data-open-modal]');
+		const shortcut = openBtn?.querySelector('kbd');
+		if (!openBtn || !(shortcut instanceof HTMLElement)) return;
+		const platformKey = shortcut.querySelector('kbd');
+		if (platformKey && /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
+			platformKey.textContent = '⌘';
+			openBtn.setAttribute('aria-keyshortcuts', 'Meta+K');
+		}
+		shortcut.style.display = '';
+	})();
+</script> <script type="module" src="/vitasync/_astro/Search.astro_astro_type_script_index_0_lang.BbKRpevv.js"></script>  </div> <div class="sl-hidden md:sl-flex print:hidden right-group astro-cbzmqx6o"> <div class="sl-flex social-icons astro-cbzmqx6o"> <a href="https://github.com/your-org/vitasync" rel="me" class="sl-flex astro-muw53q76"><span class="sr-only astro-muw53q76">GitHub</span><svg aria-hidden="true" class="astro-muw53q76 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a> </div> <starlight-theme-select>  <label style="--sl-select-width: 6.25em" class="astro-dnfevk6i"> <span class="sr-only astro-dnfevk6i">Select theme</span> <svg aria-hidden="true" class="icon label-icon astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg> <select autocomplete="off" class="astro-dnfevk6i"> <option value="dark" class="astro-dnfevk6i">Dark</option><option value="light" class="astro-dnfevk6i">Light</option><option value="auto" selected class="astro-dnfevk6i">Auto</option> </select> <svg aria-hidden="true" class="icon caret astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg> </label> </starlight-theme-select>  <script>
+	StarlightThemeProvider.updatePickers();
+</script> <script type="module">const r="starlight-theme",o=e=>e==="auto"||e==="dark"||e==="light"?e:"auto",c=()=>o(typeof localStorage<"u"&&localStorage.getItem(r));function n(e){typeof localStorage<"u"&&localStorage.setItem(r,e==="light"||e==="dark"?e:"")}const l=()=>matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";function t(e){StarlightThemeProvider.updatePickers(e),document.documentElement.dataset.theme=e==="auto"?l():e,n(e)}matchMedia("(prefers-color-scheme: light)").addEventListener("change",()=>{c()==="auto"&&t("auto")});class s extends HTMLElement{constructor(){super(),t(c()),this.querySelector("select")?.addEventListener("change",a=>{a.currentTarget instanceof HTMLSelectElement&&t(o(a.currentTarget.value))})}}customElements.define("starlight-theme-select",s);</script> <script type="module">class s extends HTMLElement{constructor(){super();const e=this.querySelector("select");e&&(e.addEventListener("change",t=>{t.currentTarget instanceof HTMLSelectElement&&(window.location.pathname=t.currentTarget.value)}),window.addEventListener("pageshow",t=>{if(!t.persisted)return;const n=e.querySelector("option[selected]")?.index;n!==e.selectedIndex&&(e.selectedIndex=n??0)}))}}customElements.define("starlight-lang-select",s);</script> </div> </div></header> <nav class="sidebar print:hidden astro-six4cu34" aria-label="Main"> <starlight-menu-button class="print:hidden astro-h22a6god"> <button aria-expanded="false" aria-label="Menu" aria-controls="starlight__sidebar" class="sl-flex md:sl-hidden astro-h22a6god"> <svg aria-hidden="true" class="open-menu astro-h22a6god astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M3 8h18a1 1 0 1 0 0-2H3a1 1 0 0 0 0 2Zm18 8H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Zm0-5H3a1 1 0 0 0 0 2h18a1 1 0 0 0 0-2Z"/></svg> <svg aria-hidden="true" class="close-menu astro-h22a6god astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z"/></svg> </button> </starlight-menu-button> <script type="module">class s extends HTMLElement{constructor(){super(),this.btn=this.querySelector("button"),this.btn.addEventListener("click",()=>this.toggleExpanded());const t=this.closest("nav");t&&t.addEventListener("keyup",e=>this.closeOnEscape(e))}setExpanded(t){this.setAttribute("aria-expanded",String(t)),document.body.toggleAttribute("data-mobile-menu-expanded",t)}toggleExpanded(){this.setExpanded(this.getAttribute("aria-expanded")!=="true")}closeOnEscape(t){t.code==="Escape"&&(this.setExpanded(!1),this.btn.focus())}}customElements.define("starlight-menu-button",s);</script>  <div id="starlight__sidebar" class="sidebar-pane astro-six4cu34"> <div class="sidebar-content sl-flex astro-six4cu34"> <sl-sidebar-state-persist data-hash="0jzuicd" class="astro-7wabrxus"> <script aria-hidden="true">
+		(() => {
+			try {
+				if (!matchMedia('(min-width: 50em)').matches) return;
+				/** @type {HTMLElement | null} */
+				const target = document.querySelector('sl-sidebar-state-persist');
+				const state = JSON.parse(sessionStorage.getItem('sl-sidebar-state') || '0');
+				if (!target || !state || target.dataset.hash !== state.hash) return;
+				window._starlightScrollRestore = state.scroll;
+				customElements.define(
+					'sl-sidebar-restore',
+					class SidebarRestore extends HTMLElement {
+						connectedCallback() {
+							try {
+								const idx = parseInt(this.dataset.index || '');
+								const details = this.closest('details');
+								if (details && typeof state.open[idx] === 'boolean') details.open = state.open[idx];
+							} catch {}
+						}
+					}
+				);
+			} catch {}
+		})();
+	</script>  <ul class="top-level astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Getting Started</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="0"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Introduction</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/quickstart/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Quickstart</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Architecture</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="1"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/overview/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Overview</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/data-model/" aria-current="page" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Data Model</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/sync-pipeline/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Sync Pipeline</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/architecture/security/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Security</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Providers</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="2"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/providers/supported/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Supported Providers</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/fitbit/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Fitbit</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/garmin/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Garmin</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/whoop/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Whoop</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/strava/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Strava</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/providers/withings/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Withings</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">API Reference</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="3"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/introduction/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Introduction</span>  </a> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Guides</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="4"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/authentication/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Authentication</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/connect-a-user/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Connect a User</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/query-health-data/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Query Health Data</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/api-reference/guides/webhooks/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Webhooks</span>  </a> </li> </ul> </details> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Developer Guides</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="5"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/adding-a-provider/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Adding a Provider</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/api-keys/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">API Keys</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/webhooks/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Webhooks</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/mcp/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">MCP Server</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/notifications/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Notifications</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/dashboard/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Dashboard</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/analytics/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">AI &amp; Analytics</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/grafana-dashboards/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Grafana Dashboards</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Features</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="6"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/goals-achievements/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Goals &amp; Achievements</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/health-tracking/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Health Tracking</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/challenges/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Challenges &amp; Training</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/reports-exports/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Reports &amp; Data Exports</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/dev-guides/sleep-biometrics/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Sleep Analysis &amp; Biometrics</span>  </a> </li> </ul> </details> </li><li class="astro-hu6mjt7t"> <details open class="astro-hu6mjt7t"> <summary class="astro-hu6mjt7t"> <span class="group-label astro-hu6mjt7t"> <span class="large astro-hu6mjt7t">Deployment</span>  </span> <svg aria-hidden="true" class="caret astro-hu6mjt7t astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.25rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg> </summary> <sl-sidebar-restore data-index="7"></sl-sidebar-restore> <ul class="astro-hu6mjt7t"> <li class="astro-hu6mjt7t"> <a href="/vitasync/deployment/docker/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Docker Compose</span>  </a> </li><li class="astro-hu6mjt7t"> <a href="/vitasync/deployment/kubernetes/" class="astro-hu6mjt7t"> <span class="astro-hu6mjt7t">Kubernetes / Helm</span>  </a> </li> </ul> </details> </li> </ul>  <script aria-hidden="true">
+		(() => {
+			const scroller = document.getElementById('starlight__sidebar');
+			if (!window._starlightScrollRestore || !scroller) return;
+			scroller.scrollTop = window._starlightScrollRestore;
+			delete window._starlightScrollRestore;
+		})();
+	</script> </sl-sidebar-state-persist> <div class="md:sl-hidden"> <div class="mobile-preferences sl-flex astro-6mxfo6em"> <div class="social-icons astro-6mxfo6em"> <a href="https://github.com/your-org/vitasync" rel="me" class="sl-flex astro-muw53q76"><span class="sr-only astro-muw53q76">GitHub</span><svg aria-hidden="true" class="astro-muw53q76 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.83-.26.83-.57L9 21.07c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.09-.73.09-.73 1.2.09 1.83 1.24 1.83 1.24 1.08 1.83 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22l-.01 3.29c0 .31.2.69.82.57A12 12 0 0 0 12 .3Z"/></svg></a> </div> <starlight-theme-select>  <label style="--sl-select-width: 6.25em" class="astro-dnfevk6i"> <span class="sr-only astro-dnfevk6i">Select theme</span> <svg aria-hidden="true" class="icon label-icon astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg> <select autocomplete="off" class="astro-dnfevk6i"> <option value="dark" class="astro-dnfevk6i">Dark</option><option value="light" class="astro-dnfevk6i">Light</option><option value="auto" selected class="astro-dnfevk6i">Auto</option> </select> <svg aria-hidden="true" class="icon caret astro-dnfevk6i astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z"/></svg> </label> </starlight-theme-select>  <script>
+	StarlightThemeProvider.updatePickers();
+</script>   </div> </div> </div> </div> </nav> <div class="main-frame astro-six4cu34">  <script type="module">const a=document.getElementById("starlight__sidebar"),n=a?.querySelector("sl-sidebar-state-persist"),o="sl-sidebar-state",i=()=>{let t=[];const e=n?.dataset.hash||"";try{const s=sessionStorage.getItem(o),r=JSON.parse(s||"{}");Array.isArray(r.open)&&r.hash===e&&(t=r.open)}catch{}return{hash:e,open:t,scroll:a?.scrollTop||0}},c=t=>{try{sessionStorage.setItem(o,JSON.stringify(t))}catch{}},d=()=>c(i()),l=(t,e)=>{const s=i();s.open[e]=t,c(s)};n?.addEventListener("click",t=>{if(!(t.target instanceof Element))return;const e=t.target.closest("summary")?.closest("details");if(!e)return;const s=e.querySelector("sl-sidebar-restore"),r=parseInt(s?.dataset.index||"");isNaN(r)||l(!e.open,r)});addEventListener("visibilitychange",()=>{document.visibilityState==="hidden"&&d()});addEventListener("pageHide",d);</script> <div class="lg:sl-flex astro-fcbywwi3"> <aside class="right-sidebar-container print:hidden astro-fcbywwi3"> <div class="right-sidebar astro-fcbywwi3"> <script type="module" src="/vitasync/_astro/MobileTableOfContents.astro_astro_type_script_index_0_lang.hwBsy0Mo.js"></script><script type="module" src="/vitasync/_astro/TableOfContents.astro_astro_type_script_index_0_lang.FuRcXuRY.js"></script><div class="lg:sl-hidden astro-wmmpr6yz"><mobile-starlight-toc data-min-h="2" data-max-h="3" class="astro-ehgd637q"><nav aria-labelledby="starlight__on-this-page--mobile" class="astro-ehgd637q"><details id="starlight__mobile-toc" class="astro-ehgd637q"><summary id="starlight__on-this-page--mobile" class="sl-flex astro-ehgd637q"><span class="toggle sl-flex astro-ehgd637q">On this page<svg aria-hidden="true" class="caret astro-ehgd637q astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1rem;"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg></span><span class="display-current astro-ehgd637q"></span></summary><div class="dropdown astro-ehgd637q"><ul class="isMobile astro-7uqxqiej" style="--depth: 0;"> <li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#_top" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Overview</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#entity-relationships" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Entity Relationships</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#tables" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Tables</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#workspaces" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">workspaces</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#users" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">users</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#api_keys" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">api_keys</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#provider_connections" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">provider_connections</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#health_metrics" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">health_metrics</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#events" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">events</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#personal_records" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">personal_records</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#webhooks" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">webhooks</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#webhook_deliveries" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">webhook_deliveries</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#sync_jobs" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">sync_jobs</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#notification_channels" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">notification_channels</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#notification_rules" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">notification_rules</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#notification_logs" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">notification_logs</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#metric-types" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Metric Types</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#activity" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Activity</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#cardiovascular" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Cardiovascular</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#sleep" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Sleep</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#body-composition" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Body Composition</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#recovery" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Recovery</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#breathing" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Breathing</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#workouts" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Workouts</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#complex-metric-data-structures" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Complex Metric Data Structures</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#sleep-data-field" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Sleep (data field)</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#blood-pressure-data-field" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Blood Pressure (data field)</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#heart-rate-intraday-data-field" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Heart Rate (intraday, data field)</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#workout-event-data-field" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Workout Event (data field)</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#wellness-tracking-tables" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Wellness Tracking Tables</span> </a> <ul class="isMobile astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#journal_entries" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">journal_entries</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#water_intake" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">water_intake</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#habits" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">habits</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#habit_logs" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">habit_logs</span> </a>  </li> </ul> </li> </ul></div></details></nav></mobile-starlight-toc></div><div class="right-sidebar-panel sl-hidden lg:sl-block astro-wmmpr6yz"><div class="sl-container astro-wmmpr6yz"><starlight-toc data-min-h="2" data-max-h="3"><nav aria-labelledby="starlight__on-this-page"><h2 id="starlight__on-this-page">On this page</h2><ul class="astro-7uqxqiej" style="--depth: 0;"> <li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#_top" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Overview</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#entity-relationships" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Entity Relationships</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#tables" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Tables</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#workspaces" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">workspaces</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#users" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">users</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#api_keys" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">api_keys</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#provider_connections" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">provider_connections</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#health_metrics" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">health_metrics</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#events" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">events</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#personal_records" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">personal_records</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#webhooks" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">webhooks</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#webhook_deliveries" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">webhook_deliveries</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#sync_jobs" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">sync_jobs</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#notification_channels" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">notification_channels</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#notification_rules" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">notification_rules</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#notification_logs" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">notification_logs</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#metric-types" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Metric Types</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#activity" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Activity</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#cardiovascular" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Cardiovascular</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#sleep" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Sleep</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#body-composition" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Body Composition</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#recovery" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Recovery</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#breathing" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Breathing</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#workouts" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Workouts</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#complex-metric-data-structures" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Complex Metric Data Structures</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#sleep-data-field" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Sleep (data field)</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#blood-pressure-data-field" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Blood Pressure (data field)</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#heart-rate-intraday-data-field" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Heart Rate (intraday, data field)</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#workout-event-data-field" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">Workout Event (data field)</span> </a>  </li> </ul> </li><li class="astro-7uqxqiej" style="--depth: 0;"> <a href="#wellness-tracking-tables" class="astro-7uqxqiej" style="--depth: 0;"> <span class="astro-7uqxqiej" style="--depth: 0;">Wellness Tracking Tables</span> </a> <ul class="astro-7uqxqiej" style="--depth: 1;"> <li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#journal_entries" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">journal_entries</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#water_intake" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">water_intake</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#habits" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">habits</span> </a>  </li><li class="astro-7uqxqiej" style="--depth: 1;"> <a href="#habit_logs" class="astro-7uqxqiej" style="--depth: 1;"> <span class="astro-7uqxqiej" style="--depth: 1;">habit_logs</span> </a>  </li> </ul> </li> </ul></nav></starlight-toc></div></div> </div> </aside> <div class="main-pane astro-fcbywwi3">  <main data-pagefind-body class="astro-4g2lxwa2" lang="en" dir="ltr">    <div class="content-panel astro-zwhrulx7"> <div class="sl-container astro-zwhrulx7"> <h1 id="_top" class="astro-2tcylr3h">Data Model</h1> </div> </div> <div class="content-panel astro-zwhrulx7"> <div class="sl-container astro-zwhrulx7"> <div class="sl-markdown-content"> <p>import { Aside } from ‘@astrojs/starlight/components’;</p>
+<p>VitaSync stores all health data in PostgreSQL using <a href="https://orm.drizzle.team">Drizzle ORM</a>. This reference explains every table, the relationships between them, and the JSON shapes used for complex metrics.</p>
+<div class="sl-heading-wrapper level-h2"><h2 id="entity-relationships">Entity Relationships</h2><a class="sl-anchor-link" href="#entity-relationships"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Entity Relationships”</span></a></div>
+<div class="expressive-code"><link rel="stylesheet" href="/vitasync/_astro/ec.v4551.css"><script type="module" src="/vitasync/_astro/ec.0vx5m.js"></script><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="plaintext"><code><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">workspaces</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">    </span></span><span style="--0:#d6deeb;--1:#403f53">|</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">    </span></span><span style="--0:#d6deeb;--1:#403f53">+-- users (many per workspace)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">|</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- provider_connections (one per provider per user)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">|         |</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">|         +-- sync_jobs</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">|         +-- health_metrics (via userId + providerId)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">|         +-- events (via userId + providerId)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">|</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- personal_records (one per metricType+category per user)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">|</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- notification_channels (many per user)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">|         |</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">|         +-- notification_logs (delivery audit trail)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">|</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- notification_rules (route categories → channels)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">|</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- mood_logs (mood &#x26; mental wellness)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- journal_entries (daily journal)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- water_intake (hydration tracking)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- habits (habit definitions)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">|       +-- habit_logs (daily completions)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- nutrition_logs (meal/food tracking)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- medications (medication tracking)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- symptom_logs (symptom occurrences)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- goals (health goals)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- achievements (unlocked badges)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- training_plans (workout plans)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- health_scores (composite wellness scores)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- health_reports (generated reports)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- health_snapshots (point-in-time snapshots)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- biometric_baselines (rolling baselines)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- anomaly_alerts (detected anomalies)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- correlations (metric relationships)</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- training_load (fitness/fatigue/form)</span></div></div><div class="ec-line"><div class="code">
+</div></div><div class="ec-line"><div class="code"><span style="--0:#d6deeb;--1:#403f53">workspaces</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">    </span></span><span style="--0:#d6deeb;--1:#403f53">|</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">    </span></span><span style="--0:#d6deeb;--1:#403f53">+-- api_keys</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">    </span></span><span style="--0:#d6deeb;--1:#403f53">+-- webhooks</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">|</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#d6deeb;--1:#403f53">          </span></span><span style="--0:#d6deeb;--1:#403f53">+-- webhook_deliveries</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="workspaces    |    +-- users (many per workspace)          |          +-- provider_connections (one per provider per user)          |         |          |         +-- sync_jobs          |         +-- health_metrics (via userId + providerId)          |         +-- events (via userId + providerId)          |          +-- personal_records (one per metricType+category per user)          |          +-- notification_channels (many per user)          |         |          |         +-- notification_logs (delivery audit trail)          |          +-- notification_rules (route categories → channels)          |          +-- mood_logs (mood &#x26; mental wellness)          +-- journal_entries (daily journal)          +-- water_intake (hydration tracking)          +-- habits (habit definitions)          |       +-- habit_logs (daily completions)          +-- nutrition_logs (meal/food tracking)          +-- medications (medication tracking)          +-- symptom_logs (symptom occurrences)          +-- goals (health goals)          +-- achievements (unlocked badges)          +-- training_plans (workout plans)          +-- health_scores (composite wellness scores)          +-- health_reports (generated reports)          +-- health_snapshots (point-in-time snapshots)          +-- biometric_baselines (rolling baselines)          +-- anomaly_alerts (detected anomalies)          +-- correlations (metric relationships)          +-- training_load (fitness/fatigue/form)workspaces    |    +-- api_keys    +-- webhooks          |          +-- webhook_deliveries"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h2"><h2 id="tables">Tables</h2><a class="sl-anchor-link" href="#tables"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Tables”</span></a></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="workspaces"><code dir="auto">workspaces</code></h3><a class="sl-anchor-link" href="#workspaces"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “workspaces”</span></a></div>
+<p>Top-level tenant. All data is isolated per workspace.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>ULID</td><td>Primary key</td></tr><tr><td><code dir="auto">name</code></td><td>text</td><td>Display name</td></tr><tr><td><code dir="auto">slug</code></td><td>text</td><td>URL-safe unique identifier</td></tr><tr><td><code dir="auto">createdAt</code></td><td>timestamptz</td><td></td></tr><tr><td><code dir="auto">updatedAt</code></td><td>timestamptz</td><td></td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="users"><code dir="auto">users</code></h3><a class="sl-anchor-link" href="#users"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “users”</span></a></div>
+<p>A user corresponds to one person with one or more wearable devices.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>ULID</td><td>Primary key</td></tr><tr><td><code dir="auto">workspaceId</code></td><td>ULID</td><td>FK → <code dir="auto">workspaces.id</code></td></tr><tr><td><code dir="auto">externalId</code></td><td>text</td><td>Your system’s user ID. Unique per workspace</td></tr><tr><td><code dir="auto">email</code></td><td>text</td><td>Optional</td></tr><tr><td><code dir="auto">displayName</code></td><td>text</td><td>Optional</td></tr><tr><td><code dir="auto">metadata</code></td><td>jsonb</td><td>Arbitrary key-value data you want to store alongside the user</td></tr><tr><td><code dir="auto">createdAt</code></td><td>timestamptz</td><td></td></tr><tr><td><code dir="auto">updatedAt</code></td><td>timestamptz</td><td></td></tr></tbody></table>
+<p>Unique constraint: <code dir="auto">(workspaceId, externalId)</code></p>
+<div class="sl-heading-wrapper level-h3"><h3 id="api_keys"><code dir="auto">api_keys</code></h3><a class="sl-anchor-link" href="#api_keys"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “api_keys”</span></a></div>
+<p>Workspace-level API keys used to authenticate all API requests.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>ULID</td><td>Primary key</td></tr><tr><td><code dir="auto">workspaceId</code></td><td>ULID</td><td>FK → <code dir="auto">workspaces.id</code></td></tr><tr><td><code dir="auto">name</code></td><td>text</td><td>Human-readable label</td></tr><tr><td><code dir="auto">keyHash</code></td><td>text</td><td>SHA-256 hash of the raw key — raw key never stored</td></tr><tr><td><code dir="auto">keyPrefix</code></td><td>text</td><td>First 8 characters of the raw key (for identification in logs)</td></tr><tr><td><code dir="auto">scopes</code></td><td>text[]</td><td>Array of: <code dir="auto">read</code>, <code dir="auto">write</code>, <code dir="auto">admin</code></td></tr><tr><td><code dir="auto">expiresAt</code></td><td>timestamptz</td><td>Null = never expires</td></tr><tr><td><code dir="auto">lastUsedAt</code></td><td>timestamptz</td><td>Updated on every authenticated request</td></tr><tr><td><code dir="auto">createdAt</code></td><td>timestamptz</td><td></td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="provider_connections"><code dir="auto">provider_connections</code></h3><a class="sl-anchor-link" href="#provider_connections"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “provider_connections”</span></a></div>
+<p>Stores OAuth tokens for each user-provider pair. Tokens are encrypted before storage.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>ULID</td><td>Primary key</td></tr><tr><td><code dir="auto">userId</code></td><td>ULID</td><td>FK → <code dir="auto">users.id</code></td></tr><tr><td><code dir="auto">providerId</code></td><td>text</td><td><code dir="auto">fitbit</code>, <code dir="auto">garmin</code>, <code dir="auto">whoop</code>, <code dir="auto">strava</code></td></tr><tr><td><code dir="auto">encryptedTokens</code></td><td>text</td><td>AES-256-GCM encrypted JSON (accessToken, refreshToken, expiresAt)</td></tr><tr><td><code dir="auto">status</code></td><td>text</td><td><code dir="auto">active</code>, <code dir="auto">error</code>, <code dir="auto">disconnected</code></td></tr><tr><td><code dir="auto">lastSyncedAt</code></td><td>timestamptz</td><td>Null until first sync completes</td></tr><tr><td><code dir="auto">connectedAt</code></td><td>timestamptz</td><td>When OAuth was completed</td></tr><tr><td><code dir="auto">createdAt</code></td><td>timestamptz</td><td></td></tr><tr><td><code dir="auto">updatedAt</code></td><td>timestamptz</td><td></td></tr></tbody></table>
+<p>Unique constraint: <code dir="auto">(userId, providerId)</code> — one connection per provider per user.</p>
+<aside type="note">
+  Tokens are encrypted with AES-256-GCM using the `ENCRYPTION_KEY` environment variable. Set `ENCRYPTION_KEY` to a 64-character hex string (32 random bytes). Losing this key means all stored tokens become unreadable — all users would need to reconnect.
+</aside>
+<div class="sl-heading-wrapper level-h3"><h3 id="health_metrics"><code dir="auto">health_metrics</code></h3><a class="sl-anchor-link" href="#health_metrics"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “health_metrics”</span></a></div>
+<p>Stores individual health data points from provider syncs.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>ULID</td><td>Primary key</td></tr><tr><td><code dir="auto">userId</code></td><td>ULID</td><td>FK → <code dir="auto">users.id</code></td></tr><tr><td><code dir="auto">providerId</code></td><td>text</td><td>Which provider supplied this data point</td></tr><tr><td><code dir="auto">metricType</code></td><td>text</td><td>See <a href="#metric-types">Metric Types</a> below</td></tr><tr><td><code dir="auto">value</code></td><td>numeric</td><td>Scalar value for simple metrics (null for complex metrics)</td></tr><tr><td><code dir="auto">unit</code></td><td>text</td><td>Unit string, e.g. <code dir="auto">count</code>, <code dir="auto">bpm</code>, <code dir="auto">kg</code>, <code dir="auto">meters</code></td></tr><tr><td><code dir="auto">data</code></td><td>jsonb</td><td>Structured data for complex metrics (sleep stages, etc.) — null for scalar metrics</td></tr><tr><td><code dir="auto">source</code></td><td>text</td><td><code dir="auto">user</code> (device-measured), <code dir="auto">manual</code>, or <code dir="auto">computed</code></td></tr><tr><td><code dir="auto">recordedAt</code></td><td>timestamptz</td><td>When the device recorded the measurement</td></tr><tr><td><code dir="auto">createdAt</code></td><td>timestamptz</td><td>When VitaSync ingested it</td></tr></tbody></table>
+<p>Unique constraint: <code dir="auto">(userId, providerId, metricType, recordedAt)</code> — prevents duplicate ingestion across multiple syncs.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="events"><code dir="auto">events</code></h3><a class="sl-anchor-link" href="#events"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “events”</span></a></div>
+<p>Structured events such as workout sessions and sleep sessions. These are richer than scalar metrics and stored separately.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>ULID</td><td>Primary key</td></tr><tr><td><code dir="auto">userId</code></td><td>ULID</td><td>FK → <code dir="auto">users.id</code></td></tr><tr><td><code dir="auto">providerId</code></td><td>text</td><td></td></tr><tr><td><code dir="auto">providerEventId</code></td><td>text</td><td>Provider-assigned event ID (for deduplication)</td></tr><tr><td><code dir="auto">eventType</code></td><td>text</td><td><code dir="auto">workout</code>, <code dir="auto">sleep</code>, <code dir="auto">activity</code></td></tr><tr><td><code dir="auto">activityType</code></td><td>text</td><td>For workouts: <code dir="auto">running</code>, <code dir="auto">cycling</code>, <code dir="auto">swimming</code>, <code dir="auto">strength_training</code>, etc.</td></tr><tr><td><code dir="auto">startedAt</code></td><td>timestamptz</td><td>Event start time</td></tr><tr><td><code dir="auto">endedAt</code></td><td>timestamptz</td><td>Event end time</td></tr><tr><td><code dir="auto">durationSeconds</code></td><td>integer</td><td>Duration in seconds</td></tr><tr><td><code dir="auto">distanceMeters</code></td><td>numeric</td><td>Distance for movement-based activities</td></tr><tr><td><code dir="auto">caloriesKcal</code></td><td>numeric</td><td>Calories burned</td></tr><tr><td><code dir="auto">avgHeartRate</code></td><td>integer</td><td>Average heart rate (bpm)</td></tr><tr><td><code dir="auto">maxHeartRate</code></td><td>integer</td><td>Maximum heart rate (bpm)</td></tr><tr><td><code dir="auto">data</code></td><td>jsonb</td><td>Provider-specific extended data (laps, elevation, sleep stages, etc.)</td></tr><tr><td><code dir="auto">createdAt</code></td><td>timestamptz</td><td></td></tr></tbody></table>
+<p>Unique constraint: <code dir="auto">(userId, providerId, providerEventId)</code>.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="personal_records"><code dir="auto">personal_records</code></h3><a class="sl-anchor-link" href="#personal_records"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “personal_records”</span></a></div>
+<p>Tracks lifetime bests per metric type for each user. Automatically updated after every successful sync.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>ULID</td><td>Primary key</td></tr><tr><td><code dir="auto">userId</code></td><td>ULID</td><td>FK → <code dir="auto">users.id</code></td></tr><tr><td><code dir="auto">metricType</code></td><td>text</td><td>See Metric Types below</td></tr><tr><td><code dir="auto">category</code></td><td>text</td><td>e.g. <code dir="auto">daily_max</code>, <code dir="auto">daily_min</code>, <code dir="auto">all_time_max</code></td></tr><tr><td><code dir="auto">value</code></td><td>numeric</td><td>The record value</td></tr><tr><td><code dir="auto">unit</code></td><td>text</td><td></td></tr><tr><td><code dir="auto">recordedAt</code></td><td>timestamptz</td><td>When the record was set</td></tr><tr><td><code dir="auto">providerId</code></td><td>text</td><td>Which provider’s data set this record</td></tr><tr><td><code dir="auto">updatedAt</code></td><td>timestamptz</td><td></td></tr></tbody></table>
+<p>Unique constraint: <code dir="auto">(userId, metricType, category)</code>.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="webhooks"><code dir="auto">webhooks</code></h3><a class="sl-anchor-link" href="#webhooks"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “webhooks”</span></a></div>
+<p>Registered HTTP endpoints for event delivery.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>ULID</td><td>Primary key</td></tr><tr><td><code dir="auto">workspaceId</code></td><td>ULID</td><td>FK → <code dir="auto">workspaces.id</code></td></tr><tr><td><code dir="auto">url</code></td><td>text</td><td>Your HTTPS endpoint</td></tr><tr><td><code dir="auto">secretHash</code></td><td>text</td><td>HMAC signing secret, hashed for storage</td></tr><tr><td><code dir="auto">events</code></td><td>text[]</td><td>Subscribed event types</td></tr><tr><td><code dir="auto">isActive</code></td><td>boolean</td><td>If false, no deliveries are made</td></tr><tr><td><code dir="auto">description</code></td><td>text</td><td>Optional label</td></tr><tr><td><code dir="auto">createdAt</code></td><td>timestamptz</td><td></td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="webhook_deliveries"><code dir="auto">webhook_deliveries</code></h3><a class="sl-anchor-link" href="#webhook_deliveries"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “webhook_deliveries”</span></a></div>
+<p>Delivery log for every attempted webhook event delivery.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>ULID</td><td>Primary key</td></tr><tr><td><code dir="auto">webhookId</code></td><td>ULID</td><td>FK → <code dir="auto">webhooks.id</code></td></tr><tr><td><code dir="auto">event</code></td><td>text</td><td>Event type string</td></tr><tr><td><code dir="auto">payload</code></td><td>jsonb</td><td>Full request body that was sent</td></tr><tr><td><code dir="auto">status</code></td><td>text</td><td><code dir="auto">pending</code>, <code dir="auto">delivered</code>, <code dir="auto">failed</code></td></tr><tr><td><code dir="auto">statusCode</code></td><td>integer</td><td>HTTP response code from your server</td></tr><tr><td><code dir="auto">attemptCount</code></td><td>integer</td><td>Number of delivery attempts so far</td></tr><tr><td><code dir="auto">deliveredAt</code></td><td>timestamptz</td><td>Null until successfully delivered</td></tr><tr><td><code dir="auto">createdAt</code></td><td>timestamptz</td><td></td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="sync_jobs"><code dir="auto">sync_jobs</code></h3><a class="sl-anchor-link" href="#sync_jobs"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “sync_jobs”</span></a></div>
+<p>Tracks the state of each background sync execution.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>ULID</td><td>Primary key</td></tr><tr><td><code dir="auto">connectionId</code></td><td>ULID</td><td>FK → <code dir="auto">provider_connections.id</code></td></tr><tr><td><code dir="auto">status</code></td><td>text</td><td><code dir="auto">pending</code>, <code dir="auto">running</code>, <code dir="auto">completed</code>, <code dir="auto">failed</code></td></tr><tr><td><code dir="auto">metricsSynced</code></td><td>integer</td><td>Number of data points written</td></tr><tr><td><code dir="auto">error</code></td><td>text</td><td>Error message if status is <code dir="auto">failed</code></td></tr><tr><td><code dir="auto">startedAt</code></td><td>timestamptz</td><td></td></tr><tr><td><code dir="auto">completedAt</code></td><td>timestamptz</td><td></td></tr><tr><td><code dir="auto">createdAt</code></td><td>timestamptz</td><td></td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="notification_channels"><code dir="auto">notification_channels</code></h3><a class="sl-anchor-link" href="#notification_channels"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “notification_channels”</span></a></div>
+<p>Stores user-configured notification channel instances. Each row represents a specific channel (e.g. “Work Slack”, “Personal Discord”).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>UUID</td><td>Primary key</td></tr><tr><td><code dir="auto">userId</code></td><td>UUID</td><td>FK → <code dir="auto">users.id</code> (cascade delete)</td></tr><tr><td><code dir="auto">channelType</code></td><td>varchar(30)</td><td><code dir="auto">discord</code>, <code dir="auto">slack</code>, <code dir="auto">teams</code>, <code dir="auto">email</code>, <code dir="auto">push</code>, <code dir="auto">ntfy</code>, <code dir="auto">webhook</code></td></tr><tr><td><code dir="auto">label</code></td><td>varchar(100)</td><td>Human-readable name</td></tr><tr><td><code dir="auto">config</code></td><td>jsonb</td><td>Channel-specific settings (webhook URL, SMTP config, etc.)</td></tr><tr><td><code dir="auto">enabled</code></td><td>boolean</td><td>Whether this channel is active</td></tr><tr><td><code dir="auto">createdAt</code></td><td>timestamptz</td><td></td></tr><tr><td><code dir="auto">updatedAt</code></td><td>timestamptz</td><td></td></tr></tbody></table>
+<p>Indexed on <code dir="auto">(userId)</code> and <code dir="auto">(userId, channelType)</code>.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="notification_rules"><code dir="auto">notification_rules</code></h3><a class="sl-anchor-link" href="#notification_rules"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “notification_rules”</span></a></div>
+<p>Determines which events trigger which channels. A rule links event categories and minimum severity to a set of notification channels.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>UUID</td><td>Primary key</td></tr><tr><td><code dir="auto">userId</code></td><td>UUID</td><td>FK → <code dir="auto">users.id</code> (cascade delete)</td></tr><tr><td><code dir="auto">name</code></td><td>varchar(100)</td><td>Human-readable rule name</td></tr><tr><td><code dir="auto">categories</code></td><td>jsonb</td><td>Array of categories: <code dir="auto">anomaly</code>, <code dir="auto">goal</code>, <code dir="auto">achievement</code>, <code dir="auto">sync</code>, <code dir="auto">report</code>, <code dir="auto">system</code>, <code dir="auto">insight</code></td></tr><tr><td><code dir="auto">minSeverity</code></td><td>varchar(20)</td><td>Minimum severity to match: <code dir="auto">info</code>, <code dir="auto">warning</code>, <code dir="auto">critical</code></td></tr><tr><td><code dir="auto">channelIds</code></td><td>jsonb</td><td>Array of <code dir="auto">notification_channels.id</code> to deliver to</td></tr><tr><td><code dir="auto">enabled</code></td><td>boolean</td><td>Whether the rule is active</td></tr><tr><td><code dir="auto">createdAt</code></td><td>timestamptz</td><td></td></tr><tr><td><code dir="auto">updatedAt</code></td><td>timestamptz</td><td></td></tr></tbody></table>
+<p>Indexed on <code dir="auto">(userId)</code>.</p>
+<div class="sl-heading-wrapper level-h3"><h3 id="notification_logs"><code dir="auto">notification_logs</code></h3><a class="sl-anchor-link" href="#notification_logs"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “notification_logs”</span></a></div>
+<p>Delivery audit log for every notification dispatch attempt.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>UUID</td><td>Primary key</td></tr><tr><td><code dir="auto">userId</code></td><td>UUID</td><td>FK → <code dir="auto">users.id</code> (cascade delete)</td></tr><tr><td><code dir="auto">channelId</code></td><td>UUID</td><td>FK → <code dir="auto">notification_channels.id</code> (cascade delete)</td></tr><tr><td><code dir="auto">channelType</code></td><td>varchar(30)</td><td>Denormalized for fast querying</td></tr><tr><td><code dir="auto">title</code></td><td>varchar(255)</td><td>Notification title</td></tr><tr><td><code dir="auto">payload</code></td><td>jsonb</td><td>Full payload sent</td></tr><tr><td><code dir="auto">status</code></td><td>varchar(20)</td><td><code dir="auto">pending</code>, <code dir="auto">delivered</code>, <code dir="auto">failed</code></td></tr><tr><td><code dir="auto">attempts</code></td><td>integer</td><td>Number of delivery attempts</td></tr><tr><td><code dir="auto">error</code></td><td>varchar(2000)</td><td>Error message if failed</td></tr><tr><td><code dir="auto">deliveredAt</code></td><td>timestamptz</td><td>Null until successful</td></tr><tr><td><code dir="auto">createdAt</code></td><td>timestamptz</td><td></td></tr></tbody></table>
+<p>Indexed on <code dir="auto">(userId)</code>, <code dir="auto">(channelId)</code>, and <code dir="auto">(status)</code>.</p>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="metric-types">Metric Types</h2><a class="sl-anchor-link" href="#metric-types"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Metric Types”</span></a></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="activity">Activity</h3><a class="sl-anchor-link" href="#activity"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Activity”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Type</th><th>Unit</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">steps</code></td><td><code dir="auto">count</code></td><td>Step count</td></tr><tr><td><code dir="auto">distance</code></td><td><code dir="auto">meters</code></td><td>Distance traveled</td></tr><tr><td><code dir="auto">calories</code></td><td><code dir="auto">kcal</code></td><td>Active calories burned</td></tr><tr><td><code dir="auto">active_minutes</code></td><td><code dir="auto">minutes</code></td><td>Time in moderate+ intensity zones</td></tr><tr><td><code dir="auto">floors</code></td><td><code dir="auto">count</code></td><td>Floors climbed (Fitbit)</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="cardiovascular">Cardiovascular</h3><a class="sl-anchor-link" href="#cardiovascular"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Cardiovascular”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Type</th><th>Unit</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">heart_rate</code></td><td><code dir="auto">bpm</code></td><td>Instantaneous or average heart rate</td></tr><tr><td><code dir="auto">resting_heart_rate</code></td><td><code dir="auto">bpm</code></td><td>Daily resting heart rate</td></tr><tr><td><code dir="auto">heart_rate_variability</code></td><td><code dir="auto">ms</code></td><td>RMSSD-based HRV (overnight)</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="sleep">Sleep</h3><a class="sl-anchor-link" href="#sleep"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Sleep”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Type</th><th>Unit</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">sleep</code></td><td><code dir="auto">hours</code></td><td>Sleep duration; stage breakdown in <code dir="auto">data</code></td></tr><tr><td><code dir="auto">sleep_score</code></td><td><code dir="auto">score</code></td><td>Composite sleep quality score (0–100)</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="body-composition">Body Composition</h3><a class="sl-anchor-link" href="#body-composition"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Body Composition”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Type</th><th>Unit</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">weight</code></td><td><code dir="auto">kg</code></td><td>Body weight</td></tr><tr><td><code dir="auto">body_fat</code></td><td><code dir="auto">percent</code></td><td>Body fat percentage</td></tr><tr><td><code dir="auto">bmi</code></td><td><code dir="auto">index</code></td><td>Body mass index</td></tr><tr><td><code dir="auto">blood_oxygen</code></td><td><code dir="auto">percent</code></td><td>Blood oxygen via pulse oximetry</td></tr><tr><td><code dir="auto">blood_pressure</code></td><td><code dir="auto">mmHg</code></td><td>Systolic/diastolic in <code dir="auto">data.systolic</code>/<code dir="auto">data.diastolic</code></td></tr><tr><td><code dir="auto">temperature</code></td><td><code dir="auto">celsius</code></td><td>Skin or core temperature</td></tr><tr><td><code dir="auto">blood_glucose</code></td><td><code dir="auto">mmol_l</code></td><td>Blood glucose</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="recovery">Recovery</h3><a class="sl-anchor-link" href="#recovery"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Recovery”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Type</th><th>Unit</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">stress</code></td><td><code dir="auto">score</code></td><td>Stress score (Garmin: 0–100)</td></tr><tr><td><code dir="auto">hrv_status</code></td><td><code dir="auto">status</code></td><td>HRV band: <code dir="auto">poor</code>, <code dir="auto">balanced</code>, <code dir="auto">good</code>, <code dir="auto">optimal</code></td></tr><tr><td><code dir="auto">recovery_score</code></td><td><code dir="auto">percent</code></td><td>WHOOP recovery (0–100%)</td></tr><tr><td><code dir="auto">readiness_score</code></td><td><code dir="auto">score</code></td><td>Daily readiness (0–100)</td></tr><tr><td><code dir="auto">strain_score</code></td><td><code dir="auto">score</code></td><td>WHOOP daily strain (0–21)</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="breathing">Breathing</h3><a class="sl-anchor-link" href="#breathing"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Breathing”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Type</th><th>Unit</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">respiratory_rate</code></td><td><code dir="auto">breaths_per_min</code></td><td>Breaths per minute (overnight average)</td></tr><tr><td><code dir="auto">spo2</code></td><td><code dir="auto">percent</code></td><td>SpO2 from pulse oximetry</td></tr></tbody></table>
+<div class="sl-heading-wrapper level-h3"><h3 id="workouts">Workouts</h3><a class="sl-anchor-link" href="#workouts"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Workouts”</span></a></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code dir="auto">workout</code></td><td>Workout session marker; full data in the Events API</td></tr></tbody></table>
+<hr>
+<div class="sl-heading-wrapper level-h2"><h2 id="complex-metric-data-structures">Complex Metric Data Structures</h2><a class="sl-anchor-link" href="#complex-metric-data-structures"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Complex Metric Data Structures”</span></a></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="sleep-data-field">Sleep (<code dir="auto">data</code> field)</h3><a class="sl-anchor-link" href="#sleep-data-field"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Sleep (data field)”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="json"><code><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"stages"</span><span style="--0:#D6DEEB;--1:#403F53">: {</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"deep"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">95</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"light"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">220</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"rem"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">110</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"awake"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">20</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">},</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"efficiency"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">88</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"consistency"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">74</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"startTime"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">2025-06-05T23:15:00.000Z</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"endTime"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">2025-06-06T07:00:00.000Z</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"score"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">82</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="{  &#x22;stages&#x22;: {    &#x22;deep&#x22;: 95,    &#x22;light&#x22;: 220,    &#x22;rem&#x22;: 110,    &#x22;awake&#x22;: 20  },  &#x22;efficiency&#x22;: 88,  &#x22;consistency&#x22;: 74,  &#x22;startTime&#x22;: &#x22;2025-06-05T23:15:00.000Z&#x22;,  &#x22;endTime&#x22;: &#x22;2025-06-06T07:00:00.000Z&#x22;,  &#x22;score&#x22;: 82}"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="blood-pressure-data-field">Blood Pressure (<code dir="auto">data</code> field)</h3><a class="sl-anchor-link" href="#blood-pressure-data-field"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Blood Pressure (data field)”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="json"><code><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"systolic"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">118</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"diastolic"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">76</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"pulse"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">68</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="{  &#x22;systolic&#x22;: 118,  &#x22;diastolic&#x22;: 76,  &#x22;pulse&#x22;: 68}"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="heart-rate-intraday-data-field">Heart Rate (intraday, <code dir="auto">data</code> field)</h3><a class="sl-anchor-link" href="#heart-rate-intraday-data-field"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Heart Rate (intraday, data field)”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="json"><code><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"min"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">46</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"max"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">148</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"resting"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">56</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"zones"</span><span style="--0:#D6DEEB;--1:#403F53">: {</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"fat_burn"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">42</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"cardio"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">28</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"peak"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">8</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="{  &#x22;min&#x22;: 46,  &#x22;max&#x22;: 148,  &#x22;resting&#x22;: 56,  &#x22;zones&#x22;: {    &#x22;fat_burn&#x22;: 42,    &#x22;cardio&#x22;: 28,    &#x22;peak&#x22;: 8  }}"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="workout-event-data-field">Workout Event (<code dir="auto">data</code> field)</h3><a class="sl-anchor-link" href="#workout-event-data-field"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Workout Event (data field)”</span></a></div>
+<div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="json"><code><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">{</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"sport"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">running</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"elevationGain"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">85</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"elevationLoss"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">82</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"avgPace"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#C789D6;--1:#7C5686">6:15</span><span style="--0:#D9F5DD;--1:#111111">"</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"avgCadence"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">168</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"avgPower"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#FF6A83;--1:#A24848">null</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"laps"</span><span style="--0:#D6DEEB;--1:#403F53">: [</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">    </span></span><span style="--0:#D6DEEB;--1:#403F53">{ </span><span style="--0:#7FDBCA;--1:#096E72">"lapNumber"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">1</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"distance"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">1000</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"time"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">375</span><span style="--0:#D6DEEB;--1:#403F53">, </span><span style="--0:#7FDBCA;--1:#096E72">"avgHR"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">152</span><span style="--0:#D6DEEB;--1:#403F53"> }</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">],</span></div></div><div class="ec-line"><div class="code"><span class="indent">  </span><span style="--0:#7FDBCA;--1:#096E72">"hrZones"</span><span style="--0:#D6DEEB;--1:#403F53">: {</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"zone1"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">180</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"zone2"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">420</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"zone3"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">810</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"zone4"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">1080</span><span style="--0:#D6DEEB;--1:#403F53">,</span></div></div><div class="ec-line"><div class="code"><span class="indent">    </span><span style="--0:#7FDBCA;--1:#096E72">"zone5"</span><span style="--0:#D6DEEB;--1:#403F53">: </span><span style="--0:#F78C6C;--1:#AA0982">210</span></div></div><div class="ec-line"><div class="code"><span class="indent"><span style="--0:#D6DEEB;--1:#403F53">  </span></span><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">}</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="{  &#x22;sport&#x22;: &#x22;running&#x22;,  &#x22;elevationGain&#x22;: 85,  &#x22;elevationLoss&#x22;: 82,  &#x22;avgPace&#x22;: &#x22;6:15&#x22;,  &#x22;avgCadence&#x22;: 168,  &#x22;avgPower&#x22;: null,  &#x22;laps&#x22;: [    { &#x22;lapNumber&#x22;: 1, &#x22;distance&#x22;: 1000, &#x22;time&#x22;: 375, &#x22;avgHR&#x22;: 152 }  ],  &#x22;hrZones&#x22;: {    &#x22;zone1&#x22;: 180,    &#x22;zone2&#x22;: 420,    &#x22;zone3&#x22;: 810,    &#x22;zone4&#x22;: 1080,    &#x22;zone5&#x22;: 210  }}"><div></div></button></div></figure></div>
+<div class="sl-heading-wrapper level-h2"><h2 id="wellness-tracking-tables">Wellness Tracking Tables</h2><a class="sl-anchor-link" href="#wellness-tracking-tables"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “Wellness Tracking Tables”</span></a></div>
+<div class="sl-heading-wrapper level-h3"><h3 id="journal_entries"><code dir="auto">journal_entries</code></h3><a class="sl-anchor-link" href="#journal_entries"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “journal_entries”</span></a></div>
+<p>Daily journal entries with mood tagging, gratitude lists, and searchable content.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>uuid</td><td>PK, auto-generated</td></tr><tr><td><code dir="auto">user_id</code></td><td>uuid</td><td>FK → users, cascade delete</td></tr><tr><td><code dir="auto">title</code></td><td>varchar(200)</td><td>Optional title/headline</td></tr><tr><td><code dir="auto">body</code></td><td>text</td><td>Main journal content (markdown-friendly)</td></tr><tr><td><code dir="auto">mood_score</code></td><td>double</td><td>Mood 1–5 at time of writing</td></tr><tr><td><code dir="auto">mood_label</code></td><td>varchar(50)</td><td>happy, calm, anxious, sad, energized, tired, grateful, reflective</td></tr><tr><td><code dir="auto">gratitude</code></td><td>jsonb</td><td>Array of gratitude strings</td></tr><tr><td><code dir="auto">tags</code></td><td>jsonb</td><td>Array of tag strings</td></tr><tr><td><code dir="auto">entry_date</code></td><td>timestamptz</td><td>When the entry is for</td></tr><tr><td><code dir="auto">created_at</code></td><td>timestamptz</td><td>Row creation time</td></tr><tr><td><code dir="auto">updated_at</code></td><td>timestamptz</td><td>Last update time</td></tr></tbody></table>
+<p>Index: <code dir="auto">(user_id, entry_date)</code></p>
+<div class="sl-heading-wrapper level-h3"><h3 id="water_intake"><code dir="auto">water_intake</code></h3><a class="sl-anchor-link" href="#water_intake"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “water_intake”</span></a></div>
+<p>Individual hydration logs with beverage type and daily goal tracking.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>uuid</td><td>PK, auto-generated</td></tr><tr><td><code dir="auto">user_id</code></td><td>uuid</td><td>FK → users, cascade delete</td></tr><tr><td><code dir="auto">amount_ml</code></td><td>integer</td><td>Amount in milliliters</td></tr><tr><td><code dir="auto">beverage_type</code></td><td>varchar(30)</td><td>water, tea, coffee, juice, other</td></tr><tr><td><code dir="auto">note</code></td><td>varchar(200)</td><td>Optional context note</td></tr><tr><td><code dir="auto">daily_goal_ml</code></td><td>integer</td><td>Daily goal snapshot (default 2500)</td></tr><tr><td><code dir="auto">logged_at</code></td><td>timestamptz</td><td>When the intake was logged</td></tr><tr><td><code dir="auto">created_at</code></td><td>timestamptz</td><td>Row creation time</td></tr></tbody></table>
+<p>Index: <code dir="auto">(user_id, logged_at)</code></p>
+<div class="sl-heading-wrapper level-h3"><h3 id="habits"><code dir="auto">habits</code></h3><a class="sl-anchor-link" href="#habits"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “habits”</span></a></div>
+<p>User-defined habit definitions with streak tracking.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>uuid</td><td>PK, auto-generated</td></tr><tr><td><code dir="auto">user_id</code></td><td>uuid</td><td>FK → users, cascade delete</td></tr><tr><td><code dir="auto">name</code></td><td>varchar(100)</td><td>Habit name</td></tr><tr><td><code dir="auto">icon</code></td><td>varchar(10)</td><td>Emoji icon</td></tr><tr><td><code dir="auto">color</code></td><td>varchar(20)</td><td>UI color (blue, green, red, etc.)</td></tr><tr><td><code dir="auto">frequency</code></td><td>varchar(20)</td><td>daily, weekdays, custom</td></tr><tr><td><code dir="auto">target_days</code></td><td>jsonb</td><td>Array of day numbers (0=Sun, 6=Sat)</td></tr><tr><td><code dir="auto">active</code></td><td>boolean</td><td>Whether the habit is active</td></tr><tr><td><code dir="auto">current_streak</code></td><td>integer</td><td>Current consecutive day streak</td></tr><tr><td><code dir="auto">longest_streak</code></td><td>integer</td><td>Best streak ever</td></tr><tr><td><code dir="auto">created_at</code></td><td>timestamptz</td><td>Row creation time</td></tr><tr><td><code dir="auto">updated_at</code></td><td>timestamptz</td><td>Last update time</td></tr></tbody></table>
+<p>Index: <code dir="auto">(user_id)</code></p>
+<div class="sl-heading-wrapper level-h3"><h3 id="habit_logs"><code dir="auto">habit_logs</code></h3><a class="sl-anchor-link" href="#habit_logs"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentcolor" d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 0 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 1 0-1.42-1.42Zm8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 0 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 1 0 1.42 1.42l3.88-3.89a4.49 4.49 0 0 0 0-6.33ZM8.83 15.17a1 1 0 0 0 1.1.22 1 1 0 0 0 .32-.22l4.92-4.92a1 1 0 0 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42Z"></path></svg></span><span class="sr-only" data-pagefind-ignore="">Section titled “habit_logs”</span></a></div>
+<p>One row per habit per day when completed.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code dir="auto">id</code></td><td>uuid</td><td>PK, auto-generated</td></tr><tr><td><code dir="auto">habit_id</code></td><td>uuid</td><td>FK → habits, cascade delete</td></tr><tr><td><code dir="auto">user_id</code></td><td>uuid</td><td>FK → users, cascade delete</td></tr><tr><td><code dir="auto">completed_date</code></td><td>date</td><td>The date the habit was completed</td></tr><tr><td><code dir="auto">note</code></td><td>varchar(200)</td><td>Optional note</td></tr><tr><td><code dir="auto">created_at</code></td><td>timestamptz</td><td>Row creation time</td></tr></tbody></table>
+<p>Indexes: <code dir="auto">(habit_id, completed_date)</code>, <code dir="auto">(user_id, completed_date)</code></p> </div> <footer class="sl-flex astro-odjls6mg"> <div class="meta sl-flex astro-odjls6mg"> <a href="https://github.com/your-org/vitasync/edit/main/apps/docs/src/content/docs/architecture/data-model.md" class="sl-flex print:hidden astro-vti6hags"><svg aria-hidden="true" class="astro-vti6hags astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.2em;"><path d="M22 7.24a1 1 0 0 0-.29-.71l-4.24-4.24a1 1 0 0 0-1.1-.22 1 1 0 0 0-.32.22l-2.83 2.83L2.29 16.05a1 1 0 0 0-.29.71V21a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .76-.29l10.87-10.93L21.71 8c.1-.1.17-.2.22-.33a1 1 0 0 0 0-.24v-.14l.07-.05ZM6.83 20H4v-2.83l9.93-9.93 2.83 2.83L6.83 20ZM18.17 8.66l-2.83-2.83 1.42-1.41 2.82 2.82-1.41 1.42Z"/></svg>Edit page</a>  </div> <div class="pagination-links print:hidden astro-lueoyfe6" dir="ltr"> <a href="/vitasync/architecture/overview/" rel="prev" class="astro-lueoyfe6"> <svg aria-hidden="true" class="astro-lueoyfe6 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17 11H9.41l3.3-3.29a1.004 1.004 0 1 0-1.42-1.42l-5 5a1 1 0 0 0-.21.33 1 1 0 0 0 0 .76 1 1 0 0 0 .21.33l5 5a1.002 1.002 0 0 0 1.639-.325 1 1 0 0 0-.219-1.095L9.41 13H17a1 1 0 0 0 0-2Z"/></svg> <span class="astro-lueoyfe6"> Previous <br class="astro-lueoyfe6"> <span class="link-title astro-lueoyfe6">Overview</span> </span> </a> <a href="/vitasync/architecture/sync-pipeline/" rel="next" class="astro-lueoyfe6"> <svg aria-hidden="true" class="astro-lueoyfe6 astro-mmsajalc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1.5rem;"><path d="M17.92 11.62a1.001 1.001 0 0 0-.21-.33l-5-5a1.003 1.003 0 1 0-1.42 1.42l3.3 3.29H7a1 1 0 0 0 0 2h7.59l-3.3 3.29a1.002 1.002 0 0 0 .325 1.639 1 1 0 0 0 1.095-.219l5-5a1 1 0 0 0 .21-.33 1 1 0 0 0 0-.76Z"/></svg> <span class="astro-lueoyfe6"> Next <br class="astro-lueoyfe6"> <span class="link-title astro-lueoyfe6">Sync Pipeline</span> </span> </a> </div>  </footer> </div> </div>  </main> </div> </div> </div> </div> </body></html>
