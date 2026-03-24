@@ -140,6 +140,22 @@ html.midnight .bg-slate-100 { background-color: #0a0a0a !important; }
 html.midnight .bg-fuchsia-50 { background-color: #0a0a0a !important; }
 html.midnight .bg-fuchsia-100 { background-color: #0a0a0a !important; }
 
+/* Light-colored borders in midnight — make visible on AMOLED black */
+html.midnight .border-green-300 { border-color: #166534 !important; }
+html.midnight .border-green-200 { border-color: #14532d !important; }
+html.midnight .border-amber-200 { border-color: #78350f !important; }
+html.midnight .border-amber-100 { border-color: #451a03 !important; }
+html.midnight .border-red-200 { border-color: #7f1d1d !important; }
+html.midnight .border-red-100 { border-color: #450a0a !important; }
+html.midnight .border-blue-200 { border-color: #1e3a5f !important; }
+html.midnight .border-blue-100 { border-color: #172554 !important; }
+html.midnight .border-indigo-200 { border-color: #312e81 !important; }
+html.midnight .border-indigo-100 { border-color: #1e1b4b !important; }
+html.midnight .border-purple-200 { border-color: #581c87 !important; }
+html.midnight .border-purple-100 { border-color: #3b0764 !important; }
+html.midnight .border-orange-200 { border-color: #7c2d12 !important; }
+html.midnight .border-yellow-200 { border-color: #713f12 !important; }
+
 /* ── Dim mode — softer, muted dark ─────────────────────────────────── */
 html.dim {
   --background: 220 16% 12%;
@@ -199,6 +215,22 @@ html.dim .bg-slate-50 { background-color: hsl(220 14% 16%) !important; }
 html.dim .bg-slate-100 { background-color: hsl(220 14% 18%) !important; }
 html.dim .bg-fuchsia-50 { background-color: hsl(220 14% 16%) !important; }
 html.dim .bg-fuchsia-100 { background-color: hsl(220 14% 18%) !important; }
+
+/* Light-colored borders in dim — make visible on muted dark */
+html.dim .border-green-300 { border-color: hsl(142 40% 25%) !important; }
+html.dim .border-green-200 { border-color: hsl(142 35% 20%) !important; }
+html.dim .border-amber-200 { border-color: hsl(30 50% 22%) !important; }
+html.dim .border-amber-100 { border-color: hsl(30 40% 18%) !important; }
+html.dim .border-red-200 { border-color: hsl(0 50% 25%) !important; }
+html.dim .border-red-100 { border-color: hsl(0 40% 18%) !important; }
+html.dim .border-blue-200 { border-color: hsl(213 50% 25%) !important; }
+html.dim .border-blue-100 { border-color: hsl(213 40% 18%) !important; }
+html.dim .border-indigo-200 { border-color: hsl(244 40% 25%) !important; }
+html.dim .border-indigo-100 { border-color: hsl(244 35% 18%) !important; }
+html.dim .border-purple-200 { border-color: hsl(270 40% 25%) !important; }
+html.dim .border-purple-100 { border-color: hsl(270 35% 18%) !important; }
+html.dim .border-orange-200 { border-color: hsl(20 50% 22%) !important; }
+html.dim .border-yellow-200 { border-color: hsl(45 50% 22%) !important; }
 
 html.dark input,
 html.dark textarea,

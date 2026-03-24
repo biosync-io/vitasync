@@ -143,7 +143,7 @@ export default function MoodPage() {
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Trend</p>
-            <p className={`text-lg font-semibold ${stats.trend === "improving" ? "text-emerald-600" : stats.trend === "declining" ? "text-red-600" : "text-gray-600"}`}>
+            <p className={`text-lg font-semibold ${stats.trend === "improving" ? "text-emerald-600 dark:text-emerald-400" : stats.trend === "declining" ? "text-red-600 dark:text-red-400" : "text-gray-600 dark:text-gray-400"}`}>
               {stats.trend === "improving" ? "📈 Improving" : stats.trend === "declining" ? "📉 Declining" : "➡️ Stable"}
             </p>
             {stats.topFactors.length > 0 && (

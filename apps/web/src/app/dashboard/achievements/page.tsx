@@ -86,7 +86,7 @@ export default function AchievementsPage() {
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">{a.name}</h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{a.description}</p>
                 <div className="mt-3 flex items-center justify-center gap-2">
-                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${TIER_STYLES[a.tier] ?? "bg-gray-100 text-gray-600"}`}>{a.tier}</span>
+                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${TIER_STYLES[a.tier] ?? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>{a.tier}</span>
                   <span className="text-xs text-gray-400">{a.category}</span>
                 </div>
                 <p className="mt-2 text-xs text-gray-400">{new Date(a.unlockedAt).toLocaleDateString()}</p>
@@ -106,7 +106,7 @@ export default function AchievementsPage() {
                 <div className="text-4xl mb-2">{unlocked ? d.icon : "🔒"}</div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">{d.name}</h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{d.description}</p>
-                <span className={`mt-3 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${TIER_STYLES[d.tier] ?? "bg-gray-100 text-gray-600"}`}>{d.tier}</span>
+                <span className={`mt-3 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${TIER_STYLES[d.tier] ?? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>{d.tier}</span>
               </div>
             )
           })}

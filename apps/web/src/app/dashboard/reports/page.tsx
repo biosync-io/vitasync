@@ -387,7 +387,7 @@ export default function ReportsPage() {
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Fatigue</p>
                   </div>
                   <div className="text-center">
-                    <p className={`text-lg font-bold ${trainingLoad.tsb >= 0 ? "text-emerald-600" : "text-amber-600"}`}>{trainingLoad.tsb > 0 ? "+" : ""}{Math.round(trainingLoad.tsb)}</p>
+                    <p className={`text-lg font-bold ${trainingLoad.tsb >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>{trainingLoad.tsb > 0 ? "+" : ""}{Math.round(trainingLoad.tsb)}</p>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Form</p>
                   </div>
                 </div>

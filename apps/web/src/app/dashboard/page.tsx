@@ -318,7 +318,7 @@ function BiometricTimeline({ metrics }: { metrics: { time: string; hr: number | 
             <XAxis dataKey="time" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
             <Tooltip
-              contentStyle={{ fontSize: 12, borderRadius: 12, border: "1px solid #e5e7eb", boxShadow: "0 4px 12px rgba(0,0,0,.08)" }}
+              contentStyle={{ fontSize: 12, borderRadius: 12, border: "1px solid rgba(55, 65, 81, 0.8)", boxShadow: "0 4px 12px rgba(0,0,0,.08)" }}
               labelStyle={{ fontWeight: 600 }}
             />
             <Area type="monotone" dataKey="hr" stroke="#ef4444" strokeWidth={2} fill="url(#hrGrad)" dot={false} name="Heart Rate" />

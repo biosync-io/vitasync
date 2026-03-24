@@ -6,8 +6,8 @@ import { correlationsApi, usersApi, type CorrelationData } from "../../../lib/ap
 
 function strengthColor(strength: string) {
   switch (strength) {
-    case "strong": return "text-emerald-600"
-    case "moderate": return "text-yellow-600"
+    case "strong": return "text-emerald-600 dark:text-emerald-400"
+    case "moderate": return "text-yellow-600 dark:text-yellow-400"
     case "weak": return "text-gray-500"
     default: return "text-gray-500"
   }
@@ -93,7 +93,7 @@ export default function CorrelationsPage() {
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400">Strong Correlations</p>
-            <p className="text-2xl font-bold text-emerald-600">{strongCorrelations.length}</p>
+            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{strongCorrelations.length}</p>
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400">Avg |Coefficient|</p>
@@ -114,7 +114,7 @@ export default function CorrelationsPage() {
                   <span className="mx-2 text-gray-400">{directionIcon(c.direction)}</span>
                   <span className="font-medium">{c.metricB}</span>
                 </span>
-                <span className={`font-mono font-medium ${(c.coefficient ?? 0) >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                <span className={`font-mono font-medium ${(c.coefficient ?? 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                   {(c.coefficient ?? 0) > 0 ? "+" : ""}{(c.coefficient ?? 0).toFixed(3)}
                 </span>
               </div>

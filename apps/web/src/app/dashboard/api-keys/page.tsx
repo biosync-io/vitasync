@@ -67,17 +67,17 @@ export default function ApiKeysPage() {
       </div>
 
       {newKey && (
-        <div className="mb-6 rounded-xl border border-green-300 bg-green-50 p-4">
-          <p className="text-sm font-semibold text-green-800 mb-2">
+        <div className="mb-6 rounded-xl border border-green-300 dark:border-green-800/40 bg-green-50 dark:bg-green-900/20 p-4">
+          <p className="text-sm font-semibold text-green-800 dark:text-green-300 mb-2">
             ✓ Key created — copy it now, it will not be shown again.
           </p>
-          <code className="block rounded bg-white border border-green-200 px-4 py-3 text-sm font-mono text-gray-900 break-all">
+          <code className="block rounded bg-white dark:bg-gray-800 border border-green-200 dark:border-green-800/40 px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100 break-all">
             {newKey}
           </code>
           <button
             type="button"
             onClick={() => navigator.clipboard.writeText(newKey)}
-            className="mt-2 text-xs text-green-700 hover:text-green-900 underline"
+            className="mt-2 text-xs text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-200 underline"
           >
             Copy to clipboard
           </button>

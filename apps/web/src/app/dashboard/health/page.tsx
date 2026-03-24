@@ -200,7 +200,7 @@ export default function HealthDataPage() {
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
               {totalMetrics.toLocaleString()} records
               {metricType && (
-                <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700">
+                <span className="ml-2 rounded-full bg-indigo-100 dark:bg-indigo-900/30 px-2 py-0.5 text-xs text-indigo-700 dark:text-indigo-300">
                   {METRIC_LABELS[metricType] ?? metricType}
                 </span>
               )}

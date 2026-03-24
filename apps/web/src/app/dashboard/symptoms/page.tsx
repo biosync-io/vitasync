@@ -126,7 +126,7 @@ export default function SymptomsPage() {
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400">Severity Trend</p>
-            <p className={`text-2xl font-bold ${patterns.severityTrend === "improving" ? "text-emerald-600" : patterns.severityTrend === "worsening" ? "text-red-600" : "text-gray-500"}`}>
+            <p className={`text-2xl font-bold ${patterns.severityTrend === "improving" ? "text-emerald-600 dark:text-emerald-400" : patterns.severityTrend === "worsening" ? "text-red-600 dark:text-red-400" : "text-gray-500"}`}>
               {patterns.severityTrend === "improving" ? "↓ Better" : patterns.severityTrend === "worsening" ? "↑ Worse" : "→ Stable"}
             </p>
           </div>

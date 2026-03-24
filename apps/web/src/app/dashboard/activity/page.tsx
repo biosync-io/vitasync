@@ -22,9 +22,9 @@ import { type HealthMetric, type WorkoutEvent, eventsApi, healthApi, usersApi } 
 // ── helpers ────────────────────────────────────────────────────────────────
 
 const EVENT_BADGE: Record<string, string> = {
-  workout: "bg-orange-100 text-orange-700",
-  sleep: "bg-blue-100 text-blue-700",
-  activity: "bg-green-100 text-green-700",
+  workout: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300",
+  sleep: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+  activity: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
 }
 
 const CHART_COLOR: Record<string, string> = {
@@ -40,11 +40,12 @@ const TICK_STYLE = { fill: "#9ca3af", fontSize: 11 }
 const GRID_PROPS = { strokeDasharray: "3 3", stroke: "#6b7280", strokeOpacity: 0.18 }
 const TOOLTIP_STYLE = {
   contentStyle: {
-    backgroundColor: "#1f2937",
-    border: "1px solid #374151",
+    backgroundColor: "rgba(17, 24, 39, 0.95)",
+    border: "1px solid rgba(55, 65, 81, 0.8)",
     borderRadius: "8px",
     fontSize: "12px",
     color: "#f3f4f6",
+    backdropFilter: "blur(8px)",
   },
   itemStyle: { color: "#e5e7eb" },
   labelStyle: { color: "#9ca3af", marginBottom: "4px" },

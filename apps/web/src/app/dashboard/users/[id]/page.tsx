@@ -30,10 +30,10 @@ const METRIC_LABELS: Record<string, string> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  active: "bg-green-100 text-green-700",
-  disconnected: "bg-gray-100 text-gray-600",
-  error: "bg-red-100 text-red-700",
-  pending: "bg-yellow-100 text-yellow-700",
+  active: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+  disconnected: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
+  error: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+  pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
 }
 
 export default function UserDetailPage() {
@@ -120,16 +120,16 @@ export default function UserDetailPage() {
   if (loadingUser) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-48 rounded bg-gray-100 animate-pulse" />
-        <div className="h-40 rounded-xl bg-gray-100 animate-pulse" />
-        <div className="h-40 rounded-xl bg-gray-100 animate-pulse" />
+        <div className="h-8 w-48 rounded bg-gray-100 animate-pulse dark:bg-gray-800" />
+        <div className="h-40 rounded-xl bg-gray-100 animate-pulse dark:bg-gray-800" />
+        <div className="h-40 rounded-xl bg-gray-100 animate-pulse dark:bg-gray-800" />
       </div>
     )
   }
 
   if (!user) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-20 text-center">
+      <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-20 text-center dark:border-gray-700 dark:bg-gray-900">
         <p className="text-sm text-gray-500">User not found.</p>
         <Link
           href="/dashboard/users"
@@ -154,7 +154,7 @@ export default function UserDetailPage() {
       {/* Page header */}
       <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {user.displayName ?? user.email ?? user.externalId}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -167,7 +167,7 @@ export default function UserDetailPage() {
             setEditForm({ email: user.email ?? "", displayName: user.displayName ?? "" })
             setEditing(true)
           }}
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
         >
           Edit
         </button>
@@ -175,17 +175,17 @@ export default function UserDetailPage() {
 
       {/* Edit form */}
       {editing && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-sm font-semibold text-gray-900">Edit User</h2>
-          {editError && <p className="mb-3 text-sm text-red-600">{editError}</p>}
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Edit User</h2>
+          {editError && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{editError}</p>}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label htmlFor="edit-user-email" className="block text-xs font-medium text-gray-700">
+              <label htmlFor="edit-user-email" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
                 Email
               </label>
               <input
                 id="edit-user-email"
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
                 value={editForm.email}
                 onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
               />
@@ -193,13 +193,13 @@ export default function UserDetailPage() {
             <div>
               <label
                 htmlFor="edit-user-displayname"
-                className="block text-xs font-medium text-gray-700"
+                className="block text-xs font-medium text-gray-700 dark:text-gray-300"
               >
                 Display Name
               </label>
               <input
                 id="edit-user-displayname"
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
                 value={editForm.displayName}
                 onChange={(e) => setEditForm((f) => ({ ...f, displayName: e.target.value }))}
               />
@@ -225,7 +225,7 @@ export default function UserDetailPage() {
                 setEditing(false)
                 setEditError("")
               }}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               Cancel
             </button>
@@ -234,8 +234,8 @@ export default function UserDetailPage() {
       )}
 
       {/* Profile card */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold text-gray-900">Profile</h2>
+      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Profile</h2>
         <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "Internal ID", value: user.id },
@@ -246,20 +246,20 @@ export default function UserDetailPage() {
           ].map(({ label, value }) => (
             <div key={label}>
               <dt className="text-xs font-medium text-gray-500">{label}</dt>
-              <dd className="mt-1 text-sm font-mono text-gray-900 break-all">{value}</dd>
+              <dd className="mt-1 text-sm font-mono text-gray-900 break-all dark:text-gray-100">{value}</dd>
             </div>
           ))}
         </dl>
       </div>
 
       {/* Provider connections */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold text-gray-900">Provider Connections</h2>
+      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Provider Connections</h2>
         {loadingConns ? (
           <div className="space-y-2">
             {Array.from({ length: 2 }).map((_, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton loader — items have no stable identity
-              <div key={i} className="h-14 rounded-lg bg-gray-100 animate-pulse" />
+              <div key={i} className="h-14 rounded-lg bg-gray-100 animate-pulse dark:bg-gray-800" />
             ))}
           </div>
         ) : connections.length === 0 ? (
@@ -267,18 +267,18 @@ export default function UserDetailPage() {
             No providers connected yet. Use the OAuth authorize endpoint to connect one.
           </p>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {connections.map((conn) => (
               <div
                 key={conn.id}
                 className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 uppercase">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 uppercase dark:bg-indigo-900/30 dark:text-indigo-300">
                     {conn.providerId[0]}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900 capitalize">
+                    <p className="text-sm font-medium text-gray-900 capitalize dark:text-gray-100">
                       {conn.providerId}
                     </p>
                     <p className="text-xs text-gray-400">
@@ -291,7 +291,7 @@ export default function UserDetailPage() {
                 <div className="flex items-center gap-2">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                      STATUS_COLORS[conn.status] ?? "bg-gray-100 text-gray-600"
+                      STATUS_COLORS[conn.status] ?? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
                     }`}
                   >
                     {conn.status}
@@ -300,7 +300,7 @@ export default function UserDetailPage() {
                     type="button"
                     onClick={() => syncMutation.mutate(conn.id)}
                     disabled={syncMutation.isPending}
-                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                   >
                     {syncMutation.isPending ? "Syncing…" : "Sync"}
                   </button>
@@ -308,7 +308,7 @@ export default function UserDetailPage() {
                     type="button"
                     onClick={() => disconnectMutation.mutate(conn.id)}
                     disabled={disconnectMutation.isPending}
-                    className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-800/40 dark:text-red-400 dark:hover:bg-red-900/20"
                   >
                     Disconnect
                   </button>
@@ -320,9 +320,9 @@ export default function UserDetailPage() {
       </div>
 
       {/* Health data summary */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900">Health Data Summary</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Health Data Summary</h2>
           <Link
             href="/dashboard/health"
             className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
@@ -337,11 +337,11 @@ export default function UserDetailPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {summary.map((s) => (
-              <div key={s.metricType} className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+              <div key={s.metricType} className="rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
                 <p className="truncate text-xs font-medium text-gray-500">
                   {METRIC_LABELS[s.metricType] ?? s.metricType}
                 </p>
-                <p className="mt-1 text-xl font-bold text-gray-900">{s.count.toLocaleString()}</p>
+                <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-50">{s.count.toLocaleString()}</p>
                 <p className="mt-1 text-xs text-gray-400">
                   Latest: {new Date(s.latest).toLocaleDateString()}
                 </p>
@@ -352,9 +352,9 @@ export default function UserDetailPage() {
       </div>
 
       {/* Recent Activity */}
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900">Recent Activity</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent Activity</h2>
           <Link
             href="/dashboard/activity"
             className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
@@ -365,7 +365,7 @@ export default function UserDetailPage() {
         {recentEvents.length === 0 ? (
           <p className="text-sm text-gray-400">No activity events synced yet.</p>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {recentEvents.map((ev) => (
               <div
                 key={ev.id}
@@ -375,17 +375,17 @@ export default function UserDetailPage() {
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       ev.eventType === "workout"
-                        ? "bg-orange-100 text-orange-700"
+                        ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
                         : ev.eventType === "sleep"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-green-100 text-green-700"
+                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                          : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
                     }`}
                   >
                     {ev.eventType}
                   </span>
                   <div>
-                    <p className="text-sm text-gray-900">
-                      {ev.title ?? ev.activityType?.replace(/_/g, " ") ?? ev.eventType}
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                      {ev.title?? ev.activityType?.replace(/_/g, " ") ?? ev.eventType}
                     </p>
                     <p className="text-xs text-gray-400">
                       {new Date(ev.startedAt).toLocaleString()}
@@ -406,18 +406,18 @@ export default function UserDetailPage() {
 
       {/* Personal Records */}
       {prData.length > 0 && (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-sm font-semibold text-gray-900">Personal Records</h2>
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Personal Records</h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {prData.map((pr) => (
-              <div key={pr.id} className="rounded-lg border border-amber-100 bg-amber-50 p-4">
+              <div key={pr.id} className="rounded-lg border border-amber-100 bg-amber-50 p-4 dark:border-amber-800/40 dark:bg-amber-900/20">
                 <p className="truncate text-xs font-medium text-gray-500 capitalize">
                   {pr.metricType.replace(/_/g, " ")}
                   {pr.category && (
                     <span className="ml-1 text-gray-400">· {pr.category.replace(/_/g, " ")}</span>
                   )}
                 </p>
-                <p className="mt-1 text-xl font-bold text-gray-900">
+                <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-50">
                   {pr.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                   {pr.unit && (
                     <span className="ml-1 text-sm font-normal text-gray-500">{pr.unit}</span>

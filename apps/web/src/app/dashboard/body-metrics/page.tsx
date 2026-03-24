@@ -63,11 +63,12 @@ const TICK_STYLE = { fill: "#9ca3af", fontSize: 11 }
 const GRID_PROPS = { strokeDasharray: "3 3", stroke: "#6b7280", strokeOpacity: 0.18 }
 const TOOLTIP_STYLE = {
   contentStyle: {
-    backgroundColor: "#1f2937",
-    border: "1px solid #374151",
+    backgroundColor: "rgba(17, 24, 39, 0.95)",
+    border: "1px solid rgba(55, 65, 81, 0.8)",
     borderRadius: "8px",
     fontSize: "12px",
     color: "#f3f4f6",
+    backdropFilter: "blur(8px)",
   },
   itemStyle: { color: "#e5e7eb" },
   labelStyle: { color: "#9ca3af", marginBottom: "4px" },

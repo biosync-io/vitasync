@@ -41,7 +41,7 @@ function CopyButton({ text }: { text: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      className="rounded px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
+      className="rounded px-2 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
     >
       {copied ? "Copied!" : "Copy"}
     </button>
@@ -50,14 +50,14 @@ function CopyButton({ text }: { text: string }) {
 
 function ScopeTag({ scope }: { scope: string }) {
   const colors: Record<string, string> = {
-    read: "bg-green-50 text-green-700",
-    write: "bg-amber-50 text-amber-700",
-    admin: "bg-red-50 text-red-700",
+    read: "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300",
+    write: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300",
+    admin: "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300",
   }
   const base = scope.split(":")[0] ?? scope
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[base] ?? "bg-gray-100 text-gray-600"}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[base] ?? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}
     >
       {scope}
     </span>
@@ -89,10 +89,10 @@ function SetupBanner({ activeKey }: { activeKey: string }) {
   const needsSetup = searchParams.get("setup") === "1" && !activeKey
   if (!needsSetup) return null
   return (
-    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+    <div className="rounded-lg border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
       <strong>API key required.</strong> Paste your key below and click <strong>Save</strong> to
       start using the dashboard. Use the <strong>Bootstrap key</strong>{" "}
-      (<code className="rounded bg-amber-100 px-1 font-mono">vs_test_dev0…</code>) for local
+      (<code className="rounded bg-amber-100 dark:bg-amber-800/30 px-1 font-mono">vs_test_dev0…</code>) for local
       development, or create a new one below.
     </div>
   )
@@ -245,19 +245,19 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => saveActiveKey("")}
-                className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                className="rounded-lg border border-red-200 dark:border-red-800/40 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
               >
                 Clear
               </button>
             )}
           </div>
           {activeKey && (
-            <p className="text-xs text-green-600 font-medium">
+            <p className="text-xs text-green-600 dark:text-green-400 font-medium">
               ✓ Key active — dashboard requests will include this credential.
             </p>
           )}
           {!activeKey && (
-            <p className="text-xs text-amber-600">
+            <p className="text-xs text-amber-600 dark:text-amber-400">
               No key set — unauthenticated requests may be rejected depending on your API
               configuration.
             </p>
@@ -293,12 +293,12 @@ export default function SettingsPage() {
         {createOpen && (
           <div className="border-b border-gray-100 dark:border-gray-800 bg-indigo-50/50 dark:bg-indigo-950/20 px-6 py-5 space-y-4">
             {createdRawKey ? (
-              <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                <p className="text-sm font-semibold text-green-800 mb-2">
+              <div className="rounded-lg border border-green-200 dark:border-green-800/40 bg-green-50 dark:bg-green-900/20 p-4">
+                <p className="text-sm font-semibold text-green-800 dark:text-green-300 mb-2">
                   ✓ Key created — copy it now, it won&apos;t be shown again.
                 </p>
-                <div className="flex items-center gap-2 rounded bg-white border border-green-200 px-3 py-2">
-                  <code className="flex-1 break-all font-mono text-xs text-gray-900">
+                <div className="flex items-center gap-2 rounded bg-white dark:bg-gray-800 border border-green-200 dark:border-green-800/40 px-3 py-2">
+                  <code className="flex-1 break-all font-mono text-xs text-gray-900 dark:text-gray-100">
                     {createdRawKey}
                   </code>
                   <CopyButton text={createdRawKey} />
@@ -321,7 +321,7 @@ export default function SettingsPage() {
                       setCreatedRawKey(null)
                       setCreateOpen(false)
                     }}
-                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-white"
+                    className="rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
                   >
                     Done
                   </button>
@@ -397,7 +397,7 @@ export default function SettingsPage() {
                     Cancel
                   </button>
                   {createMutation.isError && (
-                    <p className="text-xs text-red-600">
+                    <p className="text-xs text-red-600 dark:text-red-400">
                       {(createMutation.error as Error).message}
                     </p>
                   )}
@@ -428,12 +428,12 @@ export default function SettingsPage() {
                       {key.keyPrefix}…
                     </code>
                     {isExpired(key) && (
-                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                      <span className="rounded-full bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-300">
                         Expired
                       </span>
                     )}
                     {key.expiresAt && !isExpired(key) && (
-                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                      <span className="rounded-full bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300">
                         Expires {new Date(key.expiresAt).toLocaleDateString()}
                       </span>
                     )}
@@ -453,7 +453,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => revokeMutation.mutate(key.id)}
                   disabled={revokeMutation.isPending}
-                  className="shrink-0 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  className="shrink-0 rounded-lg border border-red-200 dark:border-red-800/40 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
                 >
                   Revoke
                 </button>
