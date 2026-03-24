@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
   Area,
@@ -56,6 +56,7 @@ const RANGE_OPTIONS = [
   { label: "90 days", days: 90 },
   { label: "6 months", days: 180 },
   { label: "1 year", days: 365 },
+  { label: "All time", days: 0 },
 ]
 
 const TICK_STYLE = { fill: "#9ca3af", fontSize: 11 }
@@ -80,7 +81,10 @@ function shortDate(iso: string): string {
 
 function dateRange(days: number): { from: string; to: string } {
   const to = new Date()
-  const from = new Date(to.getTime() - days * 86_400_000)
+  // days === 0 means "all time" — use a far-back start date
+  const from = days > 0
+    ? new Date(to.getTime() - days * 86_400_000)
+    : new Date("2020-01-01T00:00:00Z")
   return { from: from.toISOString(), to: to.toISOString() }
 }
 
@@ -98,7 +102,7 @@ function trend(points: TimeseriesPoint[]): { direction: "up" | "down" | "flat"; 
 
 export default function BodyMetricsPage() {
   const { selectedUserId, setSelectedUserId } = useSelectedUser()
-  const [rangeDays, setRangeDays] = useState(30)
+  const [rangeDays, setRangeDays] = useState(0) // Default: All time
 
   const { from, to } = useMemo(() => dateRange(rangeDays), [rangeDays])
 
@@ -160,6 +164,21 @@ export default function BodyMetricsPage() {
   })
 
   const bodySummary = summary.filter((s) => BODY_METRICS.includes(s.metricType as (typeof BODY_METRICS)[number]))
+
+  // Auto-narrow range once summary loads: if all data fits within 30 days, use 30 days
+  useEffect(() => {
+    if (bodySummary.length === 0 || rangeDays !== 0) return
+    const earliest = bodySummary.reduce((min, s) => {
+      const d = new Date(s.earliest).getTime()
+      return d < min ? d : min
+    }, Date.now())
+    const daysAgo = Math.ceil((Date.now() - earliest) / 86_400_000)
+    if (daysAgo <= 30) setRangeDays(30)
+    else if (daysAgo <= 90) setRangeDays(90)
+    else if (daysAgo <= 180) setRangeDays(180)
+    else if (daysAgo <= 365) setRangeDays(365)
+    // else stays at 0 (All time)
+  }, [bodySummary, rangeDays])
 
   // Process timeseries for charts
   const weightPoints = weightTs?.data ?? []
