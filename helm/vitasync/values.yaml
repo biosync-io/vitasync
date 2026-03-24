@@ -47,6 +47,14 @@ api:
     enabled: false
     minAvailable: 1
 
+  startupProbe:
+    httpGet:
+      path: /health
+      port: 3001
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 12
+
   livenessProbe:
     httpGet:
       path: /health
@@ -244,6 +252,14 @@ web:
   podDisruptionBudget:
     enabled: false
     minAvailable: 1
+
+  startupProbe:
+    httpGet:
+      path: /
+      port: 3000
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 12
 
   livenessProbe:
     httpGet:
