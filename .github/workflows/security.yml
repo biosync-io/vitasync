@@ -16,38 +16,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: pnpm
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
+      - run: pnpm install --frozen-lockfile
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Audit dependencies
-        run: pnpm audit --audit-level=high || echo "::warning::pnpm audit found vulnerabilities"
+      - name: Run pnpm audit
+        run: pnpm audit --prod || echo "::warning::pnpm audit found vulnerabilities"
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          scan-ref: .
-          severity: CRITICAL,HIGH
-          exit-code: 0
-          format: table
+        run: |
+          docker run --rm -v "$(pwd):/src" -w /src \
+            aquasec/trivy:latest fs --severity CRITICAL,HIGH --exit-code 0 \
+            --format table .
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
-
-      - name: CodeQL autobuild
-        uses: github/codeql-action/autobuild@v4
 
       - name: CodeQL analysis
         uses: github/codeql-action/analyze@v4

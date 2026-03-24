@@ -23,7 +23,7 @@ jobs:
           min-versions-to-keep: 10
           delete-only-untagged-versions: true
 
-      - name: Cleanup Worker images
+      - name: Cleanup worker images
         uses: actions/delete-package-versions@v5
         with:
           package-name: vitasync-worker
@@ -31,7 +31,7 @@ jobs:
           min-versions-to-keep: 10
           delete-only-untagged-versions: true
 
-      - name: Cleanup Web images
+      - name: Cleanup web images
         uses: actions/delete-package-versions@v5
         with:
           package-name: vitasync-web
