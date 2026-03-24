@@ -193,17 +193,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [themeOpen, setThemeOpen] = useState(false)
 
-  const { data: healthCheck } = useQuery({
-    queryKey: ["api-health"],
-    queryFn: async () => {
-      const res = await fetch("/api/v1/health")
-      if (!res.ok) return null
-      return res.json() as Promise<{ version: string }>
-    },
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  })
-  const appVersion = healthCheck?.version ?? null
+  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || "0.2.0"
 
   useEffect(() => {
     setDarkMode(getStoredAppearance())
