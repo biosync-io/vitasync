@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import { type ApiKey, apiKeysApi, usersApi, getRuntimeDefaultKey } from "../../../lib/api"
+import { type ApiKey, type AiProviderConfig, apiKeysApi, aiProvidersApi, usersApi, getRuntimeDefaultKey } from "../../../lib/api"
 import { type AccentTheme, ACCENT_THEMES, applyTheme, getStoredTheme } from "../../../lib/ThemeProvider"
 import { useSelectedUser } from "../../../lib/user-selection-context"
 
@@ -536,6 +536,9 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* ── AI Providers ─────────────────────────────────────────────────────── */}
+      <AiProvidersSection activeKey={activeKey} />
+
       {/* ── API Reference link ───────────────────────────────────────────────── */}
       <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm px-6 py-5">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">API Reference</h2>
@@ -662,6 +665,308 @@ function UserProfileSection() {
             <li>• <strong>Health Insights:</strong> Women&apos;s health insights shown only for female users</li>
           </ul>
         </div>
+      </div>
+    </section>
+  )
+}
+
+// ── AI Providers Section ────────────────────────────────────────────────────
+
+const PROVIDER_TYPES = [
+  { value: "openai", label: "OpenAI", models: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"] },
+  { value: "anthropic", label: "Anthropic", models: ["claude-sonnet-4-20250514", "claude-3-5-haiku-20241022", "claude-3-opus-20240229"] },
+  { value: "ollama", label: "Ollama (Local)", models: ["llama3", "llama3:70b", "mistral", "mixtral", "codellama", "phi3"] },
+] as const
+
+function AiProvidersSection({ activeKey }: { activeKey: string }) {
+  const queryClient = useQueryClient()
+
+  const { data: providersResult, isLoading } = useQuery({
+    queryKey: ["ai-providers"],
+    queryFn: aiProvidersApi.list,
+    enabled: !!activeKey,
+  })
+  const providers: AiProviderConfig[] = providersResult?.data ?? []
+
+  const [formOpen, setFormOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [name, setName] = useState("")
+  const [providerType, setProviderType] = useState("openai")
+  const [model, setModel] = useState("gpt-4o")
+  const [apiKey, setApiKey] = useState("")
+  const [baseUrl, setBaseUrl] = useState("")
+  const [isDefault, setIsDefault] = useState(false)
+  const [testResult, setTestResult] = useState<Record<string, { success: boolean; message: string } | null>>({})
+
+  function resetForm() {
+    setName("")
+    setProviderType("openai")
+    setModel("gpt-4o")
+    setApiKey("")
+    setBaseUrl("")
+    setIsDefault(false)
+    setEditingId(null)
+    setFormOpen(false)
+  }
+
+  function startEdit(p: AiProviderConfig) {
+    setEditingId(p.id)
+    setName(p.name)
+    setProviderType(p.providerType)
+    setModel(p.model)
+    setApiKey("")
+    setBaseUrl(p.baseUrl ?? "")
+    setIsDefault(p.isDefault)
+    setFormOpen(true)
+  }
+
+  const selectedType = PROVIDER_TYPES.find((t) => t.value === providerType)
+  const modelOptions = selectedType?.models ?? []
+
+  const createMut = useMutation({
+    mutationFn: () =>
+      aiProvidersApi.create({
+        name,
+        providerType,
+        model,
+        ...(apiKey ? { apiKey } : {}),
+        ...(baseUrl ? { baseUrl } : {}),
+        isDefault,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ai-providers"] })
+      resetForm()
+    },
+  })
+
+  const updateMut = useMutation({
+    mutationFn: () => {
+      const body: Record<string, unknown> = { name, providerType, model, isDefault }
+      if (apiKey) body.apiKey = apiKey
+      if (baseUrl) body.baseUrl = baseUrl
+      return aiProvidersApi.update(editingId!, body)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ai-providers"] })
+      resetForm()
+    },
+  })
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => aiProvidersApi.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ai-providers"] }),
+  })
+
+  async function handleTest(id: string) {
+    setTestResult((prev) => ({ ...prev, [id]: null }))
+    try {
+      const res = await aiProvidersApi.test(id)
+      setTestResult((prev) => ({ ...prev, [id]: res }))
+    } catch {
+      setTestResult((prev) => ({ ...prev, [id]: { success: false, message: "Connection failed" } }))
+    }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (editingId) {
+      updateMut.mutate()
+    } else {
+      createMut.mutate()
+    }
+  }
+
+  return (
+    <section id="ai-providers" className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">AI Providers</h2>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+            Configure AI providers for the health assistant chatbot.
+          </p>
+        </div>
+        {!formOpen && (
+          <button
+            type="button"
+            onClick={() => { resetForm(); setFormOpen(true); setIsDefault(providers.length === 0) }}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors"
+          >
+            + Add Provider
+          </button>
+        )}
+      </div>
+
+      <div className="px-6 py-5 space-y-4">
+        {/* Add / Edit form */}
+        {formOpen && (
+          <form onSubmit={handleSubmit} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="ai-name" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Name</label>
+                <input
+                  id="ai-name"
+                  type="text"
+                  required
+                  placeholder="e.g. GPT-4o Production"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40"
+                />
+              </div>
+              <div>
+                <label htmlFor="ai-type" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Provider</label>
+                <select
+                  id="ai-type"
+                  value={providerType}
+                  onChange={(e) => {
+                    setProviderType(e.target.value)
+                    const newType = PROVIDER_TYPES.find((t) => t.value === e.target.value)
+                    if (newType) setModel(newType.models[0])
+                  }}
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40"
+                >
+                  {PROVIDER_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="ai-model" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Model</label>
+                <select
+                  id="ai-model"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40"
+                >
+                  {modelOptions.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="ai-apikey" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
+                  API Key {providerType === "ollama" && <span className="text-gray-400">(optional)</span>}
+                </label>
+                <input
+                  id="ai-apikey"
+                  type="password"
+                  placeholder={editingId ? "Leave blank to keep existing" : providerType === "ollama" ? "Not required for local Ollama" : "sk-..."}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40"
+                />
+              </div>
+            </div>
+
+            {providerType === "ollama" && (
+              <div>
+                <label htmlFor="ai-baseurl" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Base URL</label>
+                <input
+                  id="ai-baseurl"
+                  type="url"
+                  placeholder="http://localhost:11434"
+                  value={baseUrl}
+                  onChange={(e) => setBaseUrl(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40"
+                />
+              </div>
+            )}
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsDefault(!isDefault)}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors ${
+                  isDefault ? "bg-indigo-600" : "bg-gray-200 dark:bg-gray-700"
+                }`}
+              >
+                <span className={`h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${isDefault ? "translate-x-4" : "translate-x-0"}`} />
+              </button>
+              <span className="text-xs text-gray-600 dark:text-gray-400">Set as default provider</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={createMut.isPending || updateMut.isPending}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              >
+                {(createMut.isPending || updateMut.isPending) ? "Saving…" : editingId ? "Update Provider" : "Add Provider"}
+              </button>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+
+            {(createMut.isError || updateMut.isError) && (
+              <p className="text-xs text-red-500">Failed to save provider. Check your inputs and try again.</p>
+            )}
+          </form>
+        )}
+
+        {/* Provider list */}
+        {isLoading && <p className="text-xs text-gray-400">Loading providers…</p>}
+
+        {!isLoading && providers.length === 0 && !formOpen && (
+          <p className="text-xs text-gray-400 italic py-2">No AI providers configured yet. Add one to start using the AI Assistant.</p>
+        )}
+
+        {providers.map((p) => (
+          <div key={p.id} className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{p.name}</span>
+                <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:text-gray-400">
+                  {p.providerType}
+                </span>
+                <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400">
+                  {p.model}
+                </span>
+                {p.isDefault && (
+                  <span className="inline-flex items-center rounded-full bg-green-50 dark:bg-green-900/20 px-2 py-0.5 text-[10px] font-medium text-green-600 dark:text-green-400">
+                    default
+                  </span>
+                )}
+              </div>
+              {p.apiKeyMasked && (
+                <p className="mt-0.5 text-[10px] text-gray-400 font-mono">{p.apiKeyMasked}</p>
+              )}
+              {testResult[p.id] && (
+                <p className={`mt-1 text-xs ${testResult[p.id]!.success ? "text-emerald-500" : "text-red-500"}`}>
+                  {testResult[p.id]!.success ? "✓ " : "✗ "}{testResult[p.id]!.message}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 ml-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleTest(p.id)}
+                className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+              >
+                Test
+              </button>
+              <button
+                type="button"
+                onClick={() => startEdit(p)}
+                className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => { if (confirm("Delete this AI provider?")) deleteMut.mutate(p.id) }}
+                disabled={deleteMut.isPending}
+                className="rounded-lg border border-red-200 dark:border-red-800/40 px-2.5 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   )

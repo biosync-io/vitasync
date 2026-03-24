@@ -321,7 +321,7 @@ export default function ChatbotPage() {
                 Set up an AI provider in settings to start chatting with your health assistant.
               </p>
               <Link
-                href="/dashboard/settings"
+                href="/dashboard/settings#ai-providers"
                 className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
               >
                 <Settings className="h-4 w-4" />
