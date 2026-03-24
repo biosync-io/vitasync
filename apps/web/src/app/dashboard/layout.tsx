@@ -51,6 +51,7 @@ import {
   BarChart3,
   Battery,
   BookText,
+  Cpu,
   Droplets,
   ListChecks,
   Scale,
@@ -76,6 +77,7 @@ const navSections: Array<{
       { href: "/dashboard/reports", label: "Reports", icon: FileText, color: "text-sky-500" },
       { href: "/dashboard/anomalies", label: "Anomalies", icon: AlertTriangle, color: "text-amber-500" },
       { href: "/dashboard/correlations", label: "Correlations", icon: Link2, color: "text-teal-500" },
+      { href: "/dashboard/algorithms", label: "Algorithms", icon: Cpu, color: "text-cyan-500" },
     ],
   },
   {
