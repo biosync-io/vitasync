@@ -146,7 +146,7 @@ const PREF_CYCLE: AppearanceMode[] = ["system", "light", "dark", "midnight", "di
 
 function Logo({ collapsed }: { collapsed: boolean }) {
   return (
-    <div className="flex items-center gap-2.5 min-w-0">
+    <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
       <div className="relative h-9 w-9 shrink-0">
         <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-accent-500 to-accent-600 shadow-lg shadow-accent-500/25" />
         <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative h-9 w-9">
@@ -165,7 +165,7 @@ function Logo({ collapsed }: { collapsed: boolean }) {
           VitaSync
         </span>
       )}
-    </div>
+    </Link>
   )
 }
 
