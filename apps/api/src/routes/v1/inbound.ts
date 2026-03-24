@@ -44,11 +44,14 @@ const inboundRoutes: FastifyPluginAsync = async (app) => {
 
       // ── Signature verification ──────────────────────────────
       // Use a per-provider secret stored as STRAVA_WEBHOOK_SECRET, FITBIT_WEBHOOK_SECRET, etc.
+      // Some providers (e.g. Whoop) use the OAuth client secret for webhook signing,
+      // so we fall back to <PROVIDER>_CLIENT_SECRET if the dedicated webhook secret is not set.
       const secretEnvKey = `${providerId.toUpperCase()}_WEBHOOK_SECRET`
-      const webhookSecret = process.env[secretEnvKey]
+      const clientSecretEnvKey = `${providerId.toUpperCase()}_CLIENT_SECRET`
+      const webhookSecret = process.env[secretEnvKey] || process.env[clientSecretEnvKey]
 
       if (!webhookSecret) {
-        app.log.warn({ providerId }, "Inbound webhook received but no webhook secret configured")
+        app.log.warn({ providerId }, "Inbound webhook received but no webhook secret configured (set %s_WEBHOOK_SECRET or %s_CLIENT_SECRET)", providerId.toUpperCase(), providerId.toUpperCase())
         try {
           await getDb().insert(inboundWebhookLogs).values({
             providerId,
