@@ -98,6 +98,28 @@ function trend(points: TimeseriesPoint[]): { direction: "up" | "down" | "flat"; 
   return { direction: pct > 0 ? "up" : pct < 0 ? "down" : "flat", pct: Math.abs(pct) }
 }
 
+function aggregateByDay(metrics: HealthMetric[]): TimeseriesPoint[] {
+  const byDay = new Map<string, number[]>()
+  for (const m of metrics) {
+    const day = m.recordedAt.slice(0, 10)
+    if (!byDay.has(day)) byDay.set(day, [])
+    byDay.get(day)!.push(m.value)
+  }
+  return Array.from(byDay.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([day, vals]) => {
+      const sum = vals.reduce((s, v) => s + v, 0)
+      return {
+        bucket: day + "T00:00:00Z",
+        avg: Math.round((sum / vals.length) * 100) / 100,
+        min: Math.min(...vals),
+        max: Math.max(...vals),
+        sum,
+        count: vals.length,
+      }
+    })
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────
 
 export default function BodyMetricsPage() {
@@ -112,16 +134,15 @@ export default function BodyMetricsPage() {
   })
   const users = usersResult?.data ?? []
 
-  // Fetch timeseries for weight and body fat
-  const { data: weightTs } = useQuery({
-    queryKey: ["body-ts-weight", selectedUserId, from, to],
-    queryFn: () => healthApi.timeseries(selectedUserId, { metricType: "weight", from, to, bucket: "day" }),
+  const { data: weightRaw } = useQuery({
+    queryKey: ["body-raw-weight", selectedUserId, from, to],
+    queryFn: () => healthApi.query(selectedUserId, { metricType: "weight", from, to, limit: 1000 }),
     enabled: !!selectedUserId,
   })
 
-  const { data: bodyFatTs } = useQuery({
-    queryKey: ["body-ts-bodyfat", selectedUserId, from, to],
-    queryFn: () => healthApi.timeseries(selectedUserId, { metricType: "body_fat", from, to, bucket: "day" }),
+  const { data: bodyFatRaw } = useQuery({
+    queryKey: ["body-raw-bodyfat", selectedUserId, from, to],
+    queryFn: () => healthApi.query(selectedUserId, { metricType: "body_fat", from, to, limit: 1000 }),
     enabled: !!selectedUserId,
   })
 
@@ -131,28 +152,27 @@ export default function BodyMetricsPage() {
     enabled: !!selectedUserId,
   })
 
-  const { data: spo2Ts } = useQuery({
-    queryKey: ["body-ts-spo2", selectedUserId, from, to],
-    queryFn: () => healthApi.timeseries(selectedUserId, { metricType: "blood_oxygen", from, to, bucket: "day" }),
+  const { data: spo2Raw } = useQuery({
+    queryKey: ["body-raw-spo2", selectedUserId, from, to],
+    queryFn: () => healthApi.query(selectedUserId, { metricType: "blood_oxygen", from, to, limit: 1000 }),
     enabled: !!selectedUserId,
   })
 
-  // Garmin uses "spo2" while Withings/Whoop use "blood_oxygen" — query both and merge
-  const { data: spo2AltTs } = useQuery({
-    queryKey: ["body-ts-spo2-alt", selectedUserId, from, to],
-    queryFn: () => healthApi.timeseries(selectedUserId, { metricType: "spo2", from, to, bucket: "day" }),
+  const { data: spo2AltRaw } = useQuery({
+    queryKey: ["body-raw-spo2-alt", selectedUserId, from, to],
+    queryFn: () => healthApi.query(selectedUserId, { metricType: "spo2", from, to, limit: 1000 }),
     enabled: !!selectedUserId,
   })
 
-  const { data: tempTs } = useQuery({
-    queryKey: ["body-ts-temp", selectedUserId, from, to],
-    queryFn: () => healthApi.timeseries(selectedUserId, { metricType: "temperature", from, to, bucket: "day" }),
+  const { data: tempRaw } = useQuery({
+    queryKey: ["body-raw-temp", selectedUserId, from, to],
+    queryFn: () => healthApi.query(selectedUserId, { metricType: "temperature", from, to, limit: 1000 }),
     enabled: !!selectedUserId,
   })
 
-  const { data: rrTs } = useQuery({
-    queryKey: ["body-ts-rr", selectedUserId, from, to],
-    queryFn: () => healthApi.timeseries(selectedUserId, { metricType: "respiratory_rate", from, to, bucket: "day" }),
+  const { data: rrRaw } = useQuery({
+    queryKey: ["body-raw-rr", selectedUserId, from, to],
+    queryFn: () => healthApi.query(selectedUserId, { metricType: "respiratory_rate", from, to, limit: 1000 }),
     enabled: !!selectedUserId,
   })
 
@@ -181,20 +201,14 @@ export default function BodyMetricsPage() {
   }, [bodySummary, rangeDays])
 
   // Process timeseries for charts
-  const weightPoints = weightTs?.data ?? []
-  const bodyFatPoints = bodyFatTs?.data ?? []
+  const weightPoints = useMemo(() => aggregateByDay(weightRaw?.data ?? []), [weightRaw])
+  const bodyFatPoints = useMemo(() => aggregateByDay(bodyFatRaw?.data ?? []), [bodyFatRaw])
   const spo2Points = useMemo(() => {
-    const primary = spo2Ts?.data ?? []
-    const alt = spo2AltTs?.data ?? []
-    if (alt.length === 0) return primary
-    if (primary.length === 0) return alt
-    // Merge by bucket date, preferring primary (blood_oxygen) when both exist
-    const map = new Map(alt.map((p) => [p.bucket.slice(0, 10), p]))
-    for (const p of primary) map.set(p.bucket.slice(0, 10), p)
-    return Array.from(map.values()).sort((a, b) => a.bucket.localeCompare(b.bucket))
-  }, [spo2Ts, spo2AltTs])
-  const tempPoints = tempTs?.data ?? []
-  const rrPoints = rrTs?.data ?? []
+    const combined = [...(spo2Raw?.data ?? []), ...(spo2AltRaw?.data ?? [])]
+    return aggregateByDay(combined)
+  }, [spo2Raw, spo2AltRaw])
+  const tempPoints = useMemo(() => aggregateByDay(tempRaw?.data ?? []), [tempRaw])
+  const rrPoints = useMemo(() => aggregateByDay(rrRaw?.data ?? []), [rrRaw])
 
   // Merge weight + body fat for combined chart
   const weightChartData = useMemo(() => {
