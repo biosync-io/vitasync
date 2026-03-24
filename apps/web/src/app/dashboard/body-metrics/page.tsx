@@ -356,17 +356,102 @@ export default function BodyMetricsPage() {
             </ChartCard>
           )}
 
-          {/* Vitals Mini-Charts Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {spo2Points.length > 0 && (
-              <MiniChart title="SpO₂" unit="%" data={spo2Points} color="#06b6d4" refLine={95} refLabel="Normal ≥95%" />
-            )}
-            {tempPoints.length > 0 && (
-              <MiniChart title="Temperature" unit="°C" data={tempPoints} color="#f59e0b" refLine={37} refLabel="Normal ≤37°C" />
-            )}
-            {rrPoints.length > 0 && (
-              <MiniChart title="Respiratory Rate" unit="brpm" data={rrPoints} color="#10b981" refLine={20} refLabel="Normal 12-20" />
-            )}
+          {/* Vitals Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <ChartCard title="SpO₂ (Blood Oxygen)" subtitle="Daily average — normal ≥ 95%">
+              {spo2Points.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={spo2Points.map((p) => ({ date: shortDate(p.bucket), value: p.avg != null ? Math.round(p.avg * 10) / 10 : null, min: p.min, max: p.max }))}>
+                    <defs>
+                      <linearGradient id="spo2Grad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid {...GRID_PROPS} />
+                    <XAxis dataKey="date" tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                    <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} domain={[85, 100]} />
+                    <Tooltip {...TOOLTIP_STYLE} />
+                    <ReferenceLine y={95} stroke="#22c55e" strokeDasharray="4 4" strokeOpacity={0.5} label={{ value: "Normal ≥95%", position: "insideTopRight", fill: "#22c55e", fontSize: 10 }} />
+                    <ReferenceLine y={90} stroke="#ef4444" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: "Low <90%", position: "insideBottomRight", fill: "#ef4444", fontSize: 10 }} />
+                    <Area type="monotone" dataKey="value" stroke="#06b6d4" strokeWidth={2} fill="url(#spo2Grad)" name="SpO₂ (%)" connectNulls dot={{ r: 2 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[220px] text-sm text-gray-400 dark:text-gray-500">No SpO₂ data in this period</div>
+              )}
+            </ChartCard>
+
+            <ChartCard title="Temperature" subtitle="Daily average — normal 36.0–37.5 °C">
+              {tempPoints.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={tempPoints.map((p) => ({ date: shortDate(p.bucket), value: p.avg != null ? Math.round(p.avg * 10) / 10 : null }))}>
+                    <defs>
+                      <linearGradient id="tempGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid {...GRID_PROPS} />
+                    <XAxis dataKey="date" tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                    <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} domain={[35, 40]} />
+                    <Tooltip {...TOOLTIP_STYLE} />
+                    <ReferenceLine y={37.5} stroke="#ef4444" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: "Elevated", position: "insideTopRight", fill: "#ef4444", fontSize: 10 }} />
+                    <ReferenceLine y={36} stroke="#22c55e" strokeDasharray="4 4" strokeOpacity={0.5} label={{ value: "Normal ≥36°C", position: "insideBottomRight", fill: "#22c55e", fontSize: 10 }} />
+                    <Area type="monotone" dataKey="value" stroke="#f59e0b" strokeWidth={2} fill="url(#tempGrad)" name="Temp (°C)" connectNulls dot={{ r: 2 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[220px] text-sm text-gray-400 dark:text-gray-500">No temperature data in this period</div>
+              )}
+            </ChartCard>
+
+            <ChartCard title="Respiratory Rate" subtitle="Daily average — normal 12–20 brpm">
+              {rrPoints.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={rrPoints.map((p) => ({ date: shortDate(p.bucket), value: p.avg != null ? Math.round(p.avg * 10) / 10 : null }))}>
+                    <defs>
+                      <linearGradient id="rrGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid {...GRID_PROPS} />
+                    <XAxis dataKey="date" tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                    <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} domain={[8, 30]} />
+                    <Tooltip {...TOOLTIP_STYLE} />
+                    <ReferenceLine y={20} stroke="#ef4444" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: "High >20", position: "insideTopRight", fill: "#ef4444", fontSize: 10 }} />
+                    <ReferenceLine y={12} stroke="#22c55e" strokeDasharray="4 4" strokeOpacity={0.5} label={{ value: "Normal ≥12", position: "insideBottomRight", fill: "#22c55e", fontSize: 10 }} />
+                    <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} fill="url(#rrGrad)" name="Resp. Rate (brpm)" connectNulls dot={{ r: 2 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[220px] text-sm text-gray-400 dark:text-gray-500">No respiratory rate data in this period</div>
+              )}
+            </ChartCard>
+
+            <ChartCard title="Body Fat %" subtitle="Daily average trend over selected period">
+              {bodyFatPoints.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={bodyFatPoints.map((p) => ({ date: shortDate(p.bucket), value: p.avg != null ? Math.round(p.avg * 10) / 10 : null }))}>
+                    <defs>
+                      <linearGradient id="fatGrad2" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ec4899" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#ec4899" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid {...GRID_PROPS} />
+                    <XAxis dataKey="date" tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                    <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} domain={[0, "auto"]} />
+                    <Tooltip {...TOOLTIP_STYLE} />
+                    <ReferenceLine y={25} stroke="#f59e0b" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: "25%", position: "insideTopRight", fill: "#f59e0b", fontSize: 10 }} />
+                    <Area type="monotone" dataKey="value" stroke="#ec4899" strokeWidth={2} fill="url(#fatGrad2)" name="Body Fat (%)" connectNulls dot={{ r: 2 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[220px] text-sm text-gray-400 dark:text-gray-500">No body fat data in this period</div>
+              )}
+            </ChartCard>
           </div>
 
           {/* Data counts */}
@@ -467,52 +552,6 @@ function ChartCard({ title, subtitle, children }: { title: string; subtitle: str
         <p className="text-[10px] text-gray-500 dark:text-gray-400">{subtitle}</p>
       </div>
       {children}
-    </div>
-  )
-}
-
-function MiniChart({ title, unit, data, color, refLine, refLabel }: {
-  title: string
-  unit: string
-  data: TimeseriesPoint[]
-  color: string
-  refLine?: number
-  refLabel?: string
-}) {
-  const chartData = data.map((p) => ({
-    date: shortDate(p.bucket),
-    value: p.avg != null ? Math.round(p.avg * 10) / 10 : null,
-  }))
-
-  return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-100">{title}</h4>
-        {data.length > 0 && (() => {
-          const last = data[data.length - 1]!
-          return (
-            <span className="text-sm font-bold text-gray-700 dark:text-gray-300 tabular-nums">
-              {last.avg != null ? (Math.round(last.avg * 10) / 10) : "—"} {unit}
-            </span>
-          )
-        })()}
-      </div>
-      <ResponsiveContainer width="100%" height={120}>
-        <AreaChart data={chartData}>
-          <defs>
-            <linearGradient id={`grad-${title}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={color} stopOpacity={0.25} />
-              <stop offset="95%" stopColor={color} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <XAxis dataKey="date" tick={TICK_STYLE} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-          <YAxis hide domain={["auto", "auto"]} />
-          <Tooltip {...TOOLTIP_STYLE} />
-          {refLine && <ReferenceLine y={refLine} stroke={color} strokeDasharray="3 3" strokeOpacity={0.4} />}
-          <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fill={`url(#grad-${title})`} name={`${title} (${unit})`} connectNulls />
-        </AreaChart>
-      </ResponsiveContainer>
-      {refLabel && <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-500 text-center">{refLabel}</p>}
     </div>
   )
 }
