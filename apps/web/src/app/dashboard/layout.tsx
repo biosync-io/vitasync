@@ -54,6 +54,7 @@ import {
   Cpu,
   Droplets,
   ListChecks,
+  Radio,
   Scale,
   type LucideIcon,
 } from "lucide-react"
@@ -112,6 +113,7 @@ const navSections: Array<{
       { href: "/dashboard/users", label: "Users", icon: Users, color: "text-blue-500" },
       { href: "/dashboard/sync-jobs", label: "Sync Jobs", icon: RefreshCw, color: "text-green-500" },
       { href: "/dashboard/exports", label: "Data Export", icon: Upload, color: "text-fuchsia-500" },
+      { href: "/dashboard/partner-events", label: "Partner Events", icon: Radio, color: "text-violet-500" },
     ],
   },
   {

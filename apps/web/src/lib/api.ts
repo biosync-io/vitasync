@@ -1180,3 +1180,32 @@ export const habitsApi = {
     return request<HabitsSummary>(`/v1/users/${userId}/habits/summary?${params}`)
   },
 }
+
+// ---- Inbound Webhook Logs ----
+export interface InboundWebhookLog {
+  id: string
+  providerId: string
+  providerUserId: string | null
+  connectionId: string | null
+  eventType: string | null
+  status: string
+  dataPointsIngested: number
+  signatureValid: boolean | null
+  httpStatus: number | null
+  error: string | null
+  metadata: Record<string, unknown> | null
+  createdAt: string
+}
+
+export const inboundWebhookLogsApi = {
+  list: (opts?: { providerId?: string; status?: string; from?: string; to?: string; limit?: number; offset?: number }) => {
+    const params = new URLSearchParams()
+    if (opts?.providerId) params.set("providerId", opts.providerId)
+    if (opts?.status) params.set("status", opts.status)
+    if (opts?.from) params.set("from", opts.from)
+    if (opts?.to) params.set("to", opts.to)
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    if (opts?.offset) params.set("offset", String(opts.offset))
+    return request<{ data: InboundWebhookLog[]; total: number }>(`/v1/inbound-webhook-logs?${params}`)
+  },
+}

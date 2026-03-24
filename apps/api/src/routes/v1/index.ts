@@ -12,6 +12,7 @@ import goalsRoutes from "./goals.js"
 import healthDataRoutes from "./health-data.js"
 import healthScoresRoutes from "./health-scores.js"
 import inboundRoutes from "./inbound.js"
+import inboundWebhookLogsRoutes from "./inbound-webhook-logs.js"
 import insightsRoutes from "./insights.js"
 import medicationsRoutes from "./medications.js"
 import moodRoutes from "./mood.js"
@@ -68,6 +69,9 @@ export async function registerV1Routes(app: FastifyInstance): Promise<void> {
 
       // Inbound provider webhooks — /v1/inbound/:providerId/webhook
       await v1.register(inboundRoutes, { prefix: "/inbound" })
+
+      // Inbound webhook logs — /v1/inbound-webhook-logs
+      await v1.register(inboundWebhookLogsRoutes, { prefix: "/inbound-webhook-logs" })
 
       // Sync job status — /v1/sync-jobs
       await v1.register(syncJobsRoutes, { prefix: "/sync-jobs" })

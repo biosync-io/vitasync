@@ -1,3 +1,4 @@
+import { getDb, inboundWebhookLogs } from "@biosync-io/db"
 import { providerRegistry } from "@biosync-io/provider-core"
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
@@ -48,6 +49,15 @@ const inboundRoutes: FastifyPluginAsync = async (app) => {
 
       if (!webhookSecret) {
         app.log.warn({ providerId }, "Inbound webhook received but no webhook secret configured")
+        try {
+          await getDb().insert(inboundWebhookLogs).values({
+            providerId,
+            status: "error",
+            httpStatus: 503,
+            signatureValid: null,
+            error: "No webhook secret configured",
+          })
+        } catch { /* logging must not break response */ }
         return reply.status(503).send({
           code: "NOT_CONFIGURED",
           message: "Webhook processing is not configured for this provider",
@@ -65,6 +75,15 @@ const inboundRoutes: FastifyPluginAsync = async (app) => {
         const valid = provider.verifyWebhookSignature(rawBody, signature, webhookSecret)
         if (!valid) {
           app.log.warn({ providerId }, "Inbound webhook signature verification failed")
+          try {
+            await getDb().insert(inboundWebhookLogs).values({
+              providerId,
+              status: "rejected",
+              httpStatus: 401,
+              signatureValid: false,
+              error: "Webhook signature mismatch",
+            })
+          } catch { /* logging must not break response */ }
           return reply
             .status(401)
             .send({ code: "INVALID_SIGNATURE", message: "Webhook signature mismatch" })
@@ -76,6 +95,15 @@ const inboundRoutes: FastifyPluginAsync = async (app) => {
         ? provider.extractProviderUserId(request.headers as Record<string, string | string[] | undefined>, request.body)
         : (request.headers["x-provider-user-id"] as string | undefined)
       if (!providerUserId) {
+        try {
+          await getDb().insert(inboundWebhookLogs).values({
+            providerId,
+            status: "rejected",
+            httpStatus: 400,
+            signatureValid: true,
+            error: "Missing provider user ID",
+          })
+        } catch { /* logging must not break response */ }
         return reply.status(400).send({
           code: "MISSING_HEADER",
           message: "X-Provider-User-Id header is required",
@@ -86,10 +114,21 @@ const inboundRoutes: FastifyPluginAsync = async (app) => {
       if (!connection) {
         // Acknowledge to prevent provider retries, but take no action
         app.log.info({ providerId, providerUserId }, "No connection found for inbound webhook")
+        try {
+          await getDb().insert(inboundWebhookLogs).values({
+            providerId,
+            providerUserId,
+            status: "no_connection",
+            httpStatus: 200,
+            signatureValid: true,
+          })
+        } catch { /* logging must not break response */ }
         return reply.status(200).send({ received: true })
       }
 
       // ── Process data points ─────────────────────────────────
+      let dataPointsIngested = 0
+
       if ("processWebhook" in provider && provider.processWebhook) {
         const dataPoints = await provider.processWebhook(request.body)
 
@@ -99,6 +138,7 @@ const inboundRoutes: FastifyPluginAsync = async (app) => {
             connectionId: connection.id,
             dataPoints,
           })
+          dataPointsIngested = dataPoints.length
 
           app.log.info(
             { providerId, providerUserId, count: dataPoints.length },
@@ -106,6 +146,18 @@ const inboundRoutes: FastifyPluginAsync = async (app) => {
           )
         }
       }
+
+      try {
+        await getDb().insert(inboundWebhookLogs).values({
+          providerId,
+          providerUserId,
+          connectionId: connection.id,
+          status: "processed",
+          dataPointsIngested,
+          httpStatus: 200,
+          signatureValid: true,
+        })
+      } catch { /* logging must not break response */ }
 
       return reply.status(200).send({ received: true })
     },

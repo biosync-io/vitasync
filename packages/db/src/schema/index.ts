@@ -6,6 +6,7 @@ export * from "./health-metrics"
 export * from "./events"
 export * from "./personal-records"
 export * from "./webhooks"
+export * from "./inbound-webhook-logs"
 export * from "./sync-jobs"
 
 // ── New Feature Tables ──────────────────────────────────────────
