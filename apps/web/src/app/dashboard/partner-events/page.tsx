@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { type InboundWebhookLog, inboundWebhookLogsApi } from "../../../lib/api"
 import { Pagination } from "../../../lib/Pagination"
 
@@ -39,10 +39,11 @@ export default function PartnerEventsPage() {
   const [toDate, setToDate] = useState("")
   const [page, setPage] = useState(1)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [countdown, setCountdown] = useState(15)
 
   const offset = (page - 1) * PAGE_SIZE
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, dataUpdatedAt } = useQuery({
     queryKey: ["inbound-webhook-logs", providerFilter, statusFilter, fromDate, toDate, page],
     queryFn: () => {
       const opts: Parameters<typeof inboundWebhookLogsApi.list>[0] = {
@@ -58,17 +59,80 @@ export default function PartnerEventsPage() {
     refetchInterval: 15_000,
   })
 
+  // Countdown timer for next refresh
+  useEffect(() => {
+    setCountdown(15)
+    const interval = setInterval(() => {
+      setCountdown((c) => (c <= 1 ? 15 : c - 1))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [dataUpdatedAt])
+
   const logs = data?.data ?? []
   const total = data?.total ?? 0
+
+  // Summary stats from current page data
+  const statusCounts = logs.reduce<Record<string, number>>((acc, l) => {
+    acc[l.status] = (acc[l.status] ?? 0) + 1
+    return acc
+  }, {})
+  const providerCounts = logs.reduce<Record<string, number>>((acc, l) => {
+    acc[l.providerId] = (acc[l.providerId] ?? 0) + 1
+    return acc
+  }, {})
+  const totalIngested = logs.reduce((s, l) => s + (l.dataPointsIngested ?? 0), 0)
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Partner Events</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Track inbound webhook events from health data providers. Auto-refreshes every 15 seconds.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Partner Events</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Track inbound webhook events from health data providers (Whoop, Fitbit, Garmin, Strava, Withings).
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Live indicator + countdown */}
+          <div className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl px-3 py-2 shadow-sm">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            </span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Live</span>
+            <span className="text-xs tabular-nums font-mono text-gray-400 dark:text-gray-500 min-w-[24px] text-right">{countdown}s</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Total Events</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-50 mt-1">{total.toLocaleString()}</p>
+        </div>
+        <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Data Points Ingested</p>
+          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{totalIngested.toLocaleString()}</p>
+        </div>
+        <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Providers Active</p>
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {Object.keys(providerCounts).length > 0 ? Object.entries(providerCounts).map(([p, c]) => {
+              const pc = PROVIDER_COLORS[p] ?? DEFAULT_PROVIDER_COLOR
+              return <span key={p} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${pc.bg} ${pc.text}`}>{p} <span className="font-bold">{c}</span></span>
+            }) : <span className="text-sm text-gray-400 dark:text-gray-500">—</span>}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Status Breakdown</p>
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {Object.keys(statusCounts).length > 0 ? Object.entries(statusCounts).map(([s, c]) => {
+              const ss = STATUS_STYLES[s] ?? DEFAULT_STATUS
+              return <span key={s} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${ss.bg}`}><span className={`h-1.5 w-1.5 rounded-full ${ss.dot}`} />{ss.label} <span className="font-bold">{c}</span></span>
+            }) : <span className="text-sm text-gray-400 dark:text-gray-500">—</span>}
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
