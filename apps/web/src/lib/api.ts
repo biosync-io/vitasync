@@ -540,6 +540,7 @@ export interface WorkoutEvent {
   avgSpeedMps: number | null
   elevationGainMeters: number | null
   notes: string | null
+  data: Record<string, unknown> | null
   createdAt: string
 }
 

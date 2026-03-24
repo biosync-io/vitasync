@@ -306,6 +306,8 @@ interface TableViewProps {
 }
 
 function TableView({ events, result, isLoading, cursor, setCursor, eventType }: TableViewProps) {
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
   if (isLoading && !cursor) {
     return (
       <div className="space-y-2">
@@ -346,23 +348,15 @@ function TableView({ events, result, isLoading, cursor, setCursor, eventType }: 
             </span>
           )}
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-800/60">
-              <tr>
-                {["Type", "Activity", "Title", "Duration", "Distance", "Calories", "Avg HR", "Provider", "Date"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {events.map((ev) => (
-                <EventRow key={ev.id} event={ev} />
-              ))}
-            </tbody>
-          </table>
+        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          {events.map((ev) => (
+            <EventCard
+              key={ev.id}
+              event={ev}
+              expanded={expandedId === ev.id}
+              onToggle={() => setExpandedId(expandedId === ev.id ? null : ev.id)}
+            />
+          ))}
         </div>
       </div>
 
@@ -382,35 +376,143 @@ function TableView({ events, result, isLoading, cursor, setCursor, eventType }: 
   )
 }
 
-function EventRow({ event: ev }: { event: WorkoutEvent }) {
+function DetailItem({ label, value }: { label: string; value: string | number | null | undefined }) {
+  if (value == null || value === "") return null
   return (
-    <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-      <td className="px-4 py-3 whitespace-nowrap">
-        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${EVENT_BADGE[ev.eventType] ?? "bg-gray-100 text-gray-600"}`}>
+    <div>
+      <p className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">{label}</p>
+      <p className="mt-0.5 text-sm font-medium text-gray-800 dark:text-gray-200 tabular-nums">{value}</p>
+    </div>
+  )
+}
+
+function fmtPercent(v: unknown): string | null {
+  if (v == null) return null
+  const n = Number(v)
+  return Number.isFinite(n) ? `${Math.round(n)}%` : null
+}
+
+function fmtMinutes(v: unknown): string | null {
+  if (v == null) return null
+  const n = Number(v)
+  if (!Number.isFinite(n)) return null
+  const h = Math.floor(n / 60)
+  const m = Math.round(n % 60)
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
+}
+
+function WorkoutDetails({ ev }: { ev: WorkoutEvent }) {
+  const d = ev.data ?? {}
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3">
+      <DetailItem label="Distance" value={fmtDistance(ev.distanceMeters)} />
+      <DetailItem label="Calories" value={ev.caloriesKcal != null ? `${Math.round(ev.caloriesKcal)} kcal` : null} />
+      <DetailItem label="Avg Heart Rate" value={ev.avgHeartRate != null ? `${ev.avgHeartRate} bpm` : null} />
+      <DetailItem label="Max Heart Rate" value={ev.maxHeartRate != null ? `${ev.maxHeartRate} bpm` : null} />
+      <DetailItem label="Elevation Gain" value={ev.elevationGainMeters != null ? `${Math.round(ev.elevationGainMeters)} m` : null} />
+      <DetailItem
+        label="Avg Speed"
+        value={ev.avgSpeedMps != null ? `${(ev.avgSpeedMps * 3.6).toFixed(1)} km/h` : null}
+      />
+      {Object.entries(d).map(([k, v]) => {
+        if (["type", "durationSeconds", "distanceMeters", "avgHeartRate", "maxHeartRate", "altitudeGainMeters", "avgSpeedMps", "caloriesKcal"].includes(k)) return null
+        if (v == null || typeof v === "object") return null
+        return <DetailItem key={k} label={k.replace(/([A-Z])/g, " $1").replace(/_/g, " ")} value={String(v)} />
+      })}
+    </div>
+  )
+}
+
+function SleepDetails({ ev }: { ev: WorkoutEvent }) {
+  const d = ev.data ?? {}
+  const stages = (typeof d.stages === "object" && d.stages != null ? d.stages : {}) as Record<string, unknown>
+  const score = d.score ?? d.sleep_score ?? d.sleepScore
+  const startTime = d.startTime ? new Date(String(d.startTime)).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null
+  const endTime = d.endTime ? new Date(String(d.endTime)).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null
+  const timeRange = startTime && endTime ? `${startTime} → ${endTime}` : null
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3">
+      <DetailItem label="Duration" value={fmtDuration(ev.durationSeconds)} />
+      <DetailItem label="Sleep Window" value={timeRange} />
+      <DetailItem label="Sleep Score" value={score != null ? String(score) : null} />
+      <DetailItem label="Type" value={d.nap ? "Nap" : d.type != null ? String(d.type) : null} />
+      <DetailItem label="Light Sleep" value={fmtPercent(stages.light) ?? fmtMinutes(stages.lightMinutes)} />
+      <DetailItem label="Deep Sleep" value={fmtPercent(stages.deep) ?? fmtMinutes(stages.deepMinutes)} />
+      <DetailItem label="REM" value={fmtPercent(stages.rem) ?? fmtMinutes(stages.remMinutes)} />
+      <DetailItem label="Awake" value={fmtPercent(stages.awake) ?? fmtMinutes(stages.awakeMinutes)} />
+      {Object.entries(d).map(([k, v]) => {
+        if (["stages", "score", "sleep_score", "sleepScore", "startTime", "endTime", "nap", "type", "durationMinutes"].includes(k)) return null
+        if (v == null || typeof v === "object") return null
+        return <DetailItem key={k} label={k.replace(/([A-Z])/g, " $1").replace(/_/g, " ")} value={String(v)} />
+      })}
+    </div>
+  )
+}
+
+function ActivityDetails({ ev }: { ev: WorkoutEvent }) {
+  const d = ev.data ?? {}
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3">
+      <DetailItem label="Calories" value={ev.caloriesKcal != null ? `${Math.round(ev.caloriesKcal)} kcal` : null} />
+      <DetailItem label="Steps" value={d.steps != null ? String(d.steps) : null} />
+      <DetailItem label="Active Minutes" value={d.activeMinutes != null ? `${d.activeMinutes} min` : (d.active_minutes != null ? `${d.active_minutes} min` : null)} />
+      <DetailItem label="Distance" value={fmtDistance(ev.distanceMeters)} />
+      {Object.entries(d).map(([k, v]) => {
+        if (["steps", "activeMinutes", "active_minutes", "caloriesKcal", "distanceMeters"].includes(k)) return null
+        if (v == null || typeof v === "object") return null
+        return <DetailItem key={k} label={k.replace(/([A-Z])/g, " $1").replace(/_/g, " ")} value={String(v)} />
+      })}
+    </div>
+  )
+}
+
+function EventCard({ event: ev, expanded, onToggle }: { event: WorkoutEvent; expanded: boolean; onToggle: () => void }) {
+  return (
+    <div className={`transition-colors ${expanded ? "bg-gray-50/50 dark:bg-gray-800/30" : "hover:bg-gray-50 dark:hover:bg-gray-800/50"}`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full text-left px-4 py-3 flex items-center gap-3 sm:gap-4"
+      >
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${EVENT_BADGE[ev.eventType] ?? "bg-gray-100 text-gray-600"}`}>
           {ev.eventType}
         </span>
-      </td>
-      <td className="px-4 py-3 text-gray-600 dark:text-gray-400 capitalize whitespace-nowrap">
-        {ev.activityType?.replace(/_/g, " ") ?? "—"}
-      </td>
-      <td className="px-4 py-3 text-gray-900 dark:text-gray-100 max-w-[180px] truncate">{ev.title ?? "—"}</td>
-      <td className="px-4 py-3 text-gray-600 dark:text-gray-400 tabular-nums whitespace-nowrap">
-        {fmtDuration(ev.durationSeconds)}
-      </td>
-      <td className="px-4 py-3 text-gray-600 dark:text-gray-400 tabular-nums whitespace-nowrap">
-        {fmtDistance(ev.distanceMeters)}
-      </td>
-      <td className="px-4 py-3 text-gray-600 dark:text-gray-400 tabular-nums whitespace-nowrap">
-        {ev.caloriesKcal != null ? `${Math.round(ev.caloriesKcal)} kcal` : "—"}
-      </td>
-      <td className="px-4 py-3 text-gray-600 dark:text-gray-400 tabular-nums whitespace-nowrap">
-        {ev.avgHeartRate != null ? `${ev.avgHeartRate} bpm` : "—"}
-      </td>
-      <td className="px-4 py-3 text-xs text-gray-400 dark:text-gray-500 capitalize">{ev.providerId}</td>
-      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
-        {new Date(ev.startedAt).toLocaleString()}
-      </td>
-    </tr>
+        <span className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">
+          {ev.title ?? ev.activityType?.replace(/_/g, " ") ?? "—"}
+        </span>
+        <span className="hidden sm:inline shrink-0 text-sm text-gray-500 dark:text-gray-400 tabular-nums">
+          {fmtDuration(ev.durationSeconds)}
+        </span>
+        <span className="hidden md:inline shrink-0 text-xs text-gray-400 dark:text-gray-500 capitalize">
+          {ev.providerId}
+        </span>
+        <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
+          {new Date(ev.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+        </span>
+        <svg
+          className={`shrink-0 h-4 w-4 text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 pt-1">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+            {ev.eventType === "workout" && <WorkoutDetails ev={ev} />}
+            {ev.eventType === "sleep" && <SleepDetails ev={ev} />}
+            {ev.eventType === "activity" && <ActivityDetails ev={ev} />}
+            {ev.notes && (
+              <p className="mt-3 text-xs text-gray-500 dark:text-gray-400 italic border-t border-gray-100 dark:border-gray-800 pt-3">
+                {ev.notes}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
