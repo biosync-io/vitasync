@@ -560,6 +560,9 @@ secrets:
   # exist in the database and every dashboard request would return 401.
   # Generate with: openssl rand -hex 20  (then prefix with "vs_live_")
   ADMIN_API_KEY: "vs_live_changeme_for_production"
+  # Optional: separate dashboard API key. If not set, defaults to ADMIN_API_KEY.
+  # Must be a valid key that exists in the database.
+  NEXT_PUBLIC_DEFAULT_API_KEY: ""
 
   # Provider OAuth credentials — only the providers you have registered apps for.
   FITBIT_CLIENT_ID: ""
