@@ -1209,3 +1209,27 @@ export const inboundWebhookLogsApi = {
     return request<{ data: InboundWebhookLog[]; total: number }>(`/v1/inbound-webhook-logs?${params}`)
   },
 }
+
+// ---- AI Providers ----
+export interface AiProviderConfig {
+  id: string
+  name: string
+  providerType: string
+  model: string
+  apiKeyMasked: string | null
+  baseUrl: string | null
+  isDefault: boolean
+  createdAt: string
+}
+
+export const aiProvidersApi = {
+  list: () => request<{ data: AiProviderConfig[] }>("/v1/ai-providers"),
+  create: (body: { name: string; providerType: string; model: string; apiKey?: string; baseUrl?: string; isDefault?: boolean }) =>
+    request<AiProviderConfig>("/v1/ai-providers", { method: "POST", body: JSON.stringify(body) }),
+  update: (id: string, body: Record<string, unknown>) =>
+    request<AiProviderConfig>(`/v1/ai-providers/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  delete: (id: string) =>
+    request<void>(`/v1/ai-providers/${id}`, { method: "DELETE" }),
+  test: (id: string) =>
+    request<{ success: boolean; message: string }>(`/v1/ai-providers/${id}/test`, { method: "POST" }),
+}

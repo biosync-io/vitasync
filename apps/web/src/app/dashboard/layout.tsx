@@ -57,6 +57,7 @@ import {
   Map,
   Radio,
   Scale,
+  Bot,
   type LucideIcon,
 } from "lucide-react"
 
@@ -80,6 +81,7 @@ const navSections: Array<{
       { href: "/dashboard/anomalies", label: "Anomalies", icon: AlertTriangle, color: "text-amber-500" },
       { href: "/dashboard/correlations", label: "Correlations", icon: Link2, color: "text-teal-500" },
       { href: "/dashboard/algorithms", label: "Algorithms", icon: Cpu, color: "text-cyan-500" },
+      { href: "/dashboard/chatbot", label: "AI Assistant", icon: Bot, color: "text-indigo-500" },
     ],
   },
   {

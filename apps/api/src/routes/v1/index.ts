@@ -34,6 +34,8 @@ import readinessRoutes from "./readiness.js"
 import journalRoutes from "./journal.js"
 import waterRoutes from "./water.js"
 import habitsRoutes from "./habits.js"
+import aiProvidersRoutes from "./ai-providers.js"
+import chatbotRoutes from "./chatbot.js"
 
 /**
  * Registers all v1 API routes under the `/v1` prefix.
@@ -148,6 +150,12 @@ export async function registerV1Routes(app: FastifyInstance): Promise<void> {
 
       // Habits tracking — /v1/users/:userId/habits
       await v1.register(habitsRoutes, { prefix: "/users" })
+
+      // AI provider management — /v1/ai-providers
+      await v1.register(aiProvidersRoutes, { prefix: "/ai-providers" })
+
+      // Chatbot — /v1/users/:userId/chatbot
+      await v1.register(chatbotRoutes, { prefix: "/users" })
     },
     { prefix: "/v1" },
   )
