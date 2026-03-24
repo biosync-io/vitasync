@@ -191,6 +191,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [themeOpen, setThemeOpen] = useState(false)
 
+  const { data: healthCheck } = useQuery({
+    queryKey: ["api-health"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/health")
+      if (!res.ok) return null
+      return res.json() as Promise<{ version: string }>
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  })
+  const appVersion = healthCheck?.version ?? null
+
   useEffect(() => {
     setDarkMode(getStoredAppearance())
   }, [])
@@ -351,6 +363,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <BookOpen className="h-[18px] w-[18px] shrink-0" />
           {(isMobile || sidebarOpen) && <span>API Reference</span>}
         </a>
+
+        {appVersion && (
+          <div className={`flex items-center rounded-xl px-3 py-2 text-[10px] text-gray-400 dark:text-gray-500 ${
+            !isMobile && !sidebarOpen ? "justify-center" : "gap-2"
+          }`}>
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+            {(isMobile || sidebarOpen) && <span>v{appVersion}</span>}
+          </div>
+        )}
       </div>
     </>
   )

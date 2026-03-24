@@ -27,3 +27,4 @@ data:
   ADMIN_WORKSPACE_SLUG: {{ .Values.config.ADMIN_WORKSPACE_SLUG | quote }}
   DATABASE_POOL_MIN: {{ .Values.config.DATABASE_POOL_MIN | quote }}
   DATABASE_POOL_MAX: {{ .Values.config.DATABASE_POOL_MAX | quote }}
+  APP_VERSION: {{ .Chart.AppVersion | quote }}

@@ -141,7 +141,7 @@ export async function buildServer() {
     },
     async () => ({
       status: "ok",
-      version: "1.0.0",
+      version: process.env.APP_VERSION || "1.0.0",
       timestamp: new Date().toISOString(),
     }),
   )
