@@ -308,13 +308,66 @@ To add a new channel type:
 Channel implementations follow the same plugin pattern as providers — each is an independent package with zero coupling to the core system. Adding a new channel requires no changes to existing code.
 </Aside>
 
+## In-App Notifications
+
+In addition to external delivery channels, every notification also creates an **in-app notification** record. This powers the notification bell in the dashboard header.
+
+### How It Works
+
+1. The notification processor creates a row in the `in_app_notifications` table for **every** notification, regardless of whether external channel rules match.
+2. Each row tracks `read` status (boolean), enabling unread badge counts.
+3. The dashboard header displays a **notification bell** with an unread count badge.
+4. Clicking the bell opens a dropdown panel showing recent notifications, newest first.
+
+### Dashboard UI
+
+- **Bell icon** — visible in the top navigation bar on every dashboard page
+- **Unread badge** — red circle with count, hidden when all are read
+- **Dropdown panel** — lists recent notifications with title, body, severity, category, and timestamp
+- **Mark as read** — clicking a notification or using "Mark all as read" clears the unread state
+
+### API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/v1/users/:id/notifications/inbox` | List in-app notifications (returns items + `unreadCount`) |
+| `PATCH` | `/v1/users/:id/notifications/inbox/read` | Mark notifications as read (accepts `{ ids: [...] }` or `{ all: true }`) |
+
+**Example — fetch inbox:**
+
+```bash
+curl http://localhost:3001/v1/users/$USER_ID/notifications/inbox?limit=20 \
+  -H "Authorization: Bearer $API_KEY"
+```
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "id": "notif_abc123",
+      "title": "SpO₂ anomaly detected",
+      "body": "SpO₂ dropped to 89%, below the clinical threshold of 92%.",
+      "severity": "critical",
+      "category": "anomaly",
+      "read": false,
+      "createdAt": "2025-06-15T03:12:00.000Z"
+    }
+  ],
+  "unreadCount": 3,
+  "total": 42
+}
+```
+
 ## Database Tables
 
-The notification system uses three tables:
+The notification system uses four tables:
 
 - **`notification_channels`** — User's configured channel instances with channel-specific config (JSONB)
 - **`notification_rules`** — Routing rules that map categories + severity to channels
 - **`notification_logs`** — Delivery audit log with status, attempts, and error details
+- **`in_app_notifications`** — In-app notification records with unread tracking (`userId`, `title`, `body`, `severity`, `category`, `read`, `metadata`, `createdAt`)
 
 See the [Data Model](/vitasync/architecture/data-model) reference for full column definitions.
 

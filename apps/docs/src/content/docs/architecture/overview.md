@@ -5,7 +5,7 @@ description: How the VitaSync API, worker, and provider packages fit together.
 
 import { Aside } from '@astrojs/starlight/components';
 
-VitaSync is a TypeScript monorepo with three runtime applications and a set of shared packages.
+VitaSync is a TypeScript monorepo with four runtime applications and a set of shared packages.
 
 ## Repository Layout
 
@@ -34,7 +34,8 @@ vitasync/
 │       ├── fitbit/
 │       ├── garmin/
 │       ├── strava/
-│       └── whoop/
+│       ├── whoop/
+│       └── withings/
 ├── monitoring/
 │   ├── docker-compose.monitoring.yml   # Grafana + Prometheus + exporters
 │   ├── grafana/
@@ -69,15 +70,22 @@ API (Fastify 5)
 
           │ BullMQ enqueue
           ▼
-    Worker process
+    Worker process (default: all queues; set WORKER_QUEUES for dedicated pods)
       ├─ sync queue: resolves provider, decrypts tokens, streams data
       │    ├─ bulk-inserts to health_metrics (idempotent)
+      │    ├─ logs inbound partner events to partner_events table
       │    └─ enqueues webhook delivery + anomaly check
       ├─ analytics queue: compute correlations + health scores
-      ├─ notifications queue: resolve rules → dispatch to channels
+      ├─ notifications queue: resolve rules → dispatch to channels + in-app
       │    ├─ Discord, Slack, Teams, Email, Push, ntfy, Webhook
+      │    ├─ creates in_app_notifications record for every notification
       │    └─ log delivery results to notification_logs
-      └─ webhooks queue: HMAC-signed HTTP delivery with retries
+      ├─ webhooks queue: HMAC-signed HTTP delivery with retries
+      └─ reports queue: scheduled health report generation
+
+    Dedicated worker pods (same image, different WORKER_QUEUES):
+      ├─ notification-worker (WORKER_QUEUES=notifications)
+      └─ report-worker (WORKER_QUEUES=reports)
 
 AI Assistant (Claude, GPT, Cursor…)
   │ MCP protocol (stdio or HTTP/SSE)
@@ -128,25 +136,34 @@ The `@biosync-io/analytics` package provides three core capabilities:
 
 ## CI/CD & Release Pipeline
 
-VitaSync uses GitHub Actions for all CI/CD. There are two key workflows:
+VitaSync uses GitHub Actions with **6 consolidated workflows** for all CI/CD:
 
-### `docker-publish.yml` — build, version, and publish
+| Workflow | File | Purpose |
+|----------|------|---------|
+| **CI** | `ci.yml` | Lint (Biome) + typecheck + test (Postgres/Redis) + build |
+| **Cleanup** | `cleanup.yml` | Package cleanup + stale issues |
+| **Docs** | `docs.yml` | Astro docs → GitHub Pages |
+| **Label** | `label.yml` | Auto-label PRs |
+| **Release** | `release.yml` | Semver tag + Docker matrix (4 images) + Helm publish + release notes |
+| **Security** | `security.yml` | pnpm audit + Trivy + CodeQL |
 
-Runs on every push to `main`, `feature/**`, `fix/**`, `alpha/**`, and `beta/**`.
+### `release.yml` — build, version, and publish
+
+Runs on push to `main`.
 
 ```
-Push to branch
+Push to main
       │
-      ├─ (main only) release job
+      ├─ release job
       │     ├─ reads PR title via GitHub API
       │     ├─ detects Conventional Commit type (feat / fix / feat! …)
       │     ├─ bumps VERSION file (major / minor / patch)
       │     └─ commits "chore: release vX.Y.Z" + git tag back to main
       │
-      └─ build-and-push job
+      └─ build-and-push job (matrix: api, worker, web, mcp)
             ├─ determines channel: main → stable, beta/** → beta, else → alpha
             ├─ resolves version: stable uses bumped VERSION; pre-release appends channel+sha
-            ├─ builds Docker images for api / worker / web
+            ├─ builds Docker images for api / worker / web / mcp
             └─ pushes to ghcr.io with channel-appropriate tags
 ```
 
@@ -155,17 +172,6 @@ Push to branch
 **Alpha tags** (everything else): `alpha`, `alpha-xxxxxxx`, `sha-xxxxxxx`
 
 The `helm-package` job runs only after a successful stable release and publishes the Helm chart to GHCR.
-
-### `pr-title-lint.yml` — enforce Conventional Commits
-
-Runs on every pull request event. Validates that the PR title matches the Conventional Commit pattern:
-
-```
-<type>[optional scope][optional !]: <description>
-```
-
-Valid types: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `revert`.
-An empty or whitespace-only title fails immediately. See the [Contributing guide](/vitasync/dev-guides/contributing) for examples.
 
 ### Version source of truth
 

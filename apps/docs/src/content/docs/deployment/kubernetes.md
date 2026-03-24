@@ -5,12 +5,17 @@ description: Deploy VitaSync to Kubernetes using the production-ready Helm chart
 
 import { Aside, Steps } from '@astrojs/starlight/components';
 
-VitaSync ships a production-ready Helm chart at `helm/vitasync/` with:
+VitaSync ships a production-ready Helm chart (v0.4.0) at `helm/vitasync/` with **282 configurable values**:
 
 - **HPA** (Horizontal Pod Autoscaler) for API and worker
 - **PDB** (Pod Disruption Budget) for zero-downtime rolling updates
 - **Ingress** support with TLS annotations
 - **`pre-install`/`pre-upgrade` migration Job** that runs Drizzle migrations before pods are updated
+- **Startup probes** on API and Web (failureThreshold: 12, periodSeconds: 5, ~60s window)
+- **Init containers** — `wait-for-db` on API, `wait-for-migrations` on workers (ensures DB is ready and migrations are complete before main containers start)
+- **RollingUpdate strategy** (`maxSurge: 1`, `maxUnavailable: 0`) for zero-downtime deployments
+- **Helm test suite** — validates API and Web connectivity post-install
+- **Secret validation gates** — refuses to install when placeholder secrets are detected
 - Flexible secret management (inline values or `existingSecret`)
 
 ## Prerequisites
@@ -85,6 +90,68 @@ The migration Job runs automatically before pods are replaced.
 | `ingress.web.host` | `""` | Hostname for the web dashboard |
 | `secrets.existingSecret` | `""` | Name of an existing Kubernetes Secret |
 
+## Startup Probes
+
+API and Web deployments include startup probes to handle slow container initialization:
+
+```yaml
+startupProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  failureThreshold: 12
+  periodSeconds: 5    # ~60 second window before pod is killed
+```
+
+This prevents Kubernetes from killing pods that take time to compile assets or establish database connections on startup.
+
+## Init Containers
+
+### API — `wait-for-db`
+
+The API pod includes an init container that waits for PostgreSQL to accept connections before starting the main API container. This prevents crash loops when the database takes time to start.
+
+### Workers — `wait-for-migrations`
+
+Worker pods include an init container that waits for database migrations to complete (by checking a health endpoint on the API). This ensures workers never process jobs against a stale schema.
+
+## Deployment Strategy
+
+All deployments use `RollingUpdate` with zero-downtime settings:
+
+```yaml
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+```
+
+Combined with PDB, this guarantees at least one pod is always available during upgrades.
+
+## Helm Test Suite
+
+After installing or upgrading, run the built-in tests to validate connectivity:
+
+```bash
+helm test vitasync --namespace vitasync
+```
+
+The test suite creates temporary pods that:
+- Verify the API responds at its `/healthz` endpoint
+- Verify the Web dashboard is reachable
+- Report success/failure for each check
+
+## Secret Validation
+
+The chart includes template-level validation that **refuses to install** if placeholder secrets are detected. This prevents accidental deployment with insecure defaults:
+
+```bash
+# This will fail with a clear error:
+helm install vitasync ./helm/vitasync \
+  --set secrets.jwtSecret="CHANGE_ME"
+```
+
 ## Production Recommendations
 
 - Use [External Secrets Operator](https://external-secrets.io) or [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets) for secret management.
@@ -93,5 +160,5 @@ The migration Job runs automatically before pods are replaced.
 - Add `cert-manager` annotations to the ingress for automatic TLS via Let's Encrypt.
 
 <Aside type="tip">
-  See `helm/vitasync/values.yaml` for the full list of configurable values.
+  The chart exposes 282 configurable values. See `helm/vitasync/values.yaml` for the full reference.
 </Aside>

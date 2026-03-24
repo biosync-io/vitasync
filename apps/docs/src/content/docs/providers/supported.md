@@ -5,7 +5,7 @@ description: Compare all supported wearable and fitness providers — data types
 
 import { Aside } from '@astrojs/starlight/components';
 
-VitaSync currently supports four health and fitness providers. Use this page to quickly determine which provider covers the data you need.
+VitaSync currently supports five health and fitness providers. Use this page to quickly determine which provider covers the data you need.
 
 ## Provider Overview
 
@@ -15,6 +15,7 @@ VitaSync currently supports four health and fitness providers. Use this page to 
 | [Garmin](/vitasync/providers/garmin) | OAuth 1.0a | 30 min | Yes (push) | Medium (approval required) |
 | [WHOOP](/vitasync/providers/whoop) | OAuth 2.0 | 15 min | No (polling) | Easy |
 | [Strava](/vitasync/providers/strava) | OAuth 2.0 | On-demand | No (polling) | Easy |
+| [Withings](/vitasync/providers/withings) | OAuth 2.0 | 15 min | Yes (push) | Easy |
 
 ## Metric Coverage Matrix
 
@@ -22,40 +23,44 @@ The table below shows which providers supply each metric type.
 
 **Legend:** ✅ Full &nbsp; 🔶 Partial &nbsp; — Not available
 
-| Metric | Fitbit | Garmin | WHOOP | Strava |
-|--------|--------|--------|-------|--------|
-| **Activity** | | | | |
-| Steps | ✅ | ✅ | — | — |
-| Distance | ✅ | ✅ | — | ✅ |
-| Calories burned | ✅ | ✅ | ✅ (active) | ✅ |
-| Active minutes | ✅ | ✅ | — | — |
-| Floors climbed | ✅ | — | — | — |
-| **Heart** | | | | |
-| Heart rate (intraday) | ✅ 1-min | ✅ | — | 🔶 per-workout |
-| Resting heart rate | ✅ | ✅ | ✅ | — |
-| HRV (RMSSD) | ✅ | ✅ | ✅ | — |
-| **Sleep** | | | | |
-| Sleep stages (REM/Light/Deep) | ✅ | ✅ | ✅ | — |
-| Sleep score | ✅ | ✅ | ✅ | — |
-| **Body Composition** | | | | |
-| Weight | ✅ (Fitbit scale) | ✅ | — | — |
-| Body fat % | ✅ | ✅ | — | — |
-| BMI | ✅ | — | — | — |
-| **Oxygen & Respiratory** | | | | |
-| SpO₂ | ✅ | ✅ | ✅ | — |
-| Respiratory rate | ✅ | — | ✅ | — |
-| **Recovery & Readiness** | | | | |
-| Recovery score | — | — | ✅ | — |
-| Readiness / Body Battery | — | ✅ | — | — |
-| Strain score | — | — | ✅ | — |
-| Stress level | — | ✅ | — | — |
-| **Workouts / Events** | | | | |
-| Workout events | ✅ | ✅ | ✅ | ✅ |
-| Activity type mapping | ✅ | ✅ | 100+ sports | ✅ |
-| Route / GPS data | — | ✅ | — | ✅ |
+| Metric | Fitbit | Garmin | WHOOP | Strava | Withings |
+|--------|--------|--------|-------|--------|----------|
+| **Activity** | | | | | |
+| Steps | ✅ | ✅ | — | — | — |
+| Distance | ✅ | ✅ | — | ✅ | — |
+| Calories burned | ✅ | ✅ | ✅ (active) | ✅ | — |
+| Active minutes | ✅ | ✅ | — | — | — |
+| Floors climbed | ✅ | — | — | — | — |
+| **Heart** | | | | | |
+| Heart rate (intraday) | ✅ 1-min | ✅ | — | 🔶 per-workout | — |
+| Resting heart rate | ✅ | ✅ | ✅ | — | — |
+| HRV (RMSSD) | ✅ | ✅ | ✅ | — | — |
+| **Sleep** | | | | | |
+| Sleep stages (REM/Light/Deep) | ✅ | ✅ | ✅ | — | ✅ |
+| Sleep score | ✅ | ✅ | ✅ | — | 🔶 |
+| **Body Composition** | | | | | |
+| Weight | ✅ (Fitbit scale) | ✅ | — | — | ✅ |
+| Body fat % | ✅ | ✅ | — | — | ✅ |
+| BMI | ✅ | — | — | — | ✅ |
+| **Oxygen & Respiratory** | | | | | |
+| SpO₂ | ✅ | ✅ | ✅ | — | ✅ |
+| Respiratory rate | ✅ | — | ✅ | — | ✅ |
+| **Blood Pressure** | | | | | |
+| Systolic / Diastolic | — | — | — | — | ✅ |
+| **Temperature** | | | | | |
+| Body temperature | — | — | — | — | ✅ |
+| **Recovery & Readiness** | | | | | |
+| Recovery score | — | — | ✅ | — | — |
+| Readiness / Body Battery | — | ✅ | — | — | — |
+| Strain score | — | — | ✅ | — | — |
+| Stress level | — | ✅ | — | — | — |
+| **Workouts / Events** | | | | | |
+| Workout events | ✅ | ✅ | ✅ | ✅ | — |
+| Activity type mapping | ✅ | ✅ | 100+ sports | ✅ | — |
+| Route / GPS data | — | ✅ | — | ✅ | — |
 
 <Aside>
-  Garmin is the only provider that **pushes** data to VitaSync in real time. All other providers are polled on the sync schedule or when you call the manual sync endpoint.
+  Garmin and Withings **push** data to VitaSync in real time via webhooks. All other providers are polled on the sync schedule or when you call the manual sync endpoint.
 </Aside>
 
 ## Device Compatibility
@@ -66,6 +71,7 @@ The table below shows which providers supply each metric type.
 | Garmin | Fenix 8, Forerunner 965, Venu 3, Vívoactive 5 | Smartwatch / GPS watch |
 | WHOOP | WHOOP 4.0, WHOOP MG | Band (subscription-based) |
 | Strava | Any GPS device that syncs to Strava | App / Connected device |
+| Withings | Body+, Body Scan, ScanWatch, BPM Connect, Thermo | Smart scale / Hybrid watch / Medical devices |
 
 ## Choosing a Provider
 
@@ -77,7 +83,9 @@ The table below shows which providers supply each metric type.
 
 **Best for real-time sync:** Garmin — push-based webhook delivery means data arrives in VitaSync immediately without waiting for the next polling cycle.
 
-**Best for quick setup:** Fitbit, WHOOP, or Strava — all use standard OAuth 2.0 and are available via self-service developer portals. Garmin requires manual approval.
+**Best for body composition and clinical vitals:** Withings — medical-grade scales, blood pressure monitors, and thermometers with push-based webhook delivery.
+
+**Best for quick setup:** Fitbit, WHOOP, Strava, or Withings — all use standard OAuth 2.0 and are available via self-service developer portals. Garmin requires manual approval.
 
 ## Environment Variables Reference
 
@@ -91,5 +99,7 @@ The table below shows which providers supply each metric type.
 | `WHOOP_CLIENT_SECRET` | WHOOP | OAuth app client secret |
 | `STRAVA_CLIENT_ID` | Strava | OAuth app client ID |
 | `STRAVA_CLIENT_SECRET` | Strava | OAuth app client secret |
+| `WITHINGS_CLIENT_ID` | Withings | OAuth app client ID |
+| `WITHINGS_CLIENT_SECRET` | Withings | OAuth app client secret |
 
 You only need variables for the providers you plan to use. VitaSync will show only configured providers via `GET /v1/providers`.

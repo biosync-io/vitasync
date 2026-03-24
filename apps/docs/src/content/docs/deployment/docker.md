@@ -55,6 +55,38 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 
 </Steps>
 
+## Docker Images
+
+VitaSync publishes **4 Docker images**:
+
+| Image | Description |
+|-------|-------------|
+| `ghcr.io/biosync-io/vitasync-api` | Fastify REST API — serves all `/v1` endpoints, runs database migrations on startup |
+| `ghcr.io/biosync-io/vitasync-worker` | BullMQ job processor — handles sync, analytics, notifications, webhooks, and report queues |
+| `ghcr.io/biosync-io/vitasync-web` | Next.js dashboard — the web UI at port 3000 |
+| `ghcr.io/biosync-io/vitasync-mcp` | MCP server — exposes health data and analytics tools to AI assistants via the Model Context Protocol |
+
+### Dedicated Worker Pods
+
+The worker image supports running **dedicated worker pods** by setting the `WORKER_QUEUES` environment variable. This lets you isolate queue processing for better resource control:
+
+```yaml
+services:
+  notification-worker:
+    image: ghcr.io/biosync-io/vitasync-worker:latest
+    environment:
+      WORKER_QUEUES: notifications
+  report-worker:
+    image: ghcr.io/biosync-io/vitasync-worker:latest
+    environment:
+      WORKER_QUEUES: reports
+  worker:
+    image: ghcr.io/biosync-io/vitasync-worker:latest
+    # No WORKER_QUEUES set — processes all queues
+```
+
+When `WORKER_QUEUES` is not set, the worker processes all queues. When set, it only processes the specified comma-separated queue names.
+
 ## Services
 
 The `docker-compose.yml` defines the following services:
@@ -64,6 +96,7 @@ services:
   api:      # Fastify REST API
   worker:   # BullMQ background sync worker
   web:      # Next.js dashboard
+  mcp:      # MCP server for AI assistants
   postgres: # PostgreSQL 16
   redis:    # Redis 7
 ```
@@ -108,7 +141,7 @@ Every push to any branch triggers a Docker build. Images are tagged according to
 | `beta/**` | **beta** | `beta`, `beta-xxxxxxx`, `sha-xxxxxxx` |
 | `feature/**`, `fix/**`, `alpha/**` | **alpha** | `alpha`, `alpha-xxxxxxx`, `sha-xxxxxxx` |
 
-Images are published to `ghcr.io/your-org/vitasync-{api,worker,web}`.
+Images are published to `ghcr.io/your-org/vitasync-{api,worker,web,mcp}`.
 
 ```bash
 # Pull a specific pre-release build for testing
@@ -132,4 +165,6 @@ services:
     image: ghcr.io/your-org/vitasync-worker:latest
   web:
     image: ghcr.io/your-org/vitasync-web:latest
+  mcp:
+    image: ghcr.io/your-org/vitasync-mcp:latest
 ```

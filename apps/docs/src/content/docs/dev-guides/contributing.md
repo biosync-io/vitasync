@@ -54,9 +54,22 @@ feat!: remove legacy v0 API endpoints
   An empty PR title, or one that doesn't match the pattern above, will fail the **PR Title Lint** required check and block merging.
 </Aside>
 
-## Automatic Version Bumps
+## CI/CD Workflows
 
-When a PR is merged to `main`, the `docker-publish` workflow inspects the PR title and bumps the `VERSION` file automatically:
+VitaSync uses **6 consolidated GitHub Actions workflows** (replacing the previous 12):
+
+| Workflow | File | Trigger | What It Does |
+|----------|------|---------|-------------|
+| **CI** | `ci.yml` | Push & PR | Lint (Biome), typecheck, test (with Postgres + Redis service containers), build all packages |
+| **Cleanup** | `cleanup.yml` | Schedule | Prune old container packages from GHCR, close stale issues/PRs |
+| **Docs** | `docs.yml` | Push to `main` (docs changes) | Build Astro Starlight docs and deploy to GitHub Pages |
+| **Label** | `label.yml` | PR events | Auto-label PRs based on file paths and conventional commit type |
+| **Release** | `release.yml` | Push to `main` | Semver bump, Docker matrix build (4 images: api, worker, web, mcp), Helm chart publish, auto-generated release notes |
+| **Security** | `security.yml` | Push, PR & schedule | `pnpm audit` for dependency vulnerabilities, Trivy container scanning, CodeQL static analysis |
+
+### Release Flow
+
+When a PR is merged to `main`, the release workflow inspects the PR title and bumps the `VERSION` file automatically:
 
 | PR title | Bump | Example |
 |----------|------|---------|
@@ -70,8 +83,9 @@ The workflow then:
 1. Writes the new version to the `VERSION` file.
 2. Commits `chore: release vX.Y.Z` back to `main`.
 3. Creates a `vX.Y.Z` git tag.
-4. Builds and pushes Docker images tagged `X.Y.Z`, `X.Y`, `X`, `latest`, and `sha-<short-sha>`.
+4. Builds and pushes **4 Docker images** (api, worker, web, mcp) tagged `X.Y.Z`, `X.Y`, `X`, `latest`, and `sha-<short-sha>`.
 5. Packages and publishes the Helm chart to GHCR.
+6. Generates release notes from merged PR titles since the last tag.
 </Steps>
 
 **No manual label-setting, tag-pushing, or `package.json` editing is required.**

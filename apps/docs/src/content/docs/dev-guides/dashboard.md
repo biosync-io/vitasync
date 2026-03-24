@@ -40,6 +40,9 @@ The VitaSync web dashboard (`apps/web`) is a Next.js 16 App Router application a
 | Notifications | `/dashboard/notifications` | Notification channel setup and rules |
 | Notification Logs | `/dashboard/notification-logs` | Delivery history |
 | API Keys | `/dashboard/api-keys` | API key management |
+| Algorithms | `/dashboard/algorithms` | Browsable catalog of analytics algorithms |
+| Partner Events | `/dashboard/partner-events` | Inbound webhook log viewer |
+| Body Metrics | `/dashboard/body-metrics` | Body composition with clinical charts |
 | Settings | `/dashboard/settings` | Theme, preferences, auto-sync toggle |
 
 ## Sync Jobs
@@ -141,6 +144,63 @@ Define which notifications go to which channels:
 <Aside type="tip">
   See the [Notification System guide](/vitasync/dev-guides/notifications/) for channel configuration examples and the full API reference.
 </Aside>
+
+## Algorithms
+
+The **Algorithms** page (`/dashboard/algorithms`) provides a browsable catalog of all 54 analytics algorithms used by VitaSync's scoring engines.
+
+### Features
+
+- **Search** — find algorithms by name or description
+- **Category filtering** — filter by category (health score, readiness, training load, metabolic, recovery, stress, circadian, body)
+- **Algorithm cards** — each card shows the algorithm name, description, category, signal weights, and key thresholds
+- **Expandable details** — click a card to view the full formula, input signals, and scoring ranges
+
+This page is read-only and reflects the algorithm definitions used by the analytics engine. It serves as a reference for understanding how scores and metrics are calculated.
+
+## Partner Events
+
+The **Partner Events** page (`/dashboard/partner-events`) displays a real-time log of inbound webhooks received from connected providers (e.g. Garmin push notifications, Withings data updates).
+
+### Features
+
+- **Provider filter** — narrow by provider (Garmin, Withings, etc.)
+- **Status filter** — filter by processing status (`received`, `processed`, `failed`, `ignored`)
+- **Event details** — expandable rows showing the raw webhook payload, processing result, and timestamps
+- **Auto-refresh** — the log refreshes every 10 seconds to show new events
+
+Partner events are logged to the `partner_events` table and provide an audit trail for debugging sync issues with push-based providers.
+
+## Body Metrics
+
+The **Body Metrics** page (`/dashboard/body-metrics`) provides full-size charts for body composition and clinical vitals.
+
+### Chart Types
+
+| Chart | Reference Lines |
+|-------|----------------|
+| **SpO₂** | Normal (≥ 95%), concerning (92–94%), critical (< 92%) |
+| **Temperature** | Normal range (36.1–37.2°C), fever threshold (38.0°C) |
+| **Respiratory Rate** | Normal (12–20 breaths/min), tachypnea (> 25) |
+| **Body Fat %** | Age- and gender-adjusted healthy ranges |
+| **Weight** | Trend line with 14-day moving average |
+| **BMI** | WHO categories (underweight / normal / overweight / obese) |
+
+All charts include **clinical reference lines** so users can quickly see whether their values fall within healthy ranges.
+
+## Activity
+
+The **Activity** page (`/dashboard/activity`) now features event-type-specific expandable cards that display detailed information based on the activity type.
+
+### Card Types
+
+| Event Type | Expanded Details |
+|------------|-----------------|
+| **Workout** | Duration, calories, heart rate zones, peak HR, sport type, route map (if GPS available) |
+| **Sleep** | Duration, efficiency, stage breakdown (deep/light/REM/awake), sleep score |
+| **Activity** | Steps, distance, active minutes, floors, hourly breakdown |
+
+Each card shows a summary row with key metrics and can be expanded to reveal the full dataset. Cards are sorted by date with infinite scroll pagination.
 
 ## Notification Logs
 

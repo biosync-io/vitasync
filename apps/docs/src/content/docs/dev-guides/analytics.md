@@ -197,23 +197,214 @@ AI receives: structured baselines, trends, anomalies, scores, summary
 AI responds with personalized, data-driven health insights
 ```
 
-## Health Scores
+## Health Score
 
-Composite health scores are computed from multiple underlying metrics.
+The composite health score provides a single 0–100 number summarizing overall wellness, derived from five weighted sub-scores.
 
-| Score | Derived from |
-|-------|-------------|
-| **Overall** | Weighted average of all sub-scores |
-| **Sleep** | Sleep duration, efficiency, stage balance, consistency |
-| **Activity** | Steps, active minutes, calories, workout frequency |
-| **Cardio** | Resting HR, HRV, VO₂ max trends |
-| **Recovery** | Recovery score, strain balance, readiness |
+### Sub-Scores
+
+| Sub-Score | Weight | Derived From |
+|-----------|--------|-------------|
+| **Sleep** | 25% | Sleep duration, efficiency, stage balance, consistency |
+| **Activity** | 20% | Steps, active minutes, calories, workout frequency |
+| **Cardio** | 20% | Resting HR, HRV, VO₂ max trends |
+| **Recovery** | 20% | Recovery score, strain balance, readiness |
+| **Body** | 15% | Weight stability, body composition, BMI |
+
+### Calculation
+
+Each sub-score is computed independently on a 0–100 scale, then combined:
+
+```
+healthScore = (sleep × 0.25) + (activity × 0.20) + (cardio × 0.20)
+            + (recovery × 0.20) + (body × 0.15)
+```
+
+A **7-day rolling average** is applied to smooth day-to-day fluctuations and surface meaningful trends rather than noise.
 
 ### MCP Tool
 
 ```
 get_health_scores(userId, from?, to?, limit?)
 ```
+
+## Readiness Score
+
+The readiness score (0–100) assesses daily recovery and training readiness using a 5-signal weighted model.
+
+### Signal Weights
+
+| Signal | Weight | Description |
+|--------|--------|-------------|
+| **HRV** | 30% | Overnight HRV (RMSSD) relative to personal baseline |
+| **Sleep** | 25% | Composite of duration, efficiency, and stage balance |
+| **Strain Recovery** | 20% | Previous-day strain vs. recovery response |
+| **Resting Heart Rate** | 15% | Deviation from personal baseline RHR |
+| **Physiological** | 10% | SpO₂, respiratory rate, skin temperature deviation |
+
+### Auto-Personalization
+
+After **14 days** of data collection, baselines shift from population defaults to personalized rolling averages. This adapts the scoring model to each individual's physiology.
+
+### Training Recommendations
+
+| Readiness Range | Status | Recommendation |
+|----------------|--------|----------------|
+| 80–100 | **Peak** | High-intensity training, competition ready |
+| 60–79 | **Moderate** | Moderate training, maintain load |
+| 40–59 | **Low** | Light activity, prioritize recovery |
+| 0–39 | **Rest** | Active recovery only, possible illness/overtraining |
+
+## Body Score
+
+The body score evaluates body composition health using three components.
+
+### Components
+
+| Component | Metric | Scoring |
+|-----------|--------|---------|
+| **Weight Stability** | 14-day coefficient of variation (CV) | CV < 1% = 100; CV > 5% = 0; linear interpolation between |
+| **Body Composition** | Body fat percentage | Scored against age- and gender-adjusted healthy ranges |
+| **BMI** | Body mass index | 18.5–24.9 = optimal; tapered scoring outside range |
+
+### Formula
+
+```
+bodyScore = (weightStability × 0.40) + (bodyComposition × 0.35) + (bmiScore × 0.25)
+```
+
+## Metabolic Efficiency
+
+A composite index measuring how efficiently the body converts physiological inputs into performance, with gender-adjusted reference ranges.
+
+### Sub-Indices
+
+| Sub-Index | Method | Description |
+|-----------|--------|-------------|
+| **Cardiac Efficiency** | Buchheit method | Ratio of HRV to resting HR — higher values indicate more efficient cardiac autonomic regulation |
+| **Energy Efficiency** | Activity-to-calorie ratio | How effectively active effort translates to energy expenditure |
+| **Recovery Efficiency** | Cole model | Speed and completeness of HRV and RHR return to baseline after strain |
+| **Aerobic Capacity Proxy** | Estimated VO₂ max scaling | Derived from HR/workload relationship when direct VO₂ max is unavailable |
+
+### Composite Formula
+
+```
+metabolicEfficiency = (cardiac × 0.30) + (energy × 0.25)
+                    + (recovery × 0.25) + (aerobic × 0.20)
+```
+
+All sub-indices are normalized to 0–100 and adjusted for gender using population reference data.
+
+## Training Load
+
+An impulse-response EWMA (Exponentially Weighted Moving Average) model that tracks training stress accumulation and dissipation.
+
+### Metrics
+
+| Metric | Window | Description |
+|--------|--------|-------------|
+| **Daily Strain** | — | TRIMP-like impulse from workout intensity and duration |
+| **ATL** (Acute Training Load) | 7-day EWMA | Recent training stress — "fatigue" |
+| **CTL** (Chronic Training Load) | 42-day EWMA | Long-term fitness adaptation — "fitness" |
+| **TSB** (Training Stress Balance) | CTL − ATL | Net balance — "form" |
+
+### EWMA Formula
+
+```
+EWMAₜ = EWMAₜ₋₁ + α × (valueₜ − EWMAₜ₋₁)
+  where α = 2 / (window + 1)
+```
+
+### Status Classification
+
+| TSB Range | Status | Interpretation |
+|-----------|--------|---------------|
+| > 25 | **Transition** | Detraining — fitness declining |
+| 5 to 25 | **Fresh** | Optimal performance window |
+| −10 to 5 | **Neutral** | Balanced training load |
+| −25 to −10 | **Tired** | Accumulated fatigue, manage recovery |
+| < −25 | **Overreaching** | High injury/burnout risk |
+
+## Recovery Prediction
+
+Uses the **Banister Fitness-Fatigue** model with a 4-factor adjustment to predict recovery timelines.
+
+### Banister Model
+
+```
+performance(t) = fitness(t) − fatigue(t)
+fitness(t)  = Σ w(i) × e^(−(t−i)/τ₁)     τ₁ = 42 days
+fatigue(t)  = Σ w(i) × e^(−(t−i)/τ₂)     τ₂ = 7 days
+```
+
+### 4-Factor Adjustment
+
+| Factor | Weight | Signal |
+|--------|--------|--------|
+| **Training Load Decay** | 30% | Rate of ATL reduction since last session |
+| **Sleep Quality** | 25% | Composite sleep score over recovery window |
+| **HRV Trajectory** | 25% | Direction and slope of HRV trend (rising = recovering) |
+| **RHR Elevation** | 20% | How far above baseline RHR remains (lower = more recovered) |
+
+The model outputs a predicted recovery percentage (0–100%) and estimated hours to full recovery.
+
+## Stress Resilience Index
+
+Measures autonomic nervous system resilience — the body's ability to absorb and recover from stressors.
+
+### Components
+
+| Component | Description |
+|-----------|-------------|
+| **Stressor Identification** | Detects training, sleep deficit, and physiological stress events |
+| **HRV Recovery Days** | Number of days for HRV to return to baseline after a stressor |
+| **Supercompensation Ratio** | Magnitude of HRV overshoot above baseline post-recovery (higher = more resilient) |
+| **Allostatic Load** | Cumulative stress burden — sustained deviation of RHR, HRV, and sleep from baselines |
+
+### Scoring
+
+```
+resilience = (recoverySpeed × 0.35) + (supercompensation × 0.30)
+           + (1 − allostatic × 0.20) + (stressorAdaptation × 0.15)
+```
+
+| Score Range | Rating |
+|-------------|--------|
+| 80–100 | **Excellent** — rapid recovery, strong adaptation |
+| 60–79 | **Good** — adequate resilience, room for improvement |
+| 40–59 | **Moderate** — slow recovery, watch for overtraining |
+| 0–39 | **Low** — poor resilience, reduce stressors and prioritize rest |
+
+## Circadian Rhythm Analysis
+
+Uses the **Munich Chronotype Questionnaire (MCTQ)** methodology to classify chronotype and detect circadian misalignment.
+
+### Outputs
+
+| Output | Description |
+|--------|-------------|
+| **Chronotype** | Classification based on mid-sleep on free days (MSF): early, moderate-early, intermediate, moderate-late, late |
+| **Social Jet Lag** | Difference between work-day and free-day mid-sleep — values > 1 hour indicate circadian misalignment |
+| **Optimal Sleep Window** | Recommended bed and wake times aligned with the user's natural circadian phase |
+| **Circadian Alignment Score** | 0–100 score measuring how well actual sleep timing matches the user's chronotype |
+
+### MCTQ Mid-Sleep Calculation
+
+```
+MSF = sleep_onset_free + (sleep_duration_free / 2)
+MSFsc = MSF − 0.5 × (sleep_duration_free − average_sleep_need)
+          (sleep-corrected mid-sleep on free days)
+```
+
+### Chronotype Classification
+
+| MSFsc | Chronotype |
+|-------|-----------|
+| < 02:30 | Early ("lark") |
+| 02:30–03:30 | Moderate early |
+| 03:30–04:30 | Intermediate |
+| 04:30–05:30 | Moderate late |
+| > 05:30 | Late ("owl") |
 
 ## Worker Queues
 

@@ -48,6 +48,7 @@ export default defineConfig({
             { label: "Garmin", slug: "providers/garmin" },
             { label: "Whoop", slug: "providers/whoop" },
             { label: "Strava", slug: "providers/strava" },
+            { label: "Withings", slug: "providers/withings" },
           ],
         },
         {
