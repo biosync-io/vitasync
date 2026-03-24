@@ -12,6 +12,7 @@ export interface SyncJobData {
   connectionId?: string
   userId?: string
   workspaceId?: string
+  providerId?: string
   from?: string
   to?: string
   /** Set to true when this job is the scheduler sweep */

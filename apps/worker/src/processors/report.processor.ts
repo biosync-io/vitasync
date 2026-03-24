@@ -12,6 +12,8 @@ import { and, eq, gte, lte, sql, avg, count } from "drizzle-orm"
 export interface ReportJobData {
   userId: string
   reportType: "weekly" | "monthly"
+  workspaceId?: string
+  reportId?: string
 }
 
 /**
