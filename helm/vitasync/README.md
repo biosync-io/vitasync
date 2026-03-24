@@ -57,6 +57,11 @@ A Helm chart for deploying VitaSync — a self-hosted wearable health data aggre
 | api.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | api.service.port | int | `3001` |  |
 | api.service.type | string | `"ClusterIP"` |  |
+| api.startupProbe.failureThreshold | int | `12` |  |
+| api.startupProbe.httpGet.path | string | `"/health"` |  |
+| api.startupProbe.httpGet.port | int | `3001` |  |
+| api.startupProbe.initialDelaySeconds | int | `5` |  |
+| api.startupProbe.periodSeconds | int | `5` |  |
 | api.tolerations | list | `[]` |  |
 | config.ADMIN_WORKSPACE_SLUG | string | `"default"` |  |
 | config.CORS_ORIGINS | string | `""` |  |
@@ -121,6 +126,22 @@ A Helm chart for deploying VitaSync — a self-hosted wearable health data aggre
 | migrations.resources.requests.cpu | string | `"50m"` |  |
 | migrations.resources.requests.memory | string | `"128Mi"` |  |
 | nameOverride | string | `""` | Override the release name |
+| notificationWorker.enabled | bool | `true` |  |
+| notificationWorker.extraEnv | list | `[]` |  |
+| notificationWorker.nodeSelector | object | `{}` |  |
+| notificationWorker.podAnnotations | object | `{}` |  |
+| notificationWorker.podSecurityContext.fsGroup | int | `1001` |  |
+| notificationWorker.podSecurityContext.runAsNonRoot | bool | `true` |  |
+| notificationWorker.podSecurityContext.runAsUser | int | `1001` |  |
+| notificationWorker.replicaCount | int | `1` |  |
+| notificationWorker.resources.limits.cpu | string | `"250m"` |  |
+| notificationWorker.resources.limits.memory | string | `"256Mi"` |  |
+| notificationWorker.resources.requests.cpu | string | `"50m"` |  |
+| notificationWorker.resources.requests.memory | string | `"128Mi"` |  |
+| notificationWorker.securityContext.allowPrivilegeEscalation | bool | `false` |  |
+| notificationWorker.securityContext.capabilities.drop[0] | string | `"ALL"` |  |
+| notificationWorker.securityContext.readOnlyRootFilesystem | bool | `true` |  |
+| notificationWorker.tolerations | list | `[]` |  |
 | postgresql.auth.database | string | `"vitasync"` |  |
 | postgresql.auth.password | string | `"changeme"` |  |
 | postgresql.auth.username | string | `"vitasync"` |  |
@@ -151,6 +172,22 @@ A Helm chart for deploying VitaSync — a self-hosted wearable health data aggre
 | redis.resources | object | `{}` |  |
 | redis.service.port | int | `6379` |  |
 | redis.service.type | string | `"ClusterIP"` |  |
+| reportWorker.enabled | bool | `true` |  |
+| reportWorker.extraEnv | list | `[]` |  |
+| reportWorker.nodeSelector | object | `{}` |  |
+| reportWorker.podAnnotations | object | `{}` |  |
+| reportWorker.podSecurityContext.fsGroup | int | `1001` |  |
+| reportWorker.podSecurityContext.runAsNonRoot | bool | `true` |  |
+| reportWorker.podSecurityContext.runAsUser | int | `1001` |  |
+| reportWorker.replicaCount | int | `1` |  |
+| reportWorker.resources.limits.cpu | string | `"500m"` |  |
+| reportWorker.resources.limits.memory | string | `"512Mi"` |  |
+| reportWorker.resources.requests.cpu | string | `"100m"` |  |
+| reportWorker.resources.requests.memory | string | `"256Mi"` |  |
+| reportWorker.securityContext.allowPrivilegeEscalation | bool | `false` |  |
+| reportWorker.securityContext.capabilities.drop[0] | string | `"ALL"` |  |
+| reportWorker.securityContext.readOnlyRootFilesystem | bool | `true` |  |
+| reportWorker.tolerations | list | `[]` |  |
 | secrets.ADMIN_API_KEY | string | `"vs_live_changeme_for_production"` |  |
 | secrets.ENCRYPTION_KEY | string | `"change-me-32-byte-hex-encoded-key"` |  |
 | secrets.FITBIT_CLIENT_ID | string | `""` |  |
@@ -211,6 +248,11 @@ A Helm chart for deploying VitaSync — a self-hosted wearable health data aggre
 | web.securityContext.readOnlyRootFilesystem | bool | `false` |  |
 | web.service.port | int | `3000` |  |
 | web.service.type | string | `"ClusterIP"` |  |
+| web.startupProbe.failureThreshold | int | `12` |  |
+| web.startupProbe.httpGet.path | string | `"/"` |  |
+| web.startupProbe.httpGet.port | int | `3000` |  |
+| web.startupProbe.initialDelaySeconds | int | `5` |  |
+| web.startupProbe.periodSeconds | int | `5` |  |
 | web.tolerations | list | `[]` |  |
 | worker.affinity | object | `{}` |  |
 | worker.autoscaling.enabled | bool | `false` |  |
@@ -229,6 +271,7 @@ A Helm chart for deploying VitaSync — a self-hosted wearable health data aggre
 | worker.podSecurityContext.fsGroup | int | `1001` |  |
 | worker.podSecurityContext.runAsNonRoot | bool | `true` |  |
 | worker.podSecurityContext.runAsUser | int | `1001` |  |
+| worker.queues | string | `"sync,analytics,webhooks"` |  |
 | worker.replicaCount | int | `1` |  |
 | worker.resources.limits.cpu | string | `"500m"` |  |
 | worker.resources.limits.memory | string | `"512Mi"` |  |
@@ -239,5 +282,3 @@ A Helm chart for deploying VitaSync — a self-hosted wearable health data aggre
 | worker.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | worker.tolerations | list | `[]` |  |
 
-----------------------------------------------
-Autogenerated from chart metadata using [helm-docs v1.14.2](https://github.com/norwoodj/helm-docs/releases/v1.14.2)
