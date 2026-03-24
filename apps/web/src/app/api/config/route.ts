@@ -9,10 +9,9 @@ import { NextResponse } from "next/server"
  */
 export async function GET() {
   return NextResponse.json({
-    // NEXT_PUBLIC_DEFAULT_API_KEY is baked in at build time (dev/CI).
-    // DEFAULT_API_KEY is the runtime equivalent injected by Helm in K8s.
-    // The server can read both; the browser bundle can only read the first.
     defaultApiKey:
       process.env.DEFAULT_API_KEY ?? process.env.NEXT_PUBLIC_DEFAULT_API_KEY ?? "",
+    appVersion:
+      process.env.APP_VERSION ?? process.env.NEXT_PUBLIC_APP_VERSION ?? "0.2.0",
   })
 }

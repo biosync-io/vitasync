@@ -193,7 +193,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [themeOpen, setThemeOpen] = useState(false)
 
-  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || "0.2.0"
+  const [appVersion, setAppVersion] = useState(process.env.NEXT_PUBLIC_APP_VERSION || "")
+
+  useEffect(() => {
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((d: { appVersion?: string }) => { if (d.appVersion) setAppVersion(d.appVersion) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     setDarkMode(getStoredAppearance())
