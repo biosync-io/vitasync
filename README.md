@@ -4,8 +4,8 @@
 
 **Self-hosted wearable health data aggregation platform**
 
-[![CI](https://github.com/your-org/vitasync/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/vitasync/actions/workflows/ci.yml)
-[![Docker](https://github.com/your-org/vitasync/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/your-org/vitasync/actions/workflows/docker-publish.yml)
+[![CI](https://github.com/biosync-io/vitasync/actions/workflows/ci.yml/badge.svg)](https://github.com/biosync-io/vitasync/actions/workflows/ci.yml)
+[![Release](https://github.com/biosync-io/vitasync/actions/workflows/release.yml/badge.svg)](https://github.com/biosync-io/vitasync/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://typescriptlang.org)
