@@ -19,13 +19,14 @@ import { type HealthMetric, type TimeseriesPoint, healthApi, usersApi } from "..
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const BODY_METRICS = ["weight", "body_fat", "blood_pressure", "blood_oxygen", "temperature", "respiratory_rate"] as const
+const BODY_METRICS = ["weight", "body_fat", "blood_pressure", "blood_oxygen", "spo2", "temperature", "respiratory_rate"] as const
 
 const METRIC_LABELS: Record<string, string> = {
   weight: "Weight",
   body_fat: "Body Fat",
   blood_pressure: "Blood Pressure",
   blood_oxygen: "SpO₂",
+  spo2: "SpO₂",
   temperature: "Temperature",
   respiratory_rate: "Respiratory Rate",
 }
@@ -34,6 +35,7 @@ const METRIC_UNITS: Record<string, string> = {
   weight: "kg",
   body_fat: "%",
   blood_oxygen: "%",
+  spo2: "%",
   temperature: "°C",
   respiratory_rate: "brpm",
 }
@@ -43,6 +45,7 @@ const METRIC_ICONS: Record<string, string> = {
   body_fat: "📊",
   blood_pressure: "🩸",
   blood_oxygen: "🫁",
+  spo2: "🫁",
   temperature: "🌡️",
   respiratory_rate: "💨",
 }
@@ -130,6 +133,13 @@ export default function BodyMetricsPage() {
     enabled: !!selectedUserId,
   })
 
+  // Garmin uses "spo2" while Withings/Whoop use "blood_oxygen" — query both and merge
+  const { data: spo2AltTs } = useQuery({
+    queryKey: ["body-ts-spo2-alt", selectedUserId, from, to],
+    queryFn: () => healthApi.timeseries(selectedUserId, { metricType: "spo2", from, to, bucket: "day" }),
+    enabled: !!selectedUserId,
+  })
+
   const { data: tempTs } = useQuery({
     queryKey: ["body-ts-temp", selectedUserId, from, to],
     queryFn: () => healthApi.timeseries(selectedUserId, { metricType: "temperature", from, to, bucket: "day" }),
@@ -154,7 +164,16 @@ export default function BodyMetricsPage() {
   // Process timeseries for charts
   const weightPoints = weightTs?.data ?? []
   const bodyFatPoints = bodyFatTs?.data ?? []
-  const spo2Points = spo2Ts?.data ?? []
+  const spo2Points = useMemo(() => {
+    const primary = spo2Ts?.data ?? []
+    const alt = spo2AltTs?.data ?? []
+    if (alt.length === 0) return primary
+    if (primary.length === 0) return alt
+    // Merge by bucket date, preferring primary (blood_oxygen) when both exist
+    const map = new Map(alt.map((p) => [p.bucket.slice(0, 10), p]))
+    for (const p of primary) map.set(p.bucket.slice(0, 10), p)
+    return Array.from(map.values()).sort((a, b) => a.bucket.localeCompare(b.bucket))
+  }, [spo2Ts, spo2AltTs])
   const tempPoints = tempTs?.data ?? []
   const rrPoints = rrTs?.data ?? []
 
