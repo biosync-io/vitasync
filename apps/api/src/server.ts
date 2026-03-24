@@ -28,6 +28,22 @@ export async function buildServer() {
     requestIdHeader: "x-request-id",
   })
 
+  // ── Raw body capture for webhook signature verification ────
+  // Override the JSON content-type parser to also store the raw Buffer
+  // on the request, so inbound webhook routes can verify HMAC signatures.
+  app.addContentTypeParser(
+    "application/json",
+    { parseAs: "buffer" },
+    (req, body: Buffer, done) => {
+      (req as typeof req & { rawBody?: Buffer }).rawBody = body
+      try {
+        done(null, JSON.parse(body.toString()))
+      } catch (err) {
+        done(err as Error, undefined)
+      }
+    },
+  )
+
   // ── Security headers ────────────────────────────────────────
   await app.register(helmet, {
     contentSecurityPolicy: false, // Managed at CDN/proxy level
