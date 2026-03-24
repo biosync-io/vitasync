@@ -13,12 +13,6 @@ permissions:
   contents: write
   packages: write
 
-env:
-  REGISTRY: ghcr.io
-  API_IMAGE: ghcr.io/${{ github.repository }}-api
-  WORKER_IMAGE: ghcr.io/${{ github.repository }}-worker
-  WEB_IMAGE: ghcr.io/${{ github.repository }}-web
-
 jobs:
   version-tag:
     name: Version & Tag
@@ -72,21 +66,21 @@ jobs:
           git push origin "${{ steps.bump.outputs.new_tag }}"
 
   docker:
-    name: Build & Push Docker Images
+    name: Docker · ${{ matrix.image }}
     needs: version-tag
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - app: api
-            image_env: API_IMAGE
+          - image: api
             file: apps/api/Dockerfile
-          - app: worker
-            image_env: WORKER_IMAGE
+          - image: worker
             file: apps/worker/Dockerfile
-          - app: web
-            image_env: WEB_IMAGE
+          - image: web
             file: apps/web/Dockerfile
+          - image: mcp
+            file: apps/mcp/Dockerfile
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -98,17 +92,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push ${{ matrix.app }}
+      - name: Build and push ${{ matrix.image }}
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ${{ matrix.file }}
           push: true
           tags: |
-            ${{ env[matrix.image_env] }}:${{ needs.version-tag.outputs.version }}
-            ${{ env[matrix.image_env] }}:latest
-          cache-from: type=gha,scope=${{ matrix.app }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+            ghcr.io/${{ github.repository }}-${{ matrix.image }}:${{ needs.version-tag.outputs.version }}
+            ghcr.io/${{ github.repository }}-${{ matrix.image }}:latest
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 
   helm:
     name: Publish Helm Chart
@@ -167,6 +161,9 @@ jobs:
 
           # Web Frontend
           docker pull ghcr.io/${{ github.repository }}-web:${VERSION}
+
+          # MCP Server
+          docker pull ghcr.io/${{ github.repository }}-mcp:${VERSION}
           \`\`\`
 
           ### ⎈ Helm Chart
@@ -188,6 +185,7 @@ jobs:
           | API Image | \`ghcr.io/${{ github.repository }}-api:${VERSION}\` |
           | Worker Image | \`ghcr.io/${{ github.repository }}-worker:${VERSION}\` |
           | Web Image | \`ghcr.io/${{ github.repository }}-web:${VERSION}\` |
+          | MCP Image | \`ghcr.io/${{ github.repository }}-mcp:${VERSION}\` |
           | Helm Chart | \`oci://ghcr.io/${{ github.repository_owner }}/charts/vitasync:${VERSION}\` |
           NOTES_EOF
 
