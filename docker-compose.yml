@@ -177,6 +177,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
       # Server-side proxy target — internal service name, never changes
       INTERNAL_API_URL: http://api:3001
       # Browser-facing API URL — set to your public domain in production

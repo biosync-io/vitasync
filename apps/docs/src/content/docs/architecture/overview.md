@@ -14,7 +14,7 @@ vitasync/
 ├── apps/
 │   ├── api/        # Fastify 5 REST API
 │   ├── worker/     # BullMQ background worker
-│   ├── web/        # Next.js 15 App Router dashboard
+│   ├── web/        # Next.js 16 PWA dashboard (installable, offline-capable)
 │   └── mcp/        # MCP server — expose health data + AI analytics to AI assistants
 ├── packages/
 │   ├── types/      # Shared TypeScript types

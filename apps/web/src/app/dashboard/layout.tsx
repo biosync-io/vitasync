@@ -60,6 +60,8 @@ import {
   Bot,
   type LucideIcon,
 } from "lucide-react"
+import { OfflineBanner } from "../../lib/components/OfflineBanner"
+import { InstallPrompt } from "../../lib/components/InstallPrompt"
 
 const navSections: Array<{
   title: string
@@ -462,11 +464,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="p-4 sm:p-6 lg:p-8">{children}</div>
         </main>
       </div>
+
+      <OfflineBanner />
+      <InstallPrompt />
     </div>
   )
 }
 
-// ── Notification Bell ─────────────────────────────────────────────────────
+// ── Notification Bell─────────────────────────────────────────────────────
 
 const SEVERITY_COLORS: Record<string, string> = {
   info: "text-blue-500",

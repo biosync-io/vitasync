@@ -1,11 +1,11 @@
 ---
 title: Web Dashboard
-description: Using the VitaSync web dashboard — Sync Jobs, notifications, theme picker, and settings.
+description: Using the VitaSync web dashboard — PWA features, offline support, push notifications, sync jobs, theme picker, and settings.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-The VitaSync web dashboard (`apps/web`) is a Next.js 16 App Router application available at **http://localhost:3000** (or your configured domain). It provides a management UI for users, provider connections, sync jobs, notifications, settings, and more.
+The VitaSync web dashboard (`apps/web`) is a Next.js 16 **Progressive Web App** available at **http://localhost:3000** (or your configured domain). It can be **installed** on desktop and mobile devices, works **offline** with cached data, and supports **push notifications**. It provides a management UI for users, provider connections, sync jobs, notifications, settings, and more.
 
 ## Navigation
 
@@ -44,6 +44,58 @@ The VitaSync web dashboard (`apps/web`) is a Next.js 16 App Router application a
 | Partner Events | `/dashboard/partner-events` | Inbound webhook log viewer |
 | Body Metrics | `/dashboard/body-metrics` | Body composition with clinical charts |
 | Settings | `/dashboard/settings` | Theme, preferences, auto-sync toggle |
+
+## Progressive Web App (PWA)
+
+The dashboard is a fully-featured PWA — installable, offline-capable, and push-enabled.
+
+### Installation
+
+When you visit the dashboard in a supported browser (Chrome, Edge, Safari 17+), an **Install VitaSync** prompt appears in the bottom-right corner. Click **Install** to add VitaSync to your home screen or app dock. The prompt can be dismissed and won't appear again.
+
+You can also install from the browser's address bar (look for the install icon) or via the browser menu.
+
+### Offline Support
+
+VitaSync uses a **service worker** powered by [Workbox](https://developer.chrome.com/docs/workbox/) to cache pages and API responses:
+
+| Strategy | Scope | Behaviour |
+|----------|-------|-----------|
+| **Precache** | Next.js build output | All pages and JS bundles cached at install time |
+| **CacheFirst** | Static assets, fonts, images, icons | Served from cache instantly; long TTL |
+| **NetworkFirst** | API data (`/api/v1/*`) | Tries network first with 10s timeout; falls back to cached response |
+| **CacheFirst** | Next.js static chunks | Immutable build assets cached for 1 year |
+
+When the device goes offline, a floating **"You're offline — showing cached data"** banner appears at the bottom of the screen. When connectivity returns, a brief **"Back online"** toast confirms reconnection.
+
+If a page has never been cached, the app shows a branded **offline fallback page** with a retry button.
+
+### Background Sync
+
+Mutations made while offline (e.g., logging water intake, mood entries, journal notes) are queued in **IndexedDB** and replayed automatically when connectivity returns via the [Background Sync API](https://developer.mozilla.org/en-US/docs/Web/API/Background_Synchronization_API).
+
+### Push Notifications
+
+VitaSync supports **Web Push** notifications via the VAPID protocol. To enable:
+
+1. Generate VAPID keys: `pnpm --filter @biosync-io/web generate-vapid-keys`
+2. Add the keys to your `.env` file:
+   ```bash
+   NEXT_PUBLIC_VAPID_PUBLIC_KEY=<public-key>
+   VAPID_PRIVATE_KEY=<private-key>
+   VAPID_SUBJECT=mailto:admin@vitasync.io
+   ```
+3. Users can enable push notifications in their browser when prompted
+
+Push notifications are delivered for health anomalies, goal completions, sync events, and other configurable alerts through the [notification system](/vitasync/dev-guides/notifications/).
+
+### App Badge
+
+On supported platforms (Chrome on Android/desktop, Safari on macOS), the app icon badge updates with the **unread notification count** using the [Badging API](https://developer.mozilla.org/en-US/docs/Web/API/Badging_API).
+
+### Periodic Background Sync
+
+On Chromium browsers, VitaSync registers a **periodic background sync** (every 12 hours) to refresh health scores, readiness data, and insights in the cache — so the dashboard loads fresh data even before you open it.
 
 ## Sync Jobs
 
