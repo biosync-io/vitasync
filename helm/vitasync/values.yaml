@@ -502,6 +502,11 @@ config:
   DATABASE_POOL_MIN: "2"
   # Maximum number of DB connections in the pool (postgres.js `max` option)
   DATABASE_POOL_MAX: "20"
+  # PWA / Push Notifications — generate keys with:
+  #   pnpm --filter @biosync-io/web generate-vapid-keys
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: ""
+  VAPID_PRIVATE_KEY: ""
+  VAPID_SUBJECT: "mailto:admin@vitasync.io"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Secrets
