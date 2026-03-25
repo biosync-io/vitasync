@@ -34,7 +34,8 @@ VitaSync is a fully TypeScript monorepo that gives you a production-ready, multi
 | **OpenAPI docs** | Swagger UI auto-generated at `/docs` |
 | **MCP server** | Exposes health data + AI analytics to AI assistants (Claude, Cursor, VS Code Copilot) via the Model Context Protocol |
 | **Grafana dashboards** | 8 pre-built health dashboards auto-provisioned from `monitoring/grafana/dashboards/` |
-| **Web dashboard** | Next.js dashboard with sync-job monitor, accent theme picker, and auto-sync on provider connect |
+| **Web dashboard** | Next.js 16 PWA — installable, offline-capable dashboard with push notifications, background sync, and accent theme picker |
+| **Progressive Web App** | Installable on desktop & mobile, offline data caching (Workbox), push notifications (VAPID), background sync for offline mutations, app badge API |
 | **Personal wellness tracking** | Daily journal, water intake, habits tracker, mood logs, nutrition, medications, and symptom tracking |
 | **Goals & gamification** | Health goals with streak tracking, tiered achievements, workspace-wide challenges with leaderboards |
 | **Training & readiness** | Training plans, training load metrics, readiness scores, and sleep analysis with debt tracking |
@@ -50,7 +51,7 @@ vitasync/
 ├── apps/
 │   ├── api/        # Fastify 5 REST API — routes, services, auth plugin
 │   ├── worker/     # BullMQ worker — sync, analytics, notifications, reports
-│   ├── web/        # Next.js 16 App Router dashboard
+│   ├── web/        # Next.js 16 PWA dashboard (installable, offline-capable)
 │   ├── mcp/        # MCP server — expose health data + AI analytics to AI assistants
 │   └── docs/       # Astro Starlight documentation site
 ├── packages/
@@ -196,10 +197,13 @@ Copy `.env.example` to `.env` and fill in the values.
 | `FITBIT_CLIENT_SECRET` | for Fitbit | From Fitbit developer console |
 | `GARMIN_CONSUMER_KEY` | for Garmin | From Garmin Health API |
 | `GARMIN_CONSUMER_SECRET` | for Garmin | From Garmin Health API |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | for push | Public VAPID key for push notifications. Generate with `pnpm --filter @biosync-io/web generate-vapid-keys` |
+| `VAPID_PRIVATE_KEY` | for push | Private VAPID key (keep secret). Same command as above |
+| `VAPID_SUBJECT` | for push | VAPID contact (mailto: or https:), e.g. `mailto:admin@vitasync.io` |
 
 > **Note:** Notification channel settings (SMTP, VAPID, webhook URLs, etc.) are configured per-user
 > via the **Notifications** dashboard UI and stored in the `notification_channels` database table.
-> No environment variables are needed for notification channels.
+> No environment variables are needed for notification channels beyond the VAPID keys above.
 
 ---
 
