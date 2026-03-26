@@ -13,6 +13,7 @@ import { and, eq, gte, lte, desc, sql } from "drizzle-orm"
 import { computeReadiness } from "@biosync-io/analytics"
 import { computeBodyScore } from "@biosync-io/analytics"
 import { computeTrainingLoad } from "@biosync-io/analytics"
+import { getNotificationQueue } from "../queues/notification.js"
 
 export interface AnalyticsJobData {
   userId: string
@@ -42,6 +43,27 @@ export async function processAnalyticsJob(job: Job<AnalyticsJobData>): Promise<v
   try {
     const score = await computeHealthScore(db, userId, today)
     job.log(`Health score computed: ${score.overallScore} (${score.grade})`)
+
+    // Notify on notable health score milestones
+    if (score.overallScore >= 90) {
+      getNotificationQueue().add("health-score-milestone", {
+        userId,
+        workspaceId: job.data.workspaceId,
+        title: `Excellent Health Score: ${score.overallScore}`,
+        body: `Your health score hit ${score.overallScore} (${score.grade}) today — keep it up!`,
+        severity: "info",
+        category: "insight",
+      }).catch(() => {})
+    } else if (score.overallScore <= 40) {
+      getNotificationQueue().add("health-score-low", {
+        userId,
+        workspaceId: job.data.workspaceId,
+        title: `Low Health Score: ${score.overallScore}`,
+        body: `Your health score dropped to ${score.overallScore} (${score.grade}). Check your sleep and activity levels.`,
+        severity: "warning",
+        category: "insight",
+      }).catch(() => {})
+    }
   } catch (err: any) {
     job.log(`Health score computation failed: ${err.message}`)
   }
@@ -57,7 +79,17 @@ export async function processAnalyticsJob(job: Job<AnalyticsJobData>): Promise<v
   // 2. Anomaly detection
   try {
     const count = await detectAnomalies(db, userId)
-    if (count > 0) job.log(`Detected ${count} anomalies`)
+    if (count > 0) {
+      job.log(`Detected ${count} anomalies`)
+      getNotificationQueue().add("anomaly-detected", {
+        userId,
+        workspaceId: job.data.workspaceId,
+        title: `${count} Health Anomal${count > 1 ? "ies" : "y"} Detected`,
+        body: `${count} metric${count > 1 ? "s have" : " has"} deviated significantly from your baseline.`,
+        severity: count >= 3 ? "critical" : "warning",
+        category: "anomaly",
+      }).catch(() => {})
+    }
   } catch (err: any) {
     job.log(`Anomaly detection failed: ${err.message}`)
   }
@@ -65,7 +97,17 @@ export async function processAnalyticsJob(job: Job<AnalyticsJobData>): Promise<v
   // 3. Achievement check
   try {
     const awarded = await checkAchievements(db, userId)
-    if (awarded > 0) job.log(`Awarded ${awarded} new achievements`)
+    if (awarded > 0) {
+      job.log(`Awarded ${awarded} new achievements`)
+      getNotificationQueue().add("achievement-unlocked", {
+        userId,
+        workspaceId: job.data.workspaceId,
+        title: `${awarded} Achievement${awarded > 1 ? "s" : ""} Unlocked! 🎉`,
+        body: `You've earned ${awarded} new milestone${awarded > 1 ? "s" : ""} — check your achievements page!`,
+        severity: "info",
+        category: "achievement",
+      }).catch(() => {})
+    }
   } catch (err: any) {
     job.log(`Achievement check failed: ${err.message}`)
   }
@@ -82,8 +124,18 @@ export async function processAnalyticsJob(job: Job<AnalyticsJobData>): Promise<v
 
   // 5. Evaluate active goals
   try {
-    const evaluated = await evaluateGoals(db, userId)
+    const { evaluated, completedGoals } = await evaluateGoals(db, userId)
     if (evaluated > 0) job.log(`Evaluated ${evaluated} active goals`)
+    for (const goal of completedGoals) {
+      getNotificationQueue().add("goal-completed", {
+        userId,
+        workspaceId: job.data.workspaceId,
+        title: `Goal Completed: ${goal.name}`,
+        body: `You've reached your target of ${goal.targetValue} for ${goal.name}!`,
+        severity: "info",
+        category: "goal",
+      }).catch(() => {})
+    }
   } catch (err: any) {
     job.log(`Goal evaluation failed: ${err.message}`)
   }
@@ -263,6 +315,7 @@ async function recomputeBaselines(db: ReturnType<typeof getDb>, userId: string) 
 async function evaluateGoals(db: ReturnType<typeof getDb>, userId: string) {
   const activeGoals = await db.select().from(goals).where(and(eq(goals.userId, userId), eq(goals.isActive, true))).limit(50)
   let evaluated = 0
+  const completedGoals: Array<{ name: string; targetValue: number }> = []
   for (const goal of activeGoals) {
     if (!goal.metricType) continue
     const [metric] = await db
@@ -272,12 +325,16 @@ async function evaluateGoals(db: ReturnType<typeof getDb>, userId: string) {
 
     if (metric?.total != null) {
       const newValue = metric.total
+      const wasActive = goal.isActive
       const isComplete = newValue >= goal.targetValue
       await db.update(goals).set({ currentValue: newValue, isActive: !isComplete }).where(eq(goals.id, goal.id))
+      if (isComplete && wasActive) {
+        completedGoals.push({ name: goal.name, targetValue: goal.targetValue })
+      }
       evaluated++
     }
   }
-  return evaluated
+  return { evaluated, completedGoals }
 }
 
 // ── Score helper functions ──────────────────────────────────────
