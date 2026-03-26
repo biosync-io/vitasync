@@ -12,6 +12,7 @@ import {
 import { ThemeSettingsPanel } from "../../lib/ThemeSettingsPanel"
 import { CommandPalette } from "../../lib/CommandPalette"
 import { useSelectedUser } from "../../lib/user-selection-context"
+import { useNotificationStream } from "../../lib/hooks/useNotificationStream"
 import { notificationsApi, type InAppNotification } from "../../lib/api"
 import {
   LayoutDashboard,
@@ -195,6 +196,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [darkMode, setDarkMode] = useState<AppearanceMode>("system")
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Real-time notification stream — shows toasts and updates bell instantly
+  useNotificationStream()
   const [themeOpen, setThemeOpen] = useState(false)
 
   const [appVersion, setAppVersion] = useState(process.env.NEXT_PUBLIC_APP_VERSION || "")
