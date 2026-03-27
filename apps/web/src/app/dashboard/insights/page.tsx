@@ -196,10 +196,10 @@ function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90" style={{ filter: `drop-shadow(0 0 8px rgba(${glow},0.3))` }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" className="text-gray-200/40 dark:text-gray-700/30" strokeWidth={sw} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" className="text-gray-600/30" strokeWidth={sw} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset} className="transition-all duration-1000 ease-out" />
       </svg>
-      <span className="absolute text-base font-black text-gray-900 dark:text-gray-100">{Math.round(pct)}</span>
+      <span className="absolute text-base font-black text-white">{Math.round(pct)}</span>
     </div>
   )
 }
