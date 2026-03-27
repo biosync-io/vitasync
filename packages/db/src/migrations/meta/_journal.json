@@ -29,6 +29,34 @@
       "when": 1773945600000,
       "tag": "0003_add_users_gender",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774100000000,
+      "tag": "0004_add_inbound_webhook_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1774200000000,
+      "tag": "0005_add_ai_providers",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774300000000,
+      "tag": "0006_add_api_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1774400000000,
+      "tag": "0007_add_in_app_notifications",
+      "breakpoints": true
     }
   ]
 }
