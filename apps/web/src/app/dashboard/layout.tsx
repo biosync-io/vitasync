@@ -567,7 +567,7 @@ function NotificationBell() {
 
           <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-2">
             <Link
-              href="/dashboard/notifications"
+              href="/dashboard/inbox"
               onClick={() => setOpen(false)}
               className="block text-center text-xs text-indigo-600 dark:text-indigo-400 hover:underline py-1"
             >
