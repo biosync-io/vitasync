@@ -241,7 +241,7 @@ export default function RemindersPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {reminders.length === 0 && <p className="col-span-full text-center text-sm text-gray-500 dark:text-gray-400 py-8">No reminders configured. Create one to get started!</p>}
           {reminders.map((r) => {
-            const typeInfo = TYPE_LABELS[r.reminderType] ?? TYPE_LABELS.custom
+            const typeInfo = TYPE_LABELS[r.reminderType] ?? { label: "Custom", emoji: "⏰" }
             const isSnoozed = r.snoozedUntil && new Date(r.snoozedUntil) > new Date()
             return (
               <div key={r.id} className={`rounded-xl border ${r.isActive ? "border-gray-200 dark:border-gray-800" : "border-gray-300 dark:border-gray-700 opacity-60"} bg-white dark:bg-gray-900 p-5 shadow-sm`}>
