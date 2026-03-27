@@ -310,16 +310,16 @@ export default function UserDetailPage() {
                     <button
                       type="button"
                       onClick={() => syncMutation.mutate(conn.id)}
-                      disabled={syncMutation.isPending}
+                      disabled={syncMutation.isPending && syncMutation.variables === conn.id}
                       className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                     >
-                      {syncMutation.isPending ? "Syncing…" : "Sync"}
+                      {syncMutation.isPending && syncMutation.variables === conn.id ? "Syncing…" : "Sync"}
                     </button>
                   )}
                   <button
                     type="button"
                     onClick={() => disconnectMutation.mutate(conn.id)}
-                    disabled={disconnectMutation.isPending}
+                    disabled={disconnectMutation.isPending && disconnectMutation.variables === conn.id}
                     className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-800/40 dark:text-red-400 dark:hover:bg-red-900/20"
                   >
                     Disconnect
