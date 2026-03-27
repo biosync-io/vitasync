@@ -65,7 +65,8 @@ export default function ProvidersPage() {
     enabled: !!selectedUserId,
   })
 
-  const connectedProviderIds = new Set(connections.map((c) => c.providerId))
+  const activeConnections = connections.filter((c) => c.status === "connected")
+  const connectedProviderIds = new Set(activeConnections.map((c) => c.providerId))
 
   return (
     <div className="space-y-6">
@@ -88,20 +89,31 @@ export default function ProvidersPage() {
       {/* Connected providers status */}
       {selectedUserId && connections.length > 0 && (
         <div className="rounded-2xl border border-emerald-200/60 dark:border-emerald-800/40 bg-gradient-to-br from-emerald-50/60 to-teal-50/30 dark:from-emerald-950/30 dark:to-teal-950/15 backdrop-blur-xl p-5 shadow-card">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-3">Connected Providers ({connections.length})</h2>
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-3">Connected Providers ({activeConnections.length})</h2>
           <div className="flex flex-wrap gap-3">
             {connections.map((conn) => {
               const colors = PROVIDER_COLORS[conn.providerId] ?? { bg: "from-gray-400 to-gray-500", icon: "🔗" }
+              const isActive = conn.status === "connected"
               return (
-                <div key={conn.id} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-white/80 dark:bg-gray-900/80 px-4 py-2.5 shadow-sm">
+                <div key={conn.id} className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 shadow-sm ${
+                  isActive
+                    ? "border-emerald-200 dark:border-emerald-800/40 bg-white/80 dark:bg-gray-900/80"
+                    : "border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20"
+                }`}>
                   <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${colors.bg} flex items-center justify-center text-white text-sm shadow-md`}>
                     {colors.icon}
                   </div>
                   <div>
                     <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">{conn.providerId}</span>
-                    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Connected
-                    </span>
+                    {isActive ? (
+                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Connected
+                      </span>
+                    ) : (
+                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Disconnected
+                      </span>
+                    )}
                   </div>
                 </div>
               )
@@ -120,7 +132,7 @@ export default function ProvidersPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-grid">
           {allProviders.map((provider) => (
-            <ProviderCard key={provider.id} provider={provider} isConnected={connectedProviderIds.has(provider.id)} isConfigured={provider.isConfigured} selectedUserId={selectedUserId} users={users} onSelectUser={setSelectedUserId} />
+            <ProviderCard key={provider.id} provider={provider} isConnected={connectedProviderIds.has(provider.id)} connection={connections.find((c) => c.providerId === provider.id)} isConfigured={provider.isConfigured} selectedUserId={selectedUserId} users={users} onSelectUser={setSelectedUserId} />
           ))}
         </div>
       )}
@@ -216,9 +228,10 @@ export default function ProvidersPage() {
   )
 }
 
-function ProviderCard({ provider, isConnected, isConfigured, selectedUserId, users, onSelectUser }: {
+function ProviderCard({ provider, isConnected, connection, isConfigured, selectedUserId, users, onSelectUser }: {
   provider: ProviderDef
   isConnected: boolean
+  connection?: Connection | undefined
   isConfigured: boolean
   selectedUserId: string
   users: Array<{ id: string; displayName: string | null; externalId: string | null }>
@@ -227,6 +240,8 @@ function ProviderCard({ provider, isConnected, isConfigured, selectedUserId, use
   const colors = PROVIDER_COLORS[provider.id] ?? { bg: "from-gray-400 to-gray-500", icon: "🔗" }
   const [showUserPicker, setShowUserPicker] = useState(false)
   const [oauthModal, setOauthModal] = useState<{ userId: string } | null>(null)
+
+  const isDisconnected = connection != null && !isConnected
 
   const handleConnect = () => {
     if (!selectedUserId) {
@@ -245,7 +260,9 @@ function ProviderCard({ provider, isConnected, isConfigured, selectedUserId, use
   return (
     <>
       <div className={`rounded-2xl border bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 group ${
-        isConnected ? "border-emerald-300 dark:border-emerald-800/60 ring-1 ring-emerald-200 dark:ring-emerald-800/30" : "border-gray-200/60 dark:border-gray-800/60"
+        isConnected ? "border-emerald-300 dark:border-emerald-800/60 ring-1 ring-emerald-200 dark:ring-emerald-800/30"
+          : isDisconnected ? "border-amber-300 dark:border-amber-800/60 ring-1 ring-amber-200 dark:ring-amber-800/30"
+          : "border-gray-200/60 dark:border-gray-800/60"
       }`}>
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -268,6 +285,11 @@ function ProviderCard({ provider, isConnected, isConfigured, selectedUserId, use
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active
             </span>
           )}
+          {isDisconnected && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2.5 py-1 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Disconnected
+            </span>
+          )}
         </div>
         <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">{provider.description}</p>
         <div className="flex flex-wrap gap-1.5 mb-4">
@@ -283,6 +305,20 @@ function ProviderCard({ provider, isConnected, isConfigured, selectedUserId, use
           <div className="flex items-center justify-between rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-4 py-2.5">
             <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">✓ Connected & Syncing</span>
             <span className="text-[10px] text-emerald-500">Auto-sync active</span>
+          </div>
+        ) : isDisconnected ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-4 py-2.5">
+              <span className="text-sm font-medium text-amber-700 dark:text-amber-400">⚠ Disconnected</span>
+              <span className="text-[10px] text-amber-500">Sync paused</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleConnect}
+              className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 text-sm font-bold text-white hover:from-amber-600 hover:to-orange-600 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:-translate-y-0.5 transition-all duration-200"
+            >
+              🔄 Reconnect {provider.name}
+            </button>
           </div>
         ) : !isConfigured ? (
           <div className="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/40 px-4 py-3 text-center">

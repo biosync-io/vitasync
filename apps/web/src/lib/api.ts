@@ -132,6 +132,7 @@ export const apiKeysApi = {
 // ---- Sync Jobs ----
 export const syncJobsApi = {
   list: () => request<{ jobs: SyncJob[] }>("/v1/sync-jobs"),
+  sweep: () => request<{ message: string; total: number; enqueued: number }>("/v1/sync-jobs/sweep", { method: "POST" }),
 }
 
 // ---- Webhooks ----

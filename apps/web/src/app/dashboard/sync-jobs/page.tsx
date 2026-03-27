@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
 import { type SyncJob, syncJobsApi } from "../../../lib/api"
 import { Pagination } from "../../../lib/Pagination"
@@ -49,6 +49,11 @@ export default function SyncJobsPage() {
     queryKey: ["sync-jobs"],
     queryFn: syncJobsApi.list,
     refetchInterval: 5_000,
+  })
+
+  const sweepMutation = useMutation({
+    mutationFn: syncJobsApi.sweep,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sync-jobs"] }),
   })
 
   const allJobs = data?.jobs ?? []
@@ -122,11 +127,29 @@ export default function SyncJobsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {sweepMutation.isSuccess && (
+            <span className="text-xs text-emerald-600 dark:text-emerald-400">
+              {sweepMutation.data.message}
+            </span>
+          )}
+          {sweepMutation.isError && (
+            <span className="text-xs text-red-600 dark:text-red-400">
+              Sweep failed
+            </span>
+          )}
           {dataUpdatedAt > 0 && (
             <span className="text-xs text-gray-400 hidden sm:inline">
               Updated {new Date(dataUpdatedAt).toLocaleTimeString()}
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => sweepMutation.mutate()}
+            disabled={sweepMutation.isPending}
+            className="rounded-lg border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-50 transition-colors"
+          >
+            {sweepMutation.isPending ? "Sweeping…" : "⚡ Trigger Sync Sweep"}
+          </button>
           <button
             type="button"
             onClick={() => qc.invalidateQueries({ queryKey: ["sync-jobs"] })}
