@@ -28,17 +28,18 @@ const authPlugin: FastifyPluginAsync = async (app) => {
     // OAuth authorize and callbacks are browser redirects — no API key in this flow
     if (/^\/v1\/oauth\/[^/]+\/(authorize|callback)(\?|$)/.test(request.url)) return
 
+    // Support API key from query param for SSE endpoints (EventSource can't send headers)
+    const query = request.query as Record<string, string | undefined>
     const authHeader = request.headers.authorization
-    if (!authHeader?.startsWith("Bearer ")) {
+    const rawKey = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : query.apiKey?.trim() ?? ""
+
+    if (!rawKey) {
       return reply.status(401).send({
         code: "UNAUTHORIZED",
         message: "Missing or invalid Authorization header. Use: Bearer <api_key>",
       })
-    }
-
-    const rawKey = authHeader.slice(7).trim()
-    if (!rawKey) {
-      return reply.status(401).send({ code: "UNAUTHORIZED", message: "Empty API key" })
     }
 
     // Hash the incoming key — SHA-256 is intentional for token lookup, not password storage.

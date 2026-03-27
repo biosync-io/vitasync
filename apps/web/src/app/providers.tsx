@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
+import { Toaster } from "sonner"
 import { useState } from "react"
 import { ThemeProvider } from "../lib/ThemeProvider"
 import { UserSelectionProvider } from "../lib/user-selection-context"
@@ -24,6 +25,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ThemeProvider>
         <UserSelectionProvider>{children}</UserSelectionProvider>
       </ThemeProvider>
+      <Toaster
+        position="top-right"
+        expand={false}
+        richColors
+        closeButton
+        toastOptions={{
+          className: "font-sans",
+        }}
+      />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   )

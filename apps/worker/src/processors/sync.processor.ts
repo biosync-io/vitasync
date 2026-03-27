@@ -6,6 +6,7 @@ import type { Job } from "bullmq"
 import { eq } from "drizzle-orm"
 import { getConfig } from "../config.js"
 import { decrypt } from "../lib/crypto.js"
+import { getNotificationQueue } from "../queues/notification.js"
 import { enqueueAllActiveConnections } from "../schedulers/periodic-sync.js"
 
 export interface SyncJobData {
@@ -188,6 +189,19 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
       .where(eq(syncJobs.id, jobId!))
 
     job.log(`Sync complete: ${totalInserted} metrics inserted, ${eventBatch.length} events upserted for connection ${connectionId}`)
+
+    // Notify user of successful sync
+    if (totalInserted > 0) {
+      const providerLabel = connection.providerId.charAt(0).toUpperCase() + connection.providerId.slice(1)
+      getNotificationQueue().add("sync-success", {
+        userId,
+        workspaceId: workspaceId ?? "",
+        title: `${providerLabel} Sync Complete`,
+        body: `Synced ${totalInserted} metrics${eventBatch.length > 0 ? ` and ${eventBatch.length} events` : ""} from ${providerLabel}.`,
+        severity: "info",
+        category: "sync",
+      }).catch((e) => console.error("[sync] Failed to enqueue success notification:", e))
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
 
