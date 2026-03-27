@@ -36,6 +36,7 @@ import waterRoutes from "./water.js"
 import habitsRoutes from "./habits.js"
 import aiProvidersRoutes from "./ai-providers.js"
 import chatbotRoutes from "./chatbot.js"
+import systemRoutes from "./system.js"
 
 /**
  * Registers all v1 API routes under the `/v1` prefix.
@@ -156,6 +157,9 @@ export async function registerV1Routes(app: FastifyInstance): Promise<void> {
 
       // Chatbot — /v1/users/:userId/chatbot
       await v1.register(chatbotRoutes, { prefix: "/users" })
+
+      // System status — /v1/system/status
+      await v1.register(systemRoutes, { prefix: "/system" })
     },
     { prefix: "/v1" },
   )

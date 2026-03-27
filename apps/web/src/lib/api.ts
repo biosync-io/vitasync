@@ -135,6 +135,29 @@ export const syncJobsApi = {
   sweep: () => request<{ message: string; total: number; enqueued: number }>("/v1/sync-jobs/sweep", { method: "POST" }),
 }
 
+// ---- System Status ----
+export interface SystemStatus {
+  status: "operational" | "degraded" | "down"
+  version: string
+  environment: string
+  uptime: string
+  uptimeMs: number
+  timestamp: string
+  summary: { healthy: number; degraded: number; down: number; total: number }
+  components: Array<{
+    name: string
+    type: string
+    status: "healthy" | "degraded" | "down"
+    latencyMs: number | null
+    error: string | null
+    details?: Record<string, unknown>
+  }>
+}
+
+export const systemApi = {
+  status: () => request<SystemStatus>("/v1/system/status"),
+}
+
 // ---- Webhooks ----
 export const webhooksApi = {  list: () => request<Webhook[]>("/v1/webhooks"),
   create: (body: { url: string; secret: string; events: string[]; description?: string }) =>
