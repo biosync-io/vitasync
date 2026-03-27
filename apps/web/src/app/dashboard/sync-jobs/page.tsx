@@ -2,13 +2,15 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
-import { type SyncJob, syncJobsApi } from "../../../lib/api"
+import { type SyncJob, type SyncJobRecord, syncJobsApi } from "../../../lib/api"
 import { Pagination } from "../../../lib/Pagination"
 import { ExportButton } from "../../../lib/ExportButton"
 
 const PAGE_SIZE = 25
 
 const STATES = ["active", "waiting", "delayed", "completed", "failed"] as const
+
+type Tab = "queue" | "history"
 
 const STATE_STYLES: Record<SyncJob["state"], string> = {
   active: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
@@ -40,6 +42,7 @@ function formatDuration(job: SyncJob): string {
 
 export default function SyncJobsPage() {
   const qc = useQueryClient()
+  const [tab, setTab] = useState<Tab>("queue")
   const [page, setPage] = useState(1)
   const [stateFilter, setStateFilter] = useState<SyncJob["state"] | "">("")
   const [search, setSearch] = useState("")
@@ -160,6 +163,22 @@ export default function SyncJobsPage() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="mb-5 flex gap-1 border-b border-gray-200 dark:border-gray-800">
+        <button type="button" onClick={() => { setTab("queue"); setPage(1) }}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "queue" ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}`}>
+          ⚡ Live Queue
+        </button>
+        <button type="button" onClick={() => { setTab("history"); setPage(1) }}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "history" ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}`}>
+          📊 Sync History
+        </button>
+      </div>
+
+      {tab === "history" ? (
+        <SyncHistoryTab />
+      ) : (
+      <>
       {/* Failed jobs alert banner */}
       {(() => {
         const failedJobs = allJobs.filter((j) => j.state === "failed")
@@ -438,6 +457,190 @@ export default function SyncJobsPage() {
           </div>
 
           <Pagination page={page} pageSize={PAGE_SIZE} total={filteredJobs.length} onChange={setPage} />
+        </>
+      )}
+      </>
+      )}
+    </div>
+  )
+}
+
+// ── Sync History Tab (PostgreSQL-backed) ────────────────────────────────
+
+const HISTORY_PAGE_SIZE = 25
+const DB_STATUSES = ["completed", "failed", "running", "pending"] as const
+
+const DB_STATUS_STYLES: Record<string, string> = {
+  completed: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+  failed: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+  running: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
+}
+
+function formatDurationMs(ms: number | null): string {
+  if (ms == null) return "—"
+  if (ms < 1000) return `${ms}ms`
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`
+  return `${(ms / 60_000).toFixed(1)}m`
+}
+
+function formatDate(iso: string | null): string {
+  if (!iso) return "—"
+  return new Date(iso).toLocaleString()
+}
+
+function SyncHistoryTab() {
+  const [histPage, setHistPage] = useState(1)
+  const [providerFilter, setProviderFilter] = useState("")
+  const [statusFilter, setStatusFilter] = useState("")
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["sync-history", providerFilter, statusFilter, histPage],
+    queryFn: () =>
+      syncJobsApi.history({
+        providerId: providerFilter || undefined,
+        status: statusFilter || undefined,
+        limit: HISTORY_PAGE_SIZE,
+        offset: (histPage - 1) * HISTORY_PAGE_SIZE,
+      }),
+    refetchInterval: 15_000,
+  })
+
+  const records = data?.data ?? []
+  const total = data?.total ?? 0
+
+  // Collect unique providers from results for filter dropdown
+  const providers = useMemo(() => {
+    const set = new Set<string>()
+    for (const r of records) {
+      if (r.providerId) set.add(r.providerId)
+    }
+    return [...set].sort()
+  }, [records])
+
+  return (
+    <div>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        Persistent sync job records from the database with provider API call stats.
+      </p>
+
+      {/* Filters */}
+      <div className="mb-4 flex flex-wrap gap-3 items-center">
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setHistPage(1) }}
+          className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-300"
+        >
+          <option value="">All statuses</option>
+          {DB_STATUSES.map((s) => (
+            <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+          ))}
+        </select>
+        {providers.length > 0 && (
+          <select
+            value={providerFilter}
+            onChange={(e) => { setProviderFilter(e.target.value); setHistPage(1) }}
+            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-300"
+          >
+            <option value="">All providers</option>
+            {providers.map((p) => (
+              <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+            ))}
+          </select>
+        )}
+        <span className="text-xs text-gray-400 dark:text-gray-500">{total} records</span>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton
+            <div key={i} className="h-16 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+          ))}
+        </div>
+      ) : records.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 py-16 text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400">No sync history records yet.</p>
+        </div>
+      ) : (
+        <>
+          <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                <thead className="bg-gray-50 dark:bg-gray-800/60">
+                  <tr>
+                    {["Status", "Provider", "Metrics", "Events", "API Calls", "Errors", "Duration", "Endpoints", "Started", "Error"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {records.map((r) => {
+                    const stats = r.providerCallStats
+                    return (
+                      <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${DB_STATUS_STYLES[r.status] ?? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"}`}>
+                            {r.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 capitalize whitespace-nowrap">
+                          {r.providerId ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-700 dark:text-gray-300 tabular-nums font-medium">
+                          {r.metricsSynced > 0 ? r.metricsSynced.toLocaleString() : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-700 dark:text-gray-300 tabular-nums">
+                          {r.eventsSynced > 0 ? r.eventsSynced : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs tabular-nums">
+                          {stats ? (
+                            <span className="font-medium text-indigo-600 dark:text-indigo-400">{stats.totalCalls}</span>
+                          ) : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs tabular-nums">
+                          {stats && stats.totalErrors > 0 ? (
+                            <span className="font-medium text-red-600 dark:text-red-400">{stats.totalErrors}</span>
+                          ) : stats ? (
+                            <span className="text-green-600 dark:text-green-400">0</span>
+                          ) : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">
+                          {formatDurationMs(r.durationMs)}
+                        </td>
+                        <td className="px-4 py-3 text-xs max-w-[250px]">
+                          {stats && stats.endpoints.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {stats.endpoints.slice(0, 3).map((ep) => (
+                                <span key={ep} className="inline-block rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[10px] font-mono text-gray-600 dark:text-gray-400 truncate max-w-[200px]" title={ep}>
+                                  {ep}
+                                </span>
+                              ))}
+                              {stats.endpoints.length > 3 && (
+                                <span className="text-[10px] text-gray-400">+{stats.endpoints.length - 3} more</span>
+                              )}
+                            </div>
+                          ) : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                          {formatDate(r.startedAt)}
+                        </td>
+                        <td className="px-4 py-3 text-xs max-w-[200px]">
+                          {r.error ? (
+                            <span className="text-red-600 dark:text-red-400 break-words line-clamp-2" title={r.error}>{r.error}</span>
+                          ) : "—"}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <Pagination page={histPage} pageSize={HISTORY_PAGE_SIZE} total={total} onChange={setHistPage} />
         </>
       )}
     </div>

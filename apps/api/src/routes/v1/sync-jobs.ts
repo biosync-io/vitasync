@@ -46,6 +46,49 @@ const syncJobsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   /**
+   * GET /v1/sync-jobs/history
+   * Returns historical sync job records from PostgreSQL with provider call stats.
+   */
+  app.get("/history", async (request, reply) => {
+    const { z } = await import("zod")
+    const { getDb, syncJobs } = await import("@biosync-io/db")
+    const drizzle = await import("drizzle-orm")
+
+    const query = z
+      .object({
+        providerId: z.string().optional(),
+        status: z.string().optional(),
+        limit: z.coerce.number().int().min(1).max(200).default(50),
+        offset: z.coerce.number().int().min(0).default(0),
+      })
+      .parse(request.query)
+
+    const db = getDb()
+    const conditions: (ReturnType<typeof drizzle.eq>)[] = []
+
+    if (query.providerId) conditions.push(drizzle.eq(syncJobs.providerId, query.providerId))
+    if (query.status) conditions.push(drizzle.eq(syncJobs.status, query.status))
+
+    const where = conditions.length > 0 ? drizzle.and(...conditions) : undefined
+
+    const [rows, countRows] = await Promise.all([
+      db
+        .select()
+        .from(syncJobs)
+        .where(where)
+        .orderBy(drizzle.desc(syncJobs.createdAt))
+        .limit(query.limit)
+        .offset(query.offset),
+      db
+        .select({ total: drizzle.count() })
+        .from(syncJobs)
+        .where(where),
+    ])
+
+    return reply.send({ data: rows, total: countRows[0]?.total ?? 0 })
+  })
+
+  /**
    * POST /v1/sync-jobs/sweep
    * Manually trigger a sync sweep — enqueues sync jobs for every connected provider.
    * Use this to recover when the worker scheduler failed to auto-create sync jobs.

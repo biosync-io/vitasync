@@ -132,7 +132,35 @@ export const apiKeysApi = {
 // ---- Sync Jobs ----
 export const syncJobsApi = {
   list: () => request<{ jobs: SyncJob[] }>("/v1/sync-jobs"),
+  history: (opts?: { providerId?: string | undefined; status?: string | undefined; limit?: number | undefined; offset?: number | undefined }) => {
+    const params = new URLSearchParams()
+    if (opts?.providerId) params.set("providerId", opts.providerId)
+    if (opts?.status) params.set("status", opts.status)
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    if (opts?.offset) params.set("offset", String(opts.offset))
+    const query = params.toString()
+    return request<{ data: SyncJobRecord[]; total: number }>(`/v1/sync-jobs/history${query ? `?${query}` : ""}`)
+  },
   sweep: () => request<{ message: string; total: number; enqueued: number }>("/v1/sync-jobs/sweep", { method: "POST" }),
+}
+
+export interface SyncJobRecord {
+  id: string
+  connectionId: string
+  status: string
+  providerId: string | null
+  startedAt: string | null
+  completedAt: string | null
+  error: string | null
+  metricsSynced: number
+  eventsSynced: number
+  durationMs: number | null
+  providerCallStats: {
+    totalCalls: number
+    totalErrors: number
+    endpoints: string[]
+  } | null
+  createdAt: string
 }
 
 // ---- System Status ----
