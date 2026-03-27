@@ -19,6 +19,7 @@ import { processNotificationJob } from "./processors/notification.processor.js"
 import { processReportJob } from "./processors/report.processor.js"
 import { processSyncJob } from "./processors/sync.processor.js"
 import { processWebhookJob } from "./processors/webhook.processor.js"
+import { getNotificationQueue } from "./queues/notification.js"
 import { startPeriodicScheduler } from "./schedulers/periodic-sync.js"
 
 type QueueName = "sync" | "analytics" | "webhooks" | "notifications" | "reports"
@@ -60,8 +61,8 @@ async function main() {
   const workers: Worker[] = []
   let stopScheduler: (() => Promise<void>) | null = null
 
-  // Notification queue — used to enqueue failure alerts from sync worker
-  const notificationQueue = new Queue("notifications", { connection })
+  // Notification queue — shared factory used by processors and event handlers
+  const notificationQueue = getNotificationQueue()
 
   // ── Sync worker ────────────────────────────────────────────────
   if (enabledQueues.has("sync")) {

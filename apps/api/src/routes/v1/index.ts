@@ -30,6 +30,7 @@ import usersRoutes from "./users.js"
 import webhooksRoutes from "./webhooks.js"
 import analyticsRoutes from "./analytics.js"
 import notificationsRoutes from "./notifications.js"
+import notificationStreamRoutes from "./notification-stream.js"
 import readinessRoutes from "./readiness.js"
 import journalRoutes from "./journal.js"
 import waterRoutes from "./water.js"
@@ -135,6 +136,9 @@ export async function registerV1Routes(app: FastifyInstance): Promise<void> {
 
       // Notifications — /v1/users/:userId/notifications/*
       await v1.register(notificationsRoutes, { prefix: "/users" })
+
+      // Notification SSE stream — /v1/users/:userId/notifications/stream
+      await v1.register(notificationStreamRoutes, { prefix: "/users" })
 
       // Analytics (LLM context, enhanced correlations, enhanced anomalies)
       await v1.register(analyticsRoutes, { prefix: "/users" })

@@ -7,6 +7,20 @@ import {
 } from "@biosync-io/db"
 import { NotificationManager, type ChannelConfig } from "@biosync-io/notification-core"
 import { and, eq } from "drizzle-orm"
+import { Redis } from "ioredis"
+
+let _publisher: Redis | null = null
+
+function getPublisher(): Redis {
+  if (!_publisher) {
+    _publisher = new Redis(process.env.REDIS_URL!, {
+      enableReadyCheck: false,
+      lazyConnect: true,
+    })
+    _publisher.connect().catch(() => {})
+  }
+  return _publisher
+}
 
 interface NotificationJobData {
   userId: string
@@ -48,14 +62,32 @@ export async function processNotificationJob(job: Job<NotificationJobData>): Pro
   const db = getDb()
 
   // Always create an in-app notification
-  await db.insert(inAppNotifications).values({
+  const [inAppRow] = await db.insert(inAppNotifications).values({
     userId,
     title,
     body,
     category,
     severity,
     link: url ?? CATEGORY_LINKS[category],
-  })
+  }).returning()
+
+  // Publish to Redis so SSE clients receive the notification instantly
+  try {
+    await getPublisher().publish(
+      `notifications:${userId}`,
+      JSON.stringify({
+        type: "notification",
+        id: inAppRow!.id,
+        title,
+        body,
+        category,
+        severity,
+        link: url ?? CATEGORY_LINKS[category],
+      }),
+    )
+  } catch {
+    // Non-critical: SSE delivery is best-effort
+  }
 
   // Resolve target channels
   let channelRows
