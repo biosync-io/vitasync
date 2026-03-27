@@ -175,8 +175,58 @@ export default function SystemStatusPage() {
             <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Last Check</p>
             <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{new Date(data.timestamp).toLocaleTimeString()}</p>
           </div>
+          {data.hostname && (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Hostname</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-gray-100 font-mono truncate" title={data.hostname}>{data.hostname}</p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Kubernetes deployments (only shown when running in K8s) */}
+      {data.deployments && data.deployments.length > 0 && (
+        <div className="rounded-2xl border border-indigo-200/60 dark:border-indigo-800/40 bg-gradient-to-br from-indigo-50/60 to-blue-50/30 dark:from-indigo-950/30 dark:to-blue-950/15 backdrop-blur-xl p-6 shadow-card">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-4">☸ Kubernetes Deployments</h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {data.deployments.map((dep) => {
+              const allReady = dep.readyReplicas === dep.replicas && dep.replicas > 0
+              const hasUnavailable = dep.unavailableReplicas > 0
+              return (
+                <div key={dep.name} className={`rounded-xl border p-4 ${
+                  allReady
+                    ? "border-emerald-200 dark:border-emerald-800/40 bg-white/80 dark:bg-gray-900/80"
+                    : hasUnavailable
+                      ? "border-red-200 dark:border-red-800/40 bg-red-50/50 dark:bg-red-950/20"
+                      : "border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20"
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{dep.name}</h3>
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${
+                      allReady ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"
+                    }`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${allReady ? "bg-emerald-500 animate-pulse" : hasUnavailable ? "bg-red-500" : "bg-amber-500"}`} />
+                      {allReady ? "Healthy" : hasUnavailable ? "Degraded" : "Scaling"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{dep.readyReplicas}/{dep.replicas}</p>
+                      <p className="text-[9px] uppercase tracking-wider text-gray-500">Ready</p>
+                    </div>
+                    {hasUnavailable && (
+                      <div className="text-center">
+                        <p className="text-lg font-bold text-red-600 dark:text-red-400">{dep.unavailableReplicas}</p>
+                        <p className="text-[9px] uppercase tracking-wider text-gray-500">Unavailable</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Infrastructure components */}
       <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">

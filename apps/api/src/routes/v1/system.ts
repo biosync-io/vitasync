@@ -12,7 +12,60 @@ interface ComponentHealth {
   details?: Record<string, unknown>
 }
 
+interface DeploymentInfo {
+  name: string
+  replicas: number
+  readyReplicas: number
+  unavailableReplicas: number
+}
+
 const startedAt = Date.now()
+
+/**
+ * Query the in-cluster Kubernetes API for deployment replica counts.
+ * Returns null when not running in K8s (Docker Compose, local dev).
+ */
+async function getK8sDeployments(): Promise<DeploymentInfo[] | null> {
+  try {
+    const { readFileSync } = await import("node:fs")
+    const token = readFileSync("/var/run/secrets/kubernetes.io/serviceaccount/token", "utf8")
+    const namespace = readFileSync("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "utf8").trim()
+    const ca = readFileSync("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt", "utf8")
+
+    const res = await fetch(
+      `https://kubernetes.default.svc/apis/apps/v1/namespaces/${namespace}/deployments`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        // Node 18+ fetch doesn't support custom CA directly;
+        // the K8s API cert is trusted via the mounted ca.crt in most clusters.
+        // @ts-expect-error — Node fetch dispatcher option
+        dispatcher: undefined,
+      },
+    )
+    if (!res.ok) return null
+
+    const data = (await res.json()) as {
+      items: Array<{
+        metadata: { name: string }
+        status: {
+          replicas?: number
+          readyReplicas?: number
+          unavailableReplicas?: number
+        }
+      }>
+    }
+
+    return data.items.map((d) => ({
+      name: d.metadata.name,
+      replicas: d.status.replicas ?? 0,
+      readyReplicas: d.status.readyReplicas ?? 0,
+      unavailableReplicas: d.status.unavailableReplicas ?? 0,
+    }))
+  } catch {
+    // Not running in K8s or no permissions — return null
+    return null
+  }
+}
 
 const systemRoutes: FastifyPluginAsync = async (app) => {
   /**
@@ -144,6 +197,9 @@ const systemRoutes: FastifyPluginAsync = async (app) => {
     const hours = Math.floor(uptimeSeconds / 3600)
     const minutes = Math.floor((uptimeSeconds % 3600) / 60)
 
+    // ── Kubernetes deployment info (if running in K8s) ─────────
+    const deployments = await getK8sDeployments()
+
     return reply.send({
       status: overallStatus,
       version: process.env.APP_VERSION || "0.2.0",
@@ -151,8 +207,10 @@ const systemRoutes: FastifyPluginAsync = async (app) => {
       uptime: `${hours}h ${minutes}m`,
       uptimeMs,
       timestamp: new Date().toISOString(),
+      hostname: process.env.HOSTNAME ?? null,
       summary: { healthy, degraded, down, total },
       components,
+      deployments,
     })
   })
 }

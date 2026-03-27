@@ -143,6 +143,7 @@ export interface SystemStatus {
   uptime: string
   uptimeMs: number
   timestamp: string
+  hostname: string | null
   summary: { healthy: number; degraded: number; down: number; total: number }
   components: Array<{
     name: string
@@ -152,6 +153,12 @@ export interface SystemStatus {
     error: string | null
     details?: Record<string, unknown>
   }>
+  deployments: Array<{
+    name: string
+    replicas: number
+    readyReplicas: number
+    unavailableReplicas: number
+  }> | null
 }
 
 export const systemApi = {
