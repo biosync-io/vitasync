@@ -27,11 +27,9 @@ const systemRoutes: FastifyPluginAsync = async (app) => {
     const pgStart = Date.now()
     try {
       const { getDb } = await import("@biosync-io/db")
+      const { sql: rawSql } = await import("drizzle-orm")
       const db = getDb()
-      const result = await db.execute(
-        // biome-ignore lint: raw SQL health check
-        { sql: "SELECT 1 AS ok", params: [] } as never,
-      )
+      await db.execute(rawSql`SELECT 1`)
       components.push({
         name: "PostgreSQL",
         type: "database",
