@@ -57,6 +57,13 @@
       "when": 1774400000000,
       "tag": "0007_add_in_app_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1774500000000,
+      "tag": "0008_add_sync_job_provider_stats",
+      "breakpoints": true
     }
   ]
 }

@@ -14,6 +14,7 @@ import { registerWebhookNotificationChannel } from "@biosync-io/notification-web
 import { Queue, Worker } from "bullmq"
 import { Redis } from "ioredis"
 import { getConfig } from "./config.js"
+import { installFetchTracker } from "./lib/provider-call-tracker.js"
 import { processAnalyticsJob } from "./processors/analytics.processor.js"
 import { processNotificationJob } from "./processors/notification.processor.js"
 import { processReportJob } from "./processors/report.processor.js"
@@ -32,6 +33,7 @@ async function main() {
 
   // Register data providers (needed by sync + analytics workers)
   if (enabledQueues.has("sync") || enabledQueues.has("analytics")) {
+    installFetchTracker()
     registerFitbitProvider()
     registerGarminProvider()
     registerStravaProvider()
