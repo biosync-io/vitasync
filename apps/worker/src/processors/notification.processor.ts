@@ -60,16 +60,23 @@ const manager = new NotificationManager()
 export async function processNotificationJob(job: Job<NotificationJobData>): Promise<void> {
   const { userId, title, body, severity, category, url, metadata, channelId } = job.data
   const db = getDb()
+  const link = url ?? CATEGORY_LINKS[category]
 
-  // Always create an in-app notification
-  const [inAppRow] = await db.insert(inAppNotifications).values({
-    userId,
-    title,
-    body,
-    category,
-    severity,
-    link: url ?? CATEGORY_LINKS[category],
-  }).returning()
+  // Create an in-app notification (non-blocking — failures must not prevent external delivery)
+  let inAppId: string | undefined
+  try {
+    const [inAppRow] = await db.insert(inAppNotifications).values({
+      userId,
+      title,
+      body,
+      category,
+      severity,
+      link,
+    }).returning()
+    inAppId = inAppRow?.id
+  } catch (err) {
+    console.error(`[notification] In-app insert failed for user ${userId}:`, (err as Error).message)
+  }
 
   // Publish to Redis so SSE clients receive the notification instantly
   try {
@@ -77,12 +84,12 @@ export async function processNotificationJob(job: Job<NotificationJobData>): Pro
       `notifications:${userId}`,
       JSON.stringify({
         type: "notification",
-        id: inAppRow!.id,
+        id: inAppId,
         title,
         body,
         category,
         severity,
-        link: url ?? CATEGORY_LINKS[category],
+        link,
       }),
     )
   } catch {
@@ -133,19 +140,23 @@ export async function processNotificationJob(job: Job<NotificationJobData>): Pro
   for (let i = 0; i < results.length; i++) {
     const result = results[i]!
     const ch = channelRows[i]!
-    await db.insert(notificationLogs).values({
-      userId,
-      channelId: ch.id,
-      channelType: ch.channelType,
-      title,
-      payload: payload as unknown as Record<string, unknown>,
-      status: result.success ? "delivered" : "failed",
-      attempts: 1,
-      error: result.error ?? undefined,
-      deliveredAt: result.success ? new Date() : undefined,
-    })
+    try {
+      await db.insert(notificationLogs).values({
+        userId,
+        channelId: ch.id,
+        channelType: ch.channelType,
+        title,
+        payload: payload as unknown as Record<string, unknown>,
+        status: result.success ? "delivered" : "failed",
+        attempts: 1,
+        error: result.error ?? undefined,
+        deliveredAt: result.success ? new Date() : undefined,
+      })
+    } catch (err) {
+      console.error(`[notification] Failed to log delivery for channel ${ch.id}:`, (err as Error).message)
+    }
   }
 
   const successCount = results.filter((r) => r.success).length
-  console.info(`[notification] Delivered ${successCount}/${results.length} + in-app for user ${userId}`)
+  console.info(`[notification] Delivered ${successCount}/${results.length}${inAppId ? " + in-app" : ""} for user ${userId}`)
 }

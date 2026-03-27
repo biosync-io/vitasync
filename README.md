@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/biosync-io/vitasync/actions/workflows/ci.yml/badge.svg)](https://github.com/biosync-io/vitasync/actions/workflows/ci.yml)
 [![Release](https://github.com/biosync-io/vitasync/actions/workflows/release.yml/badge.svg)](https://github.com/biosync-io/vitasync/actions/workflows/release.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://typescriptlang.org)
 
@@ -684,4 +684,4 @@ See [Contributing Guide](apps/docs/src/content/docs/dev-guides/contributing.md) 
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+AGPL-3.0 — see [LICENSE](LICENSE).

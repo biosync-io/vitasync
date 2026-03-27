@@ -6,6 +6,7 @@ import type { Job } from "bullmq"
 import { eq } from "drizzle-orm"
 import { getConfig } from "../config.js"
 import { decrypt } from "../lib/crypto.js"
+import { trackProviderCalls } from "../lib/provider-call-tracker.js"
 import { getNotificationQueue } from "../queues/notification.js"
 import { enqueueAllActiveConnections } from "../schedulers/periodic-sync.js"
 
@@ -61,9 +62,10 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
   }
 
   // Create sync job record
+  const syncStartTime = Date.now()
   const [syncJob] = await db
     .insert(syncJobs)
-    .values({ connectionId, status: "running", startedAt: new Date() })
+    .values({ connectionId, providerId: connection.providerId, status: "running", startedAt: new Date() })
     .returning()
 
   const jobId = syncJob?.id
@@ -115,7 +117,7 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
 
     const to = job.data.to ? new Date(job.data.to) : new Date()
 
-    // Stream data from provider
+    // Stream data from provider (tracked for outbound call stats)
     const batch: Array<{
       userId: string
       connectionId: string
@@ -145,26 +147,28 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
       await job.updateProgress(totalInserted)
     }
 
-    // biome-ignore lint: provider tokens type variance
-    for await (const point of (provider as any).syncData(tokens, { from, to })) {
-      const p = point as SyncDataPoint
-      batch.push({
-        userId,
-        connectionId,
-        providerId: connection.providerId,
-        metricType: p.metricType,
-        recordedAt: p.recordedAt,
-        value: p.value ?? 0,
-        ...(p.unit !== undefined && { unit: p.unit }),
-        ...(p.data !== undefined && { data: p.data }),
-        source: connection.providerId,
-      })
+    const { stats: callStats } = await trackProviderCalls(async () => {
+      // biome-ignore lint: provider tokens type variance
+      for await (const point of (provider as any).syncData(tokens, { from, to })) {
+        const p = point as SyncDataPoint
+        batch.push({
+          userId,
+          connectionId,
+          providerId: connection.providerId,
+          metricType: p.metricType,
+          recordedAt: p.recordedAt,
+          value: p.value ?? 0,
+          ...(p.unit !== undefined && { unit: p.unit }),
+          ...(p.data !== undefined && { data: p.data }),
+          source: connection.providerId,
+        })
 
-      const event = extractEvent(p, userId, connectionId)
-      if (event) eventBatch.push(event)
+        const event = extractEvent(p, userId, connectionId)
+        if (event) eventBatch.push(event)
 
-      if (batch.length >= BATCH_SIZE) await flush()
-    }
+        if (batch.length >= BATCH_SIZE) await flush()
+      }
+    })
 
     await flush()
 
@@ -183,12 +187,20 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
       .where(eq(providerConnections.id, connectionId))
 
     // Mark sync job complete
+    const durationMs = Date.now() - syncStartTime
     await db
       .update(syncJobs)
-      .set({ status: "completed", completedAt: new Date(), metricsSynced: totalInserted })
+      .set({
+        status: "completed",
+        completedAt: new Date(),
+        metricsSynced: totalInserted,
+        eventsSynced: eventBatch.length,
+        durationMs,
+        providerCallStats: callStats,
+      })
       .where(eq(syncJobs.id, jobId!))
 
-    job.log(`Sync complete: ${totalInserted} metrics inserted, ${eventBatch.length} events upserted for connection ${connectionId}`)
+    job.log(`Sync complete: ${totalInserted} metrics, ${eventBatch.length} events, ${callStats.totalCalls} API calls (${callStats.totalErrors} errors) in ${durationMs}ms for ${connection.providerId}`)
 
     // Notify user of successful sync
     if (totalInserted > 0) {
@@ -215,7 +227,12 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
 
     await db
       .update(syncJobs)
-      .set({ status: "failed", completedAt: new Date(), error: message })
+      .set({
+        status: "failed",
+        completedAt: new Date(),
+        durationMs: Date.now() - syncStartTime,
+        error: message,
+      })
       .where(eq(syncJobs.id, jobId!))
 
     throw err // Re-throw so BullMQ records the failure and retries
