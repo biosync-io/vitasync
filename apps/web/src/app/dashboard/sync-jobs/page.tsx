@@ -610,17 +610,27 @@ function SyncHistoryTab() {
                         <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">
                           {formatDurationMs(r.durationMs)}
                         </td>
-                        <td className="px-4 py-3 text-xs max-w-[250px]">
+                        <td className="px-4 py-3 text-xs max-w-[350px]">
                           {stats && stats.endpoints.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {stats.endpoints.slice(0, 3).map((ep) => (
-                                <span key={ep} className="inline-block rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[10px] font-mono text-gray-600 dark:text-gray-400 truncate max-w-[200px]" title={ep}>
-                                  {ep}
-                                </span>
+                            <div className="space-y-1">
+                              {stats.endpoints.map((ep) => (
+                                <div key={ep.endpoint} className="flex items-center gap-2 rounded bg-gray-50 dark:bg-gray-800/60 px-2 py-1">
+                                  <span className="font-mono text-[10px] text-gray-600 dark:text-gray-400 truncate flex-1" title={ep.endpoint}>
+                                    {ep.endpoint}
+                                  </span>
+                                  <span className="shrink-0 text-[10px] tabular-nums font-medium text-gray-700 dark:text-gray-300">
+                                    ×{ep.calls}
+                                  </span>
+                                  <span className="shrink-0 text-[10px] tabular-nums text-green-600 dark:text-green-400">
+                                    ✓{ep.success}
+                                  </span>
+                                  {ep.errors > 0 && (
+                                    <span className="shrink-0 text-[10px] tabular-nums text-red-600 dark:text-red-400">
+                                      ✗{ep.errors}
+                                    </span>
+                                  )}
+                                </div>
                               ))}
-                              {stats.endpoints.length > 3 && (
-                                <span className="text-[10px] text-gray-400">+{stats.endpoints.length - 3} more</span>
-                              )}
                             </div>
                           ) : "—"}
                         </td>

@@ -24,7 +24,7 @@ export const syncJobs = pgTable(
     providerCallStats: jsonb("provider_call_stats").$type<{
       totalCalls: number
       totalErrors: number
-      endpoints: string[]
+      endpoints: Array<{ endpoint: string; calls: number; success: number; errors: number }>
     }>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

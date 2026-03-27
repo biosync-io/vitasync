@@ -8,14 +8,30 @@ import { AsyncLocalStorage } from "node:async_hooks"
  * to provider code.
  */
 
+interface EndpointStats {
+  calls: number
+  success: number
+  errors: number
+}
+
 interface CallStats {
   totalCalls: number
   totalErrors: number
-  endpoints: Set<string>
+  byEndpoint: Map<string, EndpointStats>
 }
 
 const storage = new AsyncLocalStorage<CallStats>()
 let installed = false
+
+function resolveEndpoint(input: RequestInfo | URL, init?: RequestInit): string {
+  try {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url
+    const parsed = new URL(url)
+    return `${init?.method ?? "GET"} ${parsed.hostname}${parsed.pathname}`
+  } catch {
+    return "UNKNOWN"
+  }
+}
 
 /** Install the global fetch interceptor (idempotent). */
 export function installFetchTracker(): void {
@@ -29,30 +45,36 @@ export function installFetchTracker(): void {
     init?: RequestInit,
   ): Promise<Response> {
     const stats = storage.getStore()
+    if (!stats) return originalFetch(input, init)
 
-    if (stats) {
-      stats.totalCalls++
-      try {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url
-        // Extract path without query params, mask IDs for grouping
-        const parsed = new URL(url)
-        stats.endpoints.add(`${init?.method ?? "GET"} ${parsed.hostname}${parsed.pathname}`)
-      } catch {
-        // Non-URL input — skip endpoint tracking
-      }
-    }
+    stats.totalCalls++
+    const endpoint = resolveEndpoint(input, init)
+    const ep = stats.byEndpoint.get(endpoint) ?? { calls: 0, success: 0, errors: 0 }
+    ep.calls++
 
     try {
       const response = await originalFetch(input, init)
-      if (stats && response.status >= 400) {
+      if (response.status >= 400) {
         stats.totalErrors++
+        ep.errors++
+      } else {
+        ep.success++
       }
+      stats.byEndpoint.set(endpoint, ep)
       return response
     } catch (err) {
-      if (stats) stats.totalErrors++
+      stats.totalErrors++
+      ep.errors++
+      stats.byEndpoint.set(endpoint, ep)
       throw err
     }
   }
+}
+
+export interface ProviderCallStatsResult {
+  totalCalls: number
+  totalErrors: number
+  endpoints: Array<{ endpoint: string; calls: number; success: number; errors: number }>
 }
 
 /**
@@ -61,8 +83,8 @@ export function installFetchTracker(): void {
  */
 export async function trackProviderCalls<T>(
   fn: () => Promise<T>,
-): Promise<{ result: T; stats: { totalCalls: number; totalErrors: number; endpoints: string[] } }> {
-  const callStats: CallStats = { totalCalls: 0, totalErrors: 0, endpoints: new Set() }
+): Promise<{ result: T; stats: ProviderCallStatsResult }> {
+  const callStats: CallStats = { totalCalls: 0, totalErrors: 0, byEndpoint: new Map() }
 
   const result = await storage.run(callStats, fn)
 
@@ -71,7 +93,9 @@ export async function trackProviderCalls<T>(
     stats: {
       totalCalls: callStats.totalCalls,
       totalErrors: callStats.totalErrors,
-      endpoints: [...callStats.endpoints],
+      endpoints: [...callStats.byEndpoint.entries()]
+        .map(([endpoint, s]) => ({ endpoint, ...s }))
+        .sort((a, b) => b.calls - a.calls),
     },
   }
 }

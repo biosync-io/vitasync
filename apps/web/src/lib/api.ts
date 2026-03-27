@@ -158,7 +158,7 @@ export interface SyncJobRecord {
   providerCallStats: {
     totalCalls: number
     totalErrors: number
-    endpoints: string[]
+    endpoints: Array<{ endpoint: string; calls: number; success: number; errors: number }>
   } | null
   createdAt: string
 }
