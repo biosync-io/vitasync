@@ -158,6 +158,39 @@ export const systemApi = {
   status: () => request<SystemStatus>("/v1/system/status"),
 }
 
+// ---- API Logs ----
+export interface ApiLogEntry {
+  id: string
+  method: string
+  endpoint: string
+  statusCode: number
+  durationMs: number
+  errorMessage: string | null
+  createdAt: string
+}
+
+export interface ApiLogStats {
+  totalCalls: number
+  errorRate: string
+  errorCount: number
+  avgDurationMs: number
+  last24h: number
+}
+
+export const apiLogsApi = {
+  list: (params?: { method?: string | undefined; status?: number | undefined; endpoint?: string | undefined; from?: string | undefined; to?: string | undefined; limit?: number | undefined; offset?: number | undefined }) => {
+    const qs = new URLSearchParams()
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        if (v !== undefined && v !== "") qs.set(k, String(v))
+      }
+    }
+    const query = qs.toString()
+    return request<{ data: ApiLogEntry[]; total: number }>(`/v1/api-logs${query ? `?${query}` : ""}`)
+  },
+  stats: () => request<ApiLogStats>("/v1/api-logs/stats"),
+}
+
 // ---- Webhooks ----
 export const webhooksApi = {  list: () => request<Webhook[]>("/v1/webhooks"),
   create: (body: { url: string; secret: string; events: string[]; description?: string }) =>
