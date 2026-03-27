@@ -68,6 +68,7 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       OAUTH_REDIRECT_BASE_URL: ${OAUTH_REDIRECT_BASE_URL:-http://localhost:3001}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
       FITBIT_CLIENT_ID: ${FITBIT_CLIENT_ID:-}
       FITBIT_CLIENT_SECRET: ${FITBIT_CLIENT_SECRET:-}
       GARMIN_CONSUMER_KEY: ${GARMIN_CONSUMER_KEY:-}
@@ -182,6 +183,8 @@ services:
       INTERNAL_API_URL: http://api:3001
       # Browser-facing API URL — set to your public domain in production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      # Runtime API key — served to browser via /api/config
+      DEFAULT_API_KEY: ${ADMIN_API_KEY:-}
     ports:
       - "3000:3000"
     depends_on:

@@ -50,13 +50,14 @@ const COMPONENT_STATUS_STYLES: Record<string, { bg: string; text: string; dot: s
 }
 
 export default function SystemStatusPage() {
-  const { data, isLoading, dataUpdatedAt } = useQuery<SystemStatus>({
+  const { data, isLoading, isError, error, dataUpdatedAt } = useQuery<SystemStatus>({
     queryKey: ["system-status"],
     queryFn: systemApi.status,
     refetchInterval: 15_000,
+    retry: 1,
   })
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div>
@@ -70,6 +71,23 @@ export default function SystemStatusPage() {
             // biome-ignore lint/suspicious/noArrayIndexKey: skeleton loader
             <div key={i} className="h-24 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
           ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">System Status</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Real-time health monitoring for all VitaSync services.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/20 p-8 text-center">
+          <p className="text-lg font-semibold text-red-700 dark:text-red-400">Failed to load system status</p>
+          <p className="mt-2 text-sm text-red-500">{error instanceof Error ? error.message : "Unable to connect to the API"}</p>
         </div>
       </div>
     )
