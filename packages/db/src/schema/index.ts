@@ -41,3 +41,8 @@ export * from "./notification-rules"
 export * from "./in-app-notifications"
 export * from "./ai-providers"
 export * from "./api-logs"
+
+// ── Smart Reminders & Points ────────────────────────────────────
+export * from "./smart-reminders"
+export * from "./reminder-logs"
+export * from "./points-transactions"

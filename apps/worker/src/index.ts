@@ -19,10 +19,13 @@ import { processNotificationJob } from "./processors/notification.processor.js"
 import { processReportJob } from "./processors/report.processor.js"
 import { processSyncJob } from "./processors/sync.processor.js"
 import { processWebhookJob } from "./processors/webhook.processor.js"
+import { processReminderJob } from "./processors/reminder.processor.js"
 import { getNotificationQueue } from "./queues/notification.js"
+import { getRemindersQueue } from "./queues/reminders.js"
 import { startPeriodicScheduler } from "./schedulers/periodic-sync.js"
+import { startReminderScheduler } from "./schedulers/reminder-sweep.js"
 
-type QueueName = "sync" | "analytics" | "webhooks" | "notifications" | "reports"
+type QueueName = "sync" | "analytics" | "webhooks" | "notifications" | "reports" | "reminders"
 
 async function main() {
   const config = getConfig()
@@ -78,6 +81,7 @@ async function main() {
 
   const workers: Worker[] = []
   let stopScheduler: (() => Promise<void>) | null = null
+  let stopReminderScheduler: (() => Promise<void>) | null = null
 
   // Notification queue — shared factory used by processors and event handlers
   const notificationQueue = getNotificationQueue()
@@ -203,12 +207,33 @@ async function main() {
     console.info("[worker] Notifications queue enabled (concurrency: 8)")
   }
 
+  // ── Reminders worker ──────────────────────────────────────────
+  if (enabledQueues.has("reminders")) {
+    const remindersQueue = getRemindersQueue()
+    const reminderWorker = new Worker("reminders", processReminderJob, {
+      connection,
+      concurrency: 3,
+    })
+    workers.push(reminderWorker)
+
+    reminderWorker.on("completed", (job) => {
+      console.info(`[reminders] Job ${job.id} completed`)
+    })
+    reminderWorker.on("failed", (job, err) => {
+      console.error(`[reminders] Job ${job?.id} failed: ${err.message}`)
+    })
+
+    stopReminderScheduler = await startReminderScheduler(remindersQueue, connection)
+    console.info("[worker] Reminders queue enabled (concurrency: 3)")
+  }
+
   console.info(`VitaSync Worker started. Queues: [${[...enabledQueues].join(", ")}]`)
 
   // Graceful shutdown
   async function shutdown(signal: string) {
     console.info(`Received ${signal}. Draining workers...`)
     if (stopScheduler) await stopScheduler()
+    if (stopReminderScheduler) await stopReminderScheduler()
     await Promise.all([
       ...workers.map((w) => w.close()),
       notificationQueue.close(),

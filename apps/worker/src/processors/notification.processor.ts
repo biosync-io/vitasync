@@ -42,6 +42,7 @@ const CATEGORY_LINKS: Record<string, string> = {
   achievement: "/dashboard/achievements",
   goal: "/dashboard/goals",
   insight: "/dashboard/insights",
+  reminder: "/dashboard/reminders",
 }
 
 const manager = new NotificationManager()
@@ -112,7 +113,7 @@ export async function processNotificationJob(job: Job<NotificationJobData>): Pro
     title,
     body,
     severity: severity as "info" | "warning" | "critical",
-    category: category as "anomaly" | "goal" | "achievement" | "sync" | "report" | "system" | "insight",
+    category: category as "anomaly" | "goal" | "achievement" | "sync" | "report" | "system" | "insight" | "reminder",
     userId,
     workspaceId: job.data.workspaceId,
     url,

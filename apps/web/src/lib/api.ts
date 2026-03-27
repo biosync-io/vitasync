@@ -996,7 +996,7 @@ export interface BaselineData {
 
 export type ChannelType = "discord" | "slack" | "teams" | "email" | "push" | "ntfy" | "webhook"
 export type NotificationSeverity = "info" | "warning" | "critical"
-export type NotificationCategory = "anomaly" | "goal" | "achievement" | "sync" | "report" | "system" | "insight"
+export type NotificationCategory = "anomaly" | "goal" | "achievement" | "sync" | "report" | "system" | "insight" | "reminder"
 
 export interface NotificationChannel {
   id: string
@@ -1296,4 +1296,119 @@ export const aiProvidersApi = {
     request<void>(`/v1/ai-providers/${id}`, { method: "DELETE" }),
   test: (id: string) =>
     request<{ success: boolean; message: string }>(`/v1/ai-providers/${id}/test`, { method: "POST" }),
+}
+
+// ---- Smart Reminders ----
+export interface SmartReminderData {
+  id: string
+  userId: string
+  name: string
+  description: string | null
+  reminderType: string
+  frequency: string
+  timeOfDay: string
+  dayOfWeek: number | null
+  dayOfMonth: number | null
+  timezone: string
+  goalId: string | null
+  channelIds: string[]
+  config: Record<string, unknown>
+  isActive: boolean
+  lastTriggeredAt: string | null
+  nextTriggerAt: string | null
+  snoozedUntil: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ReminderLogData {
+  id: string
+  reminderId: string
+  userId: string
+  action: string
+  snoozeDuration: number | null
+  progressSnapshot: Record<string, unknown> | null
+  feedback: string | null
+  createdAt: string
+}
+
+export interface ReminderSuggestion {
+  goalId: string
+  goalName: string
+  percentComplete: number
+  lastActivity: string | null
+}
+
+export const remindersApi = {
+  list: (userId: string, opts?: { active?: boolean }) => {
+    const params = new URLSearchParams()
+    if (opts?.active !== undefined) params.set("active", String(opts.active))
+    return request<{ data: SmartReminderData[] }>(`/v1/users/${userId}/reminders?${params}`)
+  },
+  get: (userId: string, reminderId: string) =>
+    request<{ data: SmartReminderData }>(`/v1/users/${userId}/reminders/${reminderId}`),
+  create: (userId: string, body: Record<string, unknown>) =>
+    request<{ data: SmartReminderData }>(`/v1/users/${userId}/reminders`, { method: "POST", body: JSON.stringify(body) }),
+  update: (userId: string, reminderId: string, body: Record<string, unknown>) =>
+    request<{ data: SmartReminderData }>(`/v1/users/${userId}/reminders/${reminderId}`, { method: "PUT", body: JSON.stringify(body) }),
+  delete: (userId: string, reminderId: string) =>
+    request<void>(`/v1/users/${userId}/reminders/${reminderId}`, { method: "DELETE" }),
+  snooze: (userId: string, reminderId: string, durationMinutes: number) =>
+    request<{ data: SmartReminderData; message: string }>(`/v1/users/${userId}/reminders/${reminderId}/snooze`, {
+      method: "POST",
+      body: JSON.stringify({ durationMinutes }),
+    }),
+  dismiss: (userId: string, reminderId: string) =>
+    request<{ data: SmartReminderData; message: string }>(`/v1/users/${userId}/reminders/${reminderId}/dismiss`, {
+      method: "POST",
+    }),
+  logs: (userId: string, opts?: { reminderId?: string; limit?: number }) => {
+    const params = new URLSearchParams()
+    if (opts?.reminderId) params.set("reminderId", opts.reminderId)
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    return request<{ data: ReminderLogData[] }>(`/v1/users/${userId}/reminders/logs?${params}`)
+  },
+  suggestions: (userId: string) =>
+    request<{ data: ReminderSuggestion[] }>(`/v1/users/${userId}/reminders/suggestions`),
+}
+
+// ---- Points & Leaderboard ----
+export interface PointsBalance {
+  userId: string
+  totalPoints: number
+}
+
+export interface PointsTransactionData {
+  id: string
+  userId: string
+  points: number
+  reason: string
+  description: string
+  relatedType: string | null
+  relatedId: string | null
+  createdAt: string
+}
+
+export interface LeaderboardEntryData {
+  userId: string
+  displayName: string | null
+  totalPoints: number
+  rank: number
+}
+
+export const pointsApi = {
+  balance: (userId: string) =>
+    request<{ data: PointsBalance }>(`/v1/users/${userId}/points`),
+  history: (userId: string, opts?: { limit?: number; since?: string }) => {
+    const params = new URLSearchParams()
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    if (opts?.since) params.set("since", opts.since)
+    return request<{ data: PointsTransactionData[] }>(`/v1/users/${userId}/points/history?${params}`)
+  },
+  leaderboard: (opts?: { period?: string; limit?: number }) => {
+    const params = new URLSearchParams()
+    if (opts?.period) params.set("period", opts.period)
+    if (opts?.limit) params.set("limit", String(opts.limit))
+    return request<{ data: LeaderboardEntryData[] }>(`/v1/points/leaderboard?${params}`)
+  },
 }

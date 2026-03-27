@@ -13,6 +13,7 @@ export const NotificationCategory = z.enum([
   "report",
   "system",
   "insight",
+  "reminder",
 ])
 export type NotificationCategory = z.infer<typeof NotificationCategory>
 

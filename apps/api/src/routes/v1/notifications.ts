@@ -119,7 +119,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
     const body = z
       .object({
         name: z.string().min(1).max(100),
-        categories: z.array(z.enum(["anomaly", "goal", "achievement", "sync", "report", "system", "insight"])),
+        categories: z.array(z.enum(["anomaly", "goal", "achievement", "sync", "report", "system", "insight", "reminder"])),
         minSeverity: z.enum(["info", "warning", "critical"]).default("info"),
         channelIds: z.array(z.string().uuid()),
         enabled: z.boolean().default(true),

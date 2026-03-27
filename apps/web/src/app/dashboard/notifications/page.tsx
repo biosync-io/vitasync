@@ -34,6 +34,7 @@ const CATEGORIES: { value: NotificationCategory; label: string; icon: string }[]
   { value: "report", label: "Report", icon: "📄" },
   { value: "system", label: "System", icon: "⚙️" },
   { value: "insight", label: "Insight", icon: "🧠" },
+  { value: "reminder", label: "Reminder", icon: "⏰" },
 ]
 
 const SEVERITIES: { value: NotificationSeverity; label: string; color: string }[] = [

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm"
-import { index, jsonb, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core"
+import { index, integer, jsonb, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core"
 import { workspaces } from "./workspaces"
 
 export const users = pgTable(
@@ -15,6 +15,8 @@ export const users = pgTable(
     displayName: varchar("display_name", { length: 255 }),
     /** Gender – used to gate gender-specific insights (e.g. womens_health) */
     gender: varchar("gender", { length: 10 }),
+    /** Denormalised points total from points_transactions ledger */
+    totalPoints: integer("total_points").notNull().default(0),
     /** Arbitrary key-value data from the caller */
     metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -59,6 +59,8 @@ import {
   Radio,
   Scale,
   Bot,
+  BellRing,
+  Star,
   type LucideIcon,
 } from "lucide-react"
 import { OfflineBanner } from "../../lib/components/OfflineBanner"
@@ -110,6 +112,8 @@ const navSections: Array<{
       { href: "/dashboard/goals", label: "Goals", icon: Target, color: "text-emerald-500" },
       { href: "/dashboard/achievements", label: "Achievements", icon: Trophy, color: "text-amber-500" },
       { href: "/dashboard/challenges", label: "Challenges", icon: Swords, color: "text-red-500" },
+      { href: "/dashboard/reminders", label: "Smart Reminders", icon: BellRing, color: "text-cyan-500" },
+      { href: "/dashboard/points", label: "Points & Leaderboard", icon: Star, color: "text-yellow-500" },
     ],
   },
   {
