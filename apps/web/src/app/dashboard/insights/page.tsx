@@ -582,27 +582,13 @@ function InsightCard({ insight }: { insight: Insight }) {
   return (
     /* Animated gradient border wrapper */
     <div
-      className="insight-card-border"
-      style={{ "--card-glow": s.hex } as React.CSSProperties}
+      className="rounded-2xl border border-gray-200 dark:border-gray-800"
     >
       <div
-        className={`group relative rounded-[15px] overflow-hidden transition-all duration-300 bg-white/70 dark:bg-gray-950/80 backdrop-blur-xl card-grid-bg`}
-        style={{ boxShadow: `0 0 0 0 rgba(${s.glowRGB},0)`, transition: "all 0.3s ease, box-shadow 0.5s ease" }}
-        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 12px 40px -12px rgba(${s.glowRGB},0.25), 0 0 0 1px rgba(${s.glowRGB},0.08)` }}
-        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = `0 0 0 0 rgba(${s.glowRGB},0)` }}
+        className={`group relative rounded-[15px] overflow-hidden transition-all duration-300 bg-white dark:bg-gray-900`}
       >
-        {/* HUD targeting bracket corners */}
-        <div className="hud-corners absolute inset-3 pointer-events-none z-20" style={{ "--accent-500": s.hex } as React.CSSProperties} />
-
-        {/* Neon left accent — thicker with animated glow */}
-        <div className={`absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b ${s.gradient}`} style={{ boxShadow: `3px 0 16px rgba(${s.glowRGB},0.35), 1px 0 4px rgba(${s.glowRGB},0.5)` }} />
-
-        {/* Ambient corner glow */}
-        <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-[0.04] group-hover:opacity-[0.1] transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(circle, ${s.hex}, transparent 70%)` }} />
-        <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(circle, ${s.hex}, transparent 70%)` }} />
-
-        {/* Scan line sweep on hover */}
-        <div className="scan-line absolute inset-0 pointer-events-none" />
+        {/* Left accent bar */}
+        <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-2xl bg-gradient-to-b ${s.gradient}`} />
 
         <div className="relative z-10 p-5 pl-7">
           {/* Top row: badges + value */}
@@ -612,8 +598,8 @@ function InsightCard({ insight }: { insight: Insight }) {
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 {/* Severity orb */}
                 <div
-                  className="sev-orb inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white shrink-0"
-                  style={{ background: `linear-gradient(135deg, ${s.hex}, ${s.hex}cc)`, "--sev-glow": `${s.hex}80` } as React.CSSProperties}
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white shrink-0"
+                  style={{ background: `linear-gradient(135deg, ${s.hex}, ${s.hex}cc)` }}
                 >
                   {s.icon}
                 </div>
@@ -635,9 +621,6 @@ function InsightCard({ insight }: { insight: Insight }) {
                 {insight.title}
               </h3>
 
-              {/* Expanding accent line under title on hover */}
-              <div className="hover-line h-[1.5px] w-24 mt-1.5 rounded-full" style={{ background: `linear-gradient(90deg, ${s.hex}, transparent)` }} />
-
               {/* Description */}
               <p className="mt-2.5 text-[13px] leading-relaxed text-gray-500 dark:text-gray-400">{insight.description}</p>
             </div>
@@ -647,18 +630,14 @@ function InsightCard({ insight }: { insight: Insight }) {
               <div className="flex-shrink-0 text-right pt-8">
                 <div className="inline-flex items-baseline gap-1">
                   <span
-                    className={`val-neon text-3xl font-black tabular-nums ${s.text}`}
-                    style={{ "--val-glow": `${s.hex}60`, letterSpacing: "-0.02em" } as React.CSSProperties}
+                    className={`text-2xl font-bold tabular-nums ${s.text}`}
+                    style={{ letterSpacing: "-0.02em" }}
                   >
                     {insight.value}
                   </span>
                   {insight.unit && (
                     <span className="text-[11px] text-gray-400/80 dark:text-gray-500/80 font-semibold uppercase tracking-wider">{insight.unit}</span>
                   )}
-                </div>
-                {/* Mini severity bar under value */}
-                <div className="mt-1.5 ml-auto w-12 h-[2px] rounded-full overflow-hidden" style={{ background: `rgba(${s.glowRGB},0.1)` }}>
-                  <div className="h-full rounded-full" style={{ width: "100%", background: `linear-gradient(90deg, transparent, ${s.hex})`, boxShadow: `0 0 6px ${s.hex}40` }} />
                 </div>
               </div>
             )}
@@ -673,17 +652,14 @@ function InsightCard({ insight }: { insight: Insight }) {
           {Object.keys(insight.metadata).length > 0 && (
             <>
               <button type="button" onClick={() => setExpanded(!expanded)}
-                className="mt-4 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500 hover:text-accent-500 dark:hover:text-accent-400 transition-colors group/btn">
-                <span className="inline-flex h-4 w-4 items-center justify-center rounded border border-current/20 text-[8px] transition-transform duration-200" style={{ transform: expanded ? "rotate(90deg)" : "none" }}>▸</span>
+                className="mt-4 inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                <span className="text-[8px] transition-transform duration-200" style={{ transform: expanded ? "rotate(90deg)" : "none" }}>▸</span>
                 <span>{expanded ? "Hide" : "Show"} diagnostics</span>
-                <span className="h-px flex-1 min-w-[20px] bg-current opacity-20" />
               </button>
               {expanded && (
-                <div className="mt-2.5 rounded-lg bg-gray-950/[0.03] dark:bg-white/[0.02] border border-gray-200/20 dark:border-gray-700/15 p-3.5 font-mono text-[11px] space-y-1.5 overflow-hidden"
-                  style={{ background: `linear-gradient(135deg, rgba(${s.glowRGB},0.02), transparent)` }}>
-                  <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200/10 dark:border-gray-700/10">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">System Diagnostics</span>
+                <div className="mt-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/30 p-3.5 font-mono text-[11px] space-y-1.5 overflow-hidden">
+                  <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200/30 dark:border-gray-700/20">
+                    <span className="text-[9px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Diagnostics</span>
                   </div>
                   {Object.entries(insight.metadata).map(([k, v]) => (
                     <div key={k} className="flex items-start gap-2 group/row hover:bg-white/[0.03] rounded px-1 -mx-1 py-0.5 transition-colors">
@@ -702,7 +678,7 @@ function InsightCard({ insight }: { insight: Insight }) {
   )
 }
 
-/* ── Holographic Reference Range Bar ─── */
+/* ── Reference Range Bar ─── */
 function HoloRangeBar({ low, high, value, hex, glowRGB }: { low: number; high: number; value: number; hex: string; glowRGB: string }) {
   const rMin = low * 0.5, rMax = high * 1.5, span = rMax - rMin
   const refL = Math.max(0, Math.min(100, ((low - rMin) / span) * 100))
@@ -710,56 +686,34 @@ function HoloRangeBar({ low, high, value, hex, glowRGB }: { low: number; high: n
   const valPct = Math.max(0, Math.min(100, ((value - rMin) / span) * 100))
   const inRange = value >= low && value <= high
   const dotColor = inRange ? "#10b981" : "#f59e0b"
-  const dotGlow = inRange ? "16,185,129" : "245,158,11"
 
   return (
     <div className="mt-5">
       {/* Labels */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-bold tabular-nums text-gray-400 dark:text-gray-500">{low}</span>
-        <div className="flex items-center gap-2">
-          <span className="h-px w-4 bg-gray-300/30 dark:bg-gray-700/30" />
-          <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-400/60 dark:text-gray-500/60">Reference Range</span>
-          <span className="h-px w-4 bg-gray-300/30 dark:bg-gray-700/30" />
-        </div>
-        <span className="text-[10px] font-bold tabular-nums text-gray-400 dark:text-gray-500">{high}</span>
+        <span className="text-[10px] font-medium tabular-nums text-gray-400 dark:text-gray-500">{low}</span>
+        <span className="text-[9px] font-medium uppercase tracking-wider text-gray-400/60 dark:text-gray-500/60">Reference Range</span>
+        <span className="text-[10px] font-medium tabular-nums text-gray-400 dark:text-gray-500">{high}</span>
       </div>
 
       {/* Track */}
-      <div className="relative h-3 rounded-full overflow-visible range-ticks" style={{ background: "linear-gradient(90deg, rgba(239,68,68,0.08), rgba(16,185,129,0.12) 33%, rgba(16,185,129,0.12) 66%, rgba(245,158,11,0.08) 100%)" }}>
-        {/* Neon shimmer sweep */}
-        <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
-          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)", backgroundSize: "200% 100%", animation: "trackShine 4s linear infinite" }} />
-        </div>
+      <div className="relative h-2.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-visible">
+        {/* Reference zone */}
+        <div className="absolute inset-y-0 rounded-full bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200/50 dark:border-emerald-800/30" style={{ left: `${refL}%`, right: `${refR}%` }} />
 
-        {/* Reference zone highlight */}
-        <div className="absolute inset-y-0 rounded-full border border-emerald-500/20" style={{ left: `${refL}%`, right: `${refR}%`, background: "linear-gradient(180deg, rgba(16,185,129,0.2), rgba(16,185,129,0.08))", boxShadow: "inset 0 0 12px rgba(16,185,129,0.08)" }}>
-          {/* Edge glow lines */}
-          <div className="absolute left-0 top-0 bottom-0 w-px bg-emerald-500/30" />
-          <div className="absolute right-0 top-0 bottom-0 w-px bg-emerald-500/30" />
-        </div>
-
-        {/* Value indicator cluster */}
-        <div className="absolute top-1/2 transition-all duration-700 ease-out z-10" style={{ left: `${valPct}%`, transform: "translate(-50%, -50%)" }}>
-          {/* Outer pulse ring */}
-          <div className="absolute -inset-3 rounded-full animate-ping opacity-20" style={{ background: dotColor }} />
-          {/* Glow aura */}
-          <div className="absolute -inset-2 rounded-full" style={{ background: `radial-gradient(circle, rgba(${dotGlow},0.3), transparent 70%)` }} />
-          {/* Dot */}
+        {/* Value dot */}
+        <div className="absolute top-1/2 z-10" style={{ left: `${valPct}%`, transform: "translate(-50%, -50%)" }}>
           <div
-            className="relative w-4 h-4 rounded-full border-2 border-white dark:border-gray-950"
-            style={{ background: dotColor, boxShadow: `0 0 12px rgba(${dotGlow},0.6), 0 0 4px rgba(${dotGlow},0.8)` }}
-          >
-            {/* Inner highlight */}
-            <div className="absolute top-0.5 left-0.5 w-1.5 h-1.5 rounded-full bg-white/40" />
-          </div>
+            className="w-3.5 h-3.5 rounded-full border-2 border-white dark:border-gray-900 shadow-sm"
+            style={{ background: dotColor }}
+          />
         </div>
       </div>
 
-      {/* Status indicator below */}
+      {/* Status */}
       <div className="flex items-center justify-center mt-2 gap-1.5">
-        <span className="h-1.5 w-1.5 rounded-full" style={{ background: dotColor, boxShadow: `0 0 6px rgba(${dotGlow},0.5)` }} />
-        <span className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: dotColor }}>{inRange ? "Within range" : "Outside range"}</span>
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: dotColor }} />
+        <span className="text-[9px] font-medium uppercase tracking-wider" style={{ color: dotColor }}>{inRange ? "Within range" : "Outside range"}</span>
       </div>
     </div>
   )
