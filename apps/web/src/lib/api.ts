@@ -132,6 +132,70 @@ export const apiKeysApi = {
 // ---- Sync Jobs ----
 export const syncJobsApi = {
   list: () => request<{ jobs: SyncJob[] }>("/v1/sync-jobs"),
+  sweep: () => request<{ message: string; total: number; enqueued: number }>("/v1/sync-jobs/sweep", { method: "POST" }),
+}
+
+// ---- System Status ----
+export interface SystemStatus {
+  status: "operational" | "degraded" | "down"
+  version: string
+  environment: string
+  uptime: string
+  uptimeMs: number
+  timestamp: string
+  hostname: string | null
+  summary: { healthy: number; degraded: number; down: number; total: number }
+  components: Array<{
+    name: string
+    type: string
+    status: "healthy" | "degraded" | "down"
+    latencyMs: number | null
+    error: string | null
+    details?: Record<string, unknown>
+  }>
+  deployments: Array<{
+    name: string
+    replicas: number
+    readyReplicas: number
+    unavailableReplicas: number
+  }> | null
+}
+
+export const systemApi = {
+  status: () => request<SystemStatus>("/v1/system/status"),
+}
+
+// ---- API Logs ----
+export interface ApiLogEntry {
+  id: string
+  method: string
+  endpoint: string
+  statusCode: number
+  durationMs: number
+  errorMessage: string | null
+  createdAt: string
+}
+
+export interface ApiLogStats {
+  totalCalls: number
+  errorRate: string
+  errorCount: number
+  avgDurationMs: number
+  last24h: number
+}
+
+export const apiLogsApi = {
+  list: (params?: { method?: string | undefined; status?: number | undefined; endpoint?: string | undefined; from?: string | undefined; to?: string | undefined; limit?: number | undefined; offset?: number | undefined }) => {
+    const qs = new URLSearchParams()
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        if (v !== undefined && v !== "") qs.set(k, String(v))
+      }
+    }
+    const query = qs.toString()
+    return request<{ data: ApiLogEntry[]; total: number }>(`/v1/api-logs${query ? `?${query}` : ""}`)
+  },
+  stats: () => request<ApiLogStats>("/v1/api-logs/stats"),
 }
 
 // ---- Webhooks ----

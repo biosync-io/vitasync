@@ -132,6 +132,39 @@ export async function buildServer() {
   await app.register(queuesPlugin)
   await app.register(registerV1Routes)
 
+  // ── API request logging → PostgreSQL ────────────────────────
+  // Logs all authenticated /v1/* requests asynchronously.
+  // Fire-and-forget so logging never slows down responses.
+  app.addHook("onResponse", (request, reply, done) => {
+    // Only log authenticated v1 API requests
+    if (!request.url.startsWith("/v1/")) {
+      done()
+      return
+    }
+
+    const durationMs = Math.round(reply.elapsedTime)
+    const endpoint = request.url.split("?")[0] ?? request.url
+    const statusCode = reply.statusCode
+
+    // Fire-and-forget — import + insert in the background
+    import("@biosync-io/db")
+      .then(({ getDb, apiLogs }) => {
+        const db = getDb()
+        return db.insert(apiLogs).values({
+          method: request.method,
+          endpoint,
+          statusCode,
+          durationMs,
+          errorMessage: statusCode >= 400 ? (reply.raw.statusMessage ?? null) : null,
+        })
+      })
+      .catch((err) => {
+        app.log.warn({ err }, "[api-logs] Failed to persist request log")
+      })
+
+    done()
+  })
+
   // ── Bull Board queue dashboard ───────────────────────────────
   await app.register(bullBoardPlugin)
 

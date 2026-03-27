@@ -13,31 +13,55 @@ import type { Redis } from "ioredis"
  * - Every `SYNC_INTERVAL_MS` milliseconds, query all connected provider connections
  * - For each connection, add a sync job if one isn't already queued or running
  * - Jobs are deduplicated via `jobId` based on connectionId to avoid pile-up
+ *
+ * Resilience:
+ * - On Redis reconnection, the repeatable job is re-registered and an immediate sweep runs
+ * - Old repeatable jobs are cleaned before re-creation to avoid stale metadata blocking
+ * - The immediate startup sweep is non-fatal so Redis latency doesn't crash the worker
  */
 
 const SYNC_INTERVAL_MS = Number.parseInt(process.env.SYNC_INTERVAL_MS ?? "900000", 10) // default 15 minutes
 
-export async function startPeriodicScheduler(
-  syncQueue: Queue,
-  connection: Redis,
-): Promise<() => Promise<void>> {
-  // Also set up a BullMQ repeatable job as a fallback scheduler
-  // This ensures scheduling continues even if the worker restarts
+/**
+ * Register (or re-register) the BullMQ repeatable sweep job.
+ * Removes any stale repeatable entry first so a fresh Redis won't reject the add.
+ */
+async function ensureRepeatableJob(syncQueue: Queue): Promise<void> {
+  try {
+    await syncQueue.removeRepeatable(
+      "schedule-all-syncs",
+      { every: SYNC_INTERVAL_MS },
+      "periodic-sync-sweep",
+    )
+  } catch {
+    // No existing repeatable to remove — safe to continue
+  }
+
   await syncQueue.add(
     "schedule-all-syncs",
     { type: "scheduled_sweep" },
     {
       repeat: { every: SYNC_INTERVAL_MS },
-      jobId: "periodic-sync-sweep", // stable ID prevents duplicate repeatable jobs
+      jobId: "periodic-sync-sweep",
       removeOnComplete: { count: 50 },
       removeOnFail: { count: 100 },
     },
   )
+}
+
+export async function startPeriodicScheduler(
+  syncQueue: Queue,
+  connection: Redis,
+): Promise<() => Promise<void>> {
+  // Register the BullMQ repeatable job (cleans stale entry first)
+  await ensureRepeatableJob(syncQueue)
 
   console.info(`[scheduler] Periodic sync enabled — interval: ${SYNC_INTERVAL_MS / 1000}s`)
 
-  // Also run an immediate sweep on startup to avoid waiting a full interval
-  await enqueueAllActiveConnections(syncQueue)
+  // Run an immediate sweep on startup — non-fatal so Redis lag doesn't crash the worker
+  enqueueAllActiveConnections(syncQueue).catch((err) => {
+    console.error("[scheduler] Initial sweep failed (will retry on next interval):", err)
+  })
 
   // In-process interval as a belt-and-suspenders approach
   const timer = setInterval(() => {
@@ -46,14 +70,33 @@ export async function startPeriodicScheduler(
     })
   }, SYNC_INTERVAL_MS)
 
+  // Re-register repeatable job and run a catch-up sweep whenever Redis reconnects.
+  // After a Redis cluster upgrade/failover the repeatable job metadata is lost;
+  // this handler ensures sync jobs resume automatically.
+  const onReconnect = () => {
+    console.info("[scheduler] Redis reconnected — re-registering repeatable job and running catch-up sweep")
+    ensureRepeatableJob(syncQueue).catch((err) => {
+      console.error("[scheduler] Failed to re-register repeatable job after reconnect:", err)
+    })
+    enqueueAllActiveConnections(syncQueue).catch((err) => {
+      console.error("[scheduler] Catch-up sweep after reconnect failed:", err)
+    })
+  }
+
+  connection.on("ready", onReconnect)
+
   return async () => {
     clearInterval(timer)
-    // Remove the repeatable job on shutdown
-    await syncQueue.removeRepeatable(
-      "schedule-all-syncs",
-      { every: SYNC_INTERVAL_MS },
-      "periodic-sync-sweep",
-    )
+    connection.off("ready", onReconnect)
+    try {
+      await syncQueue.removeRepeatable(
+        "schedule-all-syncs",
+        { every: SYNC_INTERVAL_MS },
+        "periodic-sync-sweep",
+      )
+    } catch {
+      // Queue may already be closed
+    }
   }
 }
 

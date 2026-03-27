@@ -56,7 +56,25 @@ async function main() {
   const connection = new Redis(config.REDIS_URL, {
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
+    retryStrategy(times) {
+      const delay = Math.min(times * 500, 15_000)
+      console.warn(`[redis] Reconnecting... attempt ${times} (delay: ${delay}ms)`)
+      return delay
+    },
   })
+
+  connection.on("error", (err) => {
+    console.error("[redis] Connection error:", err.message)
+  })
+
+  // Wait for Redis to be ready before initializing queues.
+  // ioredis will keep retrying via retryStrategy; we just wait for "ready".
+  await new Promise<void>((resolve, reject) => {
+    if (connection.status === "ready") return resolve()
+    connection.once("ready", resolve)
+    connection.once("end", () => reject(new Error("Redis connection closed before becoming ready")))
+  })
+  console.info("[redis] Connection established")
 
   const workers: Worker[] = []
   let stopScheduler: (() => Promise<void>) | null = null
@@ -205,7 +223,22 @@ async function main() {
   process.on("SIGINT", () => void shutdown("SIGINT"))
 }
 
-main().catch((err) => {
-  console.error("Worker failed to start:", err)
-  process.exit(1)
-})
+const MAX_STARTUP_RETRIES = 10
+const STARTUP_RETRY_DELAY_MS = 5_000
+
+;(async () => {
+  for (let attempt = 1; attempt <= MAX_STARTUP_RETRIES; attempt++) {
+    try {
+      await main()
+      return // started successfully
+    } catch (err) {
+      console.error(`Worker failed to start (attempt ${attempt}/${MAX_STARTUP_RETRIES}):`, err)
+      if (attempt === MAX_STARTUP_RETRIES) {
+        console.error("Max startup retries reached — exiting.")
+        process.exit(1)
+      }
+      console.info(`Retrying in ${STARTUP_RETRY_DELAY_MS / 1000}s...`)
+      await new Promise((r) => setTimeout(r, STARTUP_RETRY_DELAY_MS))
+    }
+  }
+})()

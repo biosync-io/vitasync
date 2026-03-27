@@ -30,6 +30,7 @@ const METRIC_LABELS: Record<string, string> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
+  connected: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
   active: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
   disconnected: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
   error: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
@@ -296,18 +297,29 @@ export default function UserDetailPage() {
                   >
                     {conn.status}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => syncMutation.mutate(conn.id)}
-                    disabled={syncMutation.isPending}
-                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-                  >
-                    {syncMutation.isPending ? "Syncing…" : "Sync"}
-                  </button>
+                  {conn.status === "disconnected" ? (
+                    <a
+                      href={`/api/v1/oauth/${conn.providerId}/authorize?userId=${id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/40"
+                    >
+                      Reconnect
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => syncMutation.mutate(conn.id)}
+                      disabled={syncMutation.isPending && syncMutation.variables === conn.id}
+                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                    >
+                      {syncMutation.isPending && syncMutation.variables === conn.id ? "Syncing…" : "Sync"}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => disconnectMutation.mutate(conn.id)}
-                    disabled={disconnectMutation.isPending}
+                    disabled={disconnectMutation.isPending && disconnectMutation.variables === conn.id}
                     className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-800/40 dark:text-red-400 dark:hover:bg-red-900/20"
                   >
                     Disconnect
