@@ -110,6 +110,7 @@ export default defineConfig({
             { label: "Docker Compose", slug: "deployment/docker" },
             { label: "Kubernetes / Helm", slug: "deployment/kubernetes" },
             { label: "Database Backup & Restore", slug: "deployment/database-backup" },
+            { label: "Prometheus & Monitoring", slug: "deployment/monitoring" },
           ],
         },
       ],

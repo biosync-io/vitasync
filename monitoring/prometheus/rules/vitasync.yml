@@ -1,0 +1,138 @@
+# VitaSync — Prometheus Alerting Rules
+#
+# Alerts for infrastructure and application health.
+# Configure an Alertmanager receiver to route these to Slack, email, etc.
+
+groups:
+  # ── Database Alerts ────────────────────────────────────────────────────
+  - name: vitasync-database
+    rules:
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "The postgres-exporter cannot reach the database. All API operations will fail."
+
+      - alert: PostgreSQLHighConnections
+        expr: pg_stat_activity_count > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL connection count is high ({{ $value }})"
+          description: "Connection count exceeds 80. Default max_connections is 100. Consider connection pooling."
+
+      - alert: PostgreSQLSlowQueries
+        expr: pg_stat_activity_max_tx_duration{state="active"} > 300
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Long-running PostgreSQL query detected ({{ $value }}s)"
+          description: "A query has been running for more than 5 minutes."
+
+      - alert: PostgreSQLDeadlocks
+        expr: rate(pg_stat_database_deadlocks_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL deadlocks detected"
+          description: "Deadlocks are occurring at a rate of {{ $value }}/s in database {{ $labels.datname }}."
+
+  # ── Redis Alerts ───────────────────────────────────────────────────────
+  - name: vitasync-redis
+    rules:
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis is unreachable. BullMQ job processing and caching will fail."
+
+      - alert: RedisHighMemory
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage above 85% ({{ $value | humanizePercentage }})"
+          description: "Redis is approaching its memory limit. Consider increasing maxmemory or reviewing eviction policy."
+
+      - alert: RedisHighLatency
+        expr: redis_commands_duration_seconds_total / redis_commands_processed_total > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis average command latency is high ({{ $value }}s)"
+          description: "Average Redis command latency exceeds 10ms."
+
+  # ── VitaSync Application Alerts ────────────────────────────────────────
+  - name: vitasync-application
+    rules:
+      - alert: SyncJobFailureRate
+        expr: |
+          vitasync_sync_jobs{status="failed"}
+          / ignoring(status) group_left
+          sum(vitasync_sync_jobs) by ()
+          > 0.1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Sync job failure rate above 10%"
+          description: "More than 10% of sync jobs in the last 24h have failed. Check provider API limits and credentials."
+
+      - alert: StaleProviderConnections
+        expr: vitasync_stale_connections > 5
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} provider connections have not synced in 24h"
+          description: "Multiple active connections are stale. Check sync worker health and provider API availability."
+
+      - alert: NoMetricsIngested
+        expr: vitasync_health_metrics_24h == 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "No health metrics ingested in the last 24 hours"
+          description: "The platform has not ingested any health data. Verify sync workers are running and provider connections are active."
+
+  # ── Host Alerts ────────────────────────────────────────────────────────
+  - name: vitasync-host
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU usage above 85% ({{ $value | humanize }}%)"
+          description: "Sustained high CPU on {{ $labels.instance }}."
+
+      - alert: HighMemoryUsage
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Memory usage above 85% ({{ $value | humanizePercentage }})"
+          description: "Available memory is low on {{ $labels.instance }}."
+
+      - alert: DiskSpaceLow
+        expr: (1 - node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk usage above 85% on {{ $labels.mountpoint }}"
+          description: "Filesystem {{ $labels.device }} on {{ $labels.instance }} is running low on space."
