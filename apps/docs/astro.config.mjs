@@ -74,6 +74,10 @@ export default defineConfig({
                   label: "Webhooks",
                   slug: "api-reference/guides/webhooks",
                 },
+                {
+                  label: "API Examples",
+                  slug: "api-reference/guides/api-examples",
+                },
               ],
             },
           ],
