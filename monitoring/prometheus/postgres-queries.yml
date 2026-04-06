@@ -1,0 +1,106 @@
+# VitaSync — Custom PostgreSQL Exporter Queries
+#
+# These queries expose VitaSync-specific business metrics via the
+# postgres-exporter. Prometheus scrapes them alongside built-in
+# PostgreSQL metrics.
+#
+# Docs: https://github.com/prometheus-community/postgres_exporter
+
+vitasync_users:
+  query: "SELECT COUNT(*)::float AS total FROM users"
+  master: true
+  metrics:
+    - total:
+        usage: GAUGE
+        description: "Total registered users"
+
+vitasync_provider_connections:
+  query: |
+    SELECT
+      provider_id,
+      status,
+      COUNT(*)::float AS total
+    FROM provider_connections
+    GROUP BY provider_id, status
+  master: true
+  metrics:
+    - total:
+        usage: GAUGE
+        description: "Provider connections by provider and status"
+
+vitasync_health_metrics_total:
+  query: "SELECT COUNT(*)::float AS total FROM health_metrics"
+  master: true
+  metrics:
+    - total:
+        usage: GAUGE
+        description: "Total health metric data points"
+
+vitasync_health_metrics_24h:
+  query: |
+    SELECT COUNT(*)::float AS total
+    FROM health_metrics
+    WHERE recorded_at >= NOW() - INTERVAL '24 hours'
+  master: true
+  metrics:
+    - total:
+        usage: GAUGE
+        description: "Health metrics ingested in the last 24 hours"
+
+vitasync_sync_jobs:
+  query: |
+    SELECT
+      status,
+      COUNT(*)::float AS total
+    FROM sync_jobs
+    WHERE created_at >= NOW() - INTERVAL '24 hours'
+    GROUP BY status
+  master: true
+  metrics:
+    - total:
+        usage: GAUGE
+        description: "Sync jobs in the last 24 hours by status"
+
+vitasync_sync_duration_seconds:
+  query: |
+    SELECT
+      COALESCE(AVG(EXTRACT(EPOCH FROM (completed_at - started_at))), 0)::float AS avg,
+      COALESCE(MAX(EXTRACT(EPOCH FROM (completed_at - started_at))), 0)::float AS max
+    FROM sync_jobs
+    WHERE status = 'completed'
+      AND completed_at >= NOW() - INTERVAL '1 hour'
+  master: true
+  metrics:
+    - avg:
+        usage: GAUGE
+        description: "Average sync job duration in seconds (last hour)"
+    - max:
+        usage: GAUGE
+        description: "Maximum sync job duration in seconds (last hour)"
+
+vitasync_stale_connections:
+  query: |
+    SELECT COUNT(*)::float AS total
+    FROM provider_connections
+    WHERE status = 'active'
+      AND last_synced_at < NOW() - INTERVAL '24 hours'
+  master: true
+  metrics:
+    - total:
+        usage: GAUGE
+        description: "Active connections with no sync in 24 hours"
+
+vitasync_notification_logs:
+  query: |
+    SELECT
+      channel,
+      status,
+      COUNT(*)::float AS total
+    FROM notification_logs
+    WHERE created_at >= NOW() - INTERVAL '24 hours'
+    GROUP BY channel, status
+  master: true
+  metrics:
+    - total:
+        usage: GAUGE
+        description: "Notification delivery stats (last 24h) by channel and status"

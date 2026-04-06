@@ -6,6 +6,7 @@
 
 [![CI](https://github.com/biosync-io/vitasync/actions/workflows/ci.yml/badge.svg)](https://github.com/biosync-io/vitasync/actions/workflows/ci.yml)
 [![Release](https://github.com/biosync-io/vitasync/actions/workflows/release.yml/badge.svg)](https://github.com/biosync-io/vitasync/actions/workflows/release.yml)
+[![codecov](https://codecov.io/gh/biosync-io/vitasync/graph/badge.svg)](https://codecov.io/gh/biosync-io/vitasync)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://typescriptlang.org)

@@ -74,6 +74,10 @@ export default defineConfig({
                   label: "Webhooks",
                   slug: "api-reference/guides/webhooks",
                 },
+                {
+                  label: "API Examples",
+                  slug: "api-reference/guides/api-examples",
+                },
               ],
             },
           ],
@@ -109,6 +113,8 @@ export default defineConfig({
           items: [
             { label: "Docker Compose", slug: "deployment/docker" },
             { label: "Kubernetes / Helm", slug: "deployment/kubernetes" },
+            { label: "Database Backup & Restore", slug: "deployment/database-backup" },
+            { label: "Prometheus & Monitoring", slug: "deployment/monitoring" },
           ],
         },
       ],
