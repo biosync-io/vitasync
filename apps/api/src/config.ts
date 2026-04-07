@@ -19,6 +19,13 @@ const EnvSchema = z.object({
   // Bootstrap: if set, a workspace + admin API key are created on first boot
   ADMIN_WORKSPACE_SLUG: z.string().default("default"),
   ADMIN_API_KEY: z.string().optional(),
+  // OpenTelemetry (optional)
+  OTEL_ENABLED: z
+    .string()
+    .default("false")
+    .transform((v) => v === "true"),
+  OTEL_SERVICE_NAME: z.string().default("vitasync-api"),
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.string().default("http://localhost:4317"),
 })
 
 const result = EnvSchema.safeParse(process.env)

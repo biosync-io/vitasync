@@ -1,4 +1,4 @@
-.PHONY: help build dev stop down test lint format migrate seed logs shell
+.PHONY: help build dev stop down test lint format migrate seed logs shell load-test load-test-smoke load-test-report
 
 # Default target
 help: ## Show this help message
@@ -85,3 +85,24 @@ setup: ## First-time project setup
 	cp -n .env.example .env || true
 	pnpm install
 	@echo "Done! Edit .env then run: make dev"
+
+# ── Load Testing ─────────────────────────────────────────────
+
+load-test: ## Run full load test suite (requires k6)
+	k6 run load-tests/api.js \
+		--env BASE_URL=$${BASE_URL:-http://localhost:3001} \
+		--env API_KEY=$${API_KEY} \
+		--env USER_ID=$${USER_ID}
+
+load-test-smoke: ## Run smoke test only (1 VU, 30s)
+	k6 run load-tests/api.js \
+		--env BASE_URL=$${BASE_URL:-http://localhost:3001} \
+		--env API_KEY=$${API_KEY} \
+		--env USER_ID=$${USER_ID} \
+		--tag scenario=smoke
+
+load-test-report: ## Run load test with HTML dashboard
+	K6_WEB_DASHBOARD=true k6 run load-tests/api.js \
+		--env BASE_URL=$${BASE_URL:-http://localhost:3001} \
+		--env API_KEY=$${API_KEY} \
+		--env USER_ID=$${USER_ID}

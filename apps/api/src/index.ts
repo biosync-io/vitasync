@@ -1,3 +1,8 @@
+import { initTelemetry } from "./telemetry.js"
+
+// Initialize OpenTelemetry before any instrumented imports
+await initTelemetry()
+
 import { createHash } from "node:crypto"
 import { closeDb, getDb, initDb } from "@biosync-io/db"
 import { apiKeys, workspaces } from "@biosync-io/db"
