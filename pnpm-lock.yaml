@@ -133,8 +133,8 @@ importers:
         specifier: ^22.10.7
         version: 22.19.15
       '@vitest/coverage-v8':
-        specifier: ^4.1.0
-        version: 4.1.0(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(vite@7.3.1(@types/node@22.19.15)(jiti@1.21.7)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.2)))
+        specifier: ^4.1.3
+        version: 4.1.3(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(vite@7.3.1(@types/node@22.19.15)(jiti@1.21.7)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.2)))
       rimraf:
         specifier: ^6.0.1
         version: 6.1.3
@@ -881,8 +881,8 @@ packages:
     resolution: {integrity: sha512-HoGuUs4sCZNezVEKdVcwqmZN8GoHirLUcLaYVNBK2J0DadGtdcqgr3BCbvH8+XUo4NGjNl3VOtSjEKNzqfFgKw==}
     engines: {node: '>=6.9.0'}
 
-  '@babel/parser@7.29.0':
-    resolution: {integrity: sha512-IyDgFV5GeDUVX4YdF/3CPULtVGSXXMLh1xVIgdCgxApktqnQV0r7/8Nqthg+8YLGaAtdyIlo2qIdZrbCv4+7ww==}
+  '@babel/parser@7.29.2':
+    resolution: {integrity: sha512-4GgRzy/+fsBa72/RZVJmGKPmZu9Byn8o4MoLpmNe1m8ZfYnz5emHLQz3U4gLud6Zwl0RZIcgiLD7Uq7ySFuDLA==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -3171,6 +3171,9 @@ packages:
   '@types/node@22.19.15':
     resolution: {integrity: sha512-F0R/h2+dsy5wJAUe3tAU6oqa2qbWY5TpNfL/RGmo1y38hiyO1w3x2jPtt76wmuaJI4DQnOBu21cNXQ2STIUUWg==}
 
+  '@types/node@22.19.17':
+    resolution: {integrity: sha512-wGdMcf+vPYM6jikpS/qhg6WiqSV/OhG+jeeHT/KlVqxYfD40iYJf9/AE1uQxVWFvU7MipKRkRv8NSHiCGgPr8Q==}
+
   '@types/node@24.12.0':
     resolution: {integrity: sha512-GYDxsZi3ChgmckRT9HPU0WEhKLP08ev/Yfcq2AstjrDASOYCSXeyjDsHg4v5t4jOj7cyDX3vmprafKlWIG9MXQ==}
 
@@ -3221,11 +3224,11 @@ packages:
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
 
-  '@vitest/coverage-v8@4.1.0':
-    resolution: {integrity: sha512-nDWulKeik2bL2Va/Wl4x7DLuTKAXa906iRFooIRPR+huHkcvp9QDkPQ2RJdmjOFrqOqvNfoSQLF68deE3xC3CQ==}
+  '@vitest/coverage-v8@4.1.3':
+    resolution: {integrity: sha512-/MBdrkA8t6hbdCWFKs09dPik774xvs4Z6L4bycdCxYNLHM8oZuRyosumQMG19LUlBsB6GeVpL1q4kFFazvyKGA==}
     peerDependencies:
-      '@vitest/browser': 4.1.0
-      vitest: 4.1.0
+      '@vitest/browser': 4.1.3
+      vitest: 4.1.3
     peerDependenciesMeta:
       '@vitest/browser':
         optional: true
@@ -3247,6 +3250,9 @@ packages:
   '@vitest/pretty-format@4.1.0':
     resolution: {integrity: sha512-3RZLZlh88Ib0J7NQTRATfc/3ZPOnSUn2uDBUoGNn5T36+bALixmzphN26OUD3LRXWkJu4H0s5vvUeqBiw+kS0A==}
 
+  '@vitest/pretty-format@4.1.3':
+    resolution: {integrity: sha512-hYqqwuMbpkkBodpRh4k4cQSOELxXky1NfMmQvOfKvV8zQHz8x8Dla+2wzElkMkBvSAJX5TRGHJAQvK0TcOafwg==}
+
   '@vitest/runner@4.1.0':
     resolution: {integrity: sha512-Duvx2OzQ7d6OjchL+trw+aSrb9idh7pnNfxrklo14p3zmNL4qPCDeIJAK+eBKYjkIwG96Bc6vYuxhqDXQOWpoQ==}
 
@@ -3258,6 +3264,9 @@ packages:
 
   '@vitest/utils@4.1.0':
     resolution: {integrity: sha512-XfPXT6a8TZY3dcGY8EdwsBulFCIw+BeeX0RZn2x/BtiY/75YGh8FeWGG8QISN/WhaqSrE2OrlDgtF8q5uhOTmw==}
+
+  '@vitest/utils@4.1.3':
+    resolution: {integrity: sha512-Pc/Oexse/khOWsGB+w3q4yzA4te7W4gpZZAvk+fr8qXfTURZUMj5i7kuxsNK5mP/dEB6ao3jfr0rs17fHhbHdw==}
 
   '@webassemblyjs/ast@1.14.1':
     resolution: {integrity: sha512-nuBEDgQfm1ccRp/8bCQrx1frohyufl4JlbMMZ4P1wpeOfDhF6FQkxZJ1b/e+PLwr6X1Nhw6OLme5usuBWYBvuQ==}
@@ -6903,7 +6912,7 @@ snapshots:
       '@babel/helper-compilation-targets': 7.28.6
       '@babel/helper-module-transforms': 7.28.6(@babel/core@7.29.0)
       '@babel/helpers': 7.29.2
-      '@babel/parser': 7.29.0
+      '@babel/parser': 7.29.2
       '@babel/template': 7.28.6
       '@babel/traverse': 7.29.0
       '@babel/types': 7.29.0
@@ -6918,7 +6927,7 @@ snapshots:
 
   '@babel/generator@7.29.1':
     dependencies:
-      '@babel/parser': 7.29.0
+      '@babel/parser': 7.29.2
       '@babel/types': 7.29.0
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
@@ -7042,7 +7051,7 @@ snapshots:
       '@babel/template': 7.28.6
       '@babel/types': 7.29.0
 
-  '@babel/parser@7.29.0':
+  '@babel/parser@7.29.2':
     dependencies:
       '@babel/types': 7.29.0
 
@@ -7522,7 +7531,7 @@ snapshots:
   '@babel/template@7.28.6':
     dependencies:
       '@babel/code-frame': 7.29.0
-      '@babel/parser': 7.29.0
+      '@babel/parser': 7.29.2
       '@babel/types': 7.29.0
 
   '@babel/traverse@7.29.0':
@@ -7530,7 +7539,7 @@ snapshots:
       '@babel/code-frame': 7.29.0
       '@babel/generator': 7.29.1
       '@babel/helper-globals': 7.28.0
-      '@babel/parser': 7.29.0
+      '@babel/parser': 7.29.2
       '@babel/template': 7.28.6
       '@babel/types': 7.29.0
       debug: 4.4.3
@@ -9375,6 +9384,10 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
+  '@types/node@22.19.17':
+    dependencies:
+      undici-types: 6.21.0
+
   '@types/node@24.12.0':
     dependencies:
       undici-types: 7.16.0
@@ -9429,10 +9442,10 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
-  '@vitest/coverage-v8@4.1.0(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(vite@7.3.1(@types/node@22.19.15)(jiti@1.21.7)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.2)))':
+  '@vitest/coverage-v8@4.1.3(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@22.19.15)(vite@7.3.1(@types/node@22.19.15)(jiti@1.21.7)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.2)))':
     dependencies:
       '@bcoe/v8-coverage': 1.0.2
-      '@vitest/utils': 4.1.0
+      '@vitest/utils': 4.1.3
       ast-v8-to-istanbul: 1.0.0
       istanbul-lib-coverage: 3.2.2
       istanbul-lib-report: 3.0.1
@@ -9464,6 +9477,10 @@ snapshots:
     dependencies:
       tinyrainbow: 3.1.0
 
+  '@vitest/pretty-format@4.1.3':
+    dependencies:
+      tinyrainbow: 3.1.0
+
   '@vitest/runner@4.1.0':
     dependencies:
       '@vitest/utils': 4.1.0
@@ -9481,6 +9498,12 @@ snapshots:
   '@vitest/utils@4.1.0':
     dependencies:
       '@vitest/pretty-format': 4.1.0
+      convert-source-map: 2.0.0
+      tinyrainbow: 3.1.0
+
+  '@vitest/utils@4.1.3':
+    dependencies:
+      '@vitest/pretty-format': 4.1.3
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
@@ -11345,7 +11368,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 22.19.15
+      '@types/node': 22.19.17
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
@@ -11475,7 +11498,7 @@ snapshots:
 
   magicast@0.5.2:
     dependencies:
-      '@babel/parser': 7.29.0
+      '@babel/parser': 7.29.2
       '@babel/types': 7.29.0
       source-map-js: 1.2.1
 
