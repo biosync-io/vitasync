@@ -97,7 +97,7 @@ function ChartTooltip({ active, payload, label }: any) {
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function MoodPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
   const [showCreate, setShowCreate] = useState(false)
   const [rangeDays, setRangeDays] = useState(30)
   const [form, setForm] = useState({ mood: "3", energy: "3", stress: "3", notes: "", tags: "" })
@@ -106,6 +106,7 @@ export default function MoodPage() {
   const { data: usersResult } = useQuery({
     queryKey: ["users", 0],
     queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
+    enabled: isAdmin,
   })
   const users = usersResult?.data ?? []
 
@@ -190,13 +191,15 @@ export default function MoodPage() {
       {/* User select + date range filter */}
       <div className="mb-6 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
         <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-          <div className="flex-1">
-            <label htmlFor="mood-user" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">User</label>
-            <select id="mood-user" className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-              <option value="">Select a user…</option>
-              {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-            </select>
-          </div>
+          {isAdmin && (
+            <div className="flex-1">
+              <label htmlFor="mood-user" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">User</label>
+              <select id="mood-user" className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+                <option value="">Select a user…</option>
+                {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Period</label>
             <div className="flex gap-1">
@@ -215,7 +218,7 @@ export default function MoodPage() {
         </div>
       </div>
 
-      {!selectedUserId && (
+      {!selectedUserId && isAdmin && (
         <div className="flex flex-col items-center justify-center py-24">
           <span className="text-6xl mb-4">😶</span>
           <p className="text-sm text-gray-500 dark:text-gray-400">Select a user to view mood data.</p>

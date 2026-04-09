@@ -78,7 +78,7 @@ function MoodDistChart({ data }: { data: Record<string, number> }) {
 }
 
 export default function JournalPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
   const [showCreate, setShowCreate] = useState(false)
   const [search, setSearch] = useState("")
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -95,6 +95,7 @@ export default function JournalPage() {
   const { data: usersResult } = useQuery({
     queryKey: ["users", 0],
     queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
+    enabled: isAdmin,
   })
   const users = usersResult?.data ?? []
 
@@ -160,15 +161,17 @@ export default function JournalPage() {
       </div>
 
       {/* User select */}
-      <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
-        <label htmlFor="journal-user" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">User</label>
-        <select id="journal-user" className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-          <option value="">Select a user…</option>
-          {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-        </select>
-      </div>
+      {isAdmin && (
+        <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
+          <label htmlFor="journal-user" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">User</label>
+          <select id="journal-user" className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+            <option value="">Select a user…</option>
+            {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
+          </select>
+        </div>
+      )}
 
-      {!selectedUserId && (
+      {!selectedUserId && isAdmin && (
         <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
           <span className="text-6xl mb-4 animate-float">📔</span>
           <p className="text-sm text-gray-500 dark:text-gray-400">Select a user to view journal entries.</p>

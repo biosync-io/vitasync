@@ -87,13 +87,14 @@ function ScatterTooltipContent({ active, payload }: { active?: boolean; payload?
 }
 
 export default function CorrelationsPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
   const queryClient = useQueryClient()
   const [days, setDays] = useState(90)
 
   const { data: usersResult } = useQuery({
     queryKey: ["users", 0],
     queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
+    enabled: isAdmin,
   })
   const users = usersResult?.data ?? []
 
@@ -157,13 +158,15 @@ export default function CorrelationsPage() {
       {/* User select + Date range filter */}
       <div className="mb-6 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
         <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-          <div className="flex-1">
-            <label htmlFor="corr-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
-            <select id="corr-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-              <option value="">Select a user…</option>
-              {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-            </select>
-          </div>
+          {isAdmin && (
+            <div className="flex-1">
+              <label htmlFor="corr-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
+              <select id="corr-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+                <option value="">Select a user…</option>
+                {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Date Range</label>
             <div className="flex gap-1.5">
@@ -186,7 +189,7 @@ export default function CorrelationsPage() {
         </div>
       </div>
 
-      {!selectedUserId && <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-16">Select a user to view correlations.</p>}
+      {!selectedUserId && isAdmin && <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-16">Select a user to view correlations.</p>}
 
       {/* Summary Stats — 4 cards */}
       {selectedUserId && correlations.length > 0 && (

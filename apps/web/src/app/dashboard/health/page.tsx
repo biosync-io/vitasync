@@ -22,7 +22,7 @@ const METRIC_LABELS: Record<string, string> = {
 const PAGE_SIZE = 100
 
 export default function HealthDataPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
   const [metricType, setMetricType] = useState<string>("")
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
@@ -35,6 +35,7 @@ export default function HealthDataPage() {
   const { data: usersResult } = useQuery({
     queryKey: ["users", 0],
     queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
+    enabled: isAdmin,
   })
 
   const usersForSelect = usersResult?.data ?? []
@@ -77,28 +78,30 @@ export default function HealthDataPage() {
       <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Filters</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label htmlFor="health-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-              User
-            </label>
-            <select
-              id="health-user"
-              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
-              value={selectedUserId}
-              onChange={(e) => {
-                setSelectedUserId(e.target.value)
-                setMetricType("")
-                resetPage()
-              }}
-            >
-              <option value="">Select a user…</option>
-              {usersForSelect.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.displayName ?? u.email ?? u.externalId}
-                </option>
-              ))}
-            </select>
-          </div>
+          {isAdmin && (
+            <div>
+              <label htmlFor="health-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                User
+              </label>
+              <select
+                id="health-user"
+                className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
+                value={selectedUserId}
+                onChange={(e) => {
+                  setSelectedUserId(e.target.value)
+                  setMetricType("")
+                  resetPage()
+                }}
+              >
+                <option value="">Select a user…</option>
+                {usersForSelect.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.displayName ?? u.email ?? u.externalId}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label htmlFor="health-metric-type" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
               Metric Type
@@ -170,11 +173,11 @@ export default function HealthDataPage() {
       )}
 
       {/* Data table */}
-      {!selectedUserId ? (
+      {!selectedUserId && isAdmin ? (
         <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 py-20 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">Select a user to browse their health data.</p>
         </div>
-      ) : loadingMetrics ? (
+      ) : !selectedUserId ? null : loadingMetrics ? (
         <div className="space-y-2">
           {Array.from({ length: 8 }).map((_, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton loader — items have no stable identity

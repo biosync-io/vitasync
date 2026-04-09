@@ -195,7 +195,7 @@ function OverallScoreTooltip({ active, payload }: any) {
 
 // ── Page ───────────────────────────────────────────────────────
 export default function HealthScoresPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
   const queryClient = useQueryClient()
   const [rangeDays, setRangeDays] = useState(30)
   const [tablePage, setTablePage] = useState(0)
@@ -204,6 +204,7 @@ export default function HealthScoresPage() {
   const { data: usersResult } = useQuery({
     queryKey: ["users", 0],
     queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
+    enabled: isAdmin,
   })
   const users = usersResult?.data ?? []
   const selectedUser = users.find((u) => u.id === selectedUserId)
@@ -286,13 +287,15 @@ export default function HealthScoresPage() {
       {/* User select + Date range filter */}
       <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-          <div className="flex-1 min-w-0">
-            <label htmlFor="hs-user" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">User</label>
-            <select id="hs-user" className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-              <option value="">Select a user…</option>
-              {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}{u.gender ? ` (${u.gender})` : ""}</option>)}
-            </select>
-          </div>
+          {isAdmin && (
+            <div className="flex-1 min-w-0">
+              <label htmlFor="hs-user" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">User</label>
+              <select id="hs-user" className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+                <option value="">Select a user…</option>
+                {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}{u.gender ? ` (${u.gender})` : ""}</option>)}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Period</label>
             <div className="flex gap-1.5">
@@ -315,7 +318,7 @@ export default function HealthScoresPage() {
         </div>
       </div>
 
-      {!selectedUserId && (
+      {!selectedUserId && isAdmin && (
         <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
           <span className="text-6xl mb-4 animate-float">💯</span>
           <p className="text-sm text-gray-500 dark:text-gray-400">Select a user to view their health score.</p>

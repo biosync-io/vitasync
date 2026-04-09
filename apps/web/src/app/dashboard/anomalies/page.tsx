@@ -82,7 +82,7 @@ function zScoreBarColor(z: number) {
 /* ---------- component ---------- */
 
 export default function AnomaliesPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
   const [severityFilter, setSeverityFilter] = useState("")
   const [lookbackDays, setLookbackDays] = useState<number>(7)
   const queryClient = useQueryClient()
@@ -92,6 +92,7 @@ export default function AnomaliesPage() {
   const { data: usersResult } = useQuery({
     queryKey: ["users", 0],
     queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
+    enabled: isAdmin,
   })
   const users = usersResult?.data ?? []
 
@@ -187,13 +188,15 @@ export default function AnomaliesPage() {
       {/* Filters */}
       <div className="mb-6 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
         <div className="flex flex-wrap gap-6 items-end">
-          <div>
-            <label htmlFor="anom-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
-            <select id="anom-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-              <option value="">Select a user…</option>
-              {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-            </select>
-          </div>
+          {isAdmin && (
+            <div>
+              <label htmlFor="anom-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
+              <select id="anom-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+                <option value="">Select a user…</option>
+                {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
+              </select>
+            </div>
+          )}
           <div>
             <label htmlFor="anom-sev" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Severity</label>
             <select id="anom-sev" className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value)}>
@@ -226,7 +229,7 @@ export default function AnomaliesPage() {
         </div>
       </div>
 
-      {!selectedUserId && <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-16">Select a user to view anomalies.</p>}
+      {!selectedUserId && isAdmin && <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-16">Select a user to view anomalies.</p>}
 
       {/* Summary stat cards */}
       {selectedUserId && (

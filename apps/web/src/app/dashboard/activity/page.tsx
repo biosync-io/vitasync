@@ -97,7 +97,7 @@ function groupByDate<T>(
 // ── main page ──────────────────────────────────────────────────────────────
 
 export default function ActivityPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
   const [eventType, setEventType] = useState("")
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
@@ -108,6 +108,7 @@ export default function ActivityPage() {
   const { data: usersResult } = useQuery({
     queryKey: ["users", 0],
     queryFn: () => usersApi.list({ limit: 100 }),
+    enabled: isAdmin,
   })
 
   const users = usersResult?.data ?? []
@@ -171,24 +172,26 @@ export default function ActivityPage() {
       <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Filters</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <FilterField label="User">
-            <select
-              id="activity-user"
-              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-              value={selectedUserId}
-              onChange={(e) => {
-                setSelectedUserId(e.target.value)
-                resetFilters()
-              }}
-            >
-              <option value="">Select a user…</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.displayName ?? u.email ?? u.externalId}
-                </option>
-              ))}
-            </select>
-          </FilterField>
+          {isAdmin && (
+            <FilterField label="User">
+              <select
+                id="activity-user"
+                className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+                value={selectedUserId}
+                onChange={(e) => {
+                  setSelectedUserId(e.target.value)
+                  resetFilters()
+                }}
+              >
+                <option value="">Select a user…</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.displayName ?? u.email ?? u.externalId}
+                  </option>
+                ))}
+              </select>
+            </FilterField>
+          )}
 
           <FilterField label="Event Type">
             <select
@@ -236,9 +239,9 @@ export default function ActivityPage() {
         </div>
       </div>
 
-      {!selectedUserId ? (
+      {!selectedUserId && isAdmin ? (
         <EmptyCard message="Select a user to browse their activity." />
-      ) : (
+      ) : !selectedUserId ? null : (
         <>
           <div className="mb-5 flex items-center gap-1 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-1 w-fit shadow-sm">
             {(["table", "charts"] as const).map((v) => (

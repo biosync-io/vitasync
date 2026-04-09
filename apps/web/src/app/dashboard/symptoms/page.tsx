@@ -54,7 +54,7 @@ function dateNDaysAgo(n: number): string {
 }
 
 export default function SymptomsPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
   const [showCreate, setShowCreate] = useState(false)
   const [rangeDays, setRangeDays] = useState<number>(30)
   const [form, setForm] = useState({ symptom: "", severity: "2", bodyLocation: "", triggers: "", notes: "" })
@@ -66,6 +66,7 @@ export default function SymptomsPage() {
   const { data: usersResult } = useQuery({
     queryKey: ["users", 0],
     queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
+    enabled: isAdmin,
   })
   const users = usersResult?.data ?? []
 
@@ -183,13 +184,15 @@ export default function SymptomsPage() {
       {/* User select + date range filter */}
       <div className="mb-6 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <label htmlFor="sym-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
-            <select id="sym-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-              <option value="">Select a user…</option>
-              {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-            </select>
-          </div>
+          {isAdmin && (
+            <div>
+              <label htmlFor="sym-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
+              <select id="sym-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+                <option value="">Select a user…</option>
+                {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
+              </select>
+            </div>
+          )}
           {selectedUserId && (
             <div>
               <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Period</label>
@@ -214,7 +217,7 @@ export default function SymptomsPage() {
         </div>
       </div>
 
-      {!selectedUserId && <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-16">Select a user to view symptom data.</p>}
+      {!selectedUserId && isAdmin && <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-16">Select a user to view symptom data.</p>}
 
       {/* Create form */}
       {showCreate && selectedUserId && (

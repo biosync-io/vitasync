@@ -124,7 +124,7 @@ function aggregateByDay(metrics: HealthMetric[]): TimeseriesPoint[] {
 // ── Main Page ──────────────────────────────────────────────────────────────
 
 export default function BodyMetricsPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
   const [rangeDays, setRangeDays] = useState(0) // Default: All time
 
   const { from, to } = useMemo(() => dateRange(rangeDays), [rangeDays])
@@ -132,6 +132,7 @@ export default function BodyMetricsPage() {
   const { data: usersResult } = useQuery({
     queryKey: ["users", 0],
     queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
+    enabled: isAdmin,
   })
   const users = usersResult?.data ?? []
 
@@ -266,18 +267,20 @@ export default function BodyMetricsPage() {
       {/* Filters */}
       <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-          <div className="flex-1 min-w-0">
-            <label htmlFor="body-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
-            <select
-              id="body-user"
-              className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-            >
-              <option value="">Select a user…</option>
-              {users.map((u) => <option key={u.id} value={u.id}>{u.displayName ?? u.email ?? u.externalId}</option>)}
-            </select>
-          </div>
+          {isAdmin && (
+            <div className="flex-1 min-w-0">
+              <label htmlFor="body-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
+              <select
+                id="body-user"
+                className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+              >
+                <option value="">Select a user…</option>
+                {users.map((u) => <option key={u.id} value={u.id}>{u.displayName ?? u.email ?? u.externalId}</option>)}
+              </select>
+            </div>
+          )}
           <div className="flex gap-1.5">
             {RANGE_OPTIONS.map((r) => (
               <button
@@ -297,11 +300,11 @@ export default function BodyMetricsPage() {
         </div>
       </div>
 
-      {!selectedUserId ? (
+      {!selectedUserId && isAdmin ? (
         <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 py-20 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">Select a user to view body metrics.</p>
         </div>
-      ) : (
+      ) : !selectedUserId ? null : (
         <div className="space-y-6">
           {/* Summary Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 stagger-grid">

@@ -103,7 +103,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 }
 
 export default function ReportsPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
   const [showGenerate, setShowGenerate] = useState(false)
   const [expandedReport, setExpandedReport] = useState<string | null>(null)
   const [form, setForm] = useState({ reportType: "weekly", periodStart: "", periodEnd: "" })
@@ -113,6 +113,7 @@ export default function ReportsPage() {
   const { data: usersResult } = useQuery({
     queryKey: ["users", 0],
     queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
+    enabled: isAdmin,
   })
   const users = usersResult?.data ?? []
   const selectedUser = users.find(u => u.id === selectedUserId)
@@ -236,13 +237,15 @@ export default function ReportsPage() {
       </div>
 
       {/* User select */}
-      <div className="mb-6 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-5 shadow-sm">
-        <label htmlFor="report-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
-        <select id="report-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-          <option value="">Select a user…</option>
-          {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId} {u.email ? `(${u.email})` : ""}</option>)}
-        </select>
-      </div>
+      {isAdmin && (
+        <div className="mb-6 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-5 shadow-sm">
+          <label htmlFor="report-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
+          <select id="report-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+            <option value="">Select a user…</option>
+            {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId} {u.email ? `(${u.email})` : ""}</option>)}
+          </select>
+        </div>
+      )}
 
       {/* Tab switcher */}
       {selectedUserId && (
@@ -265,7 +268,7 @@ export default function ReportsPage() {
       )}
 
       {/* Empty state */}
-      {!selectedUserId && (
+      {!selectedUserId && isAdmin && (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 py-24">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-3xl text-white mb-4 shadow-lg shadow-indigo-500/30">📄</div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Select a User</h3>
