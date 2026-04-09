@@ -33,22 +33,40 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     typeof window !== "undefined" ? localStorage.getItem("vitasync_api_key") : null
   const apiKey = localKey ?? (await getRuntimeDefaultKey())
 
-  if (!apiKey) {
-    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/dashboard/settings")) {
-      window.location.href = "/dashboard/settings?setup=1"
-    }
-    throw new Error("No API key configured.")
+  const hasBody = init?.body != null
+  const headers: Record<string, string> = {
+    ...(hasBody ? { "Content-Type": "application/json" } : {}),
+    ...((init?.headers as Record<string, string>) ?? {}),
   }
 
-  const hasBody = init?.body != null
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: {
-      ...(hasBody ? { "Content-Type": "application/json" } : {}),
-      Authorization: `Bearer ${apiKey}`,
-      ...init?.headers,
-    },
-  })
+  // If an API key is available, attach it as a Bearer token
+  if (apiKey) {
+    headers.Authorization = `Bearer ${apiKey}`
+  }
+
+  const doFetch = () =>
+    fetch(`${API_URL}${path}`, {
+      ...init,
+      credentials: "include",
+      headers,
+    })
+
+  let res = await doFetch()
+
+  // Global 401 handler: attempt a silent token refresh then retry once
+  if (res.status === 401) {
+    try {
+      const refreshRes = await fetch(`${API_URL}/v1/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+      })
+      if (refreshRes.ok) {
+        res = await doFetch()
+      }
+    } catch {
+      // refresh failed – fall through to original 401
+    }
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ message: res.statusText }))
@@ -1324,4 +1342,79 @@ export const aiProvidersApi = {
     request<void>(`/v1/ai-providers/${id}`, { method: "DELETE" }),
   test: (id: string) =>
     request<{ success: boolean; message: string }>(`/v1/ai-providers/${id}/test`, { method: "POST" }),
+}
+
+// ---- Auth User (for auth-context) ----
+export interface AuthUser {
+  id: string
+  email: string | null
+  displayName: string | null
+  role: string
+  workspaceId: string
+  emailVerified: boolean
+}
+
+// ---- Auth ----
+export const authApi = {
+  me: () => request<AuthUser>("/v1/auth/me"),
+  login: (body: { email: string; password: string }) =>
+    request<{ mfaRequired?: boolean; mfaToken?: string }>("/v1/auth/login", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  refresh: () =>
+    request<void>("/v1/auth/refresh", { method: "POST" }),
+  logout: () =>
+    request<void>("/v1/auth/logout", { method: "POST" }),
+  changePassword: (body: { oldPassword: string; newPassword: string }) =>
+    request<void>("/v1/auth/password", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  logoutAll: () =>
+    request<void>("/v1/auth/sessions/logout-all", { method: "POST" }),
+  resendVerification: () =>
+    request<{ message: string; verificationToken?: string }>("/v1/auth/resend-verification", {
+      method: "POST",
+    }),
+}
+
+// ---- SSO ----
+export const ssoApi = {
+  providers: () => request<{ id: string; name: string; slug: string; protocol: string }[]>("/v1/sso/providers"),
+}
+
+// ---- Identity Providers ----
+export const identityProvidersApi = {
+  list: () => request<any[]>("/v1/identity-providers"),
+  create: (body: any) => request<any>("/v1/identity-providers", { method: "POST", body: JSON.stringify(body) }),
+  update: (id: string, body: any) => request<any>(`/v1/identity-providers/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  delete: (id: string) => request<void>(`/v1/identity-providers/${id}`, { method: "DELETE" }),
+  test: (id: string) => request<any>(`/v1/identity-providers/${id}/test`, { method: "POST" }),
+}
+
+// ---- MFA ----
+export const mfaApi = {
+  status: () => request<{ enrolled: boolean }>("/v1/auth/mfa/status"),
+  enrollTotp: () => request<{ secret: string; uri: string; recoveryCodes: string[] }>("/v1/auth/mfa/totp/enroll", { method: "POST" }),
+  verifyTotp: (code: string) => request<{ verified: boolean }>("/v1/auth/mfa/totp/verify", { method: "POST", body: JSON.stringify({ code }) }),
+  validateTotp: (mfaToken: string, code: string) =>
+    request<{ validated: boolean; userId: string; workspaceId: string }>("/v1/auth/mfa/totp/validate", {
+      method: "POST", body: JSON.stringify({ mfaToken, code }),
+    }),
+  disable: () => request<void>("/v1/auth/mfa/totp", { method: "DELETE" }),
+}
+
+// ---- Passkeys ----
+export interface Passkey {
+  id: string
+  name: string
+  type: string
+  lastUsedAt: string | null
+  createdAt: string
+}
+
+export const passkeysApi = {
+  list: () => request<Passkey[]>("/v1/auth/passkeys"),
+  delete: (id: string) => request<void>(`/v1/auth/passkeys/${id}`, { method: "DELETE" }),
 }

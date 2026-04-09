@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm"
-import { index, jsonb, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core"
+import { boolean, index, integer, jsonb, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core"
 import { workspaces } from "./workspaces"
 
 export const users = pgTable(
@@ -15,6 +15,18 @@ export const users = pgTable(
     displayName: varchar("display_name", { length: 255 }),
     /** Gender – used to gate gender-specific insights (e.g. womens_health) */
     gender: varchar("gender", { length: 10 }),
+    /** Argon2id password hash — null for API-only / SSO-only users */
+    passwordHash: varchar("password_hash", { length: 255 }),
+    /** User role: 'user' (own data only) or 'admin' (full workspace access) */
+    role: varchar("role", { length: 20 }).notNull().default("user"),
+    /** Consecutive failed login attempts — for account lockout */
+    failedLoginAttempts: integer("failed_login_attempts").notNull().default(0),
+    /** Account locked until this timestamp (null = not locked) */
+    lockedUntil: timestamp("locked_until", { withTimezone: true }),
+    /** Last successful login timestamp */
+    lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+    /** Whether the user's email address has been verified */
+    emailVerified: boolean("email_verified").notNull().default(false),
     /** Arbitrary key-value data from the caller */
     metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
