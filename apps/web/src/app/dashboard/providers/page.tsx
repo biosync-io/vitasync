@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
-import { type ProviderDef, type Connection, providersApi, connectionsApi, usersApi, getRuntimeDefaultKey } from "../../../lib/api"
+import { type ProviderDef, type Connection, providersApi, connectionsApi, getRuntimeDefaultKey } from "../../../lib/api"
 
 /** Resolve the public-facing API URL for display in docs/config sections */
 function useApiBaseUrl(): string {
@@ -38,7 +38,7 @@ const ALL_SUPPORTED_PROVIDERS: ProviderDef[] = [
 ]
 
 export default function ProvidersPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
   const apiBaseUrl = useApiBaseUrl()
 
   const { data: apiProviders = [], isLoading } = useQuery<ProviderDef[]>({
@@ -53,11 +53,6 @@ export default function ProvidersPage() {
     return { ...sp, ...(configured ?? {}), isConfigured: configuredIds.has(sp.id) }
   })
 
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-  })
-  const users = usersResult?.data ?? []
 
   const { data: connections = [] } = useQuery<Connection[]>({
     queryKey: ["connections", selectedUserId],
@@ -75,15 +70,6 @@ export default function ProvidersPage() {
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Connect wearable devices via OAuth. Each user can connect to multiple providers simultaneously.
         </p>
-      </div>
-
-      {/* User select */}
-      <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
-        <label htmlFor="prov-user" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Select User to View Connections</label>
-        <select id="prov-user" className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-          <option value="">Select a user…</option>
-          {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-        </select>
       </div>
 
       {/* Connected providers status */}
@@ -132,7 +118,7 @@ export default function ProvidersPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-grid">
           {allProviders.map((provider) => (
-            <ProviderCard key={provider.id} provider={provider} isConnected={connectedProviderIds.has(provider.id)} connection={connections.find((c) => c.providerId === provider.id)} isConfigured={provider.isConfigured} selectedUserId={selectedUserId} users={users} onSelectUser={setSelectedUserId} />
+            <ProviderCard key={provider.id} provider={provider} isConnected={connectedProviderIds.has(provider.id)} connection={connections.find((c) => c.providerId === provider.id)} isConfigured={provider.isConfigured} selectedUserId={selectedUserId} />
           ))}
         </div>
       )}
@@ -228,33 +214,20 @@ export default function ProvidersPage() {
   )
 }
 
-function ProviderCard({ provider, isConnected, connection, isConfigured, selectedUserId, users, onSelectUser }: {
+function ProviderCard({ provider, isConnected, connection, isConfigured, selectedUserId }: {
   provider: ProviderDef
   isConnected: boolean
   connection?: Connection | undefined
   isConfigured: boolean
   selectedUserId: string
-  users: Array<{ id: string; displayName: string | null; externalId: string | null }>
-  onSelectUser: (id: string) => void
 }) {
   const colors = PROVIDER_COLORS[provider.id] ?? { bg: "from-gray-400 to-gray-500", icon: "🔗" }
-  const [showUserPicker, setShowUserPicker] = useState(false)
   const [oauthModal, setOauthModal] = useState<{ userId: string } | null>(null)
 
   const isDisconnected = connection != null && !isConnected
 
   const handleConnect = () => {
-    if (!selectedUserId) {
-      setShowUserPicker(true)
-      return
-    }
     setOauthModal({ userId: selectedUserId })
-  }
-
-  const handleSelectAndConnect = (userId: string) => {
-    onSelectUser(userId)
-    setShowUserPicker(false)
-    setOauthModal({ userId })
   }
 
   return (
@@ -334,25 +307,6 @@ function ProviderCard({ provider, isConnected, connection, isConfigured, selecte
             >
               🔗 Connect {provider.name}
             </button>
-
-            {/* Inline user picker — shown when no user selected */}
-            {showUserPicker && !selectedUserId && (
-              <div className="mt-3 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/20 p-3 animate-fade-in">
-                <p className="text-xs text-amber-700 dark:text-amber-400 font-medium mb-2">Select a user to connect:</p>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {users.map((u) => (
-                    <button
-                      key={u.id}
-                      type="button"
-                      onClick={() => handleSelectAndConnect(u.id)}
-                      className="w-full text-left rounded-lg px-3 py-2 text-sm hover:bg-amber-100 dark:hover:bg-amber-900/30 text-gray-700 dark:text-gray-300 transition-colors"
-                    >
-                      {u.displayName || u.externalId}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>

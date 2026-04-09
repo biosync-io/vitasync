@@ -224,16 +224,18 @@ function CyberBar({ label, icon, value, max, dotColor }: { label: string; icon: 
    ══════════════════════════════════════════════════════════════════════ */
 
 export default function InsightsPage() {
-  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
   const [categoryFilter, setCategoryFilter] = useState<InsightCategory | "">("")
   const [severityFilter, setSeverityFilter] = useState<InsightSeverity | "">("")
   const [dateRange, setDateRange] = useState<"7d" | "14d" | "30d" | "90d">("30d")
   const [showAlgorithms, setShowAlgorithms] = useState(false)
   const [algSearch, setAlgSearch] = useState("")
 
-  const { data: usersResult } = useQuery({ queryKey: ["users", 0], queryFn: () => usersApi.list({ limit: 200, offset: 0 }), enabled: isAdmin })
-  const users = usersResult?.data ?? []
-  const selectedUser = users.find((u) => u.id === selectedUserId)
+  const { data: selectedUser } = useQuery({
+    queryKey: ["user", selectedUserId],
+    queryFn: () => usersApi.get(selectedUserId),
+    enabled: !!selectedUserId,
+  })
   const GENDER_GATED: InsightCategory[] = ["womens_health"]
   const visibleCategories = selectedUser?.gender === "male" ? ALL_CATEGORIES.filter((c) => !GENDER_GATED.includes(c)) : ALL_CATEGORIES
 
@@ -340,15 +342,6 @@ export default function InsightsPage() {
       {/* ═══ CONTROL BAR ═══ */}
       <div className="rounded-2xl border border-gray-200/50 dark:border-gray-800/30 bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-          {isAdmin && (
-            <div className="flex-1 min-w-0">
-              <label htmlFor="insight-user" className="block text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500 mb-1.5">User</label>
-              <select id="insight-user" className="w-full rounded-xl border border-gray-200/60 dark:border-gray-700/40 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:border-accent-500 focus:ring-2 focus:ring-accent-500/20 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-                <option value="">Select a user…</option>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId} {u.email ? `(${u.email})` : ""}</option>)}
-              </select>
-            </div>
-          )}
           <div>
             <p className="block text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500 mb-1.5">Range</p>
             <div className="inline-flex rounded-xl bg-gray-100/80 dark:bg-gray-800/40 p-0.5 border border-gray-200/40 dark:border-gray-700/20">
@@ -460,27 +453,6 @@ export default function InsightsPage() {
                 <CyberBar key={cat} label={CAT[cat].label} icon={CAT[cat].icon} value={count} max={Math.max(1, ...Array.from(catCounts.values()))} dotColor={CAT[cat].dotColor} />
               ))}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ EMPTY STATE ═══ */}
-      {!selectedUserId && isAdmin && (
-        <div className="relative flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300/40 dark:border-gray-700/30 bg-gray-50/30 dark:bg-gray-900/20 backdrop-blur-sm py-20 px-6 text-center overflow-hidden">
-          <div className="absolute inset-0 cyber-mesh pointer-events-none" />
-          <div className="relative z-10">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-500/10 border border-accent-400/20 mx-auto mb-5 float-gentle">
-              <span className="text-4xl">🧠</span>
-            </div>
-            <h3 className="text-lg font-black text-gray-900 dark:text-gray-100">Select a User</h3>
-            <p className="mt-2 text-sm text-gray-400 dark:text-gray-500 max-w-sm">
-              Choose a user to run <span className="font-bold text-accent-500">{algorithms.length}</span> algorithms and generate personalized insights.
-            </p>
-            <button type="button" onClick={() => setShowAlgorithms(!showAlgorithms)}
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-accent-500 text-white px-5 py-2.5 text-sm font-bold shadow-lg shadow-accent-500/25 hover:bg-accent-600 hover:shadow-accent-500/30 transition-all hover:-translate-y-0.5">
-              {showAlgorithms ? "Hide algorithms" : `Browse ${algorithms.length} algorithms`}
-              <span className="text-white/50">→</span>
-            </button>
           </div>
         </div>
       )}

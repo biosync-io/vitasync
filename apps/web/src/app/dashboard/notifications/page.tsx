@@ -10,7 +10,6 @@ import {
   type NotificationRule,
   type NotificationSeverity,
   notificationsApi,
-  usersApi,
 } from "../../../lib/api"
 import { Pagination } from "../../../lib/Pagination"
 
@@ -99,16 +98,9 @@ const PAGE_SIZE = 10
 // ── Main Page ──────────────────────────────────────────────────────
 
 export default function NotificationsPage() {
+  const { selectedUserId } = useSelectedUser()
   const queryClient = useQueryClient()
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
   const [activeTab, setActiveTab] = useState<"channels" | "rules">("channels")
-
-  // ── User selector ──
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-  })
-  const users = usersResult?.data ?? []
 
   return (
     <div className="space-y-6">
@@ -122,56 +114,28 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      {/* User selector */}
-      <div className="flex items-center gap-3">
-        <label htmlFor="notif-user" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          User
-        </label>
-        <select
-          id="notif-user"
-          value={selectedUserId}
-          onChange={(e) => setSelectedUserId(e.target.value)}
-          className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option value="">Select user…</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.displayName || u.email || u.externalId}
-            </option>
-          ))}
-        </select>
+      {/* Tab bar */}
+      <div className="flex border-b border-gray-200 dark:border-gray-700">
+        {(["channels", "rules"] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === tab
+                ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
+                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
+          >
+            {tab === "channels" ? "📣 Channels" : "📋 Routing Rules"}
+          </button>
+        ))}
       </div>
 
-      {!selectedUserId ? (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-16 text-center">
-          <p className="text-gray-400 dark:text-gray-500 text-sm">Select a user to manage their notification settings.</p>
-        </div>
+      {activeTab === "channels" ? (
+        <ChannelsPanel userId={selectedUserId} queryClient={queryClient} />
       ) : (
-        <>
-          {/* Tab bar */}
-          <div className="flex border-b border-gray-200 dark:border-gray-700">
-            {(["channels", "rules"] as const).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-                  activeTab === tab
-                    ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
-                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                }`}
-              >
-                {tab === "channels" ? "📣 Channels" : "📋 Routing Rules"}
-              </button>
-            ))}
-          </div>
-
-          {activeTab === "channels" ? (
-            <ChannelsPanel userId={selectedUserId} queryClient={queryClient} />
-          ) : (
-            <RulesPanel userId={selectedUserId} queryClient={queryClient} />
-          )}
-        </>
+        <RulesPanel userId={selectedUserId} queryClient={queryClient} />
       )}
     </div>
   )

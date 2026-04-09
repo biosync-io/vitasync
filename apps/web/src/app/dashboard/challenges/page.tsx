@@ -2,7 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { type ChallengeData, type LeaderboardEntry, challengesApi, usersApi } from "../../../lib/api"
+import { type ChallengeData, type LeaderboardEntry, challengesApi } from "../../../lib/api"
+import { useSelectedUser } from "../../../lib/user-selection-context"
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   active: { bg: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-400" },
@@ -14,15 +15,9 @@ export default function ChallengesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("")
   const [selectedChallenge, setSelectedChallenge] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
-  const [joinUserId, setJoinUserId] = useState("")
   const [form, setForm] = useState({ name: "", description: "", metric: "steps", targetValue: "", challengeType: "individual", durationDays: "7" })
+  const { selectedUserId } = useSelectedUser()
   const queryClient = useQueryClient()
-
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-  })
-  const users = usersResult?.data ?? []
 
   const { data: challengesResult, isLoading } = useQuery({
     queryKey: ["challenges", statusFilter],
@@ -138,14 +133,10 @@ export default function ChallengesPage() {
                     <p className="text-xs text-gray-500 dark:text-gray-400">days left</p>
                   </div>
                 </div>
-                {c.status === "active" && (
-                  <div className="mt-3 flex items-center gap-2">
-                    <select className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-xs" value={joinUserId} onChange={(e) => setJoinUserId(e.target.value)} onClick={(e) => e.stopPropagation()}>
-                      <option value="">Join as…</option>
-                      {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-                    </select>
-                    <button type="button" disabled={!joinUserId || joinMut.isPending} onClick={(e) => { e.stopPropagation(); joinMut.mutate({ challengeId: c.id, userId: joinUserId }) }} className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
-                      {joinMut.isPending ? "Joining…" : "Join"}
+                {c.status === "active" && selectedUserId && (
+                  <div className="mt-3">
+                    <button type="button" disabled={joinMut.isPending} onClick={(e) => { e.stopPropagation(); joinMut.mutate({ challengeId: c.id, userId: selectedUserId }) }} className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
+                      {joinMut.isPending ? "Joining…" : "Join Challenge"}
                     </button>
                   </div>
                 )}

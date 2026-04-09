@@ -7,7 +7,6 @@ import {
   type ChannelType,
   type NotificationLog,
   notificationsApi,
-  usersApi,
 } from "../../../lib/api"
 import { Pagination } from "../../../lib/Pagination"
 
@@ -52,17 +51,12 @@ const PAGE_SIZE = 20
 // ── Main Page ──────────────────────────────────────────────────────
 
 export default function NotificationLogsPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
   const [statusFilter, setStatusFilter] = useState<string>("")
   const [channelFilter, setChannelFilter] = useState<string>("")
   const [page, setPage] = useState(1)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-  })
-  const users = usersResult?.data ?? []
 
   const { data: logsResult, isLoading } = useQuery({
     queryKey: ["notification-logs", selectedUserId],
@@ -101,33 +95,7 @@ export default function NotificationLogsPage() {
         </p>
       </div>
 
-      {/* User selector */}
-      <div className="flex items-center gap-3">
-        <label htmlFor="log-user" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          User
-        </label>
-        <select
-          id="log-user"
-          value={selectedUserId}
-          onChange={(e) => { setSelectedUserId(e.target.value); setPage(1) }}
-          className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option value="">Select user…</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.displayName || u.email || u.externalId}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {!selectedUserId ? (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-16 text-center">
-          <p className="text-gray-400 dark:text-gray-500 text-sm">Select a user to view their notification activity.</p>
-        </div>
-      ) : (
-        <>
-          {/* Stats cards */}
+      {/* Stats cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard label="Total" value={stats.total} color="text-gray-900 dark:text-gray-100" />
             <StatCard label="Delivered" value={stats.delivered} color="text-emerald-600 dark:text-emerald-400" />
@@ -289,8 +257,6 @@ export default function NotificationLogsPage() {
               <Pagination page={page} pageSize={PAGE_SIZE} total={filteredLogs.length} onChange={setPage} />
             </>
           )}
-        </>
-      )}
     </div>
   )
 }
