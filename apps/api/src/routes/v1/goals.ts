@@ -3,13 +3,14 @@ import { z } from "zod"
 import { defined } from "../../lib/strip-undefined.js"
 import { GoalService } from "../../services/goal.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const goalService = new GoalService()
 const userService = new UserService()
 
 const goalsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/goals
-  app.get("/:userId/goals", async (request, reply) => {
+  app.get("/:userId/goals", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -30,7 +31,7 @@ const goalsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/goals
-  app.post("/:userId/goals", async (request, reply) => {
+  app.post("/:userId/goals", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -65,7 +66,7 @@ const goalsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/goals/:goalId
-  app.get("/:userId/goals/:goalId", async (request, reply) => {
+  app.get("/:userId/goals/:goalId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, goalId } = z
       .object({ userId: z.string().uuid(), goalId: z.string().uuid() })
       .parse(request.params)
@@ -78,7 +79,7 @@ const goalsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // PUT /v1/users/:userId/goals/:goalId
-  app.put("/:userId/goals/:goalId", async (request, reply) => {
+  app.put("/:userId/goals/:goalId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, goalId } = z
       .object({ userId: z.string().uuid(), goalId: z.string().uuid() })
       .parse(request.params)
@@ -105,7 +106,7 @@ const goalsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // DELETE /v1/users/:userId/goals/:goalId
-  app.delete("/:userId/goals/:goalId", async (request, reply) => {
+  app.delete("/:userId/goals/:goalId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, goalId } = z
       .object({ userId: z.string().uuid(), goalId: z.string().uuid() })
       .parse(request.params)
@@ -118,7 +119,7 @@ const goalsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/goals/:goalId/evaluate — manual progress check
-  app.post("/:userId/goals/:goalId/evaluate", async (request, reply) => {
+  app.post("/:userId/goals/:goalId/evaluate", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, goalId } = z
       .object({ userId: z.string().uuid(), goalId: z.string().uuid() })
       .parse(request.params)

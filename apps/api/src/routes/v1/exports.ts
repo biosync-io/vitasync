@@ -2,13 +2,14 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { DataExportService } from "../../services/data-export.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const exportService = new DataExportService()
 const userService = new UserService()
 
 const exportsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/exports
-  app.get("/:userId/exports", async (request, reply) => {
+  app.get("/:userId/exports", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -18,7 +19,7 @@ const exportsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/exports/:exportId
-  app.get("/:userId/exports/:exportId", async (request, reply) => {
+  app.get("/:userId/exports/:exportId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, exportId } = z
       .object({ userId: z.string().uuid(), exportId: z.string().uuid() })
       .parse(request.params)
@@ -31,7 +32,7 @@ const exportsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/exports — request a new export
-  app.post("/:userId/exports", async (request, reply) => {
+  app.post("/:userId/exports", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

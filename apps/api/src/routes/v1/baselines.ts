@@ -3,13 +3,14 @@ import { z } from "zod"
 import { defined } from "../../lib/strip-undefined.js"
 import { BiometricBaselineService } from "../../services/biometric-baseline.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const baselineService = new BiometricBaselineService()
 const userService = new UserService()
 
 const baselinesRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/baselines
-  app.get("/:userId/baselines", async (request, reply) => {
+  app.get("/:userId/baselines", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -20,7 +21,7 @@ const baselinesRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/baselines/:metricType
-  app.get("/:userId/baselines/:metricType", async (request, reply) => {
+  app.get("/:userId/baselines/:metricType", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, metricType } = z
       .object({ userId: z.string().uuid(), metricType: z.string() })
       .parse(request.params)
@@ -33,7 +34,7 @@ const baselinesRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/baselines/compute — recompute all baselines
-  app.post("/:userId/baselines/compute", async (request, reply) => {
+  app.post("/:userId/baselines/compute", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

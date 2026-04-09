@@ -2,13 +2,14 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { InsightsService } from "../../services/insights/index.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const insightsService = new InsightsService()
 const userService = new UserService()
 
 const insightsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/insights — generate all applicable insights
-  app.get("/:userId/insights", async (request, reply) => {
+  app.get("/:userId/insights", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

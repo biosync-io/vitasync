@@ -2,13 +2,14 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { SymptomService } from "../../services/symptom.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const symptomService = new SymptomService()
 const userService = new UserService()
 
 const symptomsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/symptoms
-  app.get("/:userId/symptoms", async (request, reply) => {
+  app.get("/:userId/symptoms", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -32,7 +33,7 @@ const symptomsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/symptoms
-  app.post("/:userId/symptoms", async (request, reply) => {
+  app.post("/:userId/symptoms", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -65,7 +66,7 @@ const symptomsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/symptoms/:logId
-  app.get("/:userId/symptoms/:logId", async (request, reply) => {
+  app.get("/:userId/symptoms/:logId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, logId } = z
       .object({ userId: z.string().uuid(), logId: z.string().uuid() })
       .parse(request.params)
@@ -78,7 +79,7 @@ const symptomsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // DELETE /v1/users/:userId/symptoms/:logId
-  app.delete("/:userId/symptoms/:logId", async (request, reply) => {
+  app.delete("/:userId/symptoms/:logId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, logId } = z
       .object({ userId: z.string().uuid(), logId: z.string().uuid() })
       .parse(request.params)
@@ -91,7 +92,7 @@ const symptomsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/symptoms/top
-  app.get("/:userId/symptoms/top", async (request, reply) => {
+  app.get("/:userId/symptoms/top", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -102,7 +103,7 @@ const symptomsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/symptoms/patterns
-  app.get("/:userId/symptoms/patterns", async (request, reply) => {
+  app.get("/:userId/symptoms/patterns", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

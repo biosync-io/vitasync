@@ -3,12 +3,13 @@ import { z } from "zod"
 import { getDb, aiProviders } from "@biosync-io/db"
 import { eq } from "drizzle-orm"
 import { ChatbotService } from "../../services/chatbot.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const chatbotService = new ChatbotService()
 
 const chatbotRoutes: FastifyPluginAsync = async (app) => {
   // POST /v1/users/:userId/chatbot — stream SSE response
-  app.post("/:userId/chatbot", async (request, reply) => {
+  app.post("/:userId/chatbot", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
 
     const body = z

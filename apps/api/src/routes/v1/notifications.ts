@@ -3,6 +3,7 @@ import { z } from "zod"
 import { defined } from "../../lib/strip-undefined.js"
 import { NotificationService } from "../../services/notification.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const notificationService = new NotificationService()
 const userService = new UserService()
@@ -11,7 +12,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
   // ─── Channel CRUD ───────────────────────────────────────────────
 
   // GET /v1/users/:userId/notifications/channels
-  app.get("/:userId/notifications/channels", async (request, reply) => {
+  app.get("/:userId/notifications/channels", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -21,7 +22,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/notifications/channels
-  app.post("/:userId/notifications/channels", async (request, reply) => {
+  app.post("/:userId/notifications/channels", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -40,7 +41,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // PUT /v1/users/:userId/notifications/channels/:channelId
-  app.put("/:userId/notifications/channels/:channelId", async (request, reply) => {
+  app.put("/:userId/notifications/channels/:channelId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, channelId } = z
       .object({ userId: z.string().uuid(), channelId: z.string().uuid() })
       .parse(request.params)
@@ -61,7 +62,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // DELETE /v1/users/:userId/notifications/channels/:channelId
-  app.delete("/:userId/notifications/channels/:channelId", async (request, reply) => {
+  app.delete("/:userId/notifications/channels/:channelId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, channelId } = z
       .object({ userId: z.string().uuid(), channelId: z.string().uuid() })
       .parse(request.params)
@@ -74,7 +75,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/notifications/channels/:channelId/test
-  app.post("/:userId/notifications/channels/:channelId/test", async (request, reply) => {
+  app.post("/:userId/notifications/channels/:channelId/test", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, channelId } = z
       .object({ userId: z.string().uuid(), channelId: z.string().uuid() })
       .parse(request.params)
@@ -101,7 +102,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
   // ─── Rule CRUD ──────────────────────────────────────────────────
 
   // GET /v1/users/:userId/notifications/rules
-  app.get("/:userId/notifications/rules", async (request, reply) => {
+  app.get("/:userId/notifications/rules", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -111,7 +112,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/notifications/rules
-  app.post("/:userId/notifications/rules", async (request, reply) => {
+  app.post("/:userId/notifications/rules", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -131,7 +132,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // PUT /v1/users/:userId/notifications/rules/:ruleId
-  app.put("/:userId/notifications/rules/:ruleId", async (request, reply) => {
+  app.put("/:userId/notifications/rules/:ruleId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, ruleId } = z
       .object({ userId: z.string().uuid(), ruleId: z.string().uuid() })
       .parse(request.params)
@@ -154,7 +155,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // DELETE /v1/users/:userId/notifications/rules/:ruleId
-  app.delete("/:userId/notifications/rules/:ruleId", async (request, reply) => {
+  app.delete("/:userId/notifications/rules/:ruleId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, ruleId } = z
       .object({ userId: z.string().uuid(), ruleId: z.string().uuid() })
       .parse(request.params)
@@ -169,7 +170,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
   // ─── Delivery Logs ─────────────────────────────────────────────
 
   // GET /v1/users/:userId/notifications/logs
-  app.get("/:userId/notifications/logs", async (request, reply) => {
+  app.get("/:userId/notifications/logs", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -185,7 +186,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
   // ─── In-App Notification Inbox ─────────────────────────────────
 
   // GET /v1/users/:userId/notifications/inbox
-  app.get("/:userId/notifications/inbox", async (request, reply) => {
+  app.get("/:userId/notifications/inbox", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -199,7 +200,7 @@ const notificationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // PATCH /v1/users/:userId/notifications/inbox/read
-  app.patch("/:userId/notifications/inbox/read", async (request, reply) => {
+  app.patch("/:userId/notifications/inbox/read", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

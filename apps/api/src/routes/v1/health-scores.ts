@@ -2,13 +2,14 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { HealthScoreService } from "../../services/health-score.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const healthScoreService = new HealthScoreService()
 const userService = new UserService()
 
 const healthScoresRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/health-scores — latest score
-  app.get("/:userId/health-scores/latest", async (request, reply) => {
+  app.get("/:userId/health-scores/latest", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -19,7 +20,7 @@ const healthScoresRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/health-scores — history
-  app.get("/:userId/health-scores", async (request, reply) => {
+  app.get("/:userId/health-scores", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -41,7 +42,7 @@ const healthScoresRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/health-scores/compute — trigger computation
-  app.post("/:userId/health-scores/compute", async (request, reply) => {
+  app.post("/:userId/health-scores/compute", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

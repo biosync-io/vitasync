@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
-import { requireScope } from "../../plugins/auth.js"
+import { requireAdmin, requireScope, requireSelf } from "../../plugins/auth.js"
 import { UserService } from "../../services/user.service.js"
 
 const userService = new UserService()
@@ -22,7 +22,7 @@ const UpdateUserBody = z.object({
 
 const usersRoutes: FastifyPluginAsync = async (app) => {
   // POST /v1/users — create or find existing user
-  app.post("/", { preHandler: [requireScope("write")] }, async (request, reply) => {
+  app.post("/", { preHandler: [requireAdmin(), requireScope("write")] }, async (request, reply) => {
     const body = CreateUserBody.parse(request.body)
     const { user, created } = await userService.findOrCreate({
       workspaceId: request.workspaceId,
@@ -36,7 +36,7 @@ const usersRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users — list users in workspace
-  app.get("/", async (request, reply) => {
+  app.get("/", { preHandler: [requireAdmin()] }, async (request, reply) => {
     const query = z
       .object({ limit: z.coerce.number().int().min(1).max(200).default(50), offset: z.coerce.number().int().min(0).default(0) })
       .parse(request.query)
@@ -45,7 +45,7 @@ const usersRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId
-  app.get("/:userId", async (request, reply) => {
+  app.get("/:userId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const user = await userService.findById(userId, request.workspaceId)
     if (!user) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -53,7 +53,7 @@ const usersRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // PATCH /v1/users/:userId
-  app.patch("/:userId", { preHandler: [requireScope("write")] }, async (request, reply) => {
+  app.patch("/:userId", { preHandler: [requireSelf(), requireScope("write")] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const body = UpdateUserBody.parse(request.body)
     const user = await userService.update(userId, request.workspaceId, {
@@ -67,7 +67,7 @@ const usersRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // DELETE /v1/users/:userId
-  app.delete("/:userId", { preHandler: [requireScope("admin")] }, async (request, reply) => {
+  app.delete("/:userId", { preHandler: [requireSelf(), requireScope("admin")] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const deleted = await userService.delete(userId, request.workspaceId)
     if (!deleted) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

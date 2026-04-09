@@ -2,13 +2,14 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { JournalService } from "../../services/journal.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const journalService = new JournalService()
 const userService = new UserService()
 
 const journalRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/journal
-  app.get("/:userId/journal", async (request, reply) => {
+  app.get("/:userId/journal", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -34,7 +35,7 @@ const journalRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/journal
-  app.post("/:userId/journal", async (request, reply) => {
+  app.post("/:userId/journal", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -60,7 +61,7 @@ const journalRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // PATCH /v1/users/:userId/journal/:entryId
-  app.patch("/:userId/journal/:entryId", async (request, reply) => {
+  app.patch("/:userId/journal/:entryId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const params = z.object({ userId: z.string().uuid(), entryId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(params.userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -82,7 +83,7 @@ const journalRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // DELETE /v1/users/:userId/journal/:entryId
-  app.delete("/:userId/journal/:entryId", async (request, reply) => {
+  app.delete("/:userId/journal/:entryId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const params = z.object({ userId: z.string().uuid(), entryId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(params.userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -93,7 +94,7 @@ const journalRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/journal/stats
-  app.get("/:userId/journal/stats", async (request, reply) => {
+  app.get("/:userId/journal/stats", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

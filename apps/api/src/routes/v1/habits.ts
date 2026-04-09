@@ -2,13 +2,14 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { HabitsService } from "../../services/habits.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const habitsService = new HabitsService()
 const userService = new UserService()
 
 const habitsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/habits
-  app.get("/:userId/habits", async (request, reply) => {
+  app.get("/:userId/habits", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -19,7 +20,7 @@ const habitsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/habits
-  app.post("/:userId/habits", async (request, reply) => {
+  app.post("/:userId/habits", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -39,7 +40,7 @@ const habitsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // PATCH /v1/users/:userId/habits/:habitId
-  app.patch("/:userId/habits/:habitId", async (request, reply) => {
+  app.patch("/:userId/habits/:habitId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const params = z.object({ userId: z.string().uuid(), habitId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(params.userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -61,7 +62,7 @@ const habitsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // DELETE /v1/users/:userId/habits/:habitId
-  app.delete("/:userId/habits/:habitId", async (request, reply) => {
+  app.delete("/:userId/habits/:habitId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const params = z.object({ userId: z.string().uuid(), habitId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(params.userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -72,7 +73,7 @@ const habitsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/habits/:habitId/complete
-  app.post("/:userId/habits/:habitId/complete", async (request, reply) => {
+  app.post("/:userId/habits/:habitId/complete", { preHandler: [requireSelf()] }, async (request, reply) => {
     const params = z.object({ userId: z.string().uuid(), habitId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(params.userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -94,7 +95,7 @@ const habitsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // DELETE /v1/users/:userId/habits/:habitId/complete/:date
-  app.delete("/:userId/habits/:habitId/complete/:date", async (request, reply) => {
+  app.delete("/:userId/habits/:habitId/complete/:date", { preHandler: [requireSelf()] }, async (request, reply) => {
     const params = z.object({
       userId: z.string().uuid(),
       habitId: z.string().uuid(),
@@ -109,7 +110,7 @@ const habitsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/habits/summary
-  app.get("/:userId/habits/summary", async (request, reply) => {
+  app.get("/:userId/habits/summary", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

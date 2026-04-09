@@ -3,13 +3,14 @@ import { z } from "zod"
 import { defined } from "../../lib/strip-undefined.js"
 import { HealthSnapshotService } from "../../services/health-snapshot.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const snapshotService = new HealthSnapshotService()
 const userService = new UserService()
 
 const snapshotsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/snapshots
-  app.get("/:userId/snapshots", async (request, reply) => {
+  app.get("/:userId/snapshots", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -26,7 +27,7 @@ const snapshotsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/snapshots/:snapshotId
-  app.get("/:userId/snapshots/:snapshotId", async (request, reply) => {
+  app.get("/:userId/snapshots/:snapshotId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, snapshotId } = z
       .object({ userId: z.string().uuid(), snapshotId: z.string().uuid() })
       .parse(request.params)
@@ -39,7 +40,7 @@ const snapshotsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/snapshots/generate/weekly
-  app.post("/:userId/snapshots/generate/weekly", async (request, reply) => {
+  app.post("/:userId/snapshots/generate/weekly", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -49,7 +50,7 @@ const snapshotsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/snapshots/generate/monthly
-  app.post("/:userId/snapshots/generate/monthly", async (request, reply) => {
+  app.post("/:userId/snapshots/generate/monthly", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

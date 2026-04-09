@@ -2,13 +2,14 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { CorrelationService } from "../../services/correlation.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const correlationService = new CorrelationService()
 const userService = new UserService()
 
 const correlationsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/correlations
-  app.get("/:userId/correlations", async (request, reply) => {
+  app.get("/:userId/correlations", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -25,7 +26,7 @@ const correlationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/correlations/compute — trigger computation
-  app.post("/:userId/correlations/compute", async (request, reply) => {
+  app.post("/:userId/correlations/compute", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

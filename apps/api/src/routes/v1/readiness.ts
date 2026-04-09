@@ -2,13 +2,14 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { ReadinessService } from "../../services/readiness.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const readinessService = new ReadinessService()
 const userService = new UserService()
 
 const readinessRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/readiness — current readiness state
-  app.get("/:userId/readiness", async (request, reply) => {
+  app.get("/:userId/readiness", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -21,7 +22,7 @@ const readinessRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/training-load — current training load (ATL/CTL/TSB)
-  app.get("/:userId/training-load", async (request, reply) => {
+  app.get("/:userId/training-load", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -34,7 +35,7 @@ const readinessRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/training-load/history — historical training load
-  app.get("/:userId/training-load/history", async (request, reply) => {
+  app.get("/:userId/training-load/history", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

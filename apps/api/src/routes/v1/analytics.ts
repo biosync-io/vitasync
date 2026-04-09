@@ -10,6 +10,7 @@ import {
   computeMetabolicEfficiency,
   computeStressResilience,
 } from "@biosync-io/analytics"
+import { requireSelf } from "../../plugins/auth.js"
 
 const userService = new UserService()
 
@@ -19,7 +20,7 @@ const userService = new UserService()
  */
 const analyticsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/analytics/context — LLM-ready biological context
-  app.get("/:userId/analytics/context", async (request, reply) => {
+  app.get("/:userId/analytics/context", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -29,7 +30,7 @@ const analyticsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/analytics/correlations — auto-discover correlations
-  app.post("/:userId/analytics/correlations", async (request, reply) => {
+  app.post("/:userId/analytics/correlations", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -40,7 +41,7 @@ const analyticsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/analytics/anomalies — enhanced anomaly detection
-  app.post("/:userId/analytics/anomalies", async (request, reply) => {
+  app.post("/:userId/analytics/anomalies", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -51,7 +52,7 @@ const analyticsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/analytics/recovery — recovery prediction
-  app.get("/:userId/analytics/recovery", async (request, reply) => {
+  app.get("/:userId/analytics/recovery", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -61,7 +62,7 @@ const analyticsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/analytics/circadian — circadian rhythm analysis
-  app.get("/:userId/analytics/circadian", async (request, reply) => {
+  app.get("/:userId/analytics/circadian", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -71,7 +72,7 @@ const analyticsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/analytics/metabolic — metabolic efficiency score
-  app.get("/:userId/analytics/metabolic", async (request, reply) => {
+  app.get("/:userId/analytics/metabolic", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -81,7 +82,7 @@ const analyticsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/analytics/resilience — stress resilience index
-  app.get("/:userId/analytics/resilience", async (request, reply) => {
+  app.get("/:userId/analytics/resilience", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

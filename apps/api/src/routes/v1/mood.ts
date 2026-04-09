@@ -2,13 +2,14 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { MoodService } from "../../services/mood.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const moodService = new MoodService()
 const userService = new UserService()
 
 const moodRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/mood
-  app.get("/:userId/mood", async (request, reply) => {
+  app.get("/:userId/mood", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -32,7 +33,7 @@ const moodRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/mood
-  app.post("/:userId/mood", async (request, reply) => {
+  app.post("/:userId/mood", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -59,7 +60,7 @@ const moodRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/mood/stats
-  app.get("/:userId/mood/stats", async (request, reply) => {
+  app.get("/:userId/mood/stats", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

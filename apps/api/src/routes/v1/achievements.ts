@@ -3,13 +3,14 @@ import { z } from "zod"
 import { defined } from "../../lib/strip-undefined.js"
 import { AchievementService } from "../../services/achievement.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const achievementService = new AchievementService()
 const userService = new UserService()
 
 const achievementsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/achievements
-  app.get("/:userId/achievements", async (request, reply) => {
+  app.get("/:userId/achievements", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -32,7 +33,7 @@ const achievementsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/achievements/check — trigger achievement check
-  app.post("/:userId/achievements/check", async (request, reply) => {
+  app.post("/:userId/achievements/check", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

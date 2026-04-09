@@ -3,13 +3,14 @@ import { z } from "zod"
 import { defined } from "../../lib/strip-undefined.js"
 import { TrainingPlanService } from "../../services/training-plan.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const planService = new TrainingPlanService()
 const userService = new UserService()
 
 const trainingPlansRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/training-plans
-  app.get("/:userId/training-plans", async (request, reply) => {
+  app.get("/:userId/training-plans", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -26,7 +27,7 @@ const trainingPlansRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/training-plans/:planId
-  app.get("/:userId/training-plans/:planId", async (request, reply) => {
+  app.get("/:userId/training-plans/:planId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, planId } = z
       .object({ userId: z.string().uuid(), planId: z.string().uuid() })
       .parse(request.params)
@@ -39,7 +40,7 @@ const trainingPlansRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/training-plans/generate — AI plan generation
-  app.post("/:userId/training-plans/generate", async (request, reply) => {
+  app.post("/:userId/training-plans/generate", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -59,7 +60,7 @@ const trainingPlansRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/training-plans/:planId/progress — update progress
-  app.post("/:userId/training-plans/:planId/progress", async (request, reply) => {
+  app.post("/:userId/training-plans/:planId/progress", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, planId } = z
       .object({ userId: z.string().uuid(), planId: z.string().uuid() })
       .parse(request.params)

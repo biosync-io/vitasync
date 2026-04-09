@@ -1,14 +1,14 @@
 import { providerRegistry } from "@biosync-io/provider-core"
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
-import { requireScope } from "../../plugins/auth.js"
+import { requireScope, requireSelf } from "../../plugins/auth.js"
 import { ConnectionService } from "../../services/connection.service.js"
 
 const connectionService = new ConnectionService()
 
 const connectionsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/connections
-  app.get("/:userId/connections", async (request, reply) => {
+  app.get("/:userId/connections", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const connections = await connectionService.list(userId, request.workspaceId)
     return reply.send(connections)
@@ -17,7 +17,7 @@ const connectionsRoutes: FastifyPluginAsync = async (app) => {
   // DELETE /v1/users/:userId/connections/:connectionId
   app.delete(
     "/:userId/connections/:connectionId",
-    { preHandler: [requireScope("write")] },
+    { preHandler: [requireSelf(), requireScope("write")] },
     async (request, reply) => {
       const { connectionId } = z
         .object({ userId: z.string().uuid(), connectionId: z.string().uuid() })
@@ -32,7 +32,7 @@ const connectionsRoutes: FastifyPluginAsync = async (app) => {
   // Enqueues an immediate sync job for a connection
   app.post(
     "/:userId/connections/:connectionId/sync",
-    { preHandler: [requireScope("write")] },
+    { preHandler: [requireSelf(), requireScope("write")] },
     async (request, reply) => {
       const { userId, connectionId } = z
         .object({ userId: z.string().uuid(), connectionId: z.string().uuid() })

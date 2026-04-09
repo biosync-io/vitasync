@@ -2,13 +2,14 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { WaterIntakeService } from "../../services/water-intake.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const waterService = new WaterIntakeService()
 const userService = new UserService()
 
 const waterRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/water
-  app.get("/:userId/water", async (request, reply) => {
+  app.get("/:userId/water", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -30,7 +31,7 @@ const waterRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/water
-  app.post("/:userId/water", async (request, reply) => {
+  app.post("/:userId/water", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -54,7 +55,7 @@ const waterRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // DELETE /v1/users/:userId/water/:logId
-  app.delete("/:userId/water/:logId", async (request, reply) => {
+  app.delete("/:userId/water/:logId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const params = z.object({ userId: z.string().uuid(), logId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(params.userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -65,7 +66,7 @@ const waterRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/water/today
-  app.get("/:userId/water/today", async (request, reply) => {
+  app.get("/:userId/water/today", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -75,7 +76,7 @@ const waterRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/water/weekly
-  app.get("/:userId/water/weekly", async (request, reply) => {
+  app.get("/:userId/water/weekly", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
-import { requireScope } from "../../plugins/auth.js"
+import { requireScope, requireSelf } from "../../plugins/auth.js"
 import { HealthDataService } from "../../services/health-data.service.js"
 import type { TimeseriesBucket } from "../../services/health-data.service.js"
 import { UserService } from "../../services/user.service.js"
@@ -10,7 +10,7 @@ const userService = new UserService()
 
 const healthDataRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/health — query health data with cursor-based pagination
-  app.get("/:userId/health", async (request, reply) => {
+  app.get("/:userId/health", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -43,7 +43,7 @@ const healthDataRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/health/summary — counts per metric type
-  app.get("/:userId/health/summary", async (request, reply) => {
+  app.get("/:userId/health/summary", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -52,7 +52,7 @@ const healthDataRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/health/timeseries — time-bucketed aggregation
-  app.get("/:userId/health/timeseries", async (request, reply) => {
+  app.get("/:userId/health/timeseries", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -78,7 +78,7 @@ const healthDataRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/health/daily-summaries — per-day totals per metric
-  app.get("/:userId/health/daily-summaries", async (request, reply) => {
+  app.get("/:userId/health/daily-summaries", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -105,7 +105,7 @@ const healthDataRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // DELETE /v1/users/:userId/health — GDPR right-to-erasure
-  app.delete("/:userId/health", { preHandler: [requireScope("write")] }, async (request, reply) => {
+  app.delete("/:userId/health", { preHandler: [requireSelf(), requireScope("write")] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

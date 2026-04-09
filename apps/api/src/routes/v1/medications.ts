@@ -3,13 +3,14 @@ import { z } from "zod"
 import { defined } from "../../lib/strip-undefined.js"
 import { MedicationService } from "../../services/medication.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const medicationService = new MedicationService()
 const userService = new UserService()
 
 const medicationsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/medications
-  app.get("/:userId/medications", async (request, reply) => {
+  app.get("/:userId/medications", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -20,7 +21,7 @@ const medicationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/medications
-  app.post("/:userId/medications", async (request, reply) => {
+  app.post("/:userId/medications", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -50,7 +51,7 @@ const medicationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/medications/:medId
-  app.get("/:userId/medications/:medId", async (request, reply) => {
+  app.get("/:userId/medications/:medId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, medId } = z
       .object({ userId: z.string().uuid(), medId: z.string().uuid() })
       .parse(request.params)
@@ -63,7 +64,7 @@ const medicationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // PUT /v1/users/:userId/medications/:medId
-  app.put("/:userId/medications/:medId", async (request, reply) => {
+  app.put("/:userId/medications/:medId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, medId } = z
       .object({ userId: z.string().uuid(), medId: z.string().uuid() })
       .parse(request.params)
@@ -90,7 +91,7 @@ const medicationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // DELETE /v1/users/:userId/medications/:medId
-  app.delete("/:userId/medications/:medId", async (request, reply) => {
+  app.delete("/:userId/medications/:medId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, medId } = z
       .object({ userId: z.string().uuid(), medId: z.string().uuid() })
       .parse(request.params)
@@ -103,7 +104,7 @@ const medicationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/medications/:medId/log — log adherence
-  app.post("/:userId/medications/:medId/log", async (request, reply) => {
+  app.post("/:userId/medications/:medId/log", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, medId } = z
       .object({ userId: z.string().uuid(), medId: z.string().uuid() })
       .parse(request.params)
@@ -131,7 +132,7 @@ const medicationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/medications/:medId/logs
-  app.get("/:userId/medications/:medId/logs", async (request, reply) => {
+  app.get("/:userId/medications/:medId/logs", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, medId } = z
       .object({ userId: z.string().uuid(), medId: z.string().uuid() })
       .parse(request.params)
@@ -155,7 +156,7 @@ const medicationsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/medications/:medId/stats
-  app.get("/:userId/medications/:medId/stats", async (request, reply) => {
+  app.get("/:userId/medications/:medId/stats", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, medId } = z
       .object({ userId: z.string().uuid(), medId: z.string().uuid() })
       .parse(request.params)

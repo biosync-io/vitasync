@@ -3,13 +3,14 @@ import { z } from "zod"
 import { defined } from "../../lib/strip-undefined.js"
 import { HealthReportService } from "../../services/health-report.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const reportService = new HealthReportService()
 const userService = new UserService()
 
 const reportsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/reports
-  app.get("/:userId/reports", async (request, reply) => {
+  app.get("/:userId/reports", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -26,7 +27,7 @@ const reportsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/reports/:reportId
-  app.get("/:userId/reports/:reportId", async (request, reply) => {
+  app.get("/:userId/reports/:reportId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, reportId } = z
       .object({ userId: z.string().uuid(), reportId: z.string().uuid() })
       .parse(request.params)
@@ -39,7 +40,7 @@ const reportsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/reports/generate — generate a new report
-  app.post("/:userId/reports/generate", async (request, reply) => {
+  app.post("/:userId/reports/generate", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

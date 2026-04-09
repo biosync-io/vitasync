@@ -3,13 +3,14 @@ import { z } from "zod"
 import { defined } from "../../lib/strip-undefined.js"
 import { NutritionService } from "../../services/nutrition.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const nutritionService = new NutritionService()
 const userService = new UserService()
 
 const nutritionRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/nutrition
-  app.get("/:userId/nutrition", async (request, reply) => {
+  app.get("/:userId/nutrition", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -33,7 +34,7 @@ const nutritionRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // POST /v1/users/:userId/nutrition
-  app.post("/:userId/nutrition", async (request, reply) => {
+  app.post("/:userId/nutrition", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -72,7 +73,7 @@ const nutritionRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/nutrition/:logId
-  app.get("/:userId/nutrition/:logId", async (request, reply) => {
+  app.get("/:userId/nutrition/:logId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, logId } = z
       .object({ userId: z.string().uuid(), logId: z.string().uuid() })
       .parse(request.params)
@@ -85,7 +86,7 @@ const nutritionRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // PUT /v1/users/:userId/nutrition/:logId
-  app.put("/:userId/nutrition/:logId", async (request, reply) => {
+  app.put("/:userId/nutrition/:logId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, logId } = z
       .object({ userId: z.string().uuid(), logId: z.string().uuid() })
       .parse(request.params)
@@ -116,7 +117,7 @@ const nutritionRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // DELETE /v1/users/:userId/nutrition/:logId
-  app.delete("/:userId/nutrition/:logId", async (request, reply) => {
+  app.delete("/:userId/nutrition/:logId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, logId } = z
       .object({ userId: z.string().uuid(), logId: z.string().uuid() })
       .parse(request.params)
@@ -129,7 +130,7 @@ const nutritionRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/nutrition/summary/daily
-  app.get("/:userId/nutrition/summary/daily", async (request, reply) => {
+  app.get("/:userId/nutrition/summary/daily", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -144,7 +145,7 @@ const nutritionRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/nutrition/summary/weekly
-  app.get("/:userId/nutrition/summary/weekly", async (request, reply) => {
+  app.get("/:userId/nutrition/summary/weekly", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })

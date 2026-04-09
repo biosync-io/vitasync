@@ -3,6 +3,7 @@ import { z } from "zod"
 import { Redis } from "ioredis"
 import { config } from "../../config.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const userService = new UserService()
 
@@ -15,7 +16,7 @@ const userService = new UserService()
  */
 const notificationStreamRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/notifications/stream
-  app.get("/:userId/notifications/stream", async (request, reply) => {
+  app.get("/:userId/notifications/stream", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z
       .object({ userId: z.string().uuid() })
       .parse(request.params)

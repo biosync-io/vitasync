@@ -2,13 +2,14 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { EventService } from "../../services/event.service.js"
 import { UserService } from "../../services/user.service.js"
+import { requireSelf } from "../../plugins/auth.js"
 
 const eventService = new EventService()
 const userService = new UserService()
 
 const eventsRoutes: FastifyPluginAsync = async (app) => {
   // GET /v1/users/:userId/events — list events with cursor-based pagination
-  app.get("/:userId/events", async (request, reply) => {
+  app.get("/:userId/events", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
     const owner = await userService.findById(userId, request.workspaceId)
     if (!owner) return reply.status(404).send({ code: "NOT_FOUND", message: "User not found" })
@@ -39,7 +40,7 @@ const eventsRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/users/:userId/events/:eventId — single event detail
-  app.get("/:userId/events/:eventId", async (request, reply) => {
+  app.get("/:userId/events/:eventId", { preHandler: [requireSelf()] }, async (request, reply) => {
     const { userId, eventId } = z
       .object({ userId: z.string().uuid(), eventId: z.string().uuid() })
       .parse(request.params)
