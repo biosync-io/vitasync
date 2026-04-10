@@ -14,6 +14,12 @@ import { registerWebhookNotificationChannel } from "@biosync-io/notification-web
 import { Queue, Worker } from "bullmq"
 import { Redis } from "ioredis"
 import { getConfig } from "./config.js"
+import {
+  closeBulkheadResources,
+  createProviderQueues,
+  createProviderWorkers,
+} from "./lib/bulkhead.js"
+import { closeWorkerEventBus } from "./lib/event-bus.js"
 import { installFetchTracker } from "./lib/provider-call-tracker.js"
 import { processAnalyticsJob } from "./processors/analytics.processor.js"
 import { processNotificationJob } from "./processors/notification.processor.js"
@@ -122,6 +128,31 @@ async function main() {
     })
     stopScheduler = await startPeriodicScheduler(syncQueue, connection)
     console.info("[worker] Sync queue enabled (concurrency: 5)")
+
+    // ── Bulkhead isolation: per-provider sync queues ──────────────
+    createProviderQueues(connection)
+    const bulkheadWorkers = createProviderWorkers(connection, processSyncJob)
+    for (const [provider, w] of bulkheadWorkers) {
+      workers.push(w)
+      w.on("completed", (job) => {
+        console.info(`[sync:${provider}] Job ${job.id} completed`)
+      })
+      w.on("failed", (job, err) => {
+        console.error(`[sync:${provider}] Job ${job?.id} failed: ${err.message}`)
+        if (job?.data?.userId) {
+          const providerLabel = provider.charAt(0).toUpperCase() + provider.slice(1)
+          notificationQueue.add("sync-failure", {
+            userId: job.data.userId,
+            workspaceId: job.data.workspaceId ?? "",
+            title: `${providerLabel} Sync Failed`,
+            body: `${providerLabel} sync failed: ${err.message.slice(0, 200)}`,
+            severity: "warning",
+            category: "sync",
+          }).catch((e) => console.error(`[sync:${provider}] Failed to enqueue failure notification:`, e))
+        }
+      })
+    }
+    console.info(`[worker] Bulkhead queues enabled for: ${[...bulkheadWorkers.keys()].join(", ")}`)
   }
 
   // ── Webhook worker ─────────────────────────────────────────────
@@ -214,7 +245,9 @@ async function main() {
     await Promise.all([
       ...workers.map((w) => w.close()),
       notificationQueue.close(),
+      closeBulkheadResources(),
     ])
+    await closeWorkerEventBus()
     await connection.quit()
     await closeDb()
     console.info("Worker shut down cleanly.")

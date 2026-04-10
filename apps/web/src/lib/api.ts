@@ -28,20 +28,30 @@ export async function getRuntimeDefaultKey(): Promise<string> {
   return _runtimeDefaultKey
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const localKey =
-    typeof window !== "undefined" ? localStorage.getItem("vitasync_api_key") : null
-  const apiKey = localKey ?? (await getRuntimeDefaultKey())
+/**
+ * When true, the user is authenticated via JWT cookies (login flow).
+ * API key header is skipped so the server uses the cookie identity.
+ */
+let _cookieAuthActive = false
+export function setCookieAuthActive(active: boolean) {
+  _cookieAuthActive = active
+}
 
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const hasBody = init?.body != null
   const headers: Record<string, string> = {
     ...(hasBody ? { "Content-Type": "application/json" } : {}),
     ...((init?.headers as Record<string, string>) ?? {}),
   }
 
-  // If an API key is available, attach it as a Bearer token
-  if (apiKey) {
-    headers.Authorization = `Bearer ${apiKey}`
+  // Only attach API key if NOT using cookie-based auth
+  if (!_cookieAuthActive) {
+    const localKey =
+      typeof window !== "undefined" ? localStorage.getItem("vitasync_api_key") : null
+    const apiKey = localKey ?? (await getRuntimeDefaultKey())
+    if (apiKey) {
+      headers.Authorization = `Bearer ${apiKey}`
+    }
   }
 
   const doFetch = () =>
@@ -437,6 +447,24 @@ export const exportsApi = {
   list: (userId: string) => request<{ data: ExportData[] }>(`/v1/users/${userId}/exports`),
   create: (userId: string, body: Record<string, unknown>) =>
     request<ExportData>(`/v1/users/${userId}/exports`, { method: "POST", body: JSON.stringify(body) }),
+}
+
+// ---- Circuit Breakers (Admin) ----
+export interface CircuitBreakerMetrics {
+  state: "closed" | "open" | "half_open"
+  failureCount: number
+  successCount: number
+  totalRequests: number
+  lastFailureTime: number | null
+  lastSuccessTime: number | null
+  consecutiveFailures: number
+  consecutiveSuccesses: number
+}
+
+export const circuitBreakersApi = {
+  list: () => request<Record<string, CircuitBreakerMetrics>>("/v1/admin/circuit-breakers"),
+  reset: (provider: string) =>
+    request<void>(`/v1/admin/circuit-breakers/${provider}/reset`, { method: "POST" }),
 }
 
 // ---- Training Plans ----
@@ -1376,6 +1404,16 @@ export const authApi = {
   resendVerification: () =>
     request<{ message: string; verificationToken?: string }>("/v1/auth/resend-verification", {
       method: "POST",
+    }),
+  forgotPassword: (email: string) =>
+    request<{ message: string; resetToken?: string; resetUrl?: string }>("/v1/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  resetPassword: (token: string, newPassword: string) =>
+    request<{ message: string }>("/v1/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, newPassword }),
     }),
 }
 
