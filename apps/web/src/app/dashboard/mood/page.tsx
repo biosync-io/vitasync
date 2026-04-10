@@ -3,11 +3,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState, useMemo } from "react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
-import { type MoodLogData, type MoodStats, moodApi, usersApi } from "../../../lib/api"
+import { type MoodLogData, type MoodStats, moodApi} from "../../../lib/api"
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, ReferenceLine,
 } from "recharts"
+import { PageHeader, Badge, Card, CardHeader, CardContent, StatCard, StatSkeleton, CardSkeleton, MetricRing, EmptyState, Button } from "../../../lib/components/ui"
+import { Smile, Zap, AlertTriangle, TrendingUp, Plus } from "lucide-react"
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -97,18 +99,12 @@ function ChartTooltip({ active, payload, label }: any) {
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function MoodPage() {
-  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
   const [showCreate, setShowCreate] = useState(false)
   const [rangeDays, setRangeDays] = useState(30)
   const [form, setForm] = useState({ mood: "3", energy: "3", stress: "3", notes: "", tags: "" })
   const queryClient = useQueryClient()
 
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-    enabled: isAdmin,
-  })
-  const users = usersResult?.data ?? []
 
   const fromDate = isoDate(rangeDays)
   const toDate = isoDate(0)
@@ -174,159 +170,107 @@ export default function MoodPage() {
   const stressTrend = stats ? stressTrendIndicator(stats.avgStress, 2.5) : null
 
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Mood Tracking</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Track daily mood, energy, and stress levels to spot patterns.</p>
-        </div>
-        {selectedUserId && (
-          <button type="button" onClick={() => setShowCreate(!showCreate)} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
-            {showCreate ? "Cancel" : "Log Mood"}
-          </button>
-        )}
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Mood"
+        subtitle="Track daily mood, energy, and stress levels to spot patterns."
+        actions={selectedUserId ? <Button icon={Plus} onClick={() => setShowCreate(!showCreate)}>{showCreate ? "Cancel" : "Log Mood"}</Button> : undefined}
+      />
 
-      {/* User select + date range filter */}
-      <div className="mb-6 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
-        <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-          {isAdmin && (
-            <div className="flex-1">
-              <label htmlFor="mood-user" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">User</label>
-              <select id="mood-user" className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-                <option value="">Select a user…</option>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-              </select>
-            </div>
-          )}
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Period</label>
-            <div className="flex gap-1">
-              {RANGE_OPTIONS.map((r) => (
-                <button key={r.label} type="button" onClick={() => setRangeDays(r.days)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                    rangeDays === r.days
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-                  }`}>
-                  {r.label}
-                </button>
-              ))}
+      {/* Date range filter */}
+      <Card>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Period</label>
+              <div className="flex gap-1">
+                {RANGE_OPTIONS.map((r) => (
+                  <button key={r.label} type="button" onClick={() => setRangeDays(r.days)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                      rangeDays === r.days
+                        ? "bg-brand-600 text-white shadow-md shadow-brand-500/25"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    }`}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {!selectedUserId && isAdmin && (
-        <div className="flex flex-col items-center justify-center py-24">
-          <span className="text-6xl mb-4">😶</span>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Select a user to view mood data.</p>
-        </div>
-      )}
+        </CardContent>
+      </Card>
 
       {/* Create form */}
       {showCreate && selectedUserId && (
-        <div className="mb-6 rounded-2xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 p-5 shadow-card">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Log Mood Entry</h3>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Mood (1-5)</label>
-              <input type="range" min="1" max="5" className="w-full" value={form.mood} onChange={(e) => setForm({ ...form, mood: e.target.value })} />
-              <div className="text-center text-lg">{MOOD_EMOJI[Number(form.mood)]}</div>
+        <Card glow="brand">
+          <CardHeader title="Log Mood Entry" />
+          <CardContent>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Mood (1-5)</label>
+                <input type="range" min="1" max="5" className="w-full" value={form.mood} onChange={(e) => setForm({ ...form, mood: e.target.value })} />
+                <div className="text-center text-lg">{MOOD_EMOJI[Number(form.mood)]}</div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Energy (1-5)</label>
+                <input type="range" min="1" max="5" className="w-full" value={form.energy} onChange={(e) => setForm({ ...form, energy: e.target.value })} />
+                <div className="text-center text-sm text-gray-600 dark:text-gray-400">⚡ {form.energy}</div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Stress (1-5)</label>
+                <input type="range" min="1" max="5" className="w-full" value={form.stress} onChange={(e) => setForm({ ...form, stress: e.target.value })} />
+                <div className="text-center text-sm text-gray-600 dark:text-gray-400">😰 {form.stress}</div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Tags (comma-sep)</label>
+                <input placeholder="exercise, meditation" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Notes</label>
+                <input placeholder="How are you feeling?" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              </div>
+              <Button onClick={() => createMut.mutate()} disabled={createMut.isPending} loading={createMut.isPending}>
+                {createMut.isPending ? "Saving…" : "Save Entry"}
+              </Button>
             </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Energy (1-5)</label>
-              <input type="range" min="1" max="5" className="w-full" value={form.energy} onChange={(e) => setForm({ ...form, energy: e.target.value })} />
-              <div className="text-center text-sm text-gray-600 dark:text-gray-400">⚡ {form.energy}</div>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Stress (1-5)</label>
-              <input type="range" min="1" max="5" className="w-full" value={form.stress} onChange={(e) => setForm({ ...form, stress: e.target.value })} />
-              <div className="text-center text-sm text-gray-600 dark:text-gray-400">😰 {form.stress}</div>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Tags (comma-sep)</label>
-              <input placeholder="exercise, meditation" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Notes</label>
-              <input placeholder="How are you feeling?" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-            </div>
-            <button type="button" onClick={() => createMut.mutate()} disabled={createMut.isPending} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
-              {createMut.isPending ? "Saving…" : "Save Entry"}
-            </button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
+      {/* Loading state */}
       {selectedUserId && isLoading && (
-        <div className="flex items-center justify-center py-20">
-          <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+        <div className="space-y-8">
+          <StatSkeleton count={4} />
+          <CardSkeleton count={2} />
         </div>
       )}
 
-      {selectedUserId && !isLoading && (
+      {selectedUserId && !isLoading && logs.length === 0 && (
+        <EmptyState
+          icon={Smile}
+          title="No mood entries yet"
+          description="Start tracking your mood to see patterns over time."
+          action={{ label: "Log Mood", onClick: () => setShowCreate(true), icon: Plus }}
+        />
+      )}
+
+      {selectedUserId && !isLoading && logs.length > 0 && (
         <>
-          {/* Enhanced stats row */}
+          {/* Stats row */}
           {stats && (
-            <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {/* Avg Mood */}
-              <div className="rounded-2xl border border-indigo-200/60 dark:border-indigo-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 text-center">
-                <div className="text-3xl mb-1">{MOOD_EMOJI[Math.round(stats.avgScore)] ?? "😐"}</div>
-                <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{stats.avgScore.toFixed(1)}</div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Avg Mood</p>
-                {moodTrend && (
-                  <p className={`text-xs font-medium mt-1 ${moodTrend.color}`}>
-                    {moodTrend.icon} {moodTrend.label}
-                  </p>
-                )}
-              </div>
-              {/* Avg Energy */}
-              <div className="rounded-2xl border border-amber-200/60 dark:border-amber-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 text-center">
-                <div className="text-3xl mb-1">⚡</div>
-                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.avgEnergy.toFixed(1)}</div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Avg Energy</p>
-                {energyTrend && (
-                  <p className={`text-xs font-medium mt-1 ${energyTrend.color}`}>
-                    {energyTrend.icon} {energyTrend.label}
-                  </p>
-                )}
-              </div>
-              {/* Avg Stress */}
-              <div className="rounded-2xl border border-red-200/60 dark:border-red-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 text-center">
-                <div className="text-3xl mb-1">😰</div>
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.avgStress.toFixed(1)}</div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Avg Stress</p>
-                {stressTrend && (
-                  <p className={`text-xs font-medium mt-1 ${stressTrend.color}`}>
-                    {stressTrend.icon} {stressTrend.label}
-                  </p>
-                )}
-              </div>
-              {/* Overall Trend */}
-              <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 text-center">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Trend</p>
-                <p className={`text-lg font-semibold ${stats.trend === "improving" ? "text-emerald-600 dark:text-emerald-400" : stats.trend === "declining" ? "text-red-600 dark:text-red-400" : "text-gray-600 dark:text-gray-400"}`}>
-                  {stats.trend === "improving" ? "📈 Improving" : stats.trend === "declining" ? "📉 Declining" : "➡️ Stable"}
-                </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{stats.totalEntries} entries</p>
-                {stats.topFactors.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-xs text-gray-400 dark:text-gray-500">Top factor</p>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{stats.topFactors[0]}</p>
-                  </div>
-                )}
-              </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard label="Avg Mood" value={stats.avgScore.toFixed(1)} icon={<span className="text-2xl">{MOOD_EMOJI[Math.round(stats.avgScore)] ?? "😐"}</span>} color="brand" />
+              <StatCard label="Avg Energy" value={stats.avgEnergy.toFixed(1)} icon={<span className="text-2xl">⚡</span>} color="vitality" />
+              <StatCard label="Avg Stress" value={stats.avgStress.toFixed(1)} icon={<span className="text-2xl">😰</span>} color="accent" />
+              <StatCard label="Trend" value={stats.trend === "improving" ? "↑ Improving" : stats.trend === "declining" ? "↓ Declining" : "→ Stable"} icon={<span className="text-2xl">{stats.trend === "improving" ? "📈" : stats.trend === "declining" ? "📉" : "➡️"}</span>} />
             </div>
           )}
 
           {/* Charts row */}
-          {logs.length > 0 && (
-            <div className="mb-6 grid gap-4 lg:grid-cols-3">
-              {/* Mood trend chart */}
-              <div className="lg:col-span-2 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Mood · Energy · Stress Over Time</h3>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Card className="lg:col-span-2">
+              <CardHeader title="Mood · Energy · Stress Over Time" />
+              <CardContent>
                 <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={trendData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-gray-700" />
@@ -341,11 +285,12 @@ export default function MoodPage() {
                     <Line type="monotone" dataKey="stress" name="Stress" stroke={CHART_COLORS.stress} strokeWidth={2} dot={{ r: 2.5, fill: CHART_COLORS.stress }} activeDot={{ r: 4 }} />
                   </LineChart>
                 </ResponsiveContainer>
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Distribution chart */}
-              <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Mood Distribution</h3>
+            <Card>
+              <CardHeader title="Mood Distribution" />
+              <CardContent>
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={distributionData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-200 dark:text-gray-700" />
@@ -355,71 +300,71 @@ export default function MoodPage() {
                     <Bar dataKey="count" name="Entries" fill={CHART_COLORS.mood} radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-
-          {/* Improved logs table */}
-          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-card overflow-hidden">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/50">
-                <tr>
-                  <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Date</th>
-                  <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Mood</th>
-                  <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Energy</th>
-                  <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Stress</th>
-                  <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Tags</th>
-                  <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No mood entries yet.</td></tr>
-                )}
-                {logs.map((l, i) => (
-                  <tr key={l.id} className={`border-b border-gray-100 dark:border-gray-800 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/10 transition-colors ${i % 2 === 1 ? "bg-gray-50/50 dark:bg-gray-800/20" : ""}`}>
-                    <td className="px-4 py-3 text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                      {formatWeekdayDate(l.loggedAt)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="text-lg">{MOOD_EMOJI[l.mood] ?? l.mood}</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">{l.mood}/5</span>
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {l.energy != null ? (
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-16 rounded-full bg-gray-200 dark:bg-gray-700">
-                            <div className="h-1.5 rounded-full bg-amber-500" style={{ width: `${(l.energy / 5) * 100}%` }} />
-                          </div>
-                          <span className="text-xs text-gray-600 dark:text-gray-400">{l.energy}</span>
-                        </div>
-                      ) : <span className="text-gray-400 dark:text-gray-600">—</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      {l.stress != null ? (
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-16 rounded-full bg-gray-200 dark:bg-gray-700">
-                            <div className="h-1.5 rounded-full bg-red-500" style={{ width: `${(l.stress / 5) * 100}%` }} />
-                          </div>
-                          <span className="text-xs text-gray-600 dark:text-gray-400">{l.stress}</span>
-                        </div>
-                      ) : <span className="text-gray-400 dark:text-gray-600">—</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {l.tags?.map((tag) => (
-                          <span key={tag} className="rounded-full bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 text-xs text-blue-700 dark:text-blue-400">{tag}</span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 max-w-xs truncate">{l.notes ?? ""}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              </CardContent>
+            </Card>
           </div>
+
+          {/* Logs table */}
+          <Card>
+            <CardHeader title="Mood Entries" subtitle={logs.length + " entries"} />
+            <CardContent className="p-0">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/50">
+                  <tr>
+                    <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Date</th>
+                    <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Mood</th>
+                    <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Energy</th>
+                    <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Stress</th>
+                    <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Tags</th>
+                    <th className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map((l, i) => (
+                    <tr key={l.id} className={`border-b border-gray-100 dark:border-gray-800 hover:bg-brand-50/40 dark:hover:bg-brand-900/10 transition-colors ${i % 2 === 1 ? "bg-gray-50/50 dark:bg-gray-800/20" : ""}`}>
+                      <td className="px-4 py-3 text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                        {formatWeekdayDate(l.loggedAt)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="text-lg">{MOOD_EMOJI[l.mood] ?? l.mood}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">{l.mood}/5</span>
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {l.energy != null ? (
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 w-16 rounded-full bg-gray-200 dark:bg-gray-700">
+                              <div className="h-1.5 rounded-full bg-amber-500" style={{ width: `${(l.energy / 5) * 100}%` }} />
+                            </div>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{l.energy}</span>
+                          </div>
+                        ) : <span className="text-gray-400 dark:text-gray-600">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        {l.stress != null ? (
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 w-16 rounded-full bg-gray-200 dark:bg-gray-700">
+                              <div className="h-1.5 rounded-full bg-red-500" style={{ width: `${(l.stress / 5) * 100}%` }} />
+                            </div>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{l.stress}</span>
+                          </div>
+                        ) : <span className="text-gray-400 dark:text-gray-600">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {l.tags?.map((tag) => (
+                            <Badge key={tag} variant="info" size="sm">{tag}</Badge>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 max-w-xs truncate">{l.notes ?? ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
         </>
       )}
     </div>

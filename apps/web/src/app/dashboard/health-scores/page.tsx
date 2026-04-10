@@ -17,6 +17,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
+import { PageHeader, Badge, Card, CardHeader, CardContent, StatCard, StatSkeleton, CardSkeleton, MetricRing, MetricBar, EmptyState } from "../../../lib/components/ui"
+import { Activity, TrendingUp, TrendingDown, Minus, BarChart3, Trophy, AlertTriangle, Flame, Zap } from "lucide-react"
 
 // ── Range options ──────────────────────────────────────────────
 const RANGE_OPTIONS = [
@@ -161,20 +163,19 @@ function ScoreRing({ score, size = 180 }: { score: number; size?: number }) {
 
 function SubScoreCard({ label, icon, value, gradient }: { label: string; icon: string; value: number | null; gradient: string }) {
   const v = value ?? 0
-  const pct = Math.min(100, v)
   return (
-    <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card hover:shadow-card-hover transition-all duration-300 group">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-lg group-hover:scale-110 transition-transform">{icon}</span>
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{label}</span>
+    <Card hover>
+      <CardContent>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{icon}</span>
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{label}</span>
+          </div>
+          <span className="text-lg font-bold text-gray-900 dark:text-gray-50">{v}</span>
         </div>
-        <span className="text-lg font-bold text-gray-900 dark:text-gray-50">{v}</span>
-      </div>
-      <div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
-        <div className={`h-full rounded-full bg-gradient-to-r ${gradient} transition-all duration-700`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
+        <MetricBar value={v} max={100} color={v >= 70 ? "vitality" : v >= 50 ? "amber" : "accent"} showValue={false} />
+      </CardContent>
+    </Card>
   )
 }
 
@@ -264,26 +265,23 @@ export default function HealthScoresPage() {
   const gradeStyle = latest ? (GRADE_STYLES[latest.grade] ?? GRADE_STYLES.C) : GRADE_STYLES.C
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between animate-fade-in-down">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Health Score</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Composite daily score from sleep, activity, cardio, recovery, and body metrics.
-            {selectedUser?.gender && <span className="ml-1 text-xs">({selectedUser.gender === "female" ? "♀️ Female" : selectedUser.gender === "male" ? "♂️ Male" : "⚧️ Other"} baselines)</span>}
-          </p>
-        </div>
-        {selectedUserId && (
+      <PageHeader
+        title="Health Score"
+        subtitle={`Composite daily score from sleep, activity, cardio, recovery, and body metrics.${selectedUser?.gender ? ` (${selectedUser.gender === "female" ? "♀️ Female" : selectedUser.gender === "male" ? "♂️ Male" : "⚧️ Other"} baselines)` : ""}`}
+        badge={latest ? <Badge variant={latest.overallScore >= 80 ? "success" : latest.overallScore >= 60 ? "warning" : "danger"} dot>{latest.grade}</Badge> : undefined}
+        actions={selectedUserId ? (
           <button type="button" onClick={() => computeMut.mutate()} disabled={computeMut.isPending}
             className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50">
             {computeMut.isPending ? "Computing…" : "⚡ Compute Score"}
           </button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {/* Date range filter */}
-      <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
+      <Card>
+        <CardContent>
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Period</label>
             <div className="flex gap-1.5">
@@ -303,82 +301,55 @@ export default function HealthScoresPage() {
               ))}
             </div>
           </div>
-      </div>
+        </CardContent>
+      </Card>
 
+      {/* Loading */}
       {selectedUserId && isLoading && (
-        <div className="flex items-center justify-center py-20">
-          <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+        <div className="space-y-6">
+          <StatSkeleton count={5} />
+          <CardSkeleton count={2} />
         </div>
       )}
 
+      {/* Main content */}
       {selectedUserId && !isLoading && latest && (
-        <div className="space-y-6 stagger-grid">
+        <div className="space-y-8">
           {/* Summary statistics row */}
           {stats && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm shadow-md">📊</div>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Average</span>
-                </div>
-                <span className="text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{stats.avg.toFixed(1)}</span>
-              </div>
-              <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white text-sm shadow-md">🏆</div>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Best</span>
-                </div>
-                <span className="text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{stats.best.score}</span>
-                <span className="block text-[10px] text-gray-400 dark:text-gray-500">{formatShortDate(stats.best.date)}</span>
-              </div>
-              <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white text-sm shadow-md">📉</div>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Worst</span>
-                </div>
-                <span className="text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{stats.worst.score}</span>
-                <span className="block text-[10px] text-gray-400 dark:text-gray-500">{formatShortDate(stats.worst.date)}</span>
-              </div>
-              <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-sm shadow-md">🔥</div>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Streak ≥ 80</span>
-                </div>
-                <span className="text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{stats.streak}</span>
-                <span className="block text-[10px] text-gray-400 dark:text-gray-500">days</span>
-              </div>
-              <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${stats.trend === "rising" ? "from-emerald-500 to-teal-600" : stats.trend === "falling" ? "from-red-500 to-rose-600" : "from-gray-500 to-gray-600"} flex items-center justify-center text-white text-sm shadow-md`}>
-                    {stats.trend === "rising" ? "📈" : stats.trend === "falling" ? "📉" : "➡️"}
-                  </div>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Trend</span>
-                </div>
-                <span className={`text-xl font-bold tabular-nums ${stats.trend === "rising" ? "text-emerald-600 dark:text-emerald-400" : stats.trend === "falling" ? "text-red-600 dark:text-red-400" : "text-gray-600 dark:text-gray-400"}`}>
-                  {stats.trend === "rising" ? "↑ Rising" : stats.trend === "falling" ? "↓ Falling" : "→ Stable"}
-                </span>
-                <span className="block text-[10px] text-gray-400 dark:text-gray-500">last 7 scores</span>
-              </div>
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+              <StatCard label="Average" value={stats.avg.toFixed(1)} icon={<BarChart3 className="h-5 w-5" />} />
+              <StatCard label="Best" value={stats.best.score} icon={<Trophy className="h-5 w-5" />} color="vitality" />
+              <StatCard label="Worst" value={stats.worst.score} icon={<AlertTriangle className="h-5 w-5" />} color="accent" />
+              <StatCard label="Streak ≥ 80" value={`${stats.streak} days`} icon={<Flame className="h-5 w-5" />} />
+              <StatCard
+                label="Trend"
+                value={stats.trend === "rising" ? "↑ Rising" : stats.trend === "falling" ? "↓ Falling" : "→ Stable"}
+                icon={stats.trend === "rising" ? <TrendingUp className="h-5 w-5" /> : stats.trend === "falling" ? <TrendingDown className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
+                color={stats.trend === "rising" ? "vitality" : stats.trend === "falling" ? "accent" : "default"}
+              />
             </div>
           )}
 
           {/* Main score + grade */}
           <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-1 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-8 shadow-card hover:shadow-card-hover transition-all duration-300 flex flex-col items-center">
-              <ScoreRing score={latest.overallScore} />
-              <div className={`mt-4 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r ${gradeStyle!.bg} px-4 py-1.5 text-white text-sm font-bold shadow-lg ${gradeStyle!.glow}`}>
-                Grade {latest.grade}
-              </div>
-              {latest.deltaFromPrevious != null && (
-                <p className={`mt-2 text-sm font-medium ${latest.deltaFromPrevious > 0 ? "text-emerald-700 dark:text-emerald-500" : latest.deltaFromPrevious < 0 ? "text-red-700 dark:text-red-500" : "text-gray-500 dark:text-gray-400"}`}>
-                  {latest.deltaFromPrevious > 0 ? "↑" : latest.deltaFromPrevious < 0 ? "↓" : "→"} {Math.abs(latest.deltaFromPrevious).toFixed(1)} from previous
-                </p>
-              )}
-              {latest.weeklyAvg != null && (
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">7-day avg: <span className="font-semibold">{latest.weeklyAvg.toFixed(1)}</span></p>
-              )}
-              <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-500">{new Date(latest.date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</p>
-            </div>
+            <Card className="lg:col-span-1">
+              <CardContent className="flex flex-col items-center py-8">
+                <ScoreRing score={latest.overallScore} />
+                <div className={`mt-4 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r ${gradeStyle!.bg} px-4 py-1.5 text-white text-sm font-bold shadow-lg ${gradeStyle!.glow}`}>
+                  Grade {latest.grade}
+                </div>
+                {latest.deltaFromPrevious != null && (
+                  <p className={`mt-2 text-sm font-medium ${latest.deltaFromPrevious > 0 ? "text-emerald-700 dark:text-emerald-500" : latest.deltaFromPrevious < 0 ? "text-red-700 dark:text-red-500" : "text-gray-500 dark:text-gray-400"}`}>
+                    {latest.deltaFromPrevious > 0 ? "↑" : latest.deltaFromPrevious < 0 ? "↓" : "→"} {Math.abs(latest.deltaFromPrevious).toFixed(1)} from previous
+                  </p>
+                )}
+                {latest.weeklyAvg != null && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">7-day avg: <span className="font-semibold">{latest.weeklyAvg.toFixed(1)}</span></p>
+                )}
+                <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-500">{new Date(latest.date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</p>
+              </CardContent>
+            </Card>
 
             {/* Sub-scores grid */}
             <div className="lg:col-span-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 content-start">
@@ -392,85 +363,112 @@ export default function HealthScoresPage() {
                 />
               ))}
               {/* Weights info card */}
-              <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/40 dark:to-gray-900/40 p-4">
-                <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-2">Score Weights</p>
-                <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
-                  <div className="flex justify-between"><span>🌙 Sleep</span><span className="font-mono">25%</span></div>
-                  <div className="flex justify-between"><span>🏃 Activity</span><span className="font-mono">25%</span></div>
-                  <div className="flex justify-between"><span>❤️ Cardio</span><span className="font-mono">20%</span></div>
-                  <div className="flex justify-between"><span>🔋 Recovery</span><span className="font-mono">15%</span></div>
-                  <div className="flex justify-between"><span>⚖️ Body</span><span className="font-mono">15%</span></div>
-                </div>
-              </div>
+              <Card>
+                <CardContent>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-2">Score Weights</p>
+                  <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex justify-between"><span>🌙 Sleep</span><span className="font-mono">25%</span></div>
+                    <div className="flex justify-between"><span>🏃 Activity</span><span className="font-mono">25%</span></div>
+                    <div className="flex justify-between"><span>❤️ Cardio</span><span className="font-mono">20%</span></div>
+                    <div className="flex justify-between"><span>🔋 Recovery</span><span className="font-mono">15%</span></div>
+                    <div className="flex justify-between"><span>⚖️ Body</span><span className="font-mono">15%</span></div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
           {/* Overall Score Trend Chart */}
           {chartData.length > 0 && (
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Overall Score Trend</h3>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400">Daily composite health score over time</p>
-              </div>
-              <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="overallGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid {...GRID_PROPS} />
-                  <XAxis dataKey="date" tick={TICK_STYLE} tickLine={false} axisLine={false} />
-                  <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} domain={[0, 100]} />
-                  <Tooltip content={<OverallScoreTooltip />} />
-                  <ReferenceLine y={80} stroke="#22c55e" strokeDasharray="4 4" strokeOpacity={0.5} label={{ value: "Good (80)", position: "right", fill: "#22c55e", fontSize: 10 }} />
-                  <ReferenceLine y={60} stroke="#eab308" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: "Fair (60)", position: "right", fill: "#eab308", fontSize: 10 }} />
-                  <Area type="monotone" dataKey="overallScore" stroke="#6366f1" strokeWidth={2} fill="url(#overallGrad)" name="Overall Score" connectNulls dot={{ r: 2, fill: "#6366f1" }} activeDot={{ r: 4 }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            <Card>
+              <CardHeader title="Overall Score Trend" subtitle="Daily composite health score over time" />
+              <CardContent>
+                <ResponsiveContainer width="100%" height={280}>
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="overallGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid {...GRID_PROPS} />
+                    <XAxis dataKey="date" tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                    <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} domain={[0, 100]} />
+                    <Tooltip content={<OverallScoreTooltip />} />
+                    <ReferenceLine y={80} stroke="#22c55e" strokeDasharray="4 4" strokeOpacity={0.5} label={{ value: "Good (80)", position: "right", fill: "#22c55e", fontSize: 10 }} />
+                    <ReferenceLine y={60} stroke="#eab308" strokeDasharray="4 4" strokeOpacity={0.4} label={{ value: "Fair (60)", position: "right", fill: "#eab308", fontSize: 10 }} />
+                    <Area type="monotone" dataKey="overallScore" stroke="#6366f1" strokeWidth={2} fill="url(#overallGrad)" name="Overall Score" connectNulls dot={{ r: 2, fill: "#6366f1" }} activeDot={{ r: 4 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           )}
 
           {/* Sub-score Trend Chart */}
           {chartData.length > 0 && (
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Sub-score Trends</h3>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400">Individual category scores over time</p>
-              </div>
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={chartData}>
-                  <CartesianGrid {...GRID_PROPS} />
-                  <XAxis dataKey="date" tick={TICK_STYLE} tickLine={false} axisLine={false} />
-                  <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} domain={[0, 100]} />
-                  <Tooltip {...TOOLTIP_STYLE} />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }} />
-                  {SUB_SCORE_META.map((meta) => (
-                    <Line
-                      key={meta.key}
-                      type="monotone"
-                      dataKey={meta.key}
-                      stroke={meta.stroke}
-                      strokeWidth={2}
-                      name={meta.label}
-                      connectNulls
-                      dot={{ r: 2, fill: meta.stroke }}
-                      activeDot={{ r: 4 }}
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <Card>
+              <CardHeader title="Sub-score Trends" subtitle="Individual category scores over time" />
+              <CardContent>
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={chartData}>
+                    <CartesianGrid {...GRID_PROPS} />
+                    <XAxis dataKey="date" tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                    <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} domain={[0, 100]} />
+                    <Tooltip {...TOOLTIP_STYLE} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }} />
+                    {SUB_SCORE_META.map((meta) => (
+                      <Line
+                        key={meta.key}
+                        type="monotone"
+                        dataKey={meta.key}
+                        stroke={meta.stroke}
+                        strokeWidth={2}
+                        name={meta.label}
+                        connectNulls
+                        dot={{ r: 2, fill: meta.stroke }}
+                        activeDot={{ r: 4 }}
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           )}
 
           {/* Historical Data Table */}
-          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">History</h3>
-            {sortedHistory.length === 0 ? (
-              <p className="text-xs text-gray-500 dark:text-gray-400 py-8 text-center">No history yet. Compute your first score above.</p>
-            ) : (
-              <>
+          <Card>
+            <CardHeader
+              title="History"
+              action={totalPages > 1 ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                    Page {tablePage + 1} of {totalPages} · {sortedHistory.length} records
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTablePage((p) => Math.max(0, p - 1))}
+                      disabled={tablePage === 0}
+                      className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      ← Prev
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTablePage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={tablePage >= totalPages - 1}
+                      className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              ) : undefined}
+            />
+            <CardContent>
+              {sortedHistory.length === 0 ? (
+                <EmptyState icon={BarChart3} title="No history yet" description="Compute your first score above." />
+              ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
@@ -516,36 +514,9 @@ export default function HealthScoresPage() {
                     </tbody>
                   </table>
                 </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200 dark:border-gray-800">
-                    <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                      Page {tablePage + 1} of {totalPages} · {sortedHistory.length} records
-                    </span>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setTablePage((p) => Math.max(0, p - 1))}
-                        disabled={tablePage === 0}
-                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                      >
-                        ← Prev
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setTablePage((p) => Math.min(totalPages - 1, p + 1))}
-                        disabled={tablePage >= totalPages - 1}
-                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                      >
-                        Next →
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

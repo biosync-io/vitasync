@@ -3,11 +3,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
-import { type NutritionLogData, type NutritionSummary, type NutritionWeeklyAvg, nutritionApi, usersApi } from "../../../lib/api"
+import { type NutritionLogData, type NutritionSummary, type NutritionWeeklyAvg, nutritionApi} from "../../../lib/api"
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
   BarChart, Bar, PieChart, Pie, Cell, Legend,
 } from "recharts"
+import { PageHeader, Card, CardHeader, CardContent, StatCard as DSStatCard, Badge, StatSkeleton, CardSkeleton, EmptyState, Button, Input, Select } from "../../../lib/components/ui"
+import { UtensilsCrossed, Plus, Apple, Droplets, Flame } from "lucide-react"
 
 const MEAL_ICONS: Record<string, string> = { breakfast: "🌅", lunch: "☀️", dinner: "🌙", snack: "🍿", other: "🍽️" }
 const DATE_RANGE_OPTIONS = [
@@ -33,16 +35,6 @@ function MacroBar({ label, value, unit, color }: { label: string; value: number 
         </div>
         <span className="text-xs font-medium text-gray-900 dark:text-gray-100 w-14 text-right">{value ?? 0}{unit}</span>
       </div>
-    </div>
-  )
-}
-
-function StatCard({ title, value, subtitle }: { title: string; value: string; subtitle?: string }) {
-  return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-      <p className="text-xs text-gray-500 dark:text-gray-400">{title}</p>
-      <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
-      {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>}
     </div>
   )
 }
@@ -77,11 +69,6 @@ export default function NutritionPage() {
     return { from: fromDate, to: toDate }
   }, [rangeDays])
 
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-  })
-  const users = usersResult?.data ?? []
 
   const { data: logsResult, isLoading } = useQuery({
     queryKey: ["nutrition-logs", selectedUserId, from, to],
@@ -148,116 +135,103 @@ export default function NutritionPage() {
   }, [avgStats])
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Nutrition</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Track meals, macros, and hydration to optimise your diet.</p>
-        </div>
-        {selectedUserId && (
-          <button type="button" onClick={() => setShowCreate(!showCreate)} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+    <div className="space-y-8">
+      <PageHeader
+        title="Nutrition"
+        subtitle="Track meals, macros, and hydration to optimise your diet."
+        actions={selectedUserId ? (
+          <Button icon={Plus} onClick={() => setShowCreate(!showCreate)}>
             {showCreate ? "Cancel" : "Log Meal"}
-          </button>
-        )}
-      </div>
-
-      {/* User select */}
-      <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-        <label htmlFor="nut-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
-        <select id="nut-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-          <option value="">Select a user…</option>
-          {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-        </select>
-      </div>
-
-      {!selectedUserId && <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-16">Select a user to view nutrition data.</p>}
+          </Button>
+        ) : undefined}
+      />
 
       {/* Create form */}
       {showCreate && selectedUserId && (
-        <div className="mb-6 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Log a Meal</h3>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Meal Type</label>
-              <select className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.mealType} onChange={(e) => setForm({ ...form, mealType: e.target.value })}>
-                <option value="breakfast">Breakfast</option>
-                <option value="lunch">Lunch</option>
-                <option value="dinner">Dinner</option>
-                <option value="snack">Snack</option>
-              </select>
+        <Card glow="brand">
+          <CardHeader title="Log a Meal" />
+          <CardContent>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Select
+                label="Meal Type"
+                options={[
+                  { value: "breakfast", label: "Breakfast" },
+                  { value: "lunch", label: "Lunch" },
+                  { value: "dinner", label: "Dinner" },
+                  { value: "snack", label: "Snack" },
+                ]}
+                value={form.mealType}
+                onChange={(e) => setForm({ ...form, mealType: e.target.value })}
+              />
+              <Input label="Name" placeholder="e.g. Grilled Chicken Salad" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <Input label="Calories" type="number" value={form.calories} onChange={(e) => setForm({ ...form, calories: e.target.value })} />
+              <Input label="Protein (g)" type="number" value={form.proteinG} onChange={(e) => setForm({ ...form, proteinG: e.target.value })} />
+              <Input label="Carbs (g)" type="number" value={form.carbsG} onChange={(e) => setForm({ ...form, carbsG: e.target.value })} />
+              <Input label="Fat (g)" type="number" value={form.fatG} onChange={(e) => setForm({ ...form, fatG: e.target.value })} />
+              <Input label="Water (ml)" type="number" value={form.waterMl} onChange={(e) => setForm({ ...form, waterMl: e.target.value })} />
             </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Name</label>
-              <input className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Grilled Chicken Salad" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Calories</label>
-              <input type="number" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.calories} onChange={(e) => setForm({ ...form, calories: e.target.value })} />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Protein (g)</label>
-              <input type="number" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.proteinG} onChange={(e) => setForm({ ...form, proteinG: e.target.value })} />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Carbs (g)</label>
-              <input type="number" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.carbsG} onChange={(e) => setForm({ ...form, carbsG: e.target.value })} />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Fat (g)</label>
-              <input type="number" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.fatG} onChange={(e) => setForm({ ...form, fatG: e.target.value })} />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Water (ml)</label>
-              <input type="number" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.waterMl} onChange={(e) => setForm({ ...form, waterMl: e.target.value })} />
-            </div>
-          </div>
-          <button type="button" onClick={() => createMut.mutate()} disabled={createMut.isPending || !form.name} className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
-            {createMut.isPending ? "Saving…" : "Save"}
-          </button>
-        </div>
+            <Button className="mt-4" onClick={() => createMut.mutate()} disabled={createMut.isPending || !form.name}>
+              {createMut.isPending ? "Saving…" : "Save"}
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Date range filter */}
       {selectedUserId && (
-        <div className="mb-6 flex items-center gap-2">
-          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mr-1">Range:</span>
-          {DATE_RANGE_OPTIONS.map((opt) => (
-            <button
-              key={opt.days}
-              type="button"
-              onClick={() => setRangeDays(opt.days)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                rangeDays === opt.days
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <Card>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mr-1">Range:</span>
+              {DATE_RANGE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.days}
+                  type="button"
+                  onClick={() => setRangeDays(opt.days)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    rangeDays === opt.days
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Loading state */}
+      {selectedUserId && isLoading && (
+        <div className="space-y-8">
+          <StatSkeleton count={4} />
+          <CardSkeleton count={2} />
         </div>
       )}
 
       {/* Summary cards */}
       {selectedUserId && (daily || weekly) && (
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {daily && (
             <>
-              <StatCard title="Today's Calories" value={daily.totalCalories.toLocaleString()} subtitle={`${daily.mealCount} meals logged`} />
-              <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Macros Today</p>
-                <div className="mt-2 space-y-2">
-                  <MacroBar label="Protein" value={daily.totalProtein} unit="g" color="bg-blue-500" />
-                  <MacroBar label="Carbs" value={daily.totalCarbs} unit="g" color="bg-amber-500" />
-                  <MacroBar label="Fat" value={daily.totalFat} unit="g" color="bg-rose-500" />
-                </div>
-              </div>
+              <DSStatCard label="Today's Calories" value={daily.totalCalories.toLocaleString()} icon={<Flame className="h-5 w-5" />} changeLabel={`${daily.mealCount} meals logged`} change={0} />
+              <Card>
+                <CardHeader title="Macros Today" />
+                <CardContent>
+                  <div className="space-y-2">
+                    <MacroBar label="Protein" value={daily.totalProtein} unit="g" color="bg-blue-500" />
+                    <MacroBar label="Carbs" value={daily.totalCarbs} unit="g" color="bg-amber-500" />
+                    <MacroBar label="Fat" value={daily.totalFat} unit="g" color="bg-rose-500" />
+                  </div>
+                </CardContent>
+              </Card>
             </>
           )}
           {weekly && (
             <>
-              <StatCard title="Weekly Avg Calories" value={Math.round(weekly.avgCalories).toLocaleString()} subtitle={`${weekly.days} day average`} />
-              <StatCard title="Hydration Avg" value={`${Math.round(weekly.avgWater)} ml`} />
+              <DSStatCard label="Weekly Avg Calories" value={Math.round(weekly.avgCalories).toLocaleString()} icon={<Apple className="h-5 w-5" />} changeLabel={`${weekly.days} day average`} change={0} />
+              <DSStatCard label="Hydration Avg" value={`${Math.round(weekly.avgWater)} ml`} icon={<Droplets className="h-5 w-5" />} />
             </>
           )}
         </div>
@@ -265,128 +239,128 @@ export default function NutritionPage() {
 
       {/* Enhanced avg stats from date-range data */}
       {selectedUserId && avgStats && (
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard title={`Avg Daily Calories (${rangeDays}d)`} value={avgStats.avgCalories.toLocaleString()} subtitle={`${dailyData.length} days with data`} />
-          <StatCard title="Avg Protein" value={`${avgStats.avgProtein}g`} />
-          <StatCard title="Avg Carbs" value={`${avgStats.avgCarbs}g`} />
-          <StatCard title="Avg Fat" value={`${avgStats.avgFat}g`} />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <DSStatCard label={`Avg Daily Calories (${rangeDays}d)`} value={avgStats.avgCalories.toLocaleString()} icon={<Flame className="h-5 w-5" />} changeLabel={`${dailyData.length} days with data`} change={0} />
+          <DSStatCard label="Avg Protein" value={`${avgStats.avgProtein}g`} />
+          <DSStatCard label="Avg Carbs" value={`${avgStats.avgCarbs}g`} />
+          <DSStatCard label="Avg Fat" value={`${avgStats.avgFat}g`} />
         </div>
       )}
 
       {/* Charts */}
       {selectedUserId && dailyData.length > 0 && (
-        <div className="mb-6 grid gap-6 lg:grid-cols-2">
-          {/* Calorie trend chart */}
-          <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-            <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Calorie Trend</h3>
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={dailyData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="calGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#9ca3af" tickFormatter={(v: string) => v.slice(5)} />
-                <YAxis tick={{ fontSize: 11 }} stroke="#9ca3af" />
-                <Tooltip contentStyle={{ backgroundColor: "#1f2937", border: "none", borderRadius: 8, fontSize: 12 }} labelStyle={{ color: "#d1d5db" }} itemStyle={{ color: "#a5b4fc" }} />
-                <ReferenceLine y={2000} stroke="#f59e0b" strokeDasharray="6 3" label={{ value: "2000 kcal", fill: "#f59e0b", fontSize: 11, position: "insideTopRight" }} />
-                <Area type="monotone" dataKey="calories" stroke="#6366f1" fill="url(#calGrad)" strokeWidth={2} dot={false} name="Calories" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Macro breakdown chart */}
-          <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-            <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Macro Breakdown</h3>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={dailyData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#9ca3af" tickFormatter={(v: string) => v.slice(5)} />
-                <YAxis tick={{ fontSize: 11 }} stroke="#9ca3af" unit="g" />
-                <Tooltip contentStyle={{ backgroundColor: "#1f2937", border: "none", borderRadius: 8, fontSize: 12 }} labelStyle={{ color: "#d1d5db" }} />
-                <Bar dataKey="protein" stackId="macros" fill={MACRO_COLORS.protein} name="Protein" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="carbs" stackId="macros" fill={MACRO_COLORS.carbs} name="Carbs" />
-                <Bar dataKey="fat" stackId="macros" fill={MACRO_COLORS.fat} name="Fat" radius={[4, 4, 0, 0]} />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Macro pie chart */}
-          {pieData.length > 0 && (
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm lg:col-span-2 flex flex-col items-center">
-              <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100 self-start">Average Macro Distribution</h3>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader title="Calorie Trend" />
+            <CardContent>
               <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3} dataKey="value" label={({ name, value }: { name: string; value: number }) => `${name} ${value}%`}>
-                    {pieData.map((_entry, idx) => (
-                      <Cell key={idx} fill={PIE_COLORS[idx]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: "#1f2937", border: "none", borderRadius: 8, fontSize: 12 }} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                </PieChart>
+                <AreaChart data={dailyData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="calGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#9ca3af" tickFormatter={(v: string) => v.slice(5)} />
+                  <YAxis tick={{ fontSize: 11 }} stroke="#9ca3af" />
+                  <Tooltip contentStyle={{ backgroundColor: "#1f2937", border: "none", borderRadius: 8, fontSize: 12 }} labelStyle={{ color: "#d1d5db" }} itemStyle={{ color: "#a5b4fc" }} />
+                  <ReferenceLine y={2000} stroke="#f59e0b" strokeDasharray="6 3" label={{ value: "2000 kcal", fill: "#f59e0b", fontSize: 11, position: "insideTopRight" }} />
+                  <Area type="monotone" dataKey="calories" stroke="#6366f1" fill="url(#calGrad)" strokeWidth={2} dot={false} name="Calories" />
+                </AreaChart>
               </ResponsiveContainer>
-            </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader title="Macro Breakdown" />
+            <CardContent>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={dailyData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#9ca3af" tickFormatter={(v: string) => v.slice(5)} />
+                  <YAxis tick={{ fontSize: 11 }} stroke="#9ca3af" unit="g" />
+                  <Tooltip contentStyle={{ backgroundColor: "#1f2937", border: "none", borderRadius: 8, fontSize: 12 }} labelStyle={{ color: "#d1d5db" }} />
+                  <Bar dataKey="protein" stackId="macros" fill={MACRO_COLORS.protein} name="Protein" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="carbs" stackId="macros" fill={MACRO_COLORS.carbs} name="Carbs" />
+                  <Bar dataKey="fat" stackId="macros" fill={MACRO_COLORS.fat} name="Fat" radius={[4, 4, 0, 0]} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {pieData.length > 0 && (
+            <Card className="lg:col-span-2">
+              <CardHeader title="Average Macro Distribution" />
+              <CardContent className="flex flex-col items-center">
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3} dataKey="value" label={({ name, value }: { name: string; value: number }) => `${name} ${value}%`}>
+                      {pieData.map((_entry, idx) => (
+                        <Cell key={idx} fill={PIE_COLORS[idx]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: "#1f2937", border: "none", borderRadius: 8, fontSize: 12 }} />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           )}
         </div>
       )}
 
       {/* Meal log table */}
-      {selectedUserId && isLoading && <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-16">Loading…</p>}
       {selectedUserId && !isLoading && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Meal Log</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{logs.length} entries in the last {rangeDays} days</p>
-          </div>
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-800/50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Meal</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Name</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Calories</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Macros</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Time</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {logs.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No meals logged yet.</td></tr>
-              )}
-              {logs.map((l, idx) => (
-                <tr key={l.id} className={`${idx % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50/50 dark:bg-gray-800/20"} hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors`}>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                      {MEAL_ICONS[l.mealType] ?? "🍽️"} {l.mealType}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{l.name}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">{l.calories != null ? l.calories.toLocaleString() : "—"}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1">
-                        <span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
-                        <span className="text-xs text-gray-600 dark:text-gray-400">{l.proteinG ?? 0}g</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="inline-block h-2 w-2 rounded-full bg-amber-500" />
-                        <span className="text-xs text-gray-600 dark:text-gray-400">{l.carbsG ?? 0}g</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="inline-block h-2 w-2 rounded-full bg-rose-500" />
-                        <span className="text-xs text-gray-600 dark:text-gray-400">{l.fatG ?? 0}g</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-right text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(l.loggedAt).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Card>
+          <CardHeader title="Meal Log" subtitle={logs.length + " entries in the last " + rangeDays + " days"} />
+          <CardContent className="p-0">
+            {logs.length === 0 ? (
+              <EmptyState icon={UtensilsCrossed} title="No meals logged yet" description="Start tracking your nutrition by logging your first meal." />
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-800/50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Meal</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Name</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Calories</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Macros</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">Time</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {logs.map((l, idx) => (
+                    <tr key={l.id} className={`${idx % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50/50 dark:bg-gray-800/20"} hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors`}>
+                      <td className="px-4 py-3">
+                        <Badge>{MEAL_ICONS[l.mealType] ?? "🍽️"} {l.mealType}</Badge>
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{l.name}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">{l.calories != null ? l.calories.toLocaleString() : "—"}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1">
+                            <span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{l.proteinG ?? 0}g</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="inline-block h-2 w-2 rounded-full bg-amber-500" />
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{l.carbsG ?? 0}g</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="inline-block h-2 w-2 rounded-full bg-rose-500" />
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{l.fatG ?? 0}g</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(l.loggedAt).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </CardContent>
+        </Card>
       )}
     </div>
   )

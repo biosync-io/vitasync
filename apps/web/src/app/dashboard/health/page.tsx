@@ -3,8 +3,10 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
-import { type HealthMetric, type HealthSummary, healthApi, usersApi } from "../../../lib/api"
+import { type HealthMetric, type HealthSummary, healthApi} from "../../../lib/api"
 import { Pagination } from "../../../lib/Pagination"
+import { PageHeader, Card, CardHeader, CardContent, StatCard, Badge, Select, Input, TableSkeleton, EmptyState } from "../../../lib/components/ui"
+import { Database, Filter } from "lucide-react"
 
 const METRIC_LABELS: Record<string, string> = {
   steps: "Steps",
@@ -22,7 +24,7 @@ const METRIC_LABELS: Record<string, string> = {
 const PAGE_SIZE = 100
 
 export default function HealthDataPage() {
-  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
   const [metricType, setMetricType] = useState<string>("")
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
@@ -32,13 +34,7 @@ export default function HealthDataPage() {
     setPage(1)
   }
 
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-    enabled: isAdmin,
-  })
 
-  const usersForSelect = usersResult?.data ?? []
 
   const { data: summary = [] } = useQuery<HealthSummary[]>({
     queryKey: ["health-summary", selectedUserId],
@@ -66,196 +62,119 @@ export default function HealthDataPage() {
   const totalMetrics = metricsResult?.count ?? 0
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">Health Data</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Browse, filter, and explore synced health metrics for any user.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Health Data"
+        subtitle="Browse, filter, and explore synced health metrics for any user."
+      />
 
       {/* Filters */}
-      <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Filters</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {isAdmin && (
-            <div>
-              <label htmlFor="health-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-                User
-              </label>
-              <select
-                id="health-user"
-                className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
-                value={selectedUserId}
-                onChange={(e) => {
-                  setSelectedUserId(e.target.value)
-                  setMetricType("")
-                  resetPage()
-                }}
-              >
-                <option value="">Select a user…</option>
-                {usersForSelect.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.displayName ?? u.email ?? u.externalId}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          <div>
-            <label htmlFor="health-metric-type" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-              Metric Type
-            </label>
-            <select
-              id="health-metric-type"
-              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
+      <Card>
+        <CardHeader title="Filters" icon={<Filter className="h-4 w-4" />} />
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Select
+              label="Metric Type"
+              options={[
+                { value: "", label: "All metrics" },
+                ...summary.map((s) => ({
+                  value: s.metricType,
+                  label: `${METRIC_LABELS[s.metricType] ?? s.metricType} (${s.count})`,
+                })),
+              ]}
               value={metricType}
               onChange={(e) => { setMetricType(e.target.value); resetPage() }}
               disabled={!selectedUserId}
-            >
-              <option value="">All metrics</option>
-              {summary.map((s) => (
-                <option key={s.metricType} value={s.metricType}>
-                  {METRIC_LABELS[s.metricType] ?? s.metricType} ({s.count})
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="health-from" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-              From
-            </label>
-            <input
-              id="health-from"
-              type="date"
-              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
-              value={from}
-              onChange={(e) => { setFrom(e.target.value); resetPage() }}
             />
+            <Input label="From" type="date" value={from} onChange={(e) => { setFrom(e.target.value); resetPage() }} />
+            <Input label="To" type="date" value={to} onChange={(e) => { setTo(e.target.value); resetPage() }} />
           </div>
-          <div>
-            <label htmlFor="health-to" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-              To
-            </label>
-            <input
-              id="health-to"
-              type="date"
-              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
-              value={to}
-              onChange={(e) => { setTo(e.target.value); resetPage() }}
-            />
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Summary cards */}
       {selectedUserId && summary.length > 0 && (
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 stagger-grid">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {summary.map((s) => (
-            <button
-              type="button"
+            <div
               key={s.metricType}
               onClick={() => { setMetricType(s.metricType === metricType ? "" : s.metricType); resetPage() }}
-              className={`rounded-xl border p-4 text-left transition-colors ${
-                metricType === s.metricType
-                  ? "border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/30"
-                  : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-indigo-200 dark:hover:border-indigo-800 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20"
-              }`}
+              className="cursor-pointer"
             >
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">
-                {METRIC_LABELS[s.metricType] ?? s.metricType}
-              </p>
-              <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">{s.count.toLocaleString()}</p>
-              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">data points</p>
-            </button>
+              <StatCard
+                label={METRIC_LABELS[s.metricType] ?? s.metricType}
+                value={s.count.toLocaleString()}
+                color={metricType === s.metricType ? "brand" : "default"}
+              />
+            </div>
           ))}
         </div>
       )}
 
       {/* Data table */}
-      {!selectedUserId && isAdmin ? (
-        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 py-20 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Select a user to browse their health data.</p>
-        </div>
-      ) : !selectedUserId ? null : loadingMetrics ? (
-        <div className="space-y-2">
-          {Array.from({ length: 8 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton loader — items have no stable identity
-            <div key={i} className="h-10 rounded-lg bg-gray-100 animate-pulse" />
-          ))}
-        </div>
+      {!selectedUserId ? null : loadingMetrics ? (
+        <TableSkeleton rows={8} cols={5} />
       ) : metrics.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 py-16 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            No health data found for this user with the current filters.
-          </p>
-          <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-            Trigger a sync via the Users page or{" "}
-            <code className="rounded bg-gray-100 px-1">
-              POST /v1/users/:id/connections/:cid/sync
-            </code>
-          </p>
-        </div>
+        <EmptyState
+          icon={Database}
+          title="No health data found"
+          description="No data matches the current filters. Trigger a sync via the Users page."
+        />
       ) : (
         <>
-          <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-          <div className="border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between">
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              {totalMetrics.toLocaleString()} records
-              {metricType && (
-                <span className="ml-2 rounded-full bg-indigo-100 dark:bg-indigo-900/30 px-2 py-0.5 text-xs text-indigo-700 dark:text-indigo-300">
-                  {METRIC_LABELS[metricType] ?? metricType}
-                </span>
-              )}
-            </p>
-          </div>
-
-          {/* Desktop table */}
-          <div className="hidden sm:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-800/60">
-              <tr>
-                {["Metric", "Value", "Unit", "Recorded At", "Source"].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {metrics.map((m) => (
-                <MetricRow key={m.id} metric={m} />
-              ))}
-            </tbody>
-          </table>
-          </div>
-
-          {/* Mobile card view */}
-          <div className="sm:hidden divide-y divide-gray-100 dark:divide-gray-800">
-            {metrics.map((m) => (
-              <div key={`m-${m.id}`} className="px-4 py-3">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {METRIC_LABELS[m.metricType] ?? m.metricType}
-                  </span>
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-300 tabular-nums">
-                    {typeof m.value === "number"
-                      ? m.value.toLocaleString(undefined, { maximumFractionDigits: 2 })
-                      : m.value}
-                    {m.unit ? ` ${m.unit}` : ""}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
-                  <span>{new Date(m.recordedAt).toLocaleString()}</span>
-                  <span>{m.source ?? m.providerId ?? "—"}</span>
-                </div>
+          <Card>
+            <CardHeader
+              title={`${totalMetrics.toLocaleString()} records`}
+              action={metricType ? <Badge variant="info">{METRIC_LABELS[metricType] ?? metricType}</Badge> : undefined}
+            />
+            <CardContent className="p-0">
+              {/* Desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-800/60">
+                    <tr>
+                      {["Metric", "Value", "Unit", "Recorded At", "Source"].map((h) => (
+                        <th
+                          key={h}
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {metrics.map((m) => (
+                      <MetricRow key={m.id} metric={m} />
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
-          </div>
+
+              {/* Mobile card view */}
+              <div className="sm:hidden divide-y divide-gray-100 dark:divide-gray-800">
+                {metrics.map((m) => (
+                  <div key={`m-${m.id}`} className="px-4 py-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {METRIC_LABELS[m.metricType] ?? m.metricType}
+                      </span>
+                      <span className="text-sm font-bold text-gray-700 dark:text-gray-300 tabular-nums">
+                        {typeof m.value === "number"
+                          ? m.value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+                          : m.value}
+                        {m.unit ? ` ${m.unit}` : ""}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+                      <span>{new Date(m.recordedAt).toLocaleString()}</span>
+                      <span>{m.source ?? m.providerId ?? "—"}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
           <Pagination page={page} pageSize={PAGE_SIZE} total={totalMetrics} onChange={setPage} />
         </>
       )}

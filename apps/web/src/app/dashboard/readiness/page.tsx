@@ -12,6 +12,8 @@ import {
   readinessApi, analyticsApi, usersApi,
   type ReadinessData, type TrainingLoadData, type TrainingLoadHistoryEntry, type RecoveryPrediction,
 } from "../../../lib/api"
+import { PageHeader, Badge, Card, CardHeader, CardContent, StatCard as DSStatCard, StatSkeleton, CardSkeleton, MetricRing, MetricBar, EmptyState } from "../../../lib/components/ui"
+import { Activity, Shield, Zap, Heart, Brain } from "lucide-react"
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -79,12 +81,12 @@ function ScoreGauge({ score, size = 180 }: { score: number; size?: number }) {
 
 function SignalBar({ label, icon, value, weight }: { label: string; icon: string; value: number | null; weight?: number | undefined }) {
   const v = value ?? 0
-  const color = v >= 70 ? "from-emerald-400 to-emerald-500" : v >= 50 ? "from-yellow-400 to-amber-500" : v >= 30 ? "from-orange-400 to-orange-500" : "from-red-400 to-red-500"
+  const barColor = v >= 70 ? "vitality" : v >= 50 ? "amber" : "accent"
   return (
-    <div className="group">
+    <div>
       <div className="flex items-center justify-between text-xs mb-1">
         <div className="flex items-center gap-1.5">
-          <span className="group-hover:scale-110 transition-transform">{icon}</span>
+          <span>{icon}</span>
           <span className="text-gray-600 dark:text-gray-400 font-medium">{label}</span>
         </div>
         <div className="flex items-center gap-2">
@@ -92,19 +94,7 @@ function SignalBar({ label, icon, value, weight }: { label: string; icon: string
           <span className="font-bold text-gray-900 dark:text-gray-50 min-w-[28px] text-right">{v.toFixed(0)}</span>
         </div>
       </div>
-      <div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
-        <div className={`h-full rounded-full bg-gradient-to-r ${color} transition-all duration-700`} style={{ width: `${Math.min(100, v)}%` }} />
-      </div>
-    </div>
-  )
-}
-
-function StatCard({ icon, label, value, accent }: { icon: string; label: string; value: string; accent?: string | undefined }) {
-  return (
-    <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card hover:shadow-card-hover transition-all duration-300 text-center">
-      <span className="text-2xl">{icon}</span>
-      <p className={`mt-1 text-xl font-bold ${accent ?? "text-gray-900 dark:text-gray-50"}`}>{value}</p>
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</p>
+      <MetricBar value={v} max={100} color={barColor} showValue={false} />
     </div>
   )
 }
@@ -130,17 +120,11 @@ function CustomTooltip({ active, payload, label }: any) {
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function ReadinessPage() {
-  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
   const [rangeDays, setRangeDays] = useState(30)
   const [tablePage, setTablePage] = useState(0)
 
   // Queries
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-    enabled: isAdmin,
-  })
-  const users = usersResult?.data ?? []
 
   const { data: readiness, isLoading: loadingReadiness } = useQuery({
     queryKey: ["readiness", selectedUserId],
@@ -197,248 +181,241 @@ export default function ReadinessPage() {
   const statusStyle = trainingLoad ? (STATUS_STYLES[trainingLoad.status] ?? STATUS_STYLES.neutral!) : STATUS_STYLES.neutral!
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="animate-fade-in-down">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Readiness & Training Load</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Proprietary readiness score, recovery prediction, and Training Stress Balance (TSB).
-        </p>
-      </div>
+      <PageHeader
+        title="Readiness & Training Load"
+        subtitle="Proprietary readiness score, recovery prediction, and Training Stress Balance (TSB)."
+        badge={readiness ? <Badge variant={readiness.score >= 80 ? "success" : readiness.score >= 60 ? "warning" : "danger"} dot pulse>{recStyle.label}</Badge> : undefined}
+      />
 
-      {/* User select + Range filter */}
-      <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
-        <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-          {isAdmin && (
-            <div className="flex-1">
-              <label htmlFor="rd-user" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">User</label>
-              <select id="rd-user" className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-                <option value="">Select a user…</option>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-              </select>
-            </div>
-          )}
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">History Period</label>
-            <div className="flex gap-1">
-              {RANGE_OPTIONS.map((r) => (
-                <button key={r.label} type="button" onClick={() => { setRangeDays(r.days); setTablePage(0) }}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                    rangeDays === r.days
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-                  }`}>
-                  {r.label}
-                </button>
-              ))}
+      {/* Range filter */}
+      <Card>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">History Period</label>
+              <div className="flex gap-1">
+                {RANGE_OPTIONS.map((r) => (
+                  <button key={r.label} type="button" onClick={() => { setRangeDays(r.days); setTablePage(0) }}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                      rangeDays === r.days
+                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    }`}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {!selectedUserId && isAdmin && (
-        <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
-          <span className="text-6xl mb-4 animate-float">⚡</span>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Select a user to view readiness and training load.</p>
-        </div>
-      )}
+        </CardContent>
+      </Card>
 
       {selectedUserId && isLoading && (
-        <div className="flex items-center justify-center py-20">
-          <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+        <div className="space-y-8">
+          <StatSkeleton count={4} />
+          <CardSkeleton count={3} />
         </div>
       )}
 
       {selectedUserId && !isLoading && readiness && (
-        <div className="space-y-6 stagger-grid">
+        <div className="space-y-8">
 
-          {/* Top row: Readiness + Recommendation + Training Load */}
+          {/* Top row: Readiness + Signal Breakdown + Training Load */}
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Readiness Score */}
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card hover:shadow-card-hover transition-all duration-300 flex flex-col items-center">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Readiness Score</h3>
-              <ScoreGauge score={readiness.score} />
-              <div className={`mt-3 inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${recStyle.bg} px-4 py-2 ${recStyle.text} text-sm font-bold shadow-lg`}>
-                <span>{recStyle.icon}</span>
-                <span>{recStyle.label}</span>
-              </div>
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center max-w-xs leading-relaxed">
-                {readiness.recommendationText}
-              </p>
-              <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-500">
-                Confidence: {(readiness.confidence * 100).toFixed(0)}% · {new Date(readiness.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-              </p>
-            </div>
+            <Card glow="brand">
+              <CardHeader title="Readiness Score" />
+              <CardContent className="flex flex-col items-center">
+                <ScoreGauge score={readiness.score} />
+                <div className={`mt-3 inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${recStyle.bg} px-4 py-2 ${recStyle.text} text-sm font-bold shadow-lg`}>
+                  <span>{recStyle.icon}</span>
+                  <span>{recStyle.label}</span>
+                </div>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center max-w-xs leading-relaxed">
+                  {readiness.recommendationText}
+                </p>
+                <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-500">
+                  Confidence: {(readiness.confidence * 100).toFixed(0)}% · {new Date(readiness.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </p>
+              </CardContent>
+            </Card>
 
             {/* Signal Breakdown */}
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Signal Breakdown</h3>
-              <div className="space-y-3">
-                <SignalBar label="HRV" icon="💓" value={readiness.signals.hrv?.score ?? null} weight={readiness.signals.hrv?.weight} />
-                <SignalBar label="Sleep" icon="🌙" value={readiness.signals.sleep?.score ?? null} weight={readiness.signals.sleep?.weight} />
-                <SignalBar label="Resting HR" icon="❤️" value={readiness.signals.restingHr?.score ?? null} weight={readiness.signals.restingHr?.weight} />
-                <SignalBar label="Strain Recovery" icon="🔋" value={readiness.signals.strain?.score ?? null} weight={readiness.signals.strain?.weight} />
-                <SignalBar label="Physiological" icon="🧬" value={readiness.signals.physiological?.score ?? null} weight={readiness.signals.physiological?.weight} />
-              </div>
-            </div>
+            <Card>
+              <CardHeader title="Signal Breakdown" />
+              <CardContent>
+                <div className="space-y-3">
+                  <SignalBar label="HRV" icon="💓" value={readiness.signals.hrv?.score ?? null} weight={readiness.signals.hrv?.weight} />
+                  <SignalBar label="Sleep" icon="🌙" value={readiness.signals.sleep?.score ?? null} weight={readiness.signals.sleep?.weight} />
+                  <SignalBar label="Resting HR" icon="❤️" value={readiness.signals.restingHr?.score ?? null} weight={readiness.signals.restingHr?.weight} />
+                  <SignalBar label="Strain Recovery" icon="🔋" value={readiness.signals.strain?.score ?? null} weight={readiness.signals.strain?.weight} />
+                  <SignalBar label="Physiological" icon="🧬" value={readiness.signals.physiological?.score ?? null} weight={readiness.signals.physiological?.weight} />
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Training Load + Recovery */}
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-              {trainingLoad && (
-                <>
-                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Training Load</h3>
-                  <div className="grid grid-cols-3 gap-3 mb-4">
-                    <div className="text-center rounded-xl bg-blue-50 dark:bg-blue-900/20 p-3">
-                      <p className="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400 font-semibold">Fitness</p>
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{trainingLoad.ctl}</p>
-                      <p className="text-[10px] text-gray-400">CTL</p>
+            <Card>
+              <CardHeader title="Training Load" />
+              <CardContent>
+                {trainingLoad && (
+                  <>
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="text-center rounded-xl bg-blue-50 dark:bg-blue-900/20 p-3">
+                        <p className="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400 font-semibold">Fitness</p>
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{trainingLoad.ctl}</p>
+                        <p className="text-[10px] text-gray-400">CTL</p>
+                      </div>
+                      <div className="text-center rounded-xl bg-orange-50 dark:bg-orange-900/20 p-3">
+                        <p className="text-[10px] uppercase tracking-wider text-orange-600 dark:text-orange-400 font-semibold">Fatigue</p>
+                        <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{trainingLoad.atl}</p>
+                        <p className="text-[10px] text-gray-400">ATL</p>
+                      </div>
+                      <div className="text-center rounded-xl bg-emerald-50 dark:bg-emerald-900/20 p-3">
+                        <p className="text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">Form</p>
+                        <p className={`text-2xl font-bold ${trainingLoad.tsb >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                          {trainingLoad.tsb > 0 ? "+" : ""}{trainingLoad.tsb}
+                        </p>
+                        <p className="text-[10px] text-gray-400">TSB</p>
+                      </div>
                     </div>
-                    <div className="text-center rounded-xl bg-orange-50 dark:bg-orange-900/20 p-3">
-                      <p className="text-[10px] uppercase tracking-wider text-orange-600 dark:text-orange-400 font-semibold">Fatigue</p>
-                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{trainingLoad.atl}</p>
-                      <p className="text-[10px] text-gray-400">ATL</p>
+                    <div className={`flex items-center gap-2 rounded-xl ${statusStyle.bg} px-3 py-2 mb-4`}>
+                      <span>{statusStyle.icon}</span>
+                      <span className={`text-sm font-semibold ${statusStyle.color}`}>{statusStyle.label}</span>
                     </div>
-                    <div className="text-center rounded-xl bg-emerald-50 dark:bg-emerald-900/20 p-3">
-                      <p className="text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">Form</p>
-                      <p className={`text-2xl font-bold ${trainingLoad.tsb >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                        {trainingLoad.tsb > 0 ? "+" : ""}{trainingLoad.tsb}
-                      </p>
-                      <p className="text-[10px] text-gray-400">TSB</p>
+                  </>
+                )}
+                {recovery && (
+                  <div className="border-t border-gray-200 dark:border-gray-800 pt-3">
+                    <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Recovery Prediction</h3>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">State</span>
+                        <span className={`font-semibold ${recovery.state === "recovered" ? "text-emerald-600 dark:text-emerald-400" : recovery.state === "recovering" ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"}`}>
+                          {recovery.state.charAt(0).toUpperCase() + recovery.state.slice(1)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">Est. Recovery</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-50">{recovery.predictedRecoveryHours.toFixed(1)}h</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">Next Training</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-50">{shortDate(recovery.nextTrainingWindow)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">Confidence</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-50">{(recovery.confidence * 100).toFixed(0)}%</span>
+                      </div>
                     </div>
+                    {recovery.factors.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {recovery.factors.slice(0, 4).map((f, i) => (
+                          <div key={i} className="flex items-center gap-1.5 text-[10px]">
+                            <span className={f.impact === "positive" ? "text-emerald-500" : f.impact === "negative" ? "text-red-500" : "text-gray-400"}>
+                              {f.impact === "positive" ? "↑" : f.impact === "negative" ? "↓" : "→"}
+                            </span>
+                            <span className="text-gray-600 dark:text-gray-400">{f.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className={`flex items-center gap-2 rounded-xl ${statusStyle.bg} px-3 py-2 mb-4`}>
-                    <span>{statusStyle.icon}</span>
-                    <span className={`text-sm font-semibold ${statusStyle.color}`}>{statusStyle.label}</span>
-                  </div>
-                </>
-              )}
-              {recovery && (
-                <div className="border-t border-gray-200 dark:border-gray-800 pt-3">
-                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Recovery Prediction</h3>
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">State</span>
-                      <span className={`font-semibold ${recovery.state === "recovered" ? "text-emerald-600 dark:text-emerald-400" : recovery.state === "recovering" ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"}`}>
-                        {recovery.state.charAt(0).toUpperCase() + recovery.state.slice(1)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">Est. Recovery</span>
-                      <span className="font-semibold text-gray-900 dark:text-gray-50">{recovery.predictedRecoveryHours.toFixed(1)}h</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">Next Training</span>
-                      <span className="font-semibold text-gray-900 dark:text-gray-50">{shortDate(recovery.nextTrainingWindow)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">Confidence</span>
-                      <span className="font-semibold text-gray-900 dark:text-gray-50">{(recovery.confidence * 100).toFixed(0)}%</span>
-                    </div>
-                  </div>
-                  {recovery.factors.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      {recovery.factors.slice(0, 4).map((f, i) => (
-                        <div key={i} className="flex items-center gap-1.5 text-[10px]">
-                          <span className={f.impact === "positive" ? "text-emerald-500" : f.impact === "negative" ? "text-red-500" : "text-gray-400"}>
-                            {f.impact === "positive" ? "↑" : f.impact === "negative" ? "↓" : "→"}
-                          </span>
-                          <span className="text-gray-600 dark:text-gray-400">{f.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Summary Stats */}
           {historyStats && (
-            <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
-              <StatCard icon="📊" label="Avg TSB" value={historyStats.avgTSB}
-                accent={Number(historyStats.avgTSB) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"} />
-              <StatCard icon="⚡" label="Avg Strain" value={historyStats.avgStrain} />
-              <StatCard icon="🏆" label="Peak Fitness" value={String(historyStats.peakFitness)} accent="text-blue-600 dark:text-blue-400" />
-              <StatCard icon="🎯" label="Days in Zone" value={`${historyStats.daysInZone}/${history.length}`} />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <DSStatCard icon={<span className="text-xl">📊</span>} label="Avg TSB" value={historyStats.avgTSB} />
+              <DSStatCard icon={<span className="text-xl">⚡</span>} label="Avg Strain" value={historyStats.avgStrain} />
+              <DSStatCard icon={<span className="text-xl">🏆</span>} label="Peak Fitness" value={String(historyStats.peakFitness)} />
+              <DSStatCard icon={<span className="text-xl">🎯</span>} label="Days in Zone" value={`${historyStats.daysInZone}/${history.length}`} />
             </div>
           )}
 
           {/* Daily Strain Chart */}
           {trainingLoad && trainingLoad.dailyStrain.length > 0 && (
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Recent Daily Strain</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={trainingLoad.dailyStrain.map((d) => ({ ...d, shortDate: shortDate(d.date) }))} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#6b7280" strokeOpacity={0.15} />
-                  <XAxis dataKey="shortDate" tick={{ fontSize: 11, fill: "#9ca3af" }} stroke="#9ca3af" />
-                  <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} stroke="#9ca3af" />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="strain" name="Strain" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <Card>
+              <CardHeader title="Recent Daily Strain" />
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={trainingLoad.dailyStrain.map((d) => ({ ...d, shortDate: shortDate(d.date) }))} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#6b7280" strokeOpacity={0.15} />
+                    <XAxis dataKey="shortDate" tick={{ fontSize: 11, fill: "#9ca3af" }} stroke="#9ca3af" />
+                    <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} stroke="#9ca3af" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="strain" name="Strain" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           )}
 
           {/* Training Load Trend Chart */}
           {history.length > 0 && (
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">Training Load Trend</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={history} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#6b7280" strokeOpacity={0.15} />
-                  <XAxis dataKey="shortDate" tick={{ fontSize: 11, fill: "#9ca3af" }} stroke="#9ca3af" />
-                  <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} stroke="#9ca3af" />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: "12px" }} />
-                  <ReferenceLine y={0} stroke="#9ca3af" strokeOpacity={0.5} />
-                  <Line type="monotone" dataKey="ctl" name="Fitness (CTL)" stroke="#3b82f6" strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="atl" name="Fatigue (ATL)" stroke="#f97316" strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="tsb" name="Form (TSB)" stroke="#10b981" strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <Card>
+              <CardHeader title="Training Load Trend" />
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={history} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#6b7280" strokeOpacity={0.15} />
+                    <XAxis dataKey="shortDate" tick={{ fontSize: 11, fill: "#9ca3af" }} stroke="#9ca3af" />
+                    <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} stroke="#9ca3af" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: "12px" }} />
+                    <ReferenceLine y={0} stroke="#9ca3af" strokeOpacity={0.5} />
+                    <Line type="monotone" dataKey="ctl" name="Fitness (CTL)" stroke="#3b82f6" strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="atl" name="Fatigue (ATL)" stroke="#f97316" strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="tsb" name="Form (TSB)" stroke="#10b981" strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 4 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           )}
 
           {/* TSB Zone Chart (area) */}
           {history.length > 0 && (
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">
-                Form (TSB) & Daily Strain
-              </h3>
-              <ResponsiveContainer width="100%" height={240}>
-                <AreaChart data={history} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="tsbGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
-                    </linearGradient>
-                    <linearGradient id="strainGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#6b7280" strokeOpacity={0.15} />
-                  <XAxis dataKey="shortDate" tick={{ fontSize: 11, fill: "#9ca3af" }} stroke="#9ca3af" />
-                  <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} stroke="#9ca3af" />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: "12px" }} />
-                  <ReferenceLine y={0} stroke="#9ca3af" strokeOpacity={0.5} />
-                  <ReferenceLine y={25} stroke="#10b981" strokeDasharray="4 4" strokeOpacity={0.4} />
-                  <ReferenceLine y={-10} stroke="#ef4444" strokeDasharray="4 4" strokeOpacity={0.4} />
-                  <Area type="monotone" dataKey="tsb" name="Form (TSB)" stroke="#10b981" fill="url(#tsbGrad)" strokeWidth={2} dot={false} />
-                  <Area type="monotone" dataKey="dailyStrain" name="Daily Strain" stroke="#8b5cf6" fill="url(#strainGrad)" strokeWidth={1.5} dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            <Card>
+              <CardHeader title="Form (TSB) & Daily Strain" />
+              <CardContent>
+                <ResponsiveContainer width="100%" height={240}>
+                  <AreaChart data={history} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="tsbGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
+                      </linearGradient>
+                      <linearGradient id="strainGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#6b7280" strokeOpacity={0.15} />
+                    <XAxis dataKey="shortDate" tick={{ fontSize: 11, fill: "#9ca3af" }} stroke="#9ca3af" />
+                    <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} stroke="#9ca3af" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: "12px" }} />
+                    <ReferenceLine y={0} stroke="#9ca3af" strokeOpacity={0.5} />
+                    <ReferenceLine y={25} stroke="#10b981" strokeDasharray="4 4" strokeOpacity={0.4} />
+                    <ReferenceLine y={-10} stroke="#ef4444" strokeDasharray="4 4" strokeOpacity={0.4} />
+                    <Area type="monotone" dataKey="tsb" name="Form (TSB)" stroke="#10b981" fill="url(#tsbGrad)" strokeWidth={2} dot={false} />
+                    <Area type="monotone" dataKey="dailyStrain" name="Daily Strain" stroke="#8b5cf6" fill="url(#strainGrad)" strokeWidth={1.5} dot={false} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           )}
 
           {/* Historical Data Table */}
-          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                Training History ({sortedHistory.length} days)
-              </h3>
-              {totalPages > 1 && (
+          <Card>
+            <CardHeader
+              title={`Training History (${sortedHistory.length} days)`}
+              action={totalPages > 1 ? (
                 <div className="flex items-center gap-2">
                   <button type="button" disabled={tablePage === 0} onClick={() => setTablePage((p) => p - 1)}
                     className="rounded-lg px-2.5 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 transition-all">
@@ -450,48 +427,49 @@ export default function ReadinessPage() {
                     Next →
                   </button>
                 </div>
+              ) : undefined}
+            />
+            <CardContent>
+              {sortedHistory.length === 0 ? (
+                <EmptyState icon={Activity} title="No training history yet" description="Data will appear once enough workouts are synced." />
+              ) : (
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-800">
+                        {["Date", "Strain", "Fitness (CTL)", "Fatigue (ATL)", "Form (TSB)", "Status"].map((h) => (
+                          <th key={h} className="py-2.5 px-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedHistory.map((h, i) => {
+                        const st = STATUS_STYLES[h.status] ?? STATUS_STYLES.neutral!
+                        return (
+                          <tr key={h.date} className={`border-b border-gray-100 dark:border-gray-800/50 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/30 ${i % 2 === 1 ? "bg-gray-50/30 dark:bg-gray-800/10" : ""}`}>
+                            <td className="py-2.5 px-3 text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap">
+                              {new Date(h.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                            </td>
+                            <td className="py-2.5 px-3 font-bold text-purple-600 dark:text-purple-400">{h.dailyStrain.toFixed(1)}</td>
+                            <td className="py-2.5 px-3 text-blue-600 dark:text-blue-400 font-medium">{h.ctl}</td>
+                            <td className="py-2.5 px-3 text-orange-600 dark:text-orange-400 font-medium">{h.atl}</td>
+                            <td className={`py-2.5 px-3 font-bold ${h.tsb >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                              {h.tsb > 0 ? "+" : ""}{h.tsb}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className={`inline-flex items-center gap-1 rounded-full ${st.bg} px-2 py-0.5 text-xs font-semibold ${st.color}`}>
+                                {st.icon} {st.label}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
-            </div>
-
-            {sortedHistory.length === 0 ? (
-              <p className="text-xs text-gray-500 dark:text-gray-400 py-8 text-center">No training history yet.</p>
-            ) : (
-              <div className="overflow-x-auto -mx-6 px-6">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200 dark:border-gray-800">
-                      {["Date", "Strain", "Fitness (CTL)", "Fatigue (ATL)", "Form (TSB)", "Status"].map((h) => (
-                        <th key={h} className="py-2.5 px-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pagedHistory.map((h, i) => {
-                      const st = STATUS_STYLES[h.status] ?? STATUS_STYLES.neutral!
-                      return (
-                        <tr key={h.date} className={`border-b border-gray-100 dark:border-gray-800/50 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/30 ${i % 2 === 1 ? "bg-gray-50/30 dark:bg-gray-800/10" : ""}`}>
-                          <td className="py-2.5 px-3 text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap">
-                            {new Date(h.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-                          </td>
-                          <td className="py-2.5 px-3 font-bold text-purple-600 dark:text-purple-400">{h.dailyStrain.toFixed(1)}</td>
-                          <td className="py-2.5 px-3 text-blue-600 dark:text-blue-400 font-medium">{h.ctl}</td>
-                          <td className="py-2.5 px-3 text-orange-600 dark:text-orange-400 font-medium">{h.atl}</td>
-                          <td className={`py-2.5 px-3 font-bold ${h.tsb >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                            {h.tsb > 0 ? "+" : ""}{h.tsb}
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span className={`inline-flex items-center gap-1 rounded-full ${st.bg} px-2 py-0.5 text-xs font-semibold ${st.color}`}>
-                              {st.icon} {st.label}
-                            </span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

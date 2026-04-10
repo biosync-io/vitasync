@@ -17,7 +17,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import { type HealthMetric, type WorkoutEvent, eventsApi, healthApi, usersApi } from "../../../lib/api"
+import { type HealthMetric, type WorkoutEvent, eventsApi, healthApi} from "../../../lib/api"
+import { PageHeader, Card, CardHeader, CardContent, StatCard as DSStatCard, Badge, Select, Input, StatSkeleton, CardSkeleton, TableSkeleton, EmptyState, Button } from "../../../lib/components/ui"
+import { Activity as ActivityIcon, Filter, Dumbbell, Moon, Flame, Heart, BarChart3 } from "lucide-react"
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -97,7 +99,7 @@ function groupByDate<T>(
 // ── main page ──────────────────────────────────────────────────────────────
 
 export default function ActivityPage() {
-  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
   const [eventType, setEventType] = useState("")
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
@@ -105,13 +107,7 @@ export default function ActivityPage() {
   const [accumulated, setAccumulated] = useState<WorkoutEvent[]>([])
   const [view, setView] = useState<"table" | "charts">("table")
 
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 100 }),
-    enabled: isAdmin,
-  })
 
-  const users = usersResult?.data ?? []
 
   const { data: tableResult, isLoading } = useQuery({
     queryKey: ["activity-table", selectedUserId, eventType, from, to, cursor],
@@ -161,104 +157,39 @@ export default function ActivityPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">Activity</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Browse workouts, sleep sessions, and passive activities synced from wearables.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader title="Activity" subtitle="Browse workouts, sleep sessions, and passive activities synced from wearables." />
 
-      <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Filters</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {isAdmin && (
-            <FilterField label="User">
-              <select
-                id="activity-user"
-                className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-                value={selectedUserId}
-                onChange={(e) => {
-                  setSelectedUserId(e.target.value)
-                  resetFilters()
-                }}
-              >
-                <option value="">Select a user…</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.displayName ?? u.email ?? u.externalId}
-                  </option>
-                ))}
-              </select>
-            </FilterField>
-          )}
-
-          <FilterField label="Event Type">
-            <select
-              id="activity-event-type"
-              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-              value={eventType}
-              onChange={(e) => {
-                setEventType(e.target.value)
-                resetFilters()
-              }}
-              disabled={!selectedUserId}
-            >
-              <option value="">All types</option>
-              <option value="workout">Workout</option>
-              <option value="sleep">Sleep</option>
-              <option value="activity">Activity</option>
-            </select>
-          </FilterField>
-
-          <FilterField label="From">
-            <input
-              id="activity-from"
-              type="date"
-              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-              value={from}
-              onChange={(e) => {
-                setFrom(e.target.value)
-                resetFilters()
-              }}
-            />
-          </FilterField>
-
-          <FilterField label="To">
-            <input
-              id="activity-to"
-              type="date"
-              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-              value={to}
-              onChange={(e) => {
-                setTo(e.target.value)
-                resetFilters()
-              }}
-            />
-          </FilterField>
-        </div>
-      </div>
-
-      {!selectedUserId && isAdmin ? (
-        <EmptyCard message="Select a user to browse their activity." />
-      ) : !selectedUserId ? null : (
-        <>
-          <div className="mb-5 flex items-center gap-1 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-1 w-fit shadow-sm">
-            {(["table", "charts"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                className={`rounded-lg px-5 py-1.5 text-sm font-medium transition-all ${
-                  view === v
-                    ? "bg-indigo-600 text-white shadow"
-                    : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-                }`}
-              >
-                {v === "table" ? "📋 Table" : "📊 Charts"}
-              </button>
-            ))}
+      <Card>
+        <CardHeader title="Filters" icon={<Filter className="h-4 w-4" />} />
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Select label="Event Type" options={[
+              { value: "", label: "All types" },
+              { value: "workout", label: "Workout" },
+              { value: "sleep", label: "Sleep" },
+              { value: "activity", label: "Activity" },
+            ]} value={eventType} onChange={(e) => { setEventType(e.target.value); resetFilters() }} disabled={!selectedUserId} />
+            <Input label="From" type="date" value={from} onChange={(e) => { setFrom(e.target.value); resetFilters() }} />
+            <Input label="To" type="date" value={to} onChange={(e) => { setTo(e.target.value); resetFilters() }} />
           </div>
+        </CardContent>
+      </Card>
+
+      {selectedUserId && (
+        <>
+          <Card className="w-fit">
+            <CardContent className="p-1 flex gap-1">
+              {(["table", "charts"] as const).map((v) => (
+                <button key={v} type="button" onClick={() => setView(v)}
+                  className={`rounded-lg px-5 py-1.5 text-sm font-medium transition-all ${
+                    view === v ? "bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow" : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                  }`}>
+                  {v === "table" ? "📋 Table" : "📊 Charts"}
+                </button>
+              ))}
+            </CardContent>
+          </Card>
 
           {view === "table" ? (
             <TableView
@@ -280,21 +211,11 @@ export default function ActivityPage() {
 
 // ── shared ─────────────────────────────────────────────────────────────────
 
-function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">{label}</label>
-      {children}
-    </div>
-  )
-}
-
 function EmptyCard({ message, hint }: { message: string; hint?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 py-20 text-center">
-      <p className="text-sm text-gray-500 dark:text-gray-400">{message}</p>
-      {hint && <div className="mt-2 text-xs text-gray-400 dark:text-gray-500">{hint}</div>}
-    </div>
+    <Card>
+      <EmptyState icon={ActivityIcon} title={message} description={typeof hint === 'string' ? hint : "Try adjusting your filters or sync data from providers."} />
+    </Card>
   )
 }
 
@@ -313,14 +234,7 @@ function TableView({ events, result, isLoading, cursor, setCursor, eventType }: 
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   if (isLoading && !cursor) {
-    return (
-      <div className="space-y-2">
-        {Array.from({ length: 6 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton loader
-          <div key={i} className="h-12 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
-        ))}
-      </div>
-    )
+    return <TableSkeleton rows={6} cols={4} />
   }
 
   if (events.length === 0) {
@@ -343,15 +257,15 @@ function TableView({ events, result, isLoading, cursor, setCursor, eventType }: 
 
   return (
     <>
-      <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-        <div className="border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between">
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{events.length} events</p>
-          {eventType && (
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${EVENT_BADGE[eventType] ?? "bg-gray-100 text-gray-600"}`}>
+      <Card className="overflow-hidden">
+        <CardHeader
+          title={`${events.length} events`}
+          action={eventType ? (
+            <Badge variant={eventType === "workout" ? "warning" : eventType === "sleep" ? "info" : "success"} size="sm">
               {eventType}
-            </span>
-          )}
-        </div>
+            </Badge>
+          ) : undefined}
+        />
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
           {events.map((ev) => (
             <EventCard
@@ -362,18 +276,18 @@ function TableView({ events, result, isLoading, cursor, setCursor, eventType }: 
             />
           ))}
         </div>
-      </div>
+      </Card>
 
       {result?.hasMore && (
         <div className="mt-4 text-center">
-          <button
-            type="button"
+          <Button
+            variant="outline"
             onClick={() => setCursor(result.nextCursor)}
             disabled={isLoading}
-            className="rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+            loading={isLoading}
           >
-            {isLoading ? "Loading…" : "Load more"}
-          </button>
+            Load more
+          </Button>
         </div>
       )}
     </>
@@ -504,7 +418,7 @@ function EventCard({ event: ev, expanded, onToggle }: { event: WorkoutEvent; exp
 
       {expanded && (
         <div className="px-4 pb-4 pt-1">
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+          <Card className="p-4">
             {ev.eventType === "workout" && <WorkoutDetails ev={ev} />}
             {ev.eventType === "sleep" && <SleepDetails ev={ev} />}
             {ev.eventType === "activity" && <ActivityDetails ev={ev} />}
@@ -513,7 +427,7 @@ function EventCard({ event: ev, expanded, onToggle }: { event: WorkoutEvent; exp
                 {ev.notes}
               </p>
             )}
-          </div>
+          </Card>
         </div>
       )}
     </div>
@@ -524,20 +438,10 @@ function EventCard({ event: ev, expanded, onToggle }: { event: WorkoutEvent; exp
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-      <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
-      {children}
-    </div>
-  )
-}
-
-function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color: string }) {
-  return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</p>
-      <p className={`mt-2 text-2xl font-bold ${color}`}>{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{sub}</p>}
-    </div>
+    <Card>
+      <CardHeader title={title} />
+      <CardContent>{children}</CardContent>
+    </Card>
   )
 }
 
@@ -607,20 +511,19 @@ function ChartsView({ chartEvents, healthMetrics }: ChartsViewProps) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-grid">
-        <StatCard label="Workouts" value={workouts.length} sub="total events" color="text-orange-500" />
-        <StatCard label="Sleep Sessions" value={sleeps.length} sub="total events" color="text-blue-500" />
-        <StatCard
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <DSStatCard label="Workouts" value={workouts.length} icon={<Dumbbell className="h-5 w-5" />} />
+        <DSStatCard label="Sleep Sessions" value={sleeps.length} icon={<Moon className="h-5 w-5" />} />
+        <DSStatCard
           label="Total Calories"
           value={totalCalories > 0 ? `${totalCalories.toLocaleString()} kcal` : "—"}
-          sub="across all events"
-          color="text-red-500"
+          icon={<Flame className="h-5 w-5" />}
+          color="accent"
         />
-        <StatCard
+        <DSStatCard
           label="Avg Heart Rate"
           value={meanHR != null ? `${meanHR} bpm` : "—"}
-          sub="during workouts"
-          color="text-pink-500"
+          icon={<Heart className="h-5 w-5" />}
         />
       </div>
 

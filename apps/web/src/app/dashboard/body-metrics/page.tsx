@@ -15,7 +15,9 @@ import {
   YAxis,
 } from "recharts"
 import { useSelectedUser } from "../../../lib/user-selection-context"
-import { type HealthMetric, type TimeseriesPoint, healthApi, usersApi } from "../../../lib/api"
+import { type HealthMetric, type TimeseriesPoint, healthApi} from "../../../lib/api"
+import { PageHeader, Card, CardHeader, CardContent, Badge, EmptyState } from "../../../lib/components/ui"
+import { Stethoscope } from "lucide-react"
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -124,17 +126,11 @@ function aggregateByDay(metrics: HealthMetric[]): TimeseriesPoint[] {
 // ── Main Page ──────────────────────────────────────────────────────────────
 
 export default function BodyMetricsPage() {
-  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
-  const [rangeDays, setRangeDays] = useState(0) // Default: All time
+  const { selectedUserId } = useSelectedUser()
+  const [rangeDays, setRangeDays] = useState(0)// Default: All time
 
   const { from, to } = useMemo(() => dateRange(rangeDays), [rangeDays])
 
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-    enabled: isAdmin,
-  })
-  const users = usersResult?.data ?? []
 
   const { data: weightRaw } = useQuery({
     queryKey: ["body-raw-weight", selectedUserId, from, to],
@@ -256,88 +252,72 @@ export default function BodyMetricsPage() {
   const fatTrend = trend(bodyFatPoints)
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">Body Metrics</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Weight, body composition, blood pressure, and vital signs from your connected devices.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Body Metrics"
+        subtitle="Weight, body composition, blood pressure, and vital signs from your connected devices."
+      />
 
       {/* Filters */}
-      <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-          {isAdmin && (
-            <div className="flex-1 min-w-0">
-              <label htmlFor="body-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
-              <select
-                id="body-user"
-                className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.target.value)}
-              >
-                <option value="">Select a user…</option>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.displayName ?? u.email ?? u.externalId}</option>)}
-              </select>
+      <Card>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+            <div className="flex gap-1.5">
+              {RANGE_OPTIONS.map((r) => (
+                <button
+                  key={r.days}
+                  type="button"
+                  onClick={() => setRangeDays(r.days)}
+                  className={`rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                    rangeDays === r.days
+                      ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300"
+                      : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
             </div>
-          )}
-          <div className="flex gap-1.5">
-            {RANGE_OPTIONS.map((r) => (
-              <button
-                key={r.days}
-                type="button"
-                onClick={() => setRangeDays(r.days)}
-                className={`rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                  rangeDays === r.days
-                    ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300"
-                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {!selectedUserId && isAdmin ? (
-        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 py-20 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Select a user to view body metrics.</p>
-        </div>
-      ) : !selectedUserId ? null : (
-        <div className="space-y-6">
+      {selectedUserId && (
+        <div className="space-y-8">
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 stagger-grid">
-            <SummaryCard
-              icon="⚖️" label="Weight" value={latestWeight?.avg} unit="kg" decimals={1}
-              trend={weightTrend}
-              color="from-blue-500 to-indigo-600"
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <BodyStatCard
+              icon="⚖️" label="Weight"
+              value={latestWeight?.avg != null ? latestWeight.avg.toFixed(1) : "—"}
+              unit="kg" trend={weightTrend}
             />
-            <SummaryCard
-              icon="📊" label="Body Fat" value={latestFat?.avg} unit="%" decimals={1}
-              trend={fatTrend}
-              color="from-purple-500 to-pink-500"
+            <BodyStatCard
+              icon="📊" label="Body Fat"
+              value={latestFat?.avg != null ? latestFat.avg.toFixed(1) : "—"}
+              unit="%" trend={fatTrend}
             />
-            <SummaryCard
+            <BodyStatCard
               icon="🩸" label="Blood Pressure"
-              customValue={latestBP ? `${latestBP.systolic}/${latestBP.diastolic}` : null}
+              value={latestBP ? `${latestBP.systolic}/${latestBP.diastolic}` : "—"}
               unit="mmHg"
-              color="from-red-500 to-rose-600"
               status={latestBP ? bpStatus(latestBP.systolic!, latestBP.diastolic!) : undefined}
             />
-            <SummaryCard
-              icon="🫁" label="SpO₂" value={latestSpo2?.avg} unit="%" decimals={0}
-              color="from-cyan-500 to-teal-500"
+            <BodyStatCard
+              icon="🫁" label="SpO₂"
+              value={latestSpo2?.avg != null ? latestSpo2.avg.toFixed(0) : "—"}
+              unit="%"
               status={latestSpo2?.avg ? (latestSpo2.avg >= 95 ? "normal" : latestSpo2.avg >= 90 ? "warning" : "critical") : undefined}
             />
-            <SummaryCard
-              icon="🌡️" label="Temperature" value={latestTemp?.avg} unit="°C" decimals={1}
-              color="from-amber-500 to-orange-500"
+            <BodyStatCard
+              icon="🌡️" label="Temperature"
+              value={latestTemp?.avg != null ? latestTemp.avg.toFixed(1) : "—"}
+              unit="°C"
               status={latestTemp?.avg ? (latestTemp.avg >= 36 && latestTemp.avg <= 37.5 ? "normal" : latestTemp.avg > 38 ? "critical" : "warning") : undefined}
             />
-            <SummaryCard
-              icon="💨" label="Resp. Rate" value={latestRR?.avg} unit="brpm" decimals={0}
-              color="from-emerald-500 to-green-600"
+            <BodyStatCard
+              icon="💨" label="Resp. Rate"
+              value={latestRR?.avg != null ? latestRR.avg.toFixed(0) : "—"}
+              unit="brpm"
               status={latestRR?.avg ? (latestRR.avg >= 12 && latestRR.avg <= 20 ? "normal" : "warning") : undefined}
             />
           </div>
@@ -493,29 +473,29 @@ export default function BodyMetricsPage() {
 
           {/* Data counts */}
           {bodySummary.length > 0 && (
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Data Points Synced</h3>
-              <div className="flex flex-wrap gap-3">
-                {bodySummary.map((s) => (
-                  <div key={s.metricType} className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5">
-                    <span className="mr-2">{METRIC_ICONS[s.metricType] ?? "📍"}</span>
-                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{s.count}</span>
-                    <span className="ml-1.5 text-xs text-gray-500 dark:text-gray-400">{METRIC_LABELS[s.metricType] ?? s.metricType}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Card>
+              <CardHeader title="Data Points Synced" />
+              <CardContent>
+                <div className="flex flex-wrap gap-3">
+                  {bodySummary.map((s) => (
+                    <Badge key={s.metricType} variant="default" size="md">
+                      <span className="mr-1.5">{METRIC_ICONS[s.metricType] ?? "📍"}</span>
+                      <span className="font-semibold">{s.count}</span>
+                      <span className="ml-1 opacity-70">{METRIC_LABELS[s.metricType] ?? s.metricType}</span>
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* No data state */}
           {bodySummary.length === 0 && (
-            <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 py-16 text-center">
-              <p className="text-3xl mb-3">🩺</p>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">No body metrics yet</p>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Connect a Withings device or similar provider to start syncing weight, body composition, and vitals.
-              </p>
-            </div>
+            <EmptyState
+              icon={Stethoscope}
+              title="No body metrics yet"
+              description="Connect a Withings device or similar provider to start syncing."
+            />
           )}
         </div>
       )}
@@ -539,56 +519,44 @@ const STATUS_COLORS = {
 
 const STATUS_LABELS = { normal: "Normal", warning: "Elevated", critical: "High" }
 
-function SummaryCard({ icon, label, value, customValue, unit, decimals = 1, trend: t, color, status }: {
-  icon: string
-  label: string
-  value?: number | null | undefined
-  customValue?: string | null | undefined
-  unit: string
-  decimals?: number
-  trend?: { direction: "up" | "down" | "flat"; pct: number }
-  color: string
-  status?: "normal" | "warning" | "critical" | undefined
-}){
-  const displayValue = customValue ?? (value != null ? value.toFixed(decimals) : "—")
-  const hasData = customValue != null || value != null
-
+function BodyStatCard({ icon, label, value, unit, trend: t, status }: {
+  icon: string; label: string; value: string; unit: string;
+  trend?: { direction: "up" | "down" | "flat"; pct: number } | undefined;
+  status?: "normal" | "warning" | "critical" | undefined;
+}) {
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
-      <div className="flex items-center gap-2 mb-2">
-        <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-white text-sm shadow-md`}>
-          {icon}
+    <Card hover>
+      <CardContent>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xl">{icon}</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</span>
         </div>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</span>
-      </div>
-      <div className="flex items-baseline gap-1.5">
-        <span className="text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{displayValue}</span>
-        {hasData && <span className="text-xs text-gray-400">{unit}</span>}
-      </div>
-      <div className="mt-1 flex items-center gap-2">
-        {t && t.direction !== "flat" && (
-          <span className={`text-[10px] font-medium ${t.direction === "down" ? "text-emerald-600" : "text-amber-600"}`}>
-            {t.direction === "up" ? "▲" : "▼"} {t.pct}%
-          </span>
-        )}
-        {status && (
-          <span className={`text-[10px] font-semibold rounded-full px-2 py-0.5 ${STATUS_COLORS[status]}`}>
-            {STATUS_LABELS[status]}
-          </span>
-        )}
-      </div>
-    </div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-2xl font-bold text-gray-900 dark:text-gray-50 tabular-nums">{value}</span>
+          {value !== "—" && <span className="text-xs text-gray-400">{unit}</span>}
+        </div>
+        <div className="mt-1.5 flex items-center gap-2">
+          {t && t.direction !== "flat" && (
+            <span className={`text-xs font-medium ${t.direction === "down" ? "text-vitality-600" : "text-amber-600"}`}>
+              {t.direction === "up" ? "▲" : "▼"} {t.pct}%
+            </span>
+          )}
+          {status && (
+            <Badge variant={status === "normal" ? "success" : status === "warning" ? "warning" : "danger"} size="sm">
+              {status === "normal" ? "Normal" : status === "warning" ? "Elevated" : "High"}
+            </Badge>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
 function ChartCard({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
-        <p className="text-[10px] text-gray-500 dark:text-gray-400">{subtitle}</p>
-      </div>
-      {children}
-    </div>
+    <Card>
+      <CardHeader title={title} subtitle={subtitle} />
+      <CardContent>{children}</CardContent>
+    </Card>
   )
 }
