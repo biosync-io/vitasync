@@ -38,7 +38,6 @@ import {
   KeyRound,
   Webhook,
   Brain,
-  ChevronDown,
   Moon,
   Dumbbell,
   Flame,
@@ -473,10 +472,9 @@ function DailyTargetActual({ healthScore, goals }: { healthScore: HealthScoreDat
 }
 
 export default function DashboardPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
 
   const { data: providers = [] } = useQuery({ queryKey: ["providers"], queryFn: providersApi.list })
-  const { data: usersResult } = useQuery({ queryKey: ["users", 0], queryFn: () => usersApi.list({ limit: 200 }) })
   const { data: keys = [] } = useQuery({ queryKey: ["api-keys"], queryFn: apiKeysApi.list })
   const { data: webhooks = [] } = useQuery({ queryKey: ["webhooks"], queryFn: webhooksApi.list })
   const { data: algorithms } = useQuery({ queryKey: ["insight-algorithms"], queryFn: () => insightsApi.algorithms() })
@@ -487,7 +485,6 @@ export default function DashboardPage() {
     queryFn: () => usersApi.get(selectedUserId),
     enabled: !!selectedUserId,
   })
-  const users = usersResult?.data ?? []
 
   const { data: healthScore } = useQuery({
     queryKey: ["health-score", selectedUserId],
@@ -639,22 +636,6 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* User selector */}
-        <div className="relative">
-          <select
-            className="appearance-none w-full sm:w-72 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 pl-4 pr-10 py-2.5 text-sm font-medium text-gray-900 dark:text-gray-100 shadow-sm focus:border-accent-500 focus:ring-2 focus:ring-accent-500/20 focus:outline-none transition-all"
-            value={selectedUserId}
-            onChange={(e) => setSelectedUserId(e.target.value)}
-          >
-            <option value="">Select a user…</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.displayName || u.externalId} {u.email ? `(${u.email})` : ""}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-        </div>
       </div>
 
       {selectedUserId && (
@@ -860,19 +841,6 @@ export default function DashboardPage() {
         </DashCard>
       )}
 
-      {/* Empty state */}
-      {!selectedUserId && (
-        <DashCard className="text-center py-20">
-          <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-accent-400 to-accent-600 mb-5 shadow-xl shadow-accent-500/25">
-            <Activity className="h-10 w-10 text-white" />
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Select a User to Begin</h3>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
-            Choose a user above to unlock real-time health scores, readiness tracking,
-            {algoCount} proprietary algorithms & personalized biometric recommendations.
-          </p>
-        </DashCard>
-      )}
     </div>
   )
 }

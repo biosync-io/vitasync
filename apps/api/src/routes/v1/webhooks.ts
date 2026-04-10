@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
-import { requireScope } from "../../plugins/auth.js"
+import { requireAdmin, requireScope } from "../../plugins/auth.js"
 import { WebhookService } from "../../services/webhook.service.js"
 import { WebhookEvent } from "@biosync-io/types"
 
@@ -38,13 +38,13 @@ const webhooksRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/webhooks
-  app.get("/", async (request, reply) => {
+  app.get("/", { preHandler: [requireAdmin()] }, async (request, reply) => {
     const list = await webhookService.list(request.workspaceId)
     return reply.send(list)
   })
 
   // GET /v1/webhooks/:webhookId
-  app.get("/:webhookId", async (request, reply) => {
+  app.get("/:webhookId", { preHandler: [requireAdmin()] }, async (request, reply) => {
     const { webhookId } = z.object({ webhookId: z.string().uuid() }).parse(request.params)
     const webhook = await webhookService.getById(webhookId, request.workspaceId)
     if (!webhook) return reply.status(404).send({ code: "NOT_FOUND", message: "Webhook not found" })
@@ -77,7 +77,7 @@ const webhooksRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/webhooks/:webhookId/deliveries
-  app.get("/:webhookId/deliveries", async (request, reply) => {
+  app.get("/:webhookId/deliveries", { preHandler: [requireAdmin()] }, async (request, reply) => {
     const { webhookId } = z.object({ webhookId: z.string().uuid() }).parse(request.params)
     const deliveries = await webhookService.listDeliveries(webhookId, request.workspaceId)
     return reply.send(deliveries)

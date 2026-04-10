@@ -3,72 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import { type ApiKey, type AiProviderConfig, apiKeysApi, aiProvidersApi, usersApi, getRuntimeDefaultKey } from "../../../lib/api"
+import { usersApi, getRuntimeDefaultKey } from "../../../lib/api"
 import { type AccentTheme, ACCENT_THEMES, applyTheme, getStoredTheme } from "../../../lib/ThemeProvider"
 import { useSelectedUser } from "../../../lib/user-selection-context"
 
 const STORAGE_KEY = "vitasync_api_key"
-
-function KeyIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="h-4 w-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth={1.5}
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 0 1 21.75 8.25Z"
-      />
-    </svg>
-  )
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
-
-  async function handleCopy() {
-    await navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      className="rounded px-2 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-    >
-      {copied ? "Copied!" : "Copy"}
-    </button>
-  )
-}
-
-function ScopeTag({ scope }: { scope: string }) {
-  const colors: Record<string, string> = {
-    read: "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300",
-    write: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300",
-    admin: "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300",
-  }
-  const base = scope.split(":")[0] ?? scope
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[base] ?? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}
-    >
-      {scope}
-    </span>
-  )
-}
-
-const ALL_SCOPES = [
-  { value: "read", label: "Read" },
-  { value: "write", label: "Write" },
-  { value: "admin", label: "Admin (all)" },
-]
 
 // Static map used instead of inline styles to satisfy the no-inline-styles lint rule.
 const THEME_SWATCH_BG: Record<string, string> = {
@@ -103,7 +42,6 @@ export default function SettingsPage() {
 
   // ── Active API key stored in localStorage ──────────────────────────────────
   const [activeKey, setActiveKey] = useState("")
-  const [showActiveKey, setShowActiveKey] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
@@ -130,42 +68,6 @@ export default function SettingsPage() {
     queryClient.invalidateQueries()
   }
 
-  // ── API Keys management ────────────────────────────────────────────────────
-  // Guard: only fetch once an active key is available to authenticate the request.
-  const { data: keys = [], isLoading: keysLoading } = useQuery({
-    queryKey: ["api-keys"],
-    queryFn: apiKeysApi.list,
-    enabled: !!activeKey,
-  })
-
-  // Create key form
-  const [createOpen, setCreateOpen] = useState(false)
-  const [newKeyName, setNewKeyName] = useState("")
-  const [newKeyScopes, setNewKeyScopes] = useState<string[]>(["read", "write"])
-  const [newKeyExpiry, setNewKeyExpiry] = useState("")
-  const [createdRawKey, setCreatedRawKey] = useState<string | null>(null)
-
-  const createMutation = useMutation({
-    mutationFn: () =>
-      apiKeysApi.create({
-        name: newKeyName,
-        scopes: newKeyScopes,
-        ...(newKeyExpiry ? { expiresAt: new Date(newKeyExpiry).toISOString() } : {}),
-      }),
-    onSuccess: (data) => {
-      setCreatedRawKey(data.rawKey)
-      setNewKeyName("")
-      setNewKeyScopes(["read", "write"])
-      setNewKeyExpiry("")
-      queryClient.invalidateQueries({ queryKey: ["api-keys"] })
-    },
-  })
-
-  const revokeMutation = useMutation({
-    mutationFn: (id: string) => apiKeysApi.revoke(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["api-keys"] }),
-  })
-
   // ── Appearance settings ────────────────────────────────────────────────
   const [currentTheme, setCurrentTheme] = useState<AccentTheme>("indigo")
   const [autoSync, setAutoSync] = useState(true)
@@ -179,17 +81,6 @@ export default function SettingsPage() {
     const next = !autoSync
     setAutoSync(next)
     localStorage.setItem("vitasync_auto_sync", String(next))
-  }
-
-  function toggleScope(scope: string) {
-    setNewKeyScopes((prev) =>
-      prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope],
-    )
-  }
-
-  function isExpired(key: ApiKey): boolean {
-    if (!key.expiresAt) return false
-    return new Date(key.expiresAt) < new Date()
   }
 
   return (
@@ -208,260 +99,6 @@ export default function SettingsPage() {
 
       {/* ── User Profile — Gender Selection ──────────────────────────────── */}
       <UserProfileSection />
-      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Active API Key</h2>
-          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-            Stored in <code className="rounded bg-gray-100 dark:bg-gray-800 px-1">localStorage</code>. All dashboard
-            requests are authenticated with this key.
-          </p>
-        </div>
-        <div className="px-6 py-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type={showActiveKey ? "text" : "password"}
-                value={activeKey}
-                onChange={(e) => setActiveKey(e.target.value)}
-                placeholder="vs_live_xxxxxxxxxxxx…"
-                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 pr-16 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <button
-                type="button"
-                onClick={() => setShowActiveKey((v) => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600"
-              >
-                {showActiveKey ? "Hide" : "Show"}
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={() => saveActiveKey(activeKey)}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-            >
-              Save
-            </button>
-            {activeKey && (
-              <button
-                type="button"
-                onClick={() => saveActiveKey("")}
-                className="rounded-lg border border-red-200 dark:border-red-800/40 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-          {activeKey && (
-            <p className="text-xs text-green-600 dark:text-green-400 font-medium">
-              ✓ Key active — dashboard requests will include this credential.
-            </p>
-          )}
-          {!activeKey && (
-            <p className="text-xs text-amber-600 dark:text-amber-400">
-              No key set — unauthenticated requests may be rejected depending on your API
-              configuration.
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* ── API Keys list ────────────────────────────────────────────────────── */}
-      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">API Keys</h2>
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Manage credentials for programmatic access.
-            </p>
-          </div>
-          <button
-            type="button"
-            disabled={!activeKey}
-            onClick={() => {
-              setCreateOpen(true)
-              setCreatedRawKey(null)
-            }}
-            title={!activeKey ? "Save an active API key first" : undefined}
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <KeyIcon />
-            New Key
-          </button>
-        </div>
-
-        {/* Create form */}
-        {createOpen && (
-          <div className="border-b border-gray-100 dark:border-gray-800 bg-indigo-50/50 dark:bg-indigo-950/20 px-6 py-5 space-y-4">
-            {createdRawKey ? (
-              <div className="rounded-lg border border-green-200 dark:border-green-800/40 bg-green-50 dark:bg-green-900/20 p-4">
-                <p className="text-sm font-semibold text-green-800 dark:text-green-300 mb-2">
-                  ✓ Key created — copy it now, it won&apos;t be shown again.
-                </p>
-                <div className="flex items-center gap-2 rounded bg-white dark:bg-gray-800 border border-green-200 dark:border-green-800/40 px-3 py-2">
-                  <code className="flex-1 break-all font-mono text-xs text-gray-900 dark:text-gray-100">
-                    {createdRawKey}
-                  </code>
-                  <CopyButton text={createdRawKey} />
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      saveActiveKey(createdRawKey)
-                      setCreatedRawKey(null)
-                      setCreateOpen(false)
-                    }}
-                    className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-                  >
-                    Use as active key
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCreatedRawKey(null)
-                      setCreateOpen(false)
-                    }}
-                    className="rounded-lg border border-gray-200 dark:border-gray-800 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
-                  >
-                    Done
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Create new API key</h3>
-                <div>
-                  <label
-                    htmlFor="settings-key-name"
-                    className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400"
-                  >
-                    Name
-                  </label>
-                  <input
-                    id="settings-key-name"
-                    type="text"
-                    placeholder="e.g. CI pipeline, Mobile app…"
-                    value={newKeyName}
-                    onChange={(e) => setNewKeyName(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <p className="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-400">Scopes</p>
-                  <div className="flex flex-wrap gap-2">
-                    {ALL_SCOPES.map(({ value, label }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => toggleScope(value)}
-                        className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
-                          newKeyScopes.includes(value)
-                            ? "border-indigo-500 bg-indigo-600 text-white"
-                            : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-indigo-300"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label
-                    htmlFor="settings-key-expires"
-                    className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400"
-                  >
-                    Expires (optional)
-                  </label>
-                  <input
-                    id="settings-key-expires"
-                    type="date"
-                    value={newKeyExpiry}
-                    onChange={(e) => setNewKeyExpiry(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => createMutation.mutate()}
-                    disabled={!newKeyName || newKeyScopes.length === 0 || createMutation.isPending}
-                    className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-                  >
-                    {createMutation.isPending ? "Creating…" : "Create key"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCreateOpen(false)}
-                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
-                  >
-                    Cancel
-                  </button>
-                  {createMutation.isError && (
-                    <p className="text-xs text-red-600 dark:text-red-400">
-                      {(createMutation.error as Error).message}
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Key list */}
-        {keysLoading ? (
-          <div className="px-6 py-8 text-center text-sm text-gray-400">Loading…</div>
-        ) : keys.length === 0 ? (
-          <div className="px-6 py-12 text-center">
-            <p className="text-sm text-gray-400">No API keys yet.</p>
-            <p className="mt-1 text-xs text-gray-400">
-              Create one above to start making authenticated requests.
-            </p>
-          </div>
-        ) : (
-          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-            {keys.map((key) => (
-              <li key={key.id} className="flex items-start justify-between gap-4 px-6 py-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{key.name}</span>
-                    <code className="rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 font-mono">
-                      {key.keyPrefix}…
-                    </code>
-                    {isExpired(key) && (
-                      <span className="rounded-full bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-300">
-                        Expired
-                      </span>
-                    )}
-                    {key.expiresAt && !isExpired(key) && (
-                      <span className="rounded-full bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300">
-                        Expires {new Date(key.expiresAt).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-1.5 flex flex-wrap gap-1">
-                    {key.scopes.map((s) => (
-                      <ScopeTag key={s} scope={s} />
-                    ))}
-                  </div>
-                  <p className="mt-1.5 text-xs text-gray-400">
-                    Created {new Date(key.createdAt).toLocaleDateString()}
-                    {key.lastUsedAt &&
-                      ` · Last used ${new Date(key.lastUsedAt).toLocaleDateString()}`}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => revokeMutation.mutate(key.id)}
-                  disabled={revokeMutation.isPending}
-                  className="shrink-0 rounded-lg border border-red-200 dark:border-red-800/40 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
-                >
-                  Revoke
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
 
       {/* ── Appearance ───────────────────────────────────────────────────────── */}
       <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
@@ -535,25 +172,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
-
-      {/* ── AI Providers ─────────────────────────────────────────────────────── */}
-      <AiProvidersSection activeKey={activeKey} />
-
-      {/* ── API Reference link ───────────────────────────────────────────────── */}
-      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm px-6 py-5">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">API Reference</h2>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-          Interactive Swagger docs are available on your API instance.
-        </p>
-        <a
-          href="/api/docs"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-        >
-          Open API docs ↗
-        </a>
-      </section>
     </div>
   )
 }
@@ -567,20 +185,19 @@ const GENDER_OPTIONS = [
 ] as const
 
 function UserProfileSection() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
   const queryClient = useQueryClient()
 
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
+  const { data: selectedUser } = useQuery({
+    queryKey: ["user", selectedUserId],
+    queryFn: () => usersApi.get(selectedUserId),
+    enabled: !!selectedUserId,
   })
-  const users = usersResult?.data ?? []
-  const selectedUser = users.find((u) => u.id === selectedUserId)
 
   const updateGenderMut = useMutation({
     mutationFn: (gender: string | null) => usersApi.update(selectedUserId, { gender }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: ["user", selectedUserId] })
     },
   })
 
@@ -593,17 +210,6 @@ function UserProfileSection() {
         </p>
       </div>
       <div className="px-6 py-5 space-y-4">
-        <div>
-          <label htmlFor="profile-user" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Select User</label>
-          <select id="profile-user" className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-            <option value="">Select a user…</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.displayName || u.externalId}{u.gender ? ` (${u.gender})` : ""}
-              </option>
-            ))}
-          </select>
-        </div>
 
         {selectedUserId && (
           <div>
@@ -652,10 +258,6 @@ function UserProfileSection() {
           </div>
         )}
 
-        {!selectedUserId && (
-          <p className="text-sm text-gray-400 italic py-4">Select a user above to configure their profile.</p>
-        )}
-
         <div className="rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200/50 dark:border-blue-800/30 p-4">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-2">What gender affects</p>
           <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
@@ -665,308 +267,6 @@ function UserProfileSection() {
             <li>• <strong>Health Insights:</strong> Women&apos;s health insights shown only for female users</li>
           </ul>
         </div>
-      </div>
-    </section>
-  )
-}
-
-// ── AI Providers Section ────────────────────────────────────────────────────
-
-const PROVIDER_TYPES = [
-  { value: "openai", label: "OpenAI", models: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"] },
-  { value: "anthropic", label: "Anthropic", models: ["claude-sonnet-4-20250514", "claude-3-5-haiku-20241022", "claude-3-opus-20240229"] },
-  { value: "ollama", label: "Ollama (Local)", models: ["llama3", "llama3:70b", "mistral", "mixtral", "codellama", "phi3"] },
-] as const
-
-function AiProvidersSection({ activeKey }: { activeKey: string }) {
-  const queryClient = useQueryClient()
-
-  const { data: providersResult, isLoading } = useQuery({
-    queryKey: ["ai-providers"],
-    queryFn: aiProvidersApi.list,
-    enabled: !!activeKey,
-  })
-  const providers: AiProviderConfig[] = providersResult?.data ?? []
-
-  const [formOpen, setFormOpen] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [name, setName] = useState("")
-  const [providerType, setProviderType] = useState("openai")
-  const [model, setModel] = useState("gpt-4o")
-  const [apiKey, setApiKey] = useState("")
-  const [baseUrl, setBaseUrl] = useState("")
-  const [isDefault, setIsDefault] = useState(false)
-  const [testResult, setTestResult] = useState<Record<string, { success: boolean; message: string } | null>>({})
-
-  function resetForm() {
-    setName("")
-    setProviderType("openai")
-    setModel("gpt-4o")
-    setApiKey("")
-    setBaseUrl("")
-    setIsDefault(false)
-    setEditingId(null)
-    setFormOpen(false)
-  }
-
-  function startEdit(p: AiProviderConfig) {
-    setEditingId(p.id)
-    setName(p.name)
-    setProviderType(p.providerType)
-    setModel(p.model)
-    setApiKey("")
-    setBaseUrl(p.baseUrl ?? "")
-    setIsDefault(p.isDefault)
-    setFormOpen(true)
-  }
-
-  const selectedType = PROVIDER_TYPES.find((t) => t.value === providerType)
-  const modelOptions = selectedType?.models ?? []
-
-  const createMut = useMutation({
-    mutationFn: () =>
-      aiProvidersApi.create({
-        name,
-        providerType,
-        model,
-        ...(apiKey ? { apiKey } : {}),
-        ...(baseUrl ? { baseUrl } : {}),
-        isDefault,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ai-providers"] })
-      resetForm()
-    },
-  })
-
-  const updateMut = useMutation({
-    mutationFn: () => {
-      const body: Record<string, unknown> = { name, providerType, model, isDefault }
-      if (apiKey) body.apiKey = apiKey
-      if (baseUrl) body.baseUrl = baseUrl
-      return aiProvidersApi.update(editingId!, body)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ai-providers"] })
-      resetForm()
-    },
-  })
-
-  const deleteMut = useMutation({
-    mutationFn: (id: string) => aiProvidersApi.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ai-providers"] }),
-  })
-
-  async function handleTest(id: string) {
-    setTestResult((prev) => ({ ...prev, [id]: null }))
-    try {
-      const res = await aiProvidersApi.test(id)
-      setTestResult((prev) => ({ ...prev, [id]: res }))
-    } catch {
-      setTestResult((prev) => ({ ...prev, [id]: { success: false, message: "Connection failed" } }))
-    }
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (editingId) {
-      updateMut.mutate()
-    } else {
-      createMut.mutate()
-    }
-  }
-
-  return (
-    <section id="ai-providers" className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">AI Providers</h2>
-          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-            Configure AI providers for the health assistant chatbot.
-          </p>
-        </div>
-        {!formOpen && (
-          <button
-            type="button"
-            onClick={() => { resetForm(); setFormOpen(true); setIsDefault(providers.length === 0) }}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors"
-          >
-            + Add Provider
-          </button>
-        )}
-      </div>
-
-      <div className="px-6 py-5 space-y-4">
-        {/* Add / Edit form */}
-        {formOpen && (
-          <form onSubmit={handleSubmit} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="ai-name" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Name</label>
-                <input
-                  id="ai-name"
-                  type="text"
-                  required
-                  placeholder="e.g. GPT-4o Production"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40"
-                />
-              </div>
-              <div>
-                <label htmlFor="ai-type" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Provider</label>
-                <select
-                  id="ai-type"
-                  value={providerType}
-                  onChange={(e) => {
-                    setProviderType(e.target.value)
-                    const newType = PROVIDER_TYPES.find((t) => t.value === e.target.value)
-                    if (newType) setModel(newType.models[0])
-                  }}
-                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40"
-                >
-                  {PROVIDER_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="ai-model" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Model</label>
-                <select
-                  id="ai-model"
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40"
-                >
-                  {modelOptions.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="ai-apikey" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
-                  API Key {providerType === "ollama" && <span className="text-gray-400">(optional)</span>}
-                </label>
-                <input
-                  id="ai-apikey"
-                  type="password"
-                  placeholder={editingId ? "Leave blank to keep existing" : providerType === "ollama" ? "Not required for local Ollama" : "sk-..."}
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40"
-                />
-              </div>
-            </div>
-
-            {providerType === "ollama" && (
-              <div>
-                <label htmlFor="ai-baseurl" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Base URL</label>
-                <input
-                  id="ai-baseurl"
-                  type="url"
-                  placeholder="http://localhost:11434"
-                  value={baseUrl}
-                  onChange={(e) => setBaseUrl(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40"
-                />
-              </div>
-            )}
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setIsDefault(!isDefault)}
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors ${
-                  isDefault ? "bg-indigo-600" : "bg-gray-200 dark:bg-gray-700"
-                }`}
-              >
-                <span className={`h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${isDefault ? "translate-x-4" : "translate-x-0"}`} />
-              </button>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Set as default provider</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="submit"
-                disabled={createMut.isPending || updateMut.isPending}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-              >
-                {(createMut.isPending || updateMut.isPending) ? "Saving…" : editingId ? "Update Provider" : "Add Provider"}
-              </button>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-
-            {(createMut.isError || updateMut.isError) && (
-              <p className="text-xs text-red-500">Failed to save provider. Check your inputs and try again.</p>
-            )}
-          </form>
-        )}
-
-        {/* Provider list */}
-        {isLoading && <p className="text-xs text-gray-400">Loading providers…</p>}
-
-        {!isLoading && providers.length === 0 && !formOpen && (
-          <p className="text-xs text-gray-400 italic py-2">No AI providers configured yet. Add one to start using the AI Assistant.</p>
-        )}
-
-        {providers.map((p) => (
-          <div key={p.id} className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{p.name}</span>
-                <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:text-gray-400">
-                  {p.providerType}
-                </span>
-                <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400">
-                  {p.model}
-                </span>
-                {p.isDefault && (
-                  <span className="inline-flex items-center rounded-full bg-green-50 dark:bg-green-900/20 px-2 py-0.5 text-[10px] font-medium text-green-600 dark:text-green-400">
-                    default
-                  </span>
-                )}
-              </div>
-              {p.apiKeyMasked && (
-                <p className="mt-0.5 text-[10px] text-gray-400 font-mono">{p.apiKeyMasked}</p>
-              )}
-              {testResult[p.id] && (
-                <p className={`mt-1 text-xs ${testResult[p.id]!.success ? "text-emerald-500" : "text-red-500"}`}>
-                  {testResult[p.id]!.success ? "✓ " : "✗ "}{testResult[p.id]!.message}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 ml-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => handleTest(p.id)}
-                className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-              >
-                Test
-              </button>
-              <button
-                type="button"
-                onClick={() => startEdit(p)}
-                className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => { if (confirm("Delete this AI provider?")) deleteMut.mutate(p.id) }}
-                disabled={deleteMut.isPending}
-                className="rounded-lg border border-red-200 dark:border-red-800/40 px-2.5 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
       </div>
     </section>
   )

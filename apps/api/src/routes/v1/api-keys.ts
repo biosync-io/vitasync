@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
-import { requireScope } from "../../plugins/auth.js"
+import { requireAdmin, requireScope } from "../../plugins/auth.js"
 import { ApiKeyService } from "../../services/api-key.service.js"
 
 const apiKeyService = new ApiKeyService()
@@ -30,7 +30,7 @@ const apiKeysRoutes: FastifyPluginAsync = async (app) => {
   })
 
   // GET /v1/api-keys — list all keys in workspace (no raw keys)
-  app.get("/", async (request, reply) => {
+  app.get("/", { preHandler: [requireAdmin()] }, async (request, reply) => {
     const keys = await apiKeyService.list(request.workspaceId)
     return reply.send(keys)
   })

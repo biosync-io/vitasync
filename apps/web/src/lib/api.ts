@@ -87,6 +87,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
+// ══════════════════════════════════════════════════════
+// USER API — Health data, personal settings, goals
+// Used by /dashboard/* pages only
+// ══════════════════════════════════════════════════════
+
 // ---- Providers ----
 export const providersApi = {
   list: () => request<ProviderDef[]>("/v1/providers"),
@@ -145,6 +150,11 @@ export const healthApi = {
     return request<{ data: TimeseriesPoint[]; bucket: string }>(`/v1/users/${userId}/health/timeseries?${params}`)
   },
 }
+
+// ══════════════════════════════════════════════════════
+// ADMIN API — Platform management, system configuration
+// Used by /admin/* pages only
+// ══════════════════════════════════════════════════════
 
 // ---- API Keys ----
 export const apiKeysApi = {
@@ -267,7 +277,7 @@ export const webhooksApi = {  list: () => request<Webhook[]>("/v1/webhooks"),
   deliveries: (id: string) => request<WebhookDelivery[]>(`/v1/webhooks/${id}/deliveries`),
 }
 
-// ---- Events ----
+// ---- Events (user) ----
 export const eventsApi = {
   list: (
     userId: string,
@@ -1319,7 +1329,7 @@ export const habitsApi = {
   },
 }
 
-// ---- Inbound Webhook Logs ----
+// ---- Inbound Webhook Logs (admin) ----
 export interface InboundWebhookLog {
   id: string
   providerId: string
@@ -1348,7 +1358,7 @@ export const inboundWebhookLogsApi = {
   },
 }
 
-// ---- AI Providers ----
+// ---- AI Providers (admin) ----
 export interface AiProviderConfig {
   id: string
   name: string
@@ -1422,7 +1432,7 @@ export const ssoApi = {
   providers: () => request<{ id: string; name: string; slug: string; protocol: string }[]>("/v1/sso/providers"),
 }
 
-// ---- Identity Providers ----
+// ---- Identity Providers (admin) ----
 export const identityProvidersApi = {
   list: () => request<any[]>("/v1/identity-providers"),
   create: (body: any) => request<any>("/v1/identity-providers", { method: "POST", body: JSON.stringify(body) }),

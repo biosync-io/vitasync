@@ -59,8 +59,16 @@ import {
   Radio,
   Scale,
   Bot,
+  Shield,
+  Lock,
+  Key,
+  LogOut,
+  User,
+  Mail,
+  BadgeCheck,
   type LucideIcon,
 } from "lucide-react"
+import { useAuth } from "../../lib/auth-context"
 import { OfflineBanner } from "../../lib/components/OfflineBanner"
 import { InstallPrompt } from "../../lib/components/InstallPrompt"
 
@@ -113,25 +121,11 @@ const navSections: Array<{
     ],
   },
   {
-    title: "Platform",
+    title: "Account",
     items: [
-      { href: "/dashboard/providers", label: "Providers", icon: Zap, color: "text-yellow-500" },
-      { href: "/dashboard/users", label: "Users", icon: Users, color: "text-blue-500" },
-      { href: "/dashboard/sync-jobs", label: "Sync Jobs", icon: RefreshCw, color: "text-green-500" },
       { href: "/dashboard/exports", label: "Data Export", icon: Upload, color: "text-fuchsia-500" },
-      { href: "/dashboard/partner-events", label: "Partner Events", icon: Radio, color: "text-violet-500" },
-    ],
-  },
-  {
-    title: "Developer",
-    items: [
-      { href: "/dashboard/webhooks", label: "Webhooks", icon: Bell, color: "text-orange-500" },
-      { href: "/dashboard/notifications", label: "Notifications", icon: Megaphone, color: "text-rose-500" },
-      { href: "/dashboard/notification-logs", label: "Notification Logs", icon: ScrollText, color: "text-slate-500" },
-      { href: "/dashboard/api-keys", label: "API Keys", icon: KeyRound, color: "text-amber-500" },
-      { href: "/dashboard/api-logs", label: "API Logs", icon: ClipboardList, color: "text-cyan-500" },
-      { href: "/dashboard/roadmap", label: "Roadmap", icon: Map, color: "text-violet-500" },
-      { href: "/dashboard/system-status", label: "System Status", icon: Activity, color: "text-emerald-500" },
+      { href: "/dashboard/security", label: "Security", icon: Shield, color: "text-indigo-500" },
+      { href: "/dashboard/privacy", label: "Privacy", icon: Lock, color: "text-purple-500" },
       { href: "/dashboard/settings", label: "Settings", icon: Settings, color: "text-gray-500" },
     ],
   },
@@ -195,6 +189,7 @@ function useIsMobile() {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isMobile = useIsMobile()
+  const { user, logout } = useAuth()
   const [darkMode, setDarkMode] = useState<AppearanceMode>("system")
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -381,6 +376,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {(isMobile || sidebarOpen) && <span>v{appVersion}</span>}
           </div>
         )}
+
+        {/* User info & sign out */}
+        {user && (
+          <div className={`flex items-center rounded-xl px-3 py-2.5 ${!isMobile && !sidebarOpen ? "justify-center" : "gap-3"}`}>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-accent-400 to-accent-600 text-white text-xs font-bold">
+              {(user.displayName ?? user.email ?? "U").charAt(0).toUpperCase()}
+            </div>
+            {(isMobile || sidebarOpen) && (
+              <div className="flex-1 min-w-0">
+                <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {user.displayName ?? "User"}
+                </p>
+                {user.email && (
+                  <p className="truncate text-[11px] text-gray-400 dark:text-gray-500">{user.email}</p>
+                )}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => logout()}
+              title="Sign out"
+              className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
     </>
   )
@@ -400,14 +422,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Menu className="h-5 w-5" />
         </button>
         <Logo collapsed={false} />
-        <button
-          type="button"
-          onClick={cycleDarkMode}
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-          aria-label="Toggle theme"
-        >
-          <ThemeIcon className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={cycleDarkMode}
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            aria-label="Toggle theme"
+          >
+            <ThemeIcon className="h-5 w-5" />
+          </button>
+          <UserProfileMenu />
+        </div>
       </div>
 
       {/* Mobile sidebar overlay */}
@@ -458,10 +483,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
             {/* Notifications */}
             <NotificationBell />
-            {/* User avatar */}
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-accent-500/20">
-              V
-            </div>
+            {/* User profile monogram */}
+            <UserProfileMenu />
           </div>
         </header>
 
@@ -616,5 +639,142 @@ function formatTimeAgo(iso: string): string {
   if (hr < 24) return `${hr}h ago`
   const days = Math.floor(hr / 24)
   return `${days}d ago`
+}
+
+// ── User Profile Menu ───────────────────────────────────────────────────
+
+function getInitials(name: string | null | undefined, email: string | null | undefined): string {
+  if (name) {
+    const parts = name.trim().split(/\s+/).filter(Boolean)
+    if (parts.length >= 2) {
+      const first = parts[0] ?? ""
+      const last = parts[parts.length - 1] ?? ""
+      return ((first[0] ?? "") + (last[0] ?? "")).toUpperCase()
+    }
+    return name.slice(0, 2).toUpperCase()
+  }
+  if (email) return email.slice(0, 2).toUpperCase()
+  return "?"
+}
+
+function UserProfileMenu() {
+  const { user, isAdmin, logout } = useAuth()
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    function handler(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [open])
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return
+    function handler(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false)
+    }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  }, [open])
+
+  const initials = getInitials(user?.displayName, user?.email)
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="h-9 w-9 rounded-xl bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-accent-500/20 hover:scale-105 active:scale-95 transition-transform"
+        aria-label="User profile"
+        aria-expanded={open}
+      >
+        {initials}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-12 z-50 w-80 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl overflow-hidden animate-fade-in-down">
+          {/* Profile header */}
+          <div className="px-5 py-4 bg-gradient-to-br from-accent-50 to-accent-100/50 dark:from-accent-950/30 dark:to-accent-900/20 border-b border-gray-100 dark:border-gray-800">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-accent-500/20">
+                {initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                  {user?.displayName || "User"}
+                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <Mail className="h-3 w-3 text-gray-400" />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {user?.email || "No email"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Profile details */}
+          <div className="px-5 py-3 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <BadgeCheck className="h-3.5 w-3.5" />
+                <span>Role</span>
+              </div>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                isAdmin
+                  ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
+                  : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+              }`}>
+                {isAdmin ? "Admin" : "User"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <User className="h-3.5 w-3.5" />
+                <span>User ID</span>
+              </div>
+              <code className="text-[10px] font-mono text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
+                {user?.id ? `${user.id.slice(0, 8)}…` : "—"}
+              </code>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="border-t border-gray-100 dark:border-gray-800 px-2 py-2">
+            <Link
+              href="/dashboard/settings"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <Settings className="h-4 w-4 text-gray-400" />
+              Settings
+            </Link>
+            <Link
+              href="/dashboard/security"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <Shield className="h-4 w-4 text-gray-400" />
+              Security
+            </Link>
+            <button
+              type="button"
+              onClick={() => { setOpen(false); logout() }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
