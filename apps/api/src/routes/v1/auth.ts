@@ -19,7 +19,7 @@ function parseExpiry(val: string): number {
 const cookieOpts = {
   httpOnly: true,
   secure: config.NODE_ENV === "production",
-  sameSite: "strict" as const,
+  sameSite: (config.NODE_ENV === "production" ? "lax" : "strict") as "lax" | "strict",
   path: "/",
 }
 
@@ -148,34 +148,42 @@ const authRoutes: FastifyPluginAsync = async (app) => {
 
     const body = loginBody.parse(request.body)
 
-    const { accessToken, refreshToken, user } = await authService.login(
-      workspaceId,
-      body.email,
-      body.password,
-      request.headers["user-agent"],
-      request.ip,
-    )
+    try {
+      const { accessToken, refreshToken, user } = await authService.login(
+        workspaceId,
+        body.email,
+        body.password,
+        request.headers["user-agent"],
+        request.ip,
+      )
 
-    reply
-      .setCookie("vs_access", accessToken, {
-        ...cookieOpts,
-        maxAge: parseExpiry(config.ACCESS_TOKEN_EXPIRY),
-      })
-      .setCookie("vs_refresh", refreshToken, {
-        ...cookieOpts,
-        maxAge: parseExpiry(config.REFRESH_TOKEN_EXPIRY),
-      })
+      reply
+        .setCookie("vs_access", accessToken, {
+          ...cookieOpts,
+          maxAge: parseExpiry(config.ACCESS_TOKEN_EXPIRY),
+        })
+        .setCookie("vs_refresh", refreshToken, {
+          ...cookieOpts,
+          maxAge: parseExpiry(config.REFRESH_TOKEN_EXPIRY),
+        })
 
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        role: user.role,
-        emailVerified: user.emailVerified,
-      },
+      return {
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          displayName: user.displayName,
+          role: user.role,
+          emailVerified: user.emailVerified,
+        },
+      }
+    } catch (err) {
+      const statusCode = (err as { statusCode?: number }).statusCode ?? 401
+      return reply.status(statusCode).send({
+        code: "UNAUTHORIZED",
+        message: (err as Error).message || "Invalid email or password.",
+      })
     }
   })
 
