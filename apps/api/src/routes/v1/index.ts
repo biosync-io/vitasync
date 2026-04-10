@@ -1,9 +1,11 @@
 import type { FastifyInstance } from "fastify"
 import achievementsRoutes from "./achievements.js"
+import authRoutes from "./auth.js"
 import anomaliesRoutes from "./anomalies.js"
 import apiKeysRoutes from "./api-keys.js"
 import baselinesRoutes from "./baselines.js"
 import challengesRoutes from "./challenges.js"
+import circuitBreakerRoutes from "./circuit-breakers.js"
 import connectionsRoutes from "./connections.js"
 import correlationsRoutes from "./correlations.js"
 import eventsRoutes from "./events.js"
@@ -39,6 +41,15 @@ import aiProvidersRoutes from "./ai-providers.js"
 import chatbotRoutes from "./chatbot.js"
 import systemRoutes from "./system.js"
 import apiLogsRoutes from "./api-logs.js"
+import mfaRoutes from "./mfa.js"
+import webauthnRoutes from "./webauthn.js"
+import gdprRoutes from "./gdpr.js"
+import ssoRoutes from "./sso.js"
+import identityProviderRoutes from "./identity-providers.js"
+import healthCqrsRoutes from "./health-cqrs.js"
+import adminInvitationsRoutes from "./admin-invitations.js"
+import adminUsersRoutes from "./admin-users.js"
+import systemSettingsRoutes from "./system-settings.js"
 
 /**
  * Registers all v1 API routes under the `/v1` prefix.
@@ -46,7 +57,16 @@ import apiLogsRoutes from "./api-logs.js"
 export async function registerV1Routes(app: FastifyInstance): Promise<void> {
   await app.register(
     async (v1) => {
+      // Auth routes — /v1/auth (skipped by auth plugin)
+      await v1.register(authRoutes, { prefix: "/auth" })
+
       await v1.register(providersRoutes, { prefix: "/providers" })
+
+      // SSO flows — /v1/sso (skipped by auth plugin)
+      await v1.register(ssoRoutes, { prefix: "/sso" })
+
+      // Identity provider management — /v1/identity-providers (admin only)
+      await v1.register(identityProviderRoutes, { prefix: "/identity-providers" })
 
       // OAuth flows (skipped by auth plugin for /v1/oauth prefix)
       await v1.register(oauthRoutes, { prefix: "/oauth" })
@@ -166,8 +186,30 @@ export async function registerV1Routes(app: FastifyInstance): Promise<void> {
       // System status — /v1/system/status
       await v1.register(systemRoutes, { prefix: "/system" })
 
+      // Circuit breaker admin — /v1/admin/circuit-breakers
+      await v1.register(circuitBreakerRoutes)
+
       // API logs — /v1/api-logs
       await v1.register(apiLogsRoutes, { prefix: "/api-logs" })
+
+      // ── Auth, MFA, WebAuthn, GDPR ────────────────────────────
+      await v1.register(mfaRoutes, { prefix: "/auth/mfa" })
+      await v1.register(webauthnRoutes, { prefix: "/auth/webauthn" })
+
+      // GDPR & consent — /v1/users/:userId/gdpr-erase, /v1/users/:userId/consents
+      await v1.register(gdprRoutes, { prefix: "/users" })
+
+      // Admin invitations — /v1/admin/invitations
+      await v1.register(adminInvitationsRoutes, { prefix: "/admin" })
+
+      // Admin user management — /v1/admin/users/:userId/promote|demote
+      await v1.register(adminUsersRoutes, { prefix: "/admin" })
+
+      // Admin system settings — /v1/admin/settings/*
+      await v1.register(systemSettingsRoutes, { prefix: "/admin" })
+
+      // CQRS health endpoints — /v1/cqrs/health/*
+      await v1.register(healthCqrsRoutes, { prefix: "/cqrs" })
     },
     { prefix: "/v1" },
   )

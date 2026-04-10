@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
 import { type ProviderDef, type Connection, providersApi, connectionsApi, getRuntimeDefaultKey } from "../../../lib/api"
+import { Unplug } from "lucide-react"
+import { PageHeader, Card, CardHeader, CardContent, CardSkeleton, Badge, StatusDot, Button, EmptyState } from "../../../lib/components/ui"
 
 /** Resolve the public-facing API URL for display in docs/config sections */
 function useApiBaseUrl(): string {
@@ -64,57 +66,50 @@ export default function ProvidersPage() {
   const connectedProviderIds = new Set(activeConnections.map((c) => c.providerId))
 
   return (
-    <div className="space-y-6">
-      <div className="animate-fade-in-down">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Providers</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Connect wearable devices via OAuth. Each user can connect to multiple providers simultaneously.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader title="Connected Devices" subtitle="Connect your wearable devices and health apps to sync data automatically." />
 
       {/* Connected providers status */}
       {selectedUserId && connections.length > 0 && (
-        <div className="rounded-2xl border border-emerald-200/60 dark:border-emerald-800/40 bg-gradient-to-br from-emerald-50/60 to-teal-50/30 dark:from-emerald-950/30 dark:to-teal-950/15 backdrop-blur-xl p-5 shadow-card">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-3">Connected Providers ({activeConnections.length})</h2>
-          <div className="flex flex-wrap gap-3">
-            {connections.map((conn) => {
-              const colors = PROVIDER_COLORS[conn.providerId] ?? { bg: "from-gray-400 to-gray-500", icon: "🔗" }
-              const isActive = conn.status === "connected"
-              return (
-                <div key={conn.id} className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 shadow-sm ${
-                  isActive
-                    ? "border-emerald-200 dark:border-emerald-800/40 bg-white/80 dark:bg-gray-900/80"
-                    : "border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20"
-                }`}>
-                  <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${colors.bg} flex items-center justify-center text-white text-sm shadow-md`}>
-                    {colors.icon}
+        <Card glow="vitality">
+          <CardHeader title={`Connected Providers (${activeConnections.length})`} />
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {connections.map((conn) => {
+                const colors = PROVIDER_COLORS[conn.providerId] ?? { bg: "from-gray-400 to-gray-500", icon: "🔗" }
+                const isActive = conn.status === "connected"
+                return (
+                  <div key={conn.id} className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 shadow-sm ${
+                    isActive
+                      ? "border-emerald-200 dark:border-emerald-800/40 bg-white/80 dark:bg-gray-900/80"
+                      : "border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20"
+                  }`}>
+                    <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${colors.bg} flex items-center justify-center text-white text-sm shadow-md`}>
+                      {colors.icon}
+                    </div>
+                    <div>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">{conn.providerId}</span>
+                      <StatusDot status={isActive ? "online" : "warning"} />
+                      <Badge variant={isActive ? "success" : "warning"} dot>{isActive ? "Connected" : "Disconnected"}</Badge>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">{conn.providerId}</span>
-                    {isActive ? (
-                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Connected
-                      </span>
-                    ) : (
-                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
-                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Disconnected
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedUserId && connections.length === 0 && !isLoading && (
+        <EmptyState
+          icon={Unplug}
+          title="No providers connected"
+          description="Connect a wearable device or health app below to start syncing your health data."
+        />
       )}
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton loader — items have no stable identity
-            <div key={i} className="h-40 rounded-2xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
-          ))}
-        </div>
+        <CardSkeleton count={4} className="lg:grid-cols-3" />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-grid">
           {allProviders.map((provider) => (
@@ -123,93 +118,92 @@ export default function ProvidersPage() {
         </div>
       )}
 
-      <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30 p-6">
-        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">OAuth Authorization URL</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-          To connect a user to a provider, redirect their browser to:
-        </p>
-        <code className="block rounded-xl bg-gray-900 dark:bg-gray-950 px-5 py-3.5 text-sm text-emerald-400 font-mono overflow-auto">
-          {`GET ${apiBaseUrl}/v1/oauth/{providerId}/authorize?userId={userId}`}
-        </code>
-      </div>
+      <Card>
+        <CardHeader title="OAuth Authorization URL" />
+        <CardContent>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+            To connect a user to a provider, redirect their browser to:
+          </p>
+          <code className="block rounded-xl bg-gray-900 dark:bg-gray-950 px-5 py-3.5 text-sm text-emerald-400 font-mono overflow-auto">
+            {`GET ${apiBaseUrl}/v1/oauth/{providerId}/authorize?userId={userId}`}
+          </code>
+        </CardContent>
+      </Card>
 
       {/* Inbound Provider Webhooks */}
-      <div className="rounded-2xl border border-blue-200/60 dark:border-blue-800/40 bg-gradient-to-br from-blue-50/60 to-indigo-50/30 dark:from-blue-950/30 dark:to-indigo-950/15 backdrop-blur-xl p-6 shadow-card">
-        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1">Inbound Provider Webhooks</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Some providers can push real-time updates to VitaSync instead of waiting for scheduled syncs.
-          Configure the webhook URL in each provider&apos;s developer dashboard.
-        </p>
-
-        <div className="space-y-4">
-          {/* WHOOP */}
-          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-sm shadow-md">💪</div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">WHOOP Webhooks</h3>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Supported</span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Webhook URL (paste in WHOOP Developer Dashboard)</p>
-                <code className="block rounded-lg bg-gray-900 dark:bg-gray-950 px-4 py-2.5 text-xs text-emerald-400 font-mono overflow-auto select-all">
-                  {`${apiBaseUrl}/v1/inbound/whoop/webhook`}
-                </code>
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Events received</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {["workout.updated", "workout.deleted", "sleep.updated", "sleep.deleted", "recovery.updated", "recovery.deleted"].map((evt) => (
-                    <span key={evt} className="rounded-full bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-400">{evt}</span>
-                  ))}
+      <Card glow="brand">
+        <CardHeader title="Inbound Provider Webhooks" subtitle="Some providers can push real-time updates to VitaSync instead of waiting for scheduled syncs. Configure the webhook URL in each provider's developer dashboard." />
+        <CardContent>
+          <div className="space-y-4">
+            {/* WHOOP */}
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-sm shadow-md">💪</div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">WHOOP Webhooks</h3>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Supported</span>
                 </div>
               </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Setup steps</p>
-                <ol className="text-xs text-gray-600 dark:text-gray-400 space-y-1 list-decimal list-inside">
-                  <li>Go to <a href="https://developer-dashboard.whoop.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline">WHOOP Developer Dashboard</a></li>
-                  <li>Open your app settings → Webhooks section</li>
-                  <li>Paste the URL above and select <strong>v2</strong> model version</li>
-                  <li>Set <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded text-[10px]">WHOOP_WEBHOOK_SECRET</code> env var to your app&apos;s client secret</li>
-                  <li>Save — WHOOP will now push real-time workout/sleep/recovery events</li>
-                </ol>
-              </div>
-              <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-3 py-2">
-                <p className="text-[10px] text-amber-700 dark:text-amber-400">
-                  <strong>Signature verification:</strong> VitaSync validates every incoming webhook using HMAC-SHA256 with <code className="bg-amber-100 dark:bg-amber-800/30 px-1 rounded">X-WHOOP-Signature</code> and <code className="bg-amber-100 dark:bg-amber-800/30 px-1 rounded">X-WHOOP-Signature-Timestamp</code> headers.
-                </p>
-              </div>
-              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-3 py-2">
-                <p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 mb-1">How to verify it&apos;s working:</p>
-                <ol className="text-[10px] text-emerald-600 dark:text-emerald-400 space-y-0.5 list-decimal list-inside">
-                  <li>Check <a href="/dashboard/sync-jobs" className="underline font-medium">Sync Jobs</a> — webhook-triggered syncs appear here</li>
-                  <li>Check API server logs: <code className="bg-emerald-100 dark:bg-emerald-800/30 px-1 rounded">docker compose logs api | grep &quot;inbound webhook&quot;</code></li>
-                  <li>Check <a href="/dashboard/notification-logs" className="underline font-medium">Notification Logs</a> — sync failures appear if notification rules are set</li>
-                  <li>In WHOOP app: log an activity or edit sleep → webhook fires within seconds</li>
-                </ol>
+              <div className="space-y-2">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Webhook URL (paste in WHOOP Developer Dashboard)</p>
+                  <code className="block rounded-lg bg-gray-900 dark:bg-gray-950 px-4 py-2.5 text-xs text-emerald-400 font-mono overflow-auto select-all">
+                    {`${apiBaseUrl}/v1/inbound/whoop/webhook`}
+                  </code>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Events received</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["workout.updated", "workout.deleted", "sleep.updated", "sleep.deleted", "recovery.updated", "recovery.deleted"].map((evt) => (
+                      <Badge key={evt} variant="info" size="sm">{evt}</Badge>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Setup steps</p>
+                  <ol className="text-xs text-gray-600 dark:text-gray-400 space-y-1 list-decimal list-inside">
+                    <li>Go to <a href="https://developer-dashboard.whoop.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline">WHOOP Developer Dashboard</a></li>
+                    <li>Open your app settings → Webhooks section</li>
+                    <li>Paste the URL above and select <strong>v2</strong> model version</li>
+                    <li>Set <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded text-[10px]">WHOOP_WEBHOOK_SECRET</code> env var to your app&apos;s client secret</li>
+                    <li>Save — WHOOP will now push real-time workout/sleep/recovery events</li>
+                  </ol>
+                </div>
+                <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-3 py-2">
+                  <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                    <strong>Signature verification:</strong> VitaSync validates every incoming webhook using HMAC-SHA256 with <code className="bg-amber-100 dark:bg-amber-800/30 px-1 rounded">X-WHOOP-Signature</code> and <code className="bg-amber-100 dark:bg-amber-800/30 px-1 rounded">X-WHOOP-Signature-Timestamp</code> headers.
+                  </p>
+                </div>
+                <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-3 py-2">
+                  <p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 mb-1">How to verify it&apos;s working:</p>
+                  <ol className="text-[10px] text-emerald-600 dark:text-emerald-400 space-y-0.5 list-decimal list-inside">
+                    <li>Check <a href="/dashboard/sync-jobs" className="underline font-medium">Sync Jobs</a> — webhook-triggered syncs appear here</li>
+                    <li>Check API server logs: <code className="bg-emerald-100 dark:bg-emerald-800/30 px-1 rounded">docker compose logs api | grep &quot;inbound webhook&quot;</code></li>
+                    <li>Check <a href="/dashboard/notification-logs" className="underline font-medium">Notification Logs</a> — sync failures appear if notification rules are set</li>
+                    <li>In WHOOP app: log an activity or edit sleep → webhook fires within seconds</li>
+                  </ol>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Other providers */}
-          <div className="rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-gray-50/50 dark:bg-gray-800/30 p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex -space-x-1">
-                {["⌚", "🏔️", "🏃"].map((icon, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static icons
-                  <div key={i} className="h-6 w-6 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs border-2 border-white dark:border-gray-900">{icon}</div>
-                ))}
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Fitbit, Garmin, Strava — use scheduled polling (every 15 min)</p>
-                <p className="text-[10px] text-gray-400">Webhook support can be added per provider. See the developer docs for extending.</p>
+            {/* Other providers */}
+            <div className="rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-gray-50/50 dark:bg-gray-800/30 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex -space-x-1">
+                  {["⌚", "🏔️", "🏃"].map((icon, i) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: static icons
+                    <div key={i} className="h-6 w-6 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs border-2 border-white dark:border-gray-900">{icon}</div>
+                  ))}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Fitbit, Garmin, Strava — use scheduled polling (every 15 min)</p>
+                  <p className="text-[10px] text-gray-400">Webhook support can be added per provider. See the developer docs for extending.</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -232,84 +226,74 @@ function ProviderCard({ provider, isConnected, connection, isConfigured, selecte
 
   return (
     <>
-      <div className={`rounded-2xl border bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 group ${
+      <Card hover className={
         isConnected ? "border-emerald-300 dark:border-emerald-800/60 ring-1 ring-emerald-200 dark:ring-emerald-800/30"
           : isDisconnected ? "border-amber-300 dark:border-amber-800/60 ring-1 ring-amber-200 dark:ring-amber-800/30"
-          : "border-gray-200/60 dark:border-gray-800/60"
-      }`}>
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center text-white text-2xl shadow-lg group-hover:scale-110 transition-transform`}>
-              {colors.icon}
+          : ""
+      }>
+        <CardContent>
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center text-white text-2xl shadow-lg group-hover:scale-110 transition-transform`}>
+                {colors.icon}
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{provider.name}</h3>
+                <Badge variant="info" size="sm">
+                  {provider.authType?.toUpperCase() ?? "OAUTH2"}
+                </Badge>
+              </div>
             </div>
-            <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{provider.name}</h3>
-              <span className={`text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 ${
-                provider.authType === "oauth2"
-                  ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                  : "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400"
-              }`}>
-                {provider.authType?.toUpperCase() ?? "OAUTH2"}
-              </span>
-            </div>
+            {isConnected && (
+              <Badge variant="success" dot pulse>Active</Badge>
+            )}
+            {isDisconnected && (
+              <Badge variant="warning" dot>Disconnected</Badge>
+            )}
           </div>
-          {isConnected && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2.5 py-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active
-            </span>
-          )}
-          {isDisconnected && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2.5 py-1 text-[10px] font-bold text-amber-700 dark:text-amber-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Disconnected
-            </span>
-          )}
-        </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">{provider.description}</p>
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {provider.capabilities.map((cap) => (
-            <span key={cap} className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400 capitalize">
-              {cap.replace(/_/g, " ")}
-            </span>
-          ))}
-        </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">{provider.description}</p>
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {provider.capabilities.map((cap) => (
+              <Badge key={cap} variant="default" size="sm">
+                {cap.replace(/_/g, " ")}
+              </Badge>
+            ))}
+          </div>
 
-        {/* Connect button — always visible */}
-        {isConnected ? (
-          <div className="flex items-center justify-between rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-4 py-2.5">
-            <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">✓ Connected & Syncing</span>
-            <span className="text-[10px] text-emerald-500">Auto-sync active</span>
-          </div>
-        ) : isDisconnected ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-4 py-2.5">
-              <span className="text-sm font-medium text-amber-700 dark:text-amber-400">⚠ Disconnected</span>
-              <span className="text-[10px] text-amber-500">Sync paused</span>
+          {/* Connect button — always visible */}
+          {isConnected ? (
+            <div className="flex items-center justify-between rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-4 py-2.5">
+              <div className="flex items-center gap-2">
+                <StatusDot status="success" />
+                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Connected & Syncing</span>
+              </div>
+              <span className="text-[10px] text-emerald-500">Auto-sync active</span>
             </div>
-            <button
-              type="button"
-              onClick={handleConnect}
-              className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 text-sm font-bold text-white hover:from-amber-600 hover:to-orange-600 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:-translate-y-0.5 transition-all duration-200"
-            >
-              🔄 Reconnect {provider.name}
-            </button>
-          </div>
-        ) : !isConfigured ? (
-          <div className="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/40 px-4 py-3 text-center">
-            <p className="text-sm font-medium text-indigo-700 dark:text-indigo-400">Coming Soon</p>
-            <p className="text-[10px] text-indigo-500 dark:text-indigo-400/70 mt-0.5">{provider.name} integration is not yet enabled on this instance</p>
-          </div>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={handleConnect}
-              className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-3 text-sm font-bold text-white hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-200"
-            >
+          ) : isDisconnected ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-4 py-2.5">
+                <div className="flex items-center gap-2">
+                  <StatusDot status="warning" />
+                  <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Disconnected</span>
+                </div>
+                <span className="text-[10px] text-amber-500">Sync paused</span>
+              </div>
+              <Button variant="secondary" onClick={handleConnect} className="w-full">
+                🔄 Reconnect {provider.name}
+              </Button>
+            </div>
+          ) : !isConfigured ? (
+            <div className="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/40 px-4 py-3 text-center">
+              <p className="text-sm font-medium text-indigo-700 dark:text-indigo-400">Coming Soon</p>
+              <p className="text-[10px] text-indigo-500 dark:text-indigo-400/70 mt-0.5">{provider.name} integration is not yet enabled on this instance</p>
+            </div>
+          ) : (
+            <Button variant="primary" onClick={handleConnect} className="w-full">
               🔗 Connect {provider.name}
-            </button>
-          </>
-        )}
-      </div>
+            </Button>
+          )}
+        </CardContent>
+      </Card>
 
       {/* OAuth modal */}
       {oauthModal && (
@@ -441,13 +425,12 @@ function OAuthModal({ providerId, providerName, providerIcon, providerBg, userId
                 You&apos;ll be redirected to {providerName} to sign in and authorize access.
                 A small window will open for the authorization — please complete the sign-in there.
               </p>
-              <button
-                type="button"
+              <Button
                 onClick={openPopup}
-                className={`w-full rounded-xl bg-gradient-to-r ${providerBg} px-4 py-3 text-sm font-bold text-white shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
+                className={`w-full rounded-xl bg-gradient-to-r ${providerBg} shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
               >
                 Sign in with {providerName}
-              </button>
+              </Button>
             </div>
           )}
 
@@ -491,29 +474,27 @@ function OAuthModal({ providerId, providerName, providerIcon, providerBg, userId
                 <p className="text-sm font-semibold text-red-700 dark:text-red-400">Connection failed</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{errorMsg}</p>
               </div>
-              <button
-                type="button"
+              <Button
                 onClick={openPopup}
-                className={`w-full rounded-xl bg-gradient-to-r ${providerBg} px-4 py-3 text-sm font-bold text-white shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
+                className={`w-full rounded-xl bg-gradient-to-r ${providerBg} shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
               >
                 Try Again
-              </button>
+              </Button>
             </div>
           )}
         </div>
 
         {/* Footer */}
         <div className="border-t border-gray-100 dark:border-gray-800 px-6 py-3 flex justify-end">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={() => {
               if (popupRef.current && !popupRef.current.closed) popupRef.current.close()
               onClose()
             }}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             {status === "success" ? "Done" : "Cancel"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

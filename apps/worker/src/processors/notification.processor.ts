@@ -8,6 +8,7 @@ import {
 import { NotificationManager, type ChannelConfig } from "@biosync-io/notification-core"
 import { and, eq } from "drizzle-orm"
 import { Redis } from "ioredis"
+import { getWorkerEventBus } from "../lib/event-bus.js"
 
 let _publisher: Redis | null = null
 
@@ -159,4 +160,35 @@ export async function processNotificationJob(job: Job<NotificationJobData>): Pro
 
   const successCount = results.filter((r) => r.success).length
   console.info(`[notification] Delivered ${successCount}/${results.length}${inAppId ? " + in-app" : ""} for user ${userId}`)
+
+  // Emit domain events for notification delivery
+  if (successCount > 0) {
+    getWorkerEventBus().publish({
+      type: "notification.sent",
+      aggregateType: "notification",
+      aggregateId: inAppId ?? userId,
+      payload: {
+        userId,
+        channelCount: results.length,
+        successCount,
+        title,
+        category,
+      },
+      metadata: { userId, workspaceId: job.data.workspaceId },
+    }).catch(() => {})
+  }
+  if (successCount < results.length) {
+    getWorkerEventBus().publish({
+      type: "notification.failed",
+      aggregateType: "notification",
+      aggregateId: inAppId ?? userId,
+      payload: {
+        userId,
+        title,
+        category,
+        error: `${results.length - successCount} channel(s) failed`,
+      },
+      metadata: { userId, workspaceId: job.data.workspaceId },
+    }).catch(() => {})
+  }
 }

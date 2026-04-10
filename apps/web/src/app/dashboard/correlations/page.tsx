@@ -3,11 +3,12 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSelectedUser } from "../../../lib/user-selection-context"
-import { correlationsApi, analyticsApi, usersApi, type CorrelationData } from "../../../lib/api"
+import { correlationsApi, analyticsApi, type CorrelationData } from "../../../lib/api"
 import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine, Cell,
 } from "recharts"
+import { PageHeader, Badge, Card, CardHeader, CardContent, StatCard, StatSkeleton, CardSkeleton, TableSkeleton, EmptyState, Button, Select } from "../../../lib/components/ui"
 
 const DAYS_OPTIONS = [30, 60, 90, 180] as const
 
@@ -87,16 +88,10 @@ function ScatterTooltipContent({ active, payload }: { active?: boolean; payload?
 }
 
 export default function CorrelationsPage() {
-  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
   const queryClient = useQueryClient()
   const [days, setDays] = useState(90)
 
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-    enabled: isAdmin,
-  })
-  const users = usersResult?.data ?? []
 
   const { data: correlationsResult, isLoading } = useQuery({
     queryKey: ["correlations", selectedUserId],
@@ -141,185 +136,177 @@ export default function CorrelationsPage() {
     .slice(0, 10)
 
   return (
-    <div>
+    <div className="space-y-8">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">Metric Correlations</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Discover relationships between your health metrics using statistical analysis.</p>
-        </div>
-        {selectedUserId && (
-          <button type="button" onClick={() => computeMut.mutate()} disabled={computeMut.isPending} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
-            {computeMut.isPending ? "Computing…" : `Compute (${days}d)`}
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Correlations"
+        subtitle="Discover relationships between your health metrics using statistical analysis."
+        actions={
+          selectedUserId ? (
+            <Button onClick={() => computeMut.mutate()} loading={computeMut.isPending}>
+              Compute ({days}d)
+            </Button>
+          ) : undefined
+        }
+      />
 
-      {/* User select + Date range filter */}
-      <div className="mb-6 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
-        <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-          {isAdmin && (
-            <div className="flex-1">
-              <label htmlFor="corr-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
-              <select id="corr-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-                <option value="">Select a user…</option>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-              </select>
-            </div>
-          )}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Date Range</label>
-            <div className="flex gap-1.5">
-              {DAYS_OPTIONS.map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setDays(d)}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                    days === d
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-                  }`}
-                >
-                  {d}d
-                </button>
-              ))}
+      {/* Date range filter */}
+      <Card>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Date Range</label>
+              <div className="flex gap-1.5">
+                {DAYS_OPTIONS.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDays(d)}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
+                      days === d
+                        ? "bg-indigo-600 text-white shadow-sm"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    {d}d
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {!selectedUserId && isAdmin && <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-16">Select a user to view correlations.</p>}
+        </CardContent>
+      </Card>
 
       {/* Summary Stats — 4 cards */}
       {selectedUserId && correlations.length > 0 && (
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger-grid">
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total Correlations</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{correlations.length}</p>
-          </div>
-          <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Strongest Positive</p>
-            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-              {strongestPositive && (strongestPositive.coefficient ?? 0) > 0
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard label="Total Correlations" value={correlations.length} />
+          <StatCard
+            label="Strongest Positive"
+            value={
+              strongestPositive && (strongestPositive.coefficient ?? 0) > 0
                 ? `+${(strongestPositive.coefficient ?? 0).toFixed(3)}`
-                : "—"}
-            </p>
-            {strongestPositive && (strongestPositive.coefficient ?? 0) > 0 && (
-              <p className="mt-0.5 text-[10px] text-gray-500 dark:text-gray-400 truncate">{strongestPositive.metricA} ↔ {strongestPositive.metricB}</p>
-            )}
-          </div>
-          <div className="rounded-2xl border border-red-200 dark:border-red-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Strongest Negative</p>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {strongestNegative && (strongestNegative.coefficient ?? 0) < 0
+                : "—"
+            }
+            color="vitality"
+          />
+          <StatCard
+            label="Strongest Negative"
+            value={
+              strongestNegative && (strongestNegative.coefficient ?? 0) < 0
                 ? (strongestNegative.coefficient ?? 0).toFixed(3)
-                : "—"}
-            </p>
-            {strongestNegative && (strongestNegative.coefficient ?? 0) < 0 && (
-              <p className="mt-0.5 text-[10px] text-gray-500 dark:text-gray-400 truncate">{strongestNegative.metricA} ↔ {strongestNegative.metricB}</p>
-            )}
-          </div>
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Avg |Coefficient|</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{avgCoeff.toFixed(3)}</p>
-          </div>
+                : "—"
+            }
+            color="accent"
+          />
+          <StatCard label="Avg |Coefficient|" value={avgCoeff.toFixed(3)} />
         </div>
       )}
 
       {/* Scatter Plot + Heatmap row */}
       {selectedUserId && correlations.length > 0 && (
-        <div className="mb-6 grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* Scatter Plot */}
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Correlation Scatter</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
-                  <CartesianGrid {...GRID_PROPS} />
-                  <XAxis
-                    type="number"
-                    dataKey="sampleSize"
-                    name="Samples"
-                    tick={TICK_STYLE}
-                    label={{ value: "Sample Size", position: "insideBottom", offset: -8, style: { fill: "#9ca3af", fontSize: 10 } }}
-                  />
-                  <YAxis
-                    type="number"
-                    dataKey="coefficient"
-                    name="Coefficient"
-                    domain={[-1, 1]}
-                    tick={TICK_STYLE}
-                    label={{ value: "Coefficient", angle: -90, position: "insideLeft", offset: 10, style: { fill: "#9ca3af", fontSize: 10 } }}
-                  />
-                  <ReferenceLine y={0} stroke="#6b7280" strokeDasharray="4 4" strokeOpacity={0.5} />
-                  <Tooltip content={<ScatterTooltipContent />} cursor={{ strokeDasharray: "3 3" }} />
-                  <Scatter data={scatterData} fill="#8884d8">
-                    {scatterData.map((entry, i) => (
-                      <Cell key={`cell-${i}`} fill={coefficientColor(entry.coefficient)} fillOpacity={0.85} />
-                    ))}
-                  </Scatter>
-                </ScatterChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <Card>
+            <CardHeader title="Correlation Scatter" />
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
+                    <CartesianGrid {...GRID_PROPS} />
+                    <XAxis
+                      type="number"
+                      dataKey="sampleSize"
+                      name="Samples"
+                      tick={TICK_STYLE}
+                      label={{ value: "Sample Size", position: "insideBottom", offset: -8, style: { fill: "#9ca3af", fontSize: 10 } }}
+                    />
+                    <YAxis
+                      type="number"
+                      dataKey="coefficient"
+                      name="Coefficient"
+                      domain={[-1, 1]}
+                      tick={TICK_STYLE}
+                      label={{ value: "Coefficient", angle: -90, position: "insideLeft", offset: 10, style: { fill: "#9ca3af", fontSize: 10 } }}
+                    />
+                    <ReferenceLine y={0} stroke="#6b7280" strokeDasharray="4 4" strokeOpacity={0.5} />
+                    <Tooltip content={<ScatterTooltipContent />} cursor={{ strokeDasharray: "3 3" }} />
+                    <Scatter data={scatterData} fill="#8884d8">
+                      {scatterData.map((entry, i) => (
+                        <Cell key={`cell-${i}`} fill={coefficientColor(entry.coefficient)} fillOpacity={0.85} />
+                      ))}
+                    </Scatter>
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Heatmap-style summary */}
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Top 10 Correlations</h3>
-            <div className="space-y-1.5">
-              {heatmapData.map((c) => {
-                const coeff = c.coefficient ?? 0
-                return (
-                  <div key={c.id} className={`flex items-center justify-between rounded-lg px-3 py-2 ${heatCellBg(coeff)} transition-colors`}>
-                    <span className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate mr-2">
-                      {c.metricA} <span className="text-gray-500 dark:text-gray-400 mx-1">↔</span> {c.metricB}
-                    </span>
-                    <span className={`text-xs font-mono font-bold whitespace-nowrap ${coeff >= 0 ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200"}`}>
-                      {coeff > 0 ? "+" : ""}{coeff.toFixed(3)}
-                    </span>
-                  </div>
-                )
-              })}
-              {heatmapData.length === 0 && (
-                <p className="text-center text-xs text-gray-500 dark:text-gray-400 py-4">No data yet.</p>
-              )}
-            </div>
-          </div>
+          <Card>
+            <CardHeader title="Top 10 Correlations" />
+            <CardContent>
+              <div className="space-y-1.5">
+                {heatmapData.map((c) => {
+                  const coeff = c.coefficient ?? 0
+                  return (
+                    <div key={c.id} className={`flex items-center justify-between rounded-lg px-3 py-2 ${heatCellBg(coeff)} transition-colors`}>
+                      <span className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate mr-2">
+                        {c.metricA} <span className="text-gray-500 dark:text-gray-400 mx-1">↔</span> {c.metricB}
+                      </span>
+                      <span className={`text-xs font-mono font-bold whitespace-nowrap ${coeff >= 0 ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200"}`}>
+                        {coeff > 0 ? "+" : ""}{coeff.toFixed(3)}
+                      </span>
+                    </div>
+                  )
+                })}
+                {heatmapData.length === 0 && (
+                  <EmptyState title="No data yet" description="Compute correlations to see the top results." />
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* Key Findings */}
       {selectedUserId && strongCorrelations.length > 0 && (
-        <div className="mb-6 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/80 dark:bg-emerald-950/30 backdrop-blur-xl p-5 shadow-card">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Key Findings</h3>
-          <div className="space-y-2">
-            {strongCorrelations.slice(0, 5).map((c) => (
-              <div key={c.id} className="flex items-center justify-between text-sm">
-                <span className="text-gray-700 dark:text-gray-300">
-                  <span className="font-medium">{c.metricA}</span>
-                  <span className="mx-2 text-gray-400">{directionIcon(c.direction)}</span>
-                  <span className="font-medium">{c.metricB}</span>
-                </span>
-                <span className={`font-mono font-medium ${(c.coefficient ?? 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                  {(c.coefficient ?? 0) > 0 ? "+" : ""}{(c.coefficient ?? 0).toFixed(3)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Card>
+          <CardHeader title="Key Findings" />
+          <CardContent>
+            <div className="space-y-2">
+              {strongCorrelations.slice(0, 5).map((c) => (
+                <div key={c.id} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-700 dark:text-gray-300">
+                    <span className="font-medium">{c.metricA}</span>
+                    <span className="mx-2 text-gray-400">{directionIcon(c.direction)}</span>
+                    <span className="font-medium">{c.metricB}</span>
+                  </span>
+                  <span className={`font-mono font-medium ${(c.coefficient ?? 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                    {(c.coefficient ?? 0) > 0 ? "+" : ""}{(c.coefficient ?? 0).toFixed(3)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* All Correlations Table */}
       {selectedUserId && (
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-card overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">All Correlations</h3>
-          </div>
+        <Card>
+          <CardHeader title="All Correlations" />
           {isLoading ? (
-            <div className="p-8 text-center"><div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" /></div>
+            <CardContent>
+              <TableSkeleton rows={5} cols={7} />
+            </CardContent>
           ) : correlations.length === 0 ? (
-            <p className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">No correlations computed yet. Click &quot;Compute Correlations&quot; to analyze.</p>
+            <CardContent>
+              <EmptyState
+                title="No correlations computed"
+                description="Click &quot;Compute&quot; to analyze your health metrics."
+              />
+            </CardContent>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -355,7 +342,7 @@ export default function CorrelationsPage() {
               </table>
             </div>
           )}
-        </div>
+        </Card>
       )}
     </div>
   )

@@ -5,7 +5,9 @@ import type { OAuthTokens, ProviderTokens, SyncDataPoint } from "@biosync-io/typ
 import type { Job } from "bullmq"
 import { eq } from "drizzle-orm"
 import { getConfig } from "../config.js"
+import { getProviderCircuitBreaker } from "../lib/circuit-breakers.js"
 import { decrypt } from "../lib/crypto.js"
+import { getWorkerEventBus } from "../lib/event-bus.js"
 import { trackProviderCalls } from "../lib/provider-call-tracker.js"
 import { getNotificationQueue } from "../queues/notification.js"
 import { enqueueAllActiveConnections } from "../schedulers/periodic-sync.js"
@@ -147,27 +149,31 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
       await job.updateProgress(totalInserted)
     }
 
+    const breaker = getProviderCircuitBreaker(connection.providerId)
+
     const { stats: callStats } = await trackProviderCalls(async () => {
-      // biome-ignore lint: provider tokens type variance
-      for await (const point of (provider as any).syncData(tokens, { from, to })) {
-        const p = point as SyncDataPoint
-        batch.push({
-          userId,
-          connectionId,
-          providerId: connection.providerId,
-          metricType: p.metricType,
-          recordedAt: p.recordedAt,
-          value: p.value ?? 0,
-          ...(p.unit !== undefined && { unit: p.unit }),
-          ...(p.data !== undefined && { data: p.data }),
-          source: connection.providerId,
-        })
+      await breaker.execute(async () => {
+        // biome-ignore lint: provider tokens type variance
+        for await (const point of (provider as any).syncData(tokens, { from, to })) {
+          const p = point as SyncDataPoint
+          batch.push({
+            userId,
+            connectionId,
+            providerId: connection.providerId,
+            metricType: p.metricType,
+            recordedAt: p.recordedAt,
+            value: p.value ?? 0,
+            ...(p.unit !== undefined && { unit: p.unit }),
+            ...(p.data !== undefined && { data: p.data }),
+            source: connection.providerId,
+          })
 
-        const event = extractEvent(p, userId, connectionId)
-        if (event) eventBatch.push(event)
+          const event = extractEvent(p, userId, connectionId)
+          if (event) eventBatch.push(event)
 
-        if (batch.length >= BATCH_SIZE) await flush()
-      }
+          if (batch.length >= BATCH_SIZE) await flush()
+        }
+      })
     })
 
     await flush()
@@ -214,6 +220,23 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
         category: "sync",
       }).catch((e) => console.error("[sync] Failed to enqueue success notification:", e))
     }
+
+    // Emit domain event for sync completion
+    getWorkerEventBus().publish({
+      type: "sync.completed",
+      aggregateType: "sync",
+      aggregateId: jobId!,
+      payload: {
+        syncJobId: jobId!,
+        connectionId,
+        userId,
+        provider: connection.providerId,
+        metricsCount: totalInserted,
+        eventsCount: eventBatch.length,
+        duration: durationMs,
+      },
+      metadata: { userId, workspaceId },
+    }).catch((e) => console.error("[sync] Failed to emit sync.completed event:", e))
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
 
@@ -234,6 +257,21 @@ export async function processSyncJob(job: Job<SyncJobData>): Promise<void> {
         error: message,
       })
       .where(eq(syncJobs.id, jobId!))
+
+    // Emit domain event for sync failure
+    getWorkerEventBus().publish({
+      type: "sync.failed",
+      aggregateType: "sync",
+      aggregateId: jobId!,
+      payload: {
+        syncJobId: jobId!,
+        connectionId,
+        userId,
+        provider: connection.providerId,
+        error: message,
+      },
+      metadata: { userId, workspaceId },
+    }).catch((e) => console.error("[sync] Failed to emit sync.failed event:", e))
 
     throw err // Re-throw so BullMQ records the failure and retries
   }

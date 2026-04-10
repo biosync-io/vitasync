@@ -41,3 +41,25 @@ export * from "./notification-rules"
 export * from "./in-app-notifications"
 export * from "./ai-providers"
 export * from "./api-logs"
+
+// ── Auth, SSO & Security ────────────────────────────────────────
+export * from "./user-sessions"
+export * from "./identity-providers"
+export * from "./user-identities"
+export * from "./webauthn-credentials"
+export * from "./mfa-totp"
+export * from "./audit-log"
+export * from "./user-consents"
+export * from "./data-retention-policies"
+
+// ── Admin ────────────────────────────────────────────────────────
+export * from "./admin-invitations"
+
+// ── System Settings ──────────────────────────────────────────────
+export * from "./system-settings"
+
+// ── Event Sourcing ──────────────────────────────────────────────
+export * from "./event-store"
+
+// ── CQRS Read-Model Projections ─────────────────────────────────
+export * from "./projections"

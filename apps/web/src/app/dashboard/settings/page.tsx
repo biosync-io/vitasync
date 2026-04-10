@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation"
 import { usersApi, getRuntimeDefaultKey } from "../../../lib/api"
 import { type AccentTheme, ACCENT_THEMES, applyTheme, getStoredTheme } from "../../../lib/ThemeProvider"
 import { useSelectedUser } from "../../../lib/user-selection-context"
+import { PageHeader, Card, CardHeader, CardContent, Toggle, CardSkeleton } from "../../../lib/components/ui"
 
 const STORAGE_KEY = "vitasync_api_key"
 
@@ -85,12 +86,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-3xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Configure your workspace API access and preferences.
-        </p>
-      </div>
+      <PageHeader title="Settings" subtitle="Configure your workspace API access and preferences." />
 
       {/* ── Setup banner ─────────────────────────────────────────────────────── */}
       <Suspense>
@@ -101,14 +97,9 @@ export default function SettingsPage() {
       <UserProfileSection />
 
       {/* ── Appearance ───────────────────────────────────────────────────────── */}
-      <section className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Appearance</h2>
-          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-            Customise the dashboard accent colour and sync behaviour.
-          </p>
-        </div>
-        <div className="px-6 py-5 space-y-6">
+      <Card>
+        <CardHeader title="Appearance" subtitle="Customise the dashboard accent colour and sync behaviour." />
+        <CardContent className="space-y-6">
           {/* Accent colour picker */}
           <div>
             <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-3">Accent colour</p>
@@ -148,30 +139,14 @@ export default function SettingsPage() {
           </div>
 
           {/* Auto-sync toggle */}
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Auto-sync on connect</p>
-              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                Automatically trigger a data sync when a provider is connected via OAuth.
-              </p>
-            </div>
-            <button
-              type="button"
-              aria-label={autoSync ? "Auto-sync is on — click to disable" : "Auto-sync is off — click to enable"}
-              onClick={toggleAutoSync}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                autoSync ? "bg-indigo-600" : "bg-gray-200 dark:bg-gray-700"
-              }`}
-            >
-              <span
-                className={`h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                  autoSync ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      </section>
+          <Toggle
+            label="Auto-sync on connect"
+            description="Automatically trigger a data sync when a provider is connected via OAuth."
+            checked={autoSync}
+            onChange={toggleAutoSync}
+          />
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -188,7 +163,7 @@ function UserProfileSection() {
   const { selectedUserId } = useSelectedUser()
   const queryClient = useQueryClient()
 
-  const { data: selectedUser } = useQuery({
+  const { data: selectedUser, isLoading: userLoading } = useQuery({
     queryKey: ["user", selectedUserId],
     queryFn: () => usersApi.get(selectedUserId),
     enabled: !!selectedUserId,
@@ -202,16 +177,12 @@ function UserProfileSection() {
   })
 
   return (
-    <section className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-card overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">User Profile</h2>
-        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-          Set gender for personalized health baselines. This affects health scores, cardio assessment, sleep recommendations, and metabolic efficiency calculations.
-        </p>
-      </div>
-      <div className="px-6 py-5 space-y-4">
+    <Card>
+      <CardHeader title="User Profile" subtitle="Set gender for personalized health baselines. This affects health scores, cardio assessment, sleep recommendations, and metabolic efficiency calculations." />
+      <CardContent className="space-y-4">
 
-        {selectedUserId && (
+        {userLoading && selectedUserId && <CardSkeleton count={1} />}
+        {selectedUserId && !userLoading && (
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Gender</label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -267,7 +238,7 @@ function UserProfileSection() {
             <li>• <strong>Health Insights:</strong> Women&apos;s health insights shown only for female users</li>
           </ul>
         </div>
-      </div>
-    </section>
+      </CardContent>
+    </Card>
   )
 }

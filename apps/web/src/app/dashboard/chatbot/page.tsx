@@ -1,10 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import Link from "next/link"
 import { MessageSquare, Send, Bot, Sparkles, ChevronDown, Settings, AlertCircle } from "lucide-react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
 import { aiProvidersApi, getRuntimeDefaultKey, type AiProviderConfig } from "../../../lib/api"
+import { PageHeader, Card, CardContent, Button, EmptyState, CardSkeleton } from "../../../lib/components/ui"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -76,7 +76,7 @@ function renderMarkdown(text: string) {
 // Component
 // ---------------------------------------------------------------------------
 export default function ChatbotPage() {
-  const { selectedUserId } = useSelectedUser()
+  const { selectedUserId, currentUserId } = useSelectedUser()
 
   // Providers
   const [providers, setProviders] = useState<AiProviderConfig[]>([])
@@ -152,7 +152,7 @@ export default function ChatbotPage() {
     const trimmed = text.trim()
     if (!trimmed || streaming || !selectedProviderId) return
 
-    const userId = selectedUserId || "me"
+    const userId = selectedUserId || currentUserId || "me"
 
     const userMsg: ChatMessage = { id: generateId(), role: "user", content: trimmed, timestamp: Date.now() }
     const assistantMsg: ChatMessage = { id: generateId(), role: "assistant", content: "", timestamp: Date.now() }
@@ -258,166 +258,154 @@ export default function ChatbotPage() {
 
   // ----- Render -----
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col">
+    <div className="flex h-[calc(100vh-4rem)] flex-col space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-800 sm:px-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20">
-            <Bot className="h-5 w-5 text-indigo-500" />
-          </div>
-          <div>
-            <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">AI Assistant</h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Health insights powered by AI</p>
-          </div>
-        </div>
+      <PageHeader
+        title="AI Assistant"
+        subtitle="Health insights powered by AI"
+        actions={
+          providers.length > 0 ? (
+            <div className="relative" data-provider-dropdown>
+              <button
+                onClick={() => setProviderDropdownOpen((v) => !v)}
+                className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-750"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                {selectedProvider?.name ?? "Select provider"}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${providerDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
 
-        {/* Provider selector */}
-        {providers.length > 0 && (
-          <div className="relative" data-provider-dropdown>
-            <button
-              onClick={() => setProviderDropdownOpen((v) => !v)}
-              className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-750"
-            >
-              <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
-              {selectedProvider?.name ?? "Select provider"}
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${providerDropdownOpen ? "rotate-180" : ""}`} />
-            </button>
+              {providerDropdownOpen && (
+                <div className="absolute right-0 z-50 mt-1 min-w-[200px] rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                  {providers.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        setSelectedProviderId(p.id)
+                        setProviderDropdownOpen(false)
+                      }}
+                      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                        p.id === selectedProviderId ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-gray-700 dark:text-gray-300"
+                      }`}
+                    >
+                      <span className="font-medium">{p.name}</span>
+                      <span className="ml-auto text-[10px] text-gray-400">{p.model}</span>
+                      {p.isDefault && <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">default</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : undefined
+        }
+      />
 
-            {providerDropdownOpen && (
-              <div className="absolute right-0 z-50 mt-1 min-w-[200px] rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800">
-                {providers.map((p) => (
+      {/* Chat area */}
+      <Card className="flex-1 flex flex-col overflow-hidden">
+        <CardContent className="flex-1 overflow-y-auto">
+          {/* Loading providers */}
+          {providersLoading && (
+            <div className="flex h-full items-center justify-center p-8">
+              <CardSkeleton count={1} />
+            </div>
+          )}
+
+          {/* No providers state */}
+          {noProviders && (
+            <div className="flex h-full items-center justify-center">
+              <Card className="max-w-sm">
+                <EmptyState
+                  icon={AlertCircle}
+                  title="No AI Providers Configured"
+                  description="Set up an AI provider in settings to start chatting with your health assistant."
+                  action={{ label: "Go to Settings", href: "/dashboard/settings#ai-providers", icon: Settings }}
+                />
+              </Card>
+            </div>
+          )}
+
+          {/* Empty state with suggestions */}
+          {!providersLoading && !noProviders && !hasMessages && (
+            <div className="flex h-full flex-col items-center justify-center">
+              <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg shadow-indigo-500/25">
+                <MessageSquare className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                What can I help you with?
+              </h2>
+              <p className="mb-6 max-w-md text-center text-sm text-gray-500 dark:text-gray-400">
+                Ask me anything about your health data. I can analyze trends, spot patterns, and provide insights.
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {SUGGESTED_QUESTIONS.map((q) => (
                   <button
-                    key={p.id}
-                    onClick={() => {
-                      setSelectedProviderId(p.id)
-                      setProviderDropdownOpen(false)
-                    }}
-                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                      p.id === selectedProviderId ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400" : "text-gray-700 dark:text-gray-300"
-                    }`}
+                    key={q}
+                    onClick={() => sendMessage(q)}
+                    className="rounded-xl border border-gray-200 bg-white/80 px-3.5 py-2 text-xs font-medium text-gray-700 backdrop-blur-xl transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:border-indigo-600 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"
                   >
-                    <span className="font-medium">{p.name}</span>
-                    <span className="ml-auto text-[10px] text-gray-400">{p.model}</span>
-                    {p.isDefault && <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">default</span>}
+                    <Sparkles className="mr-1.5 inline h-3 w-3 text-indigo-400" />
+                    {q}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Message area */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
-        {/* No providers state */}
-        {noProviders && (
-          <div className="flex h-full items-center justify-center">
-            <div className="mx-auto max-w-sm rounded-2xl border border-gray-200 bg-white/80 p-8 text-center shadow-card backdrop-blur-xl dark:border-gray-700 dark:bg-gray-800/80">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10">
-                <AlertCircle className="h-7 w-7 text-amber-500" />
-              </div>
-              <h3 className="mb-2 text-base font-semibold text-gray-900 dark:text-gray-100">No AI Providers Configured</h3>
-              <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-                Set up an AI provider in settings to start chatting with your health assistant.
-              </p>
-              <Link
-                href="/dashboard/settings#ai-providers"
-                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-              >
-                <Settings className="h-4 w-4" />
-                Go to Settings
-              </Link>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Empty state with suggestions */}
-        {!noProviders && !hasMessages && (
-          <div className="flex h-full flex-col items-center justify-center">
-            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg shadow-indigo-500/25">
-              <MessageSquare className="h-8 w-8 text-white" />
-            </div>
-            <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
-              What can I help you with?
-            </h2>
-            <p className="mb-6 max-w-md text-center text-sm text-gray-500 dark:text-gray-400">
-              Ask me anything about your health data. I can analyze trends, spot patterns, and provide insights.
-            </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {SUGGESTED_QUESTIONS.map((q) => (
-                <button
-                  key={q}
-                  onClick={() => sendMessage(q)}
-                  className="rounded-xl border border-gray-200 bg-white/80 px-3.5 py-2 text-xs font-medium text-gray-700 backdrop-blur-xl transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:border-indigo-600 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400"
-                >
-                  <Sparkles className="mr-1.5 inline h-3 w-3 text-indigo-400" />
-                  {q}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Messages */}
-        {hasMessages && (
-          <div className="mx-auto max-w-3xl space-y-4">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                {msg.role === "assistant" && (
-                  <div className="mr-2 mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
-                    <Bot className="h-4 w-4 text-indigo-500" />
-                  </div>
-                )}
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                    msg.role === "user"
-                      ? "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                      : "border border-gray-200 bg-white text-gray-800 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                  }`}
-                >
-                  {msg.role === "user" ? (
-                    <p className="text-sm leading-relaxed">{msg.content}</p>
-                  ) : msg.content ? (
-                    <div className="space-y-1">{renderMarkdown(msg.content)}</div>
-                  ) : streaming && msg.id === messages[messages.length - 1]?.id ? (
-                    /* Typing indicator */
-                    <div className="flex items-center gap-1.5 py-1">
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-400 [animation-delay:0ms]" />
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-400 [animation-delay:150ms]" />
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-400 [animation-delay:300ms]" />
+          {/* Messages */}
+          {hasMessages && (
+            <div className="mx-auto max-w-3xl space-y-4">
+              {messages.map((msg) => (
+                <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  {msg.role === "assistant" && (
+                    <div className="mr-2 mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
+                      <Bot className="h-4 w-4 text-indigo-500" />
                     </div>
-                  ) : null}
+                  )}
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                      msg.role === "user"
+                        ? "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                        : "border border-gray-200 bg-white text-gray-800 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                    }`}
+                  >
+                    {msg.role === "user" ? (
+                      <p className="text-sm leading-relaxed">{msg.content}</p>
+                    ) : msg.content ? (
+                      <div className="space-y-1">{renderMarkdown(msg.content)}</div>
+                    ) : streaming && msg.id === messages[messages.length - 1]?.id ? (
+                      /* Typing indicator */
+                      <div className="flex items-center gap-1.5 py-1">
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-400 [animation-delay:0ms]" />
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-400 [animation-delay:150ms]" />
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-indigo-400 [animation-delay:300ms]" />
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </CardContent>
+
+        {/* Input bar */}
+        {!noProviders && (
+          <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-800 sm:px-6">
+            <form onSubmit={handleSubmit} className="mx-auto flex max-w-3xl items-center gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={streaming ? "AI is thinking…" : "Ask about your health data…"}
+                disabled={streaming}
+                className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-indigo-500"
+              />
+              <Button type="submit" icon={Send} disabled={streaming || !input.trim()} />
+            </form>
           </div>
         )}
-      </div>
-
-      {/* Input bar */}
-      {!noProviders && (
-        <div className="border-t border-gray-200 bg-white/80 px-4 py-3 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/80 sm:px-6">
-          <form onSubmit={handleSubmit} className="mx-auto flex max-w-3xl items-center gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={streaming ? "AI is thinking…" : "Ask about your health data…"}
-              disabled={streaming}
-              className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-indigo-500"
-            />
-            <button
-              type="submit"
-              disabled={streaming || !input.trim()}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-500/25 transition-all hover:bg-indigo-700 disabled:opacity-40 disabled:shadow-none"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          </form>
-        </div>
-      )}
+      </Card>
     </div>
   )
 }

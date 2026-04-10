@@ -69,6 +69,16 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       OAUTH_REDIRECT_BASE_URL: ${OAUTH_REDIRECT_BASE_URL:-http://localhost:3001}
       ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-VitaSync}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
+      ALLOW_SELF_REGISTRATION: ${ALLOW_SELF_REGISTRATION:-false}
       FITBIT_CLIENT_ID: ${FITBIT_CLIENT_ID:-}
       FITBIT_CLIENT_SECRET: ${FITBIT_CLIENT_SECRET:-}
       GARMIN_CONSUMER_KEY: ${GARMIN_CONSUMER_KEY:-}
@@ -80,7 +90,7 @@ services:
       WHOOP_CLIENT_ID: ${WHOOP_CLIENT_ID:-}
       WHOOP_CLIENT_SECRET: ${WHOOP_CLIENT_SECRET:-}
     ports:
-      - "3001:3001"
+      - "${API_PORT:-3001}:${API_INTERNAL_PORT:-3001}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -186,7 +196,7 @@ services:
       # Runtime API key — served to browser via /api/config
       DEFAULT_API_KEY: ${ADMIN_API_KEY:-}
     ports:
-      - "3000:3000"
+      - "${WEB_PORT:-3000}:3000"
     depends_on:
       api:
         condition: service_healthy

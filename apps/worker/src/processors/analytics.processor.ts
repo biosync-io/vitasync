@@ -14,6 +14,7 @@ import { computeReadiness } from "@biosync-io/analytics"
 import { computeBodyScore } from "@biosync-io/analytics"
 import { computeTrainingLoad } from "@biosync-io/analytics"
 import { getNotificationQueue } from "../queues/notification.js"
+import { getWorkerEventBus } from "../lib/event-bus.js"
 
 export interface AnalyticsJobData {
   userId: string
@@ -43,6 +44,20 @@ export async function processAnalyticsJob(job: Job<AnalyticsJobData>): Promise<v
   try {
     const score = await computeHealthScore(db, userId, today)
     job.log(`Health score computed: ${score.overallScore} (${score.grade})`)
+
+    // Emit health score computed event
+    getWorkerEventBus().publish({
+      type: "health.score.computed",
+      aggregateType: "health-score",
+      aggregateId: score.id ?? userId,
+      payload: {
+        userId,
+        overallScore: score.overallScore,
+        grade: score.grade,
+        date: today.toISOString(),
+      },
+      metadata: { userId, workspaceId: job.data.workspaceId },
+    }).catch(() => {})
 
     // Notify on notable health score milestones
     if (score.overallScore >= 90) {
@@ -81,6 +96,22 @@ export async function processAnalyticsJob(job: Job<AnalyticsJobData>): Promise<v
     const count = await detectAnomalies(db, userId)
     if (count > 0) {
       job.log(`Detected ${count} anomalies`)
+
+      // Emit anomaly detected event
+      getWorkerEventBus().publish({
+        type: "analytics.anomaly.detected",
+        aggregateType: "anomaly",
+        aggregateId: userId,
+        payload: {
+          userId,
+          metricType: "multiple",
+          severity: count >= 3 ? "critical" : "warning",
+          value: count,
+          expectedRange: [0, 0] as [number, number],
+        },
+        metadata: { userId, workspaceId: job.data.workspaceId },
+      }).catch(() => {})
+
       getNotificationQueue().add("anomaly-detected", {
         userId,
         workspaceId: job.data.workspaceId,
@@ -99,6 +130,22 @@ export async function processAnalyticsJob(job: Job<AnalyticsJobData>): Promise<v
     const awarded = await checkAchievements(db, userId)
     if (awarded > 0) {
       job.log(`Awarded ${awarded} new achievements`)
+
+      // Emit achievement unlocked event
+      getWorkerEventBus().publish({
+        type: "achievement.unlocked",
+        aggregateType: "achievement",
+        aggregateId: userId,
+        payload: {
+          userId,
+          achievementId: "batch",
+          name: `${awarded} achievement${awarded > 1 ? "s" : ""}`,
+          category: "milestone",
+          tier: "bronze",
+        },
+        metadata: { userId, workspaceId: job.data.workspaceId },
+      }).catch(() => {})
+
       getNotificationQueue().add("achievement-unlocked", {
         userId,
         workspaceId: job.data.workspaceId,
@@ -127,6 +174,21 @@ export async function processAnalyticsJob(job: Job<AnalyticsJobData>): Promise<v
     const { evaluated, completedGoals } = await evaluateGoals(db, userId)
     if (evaluated > 0) job.log(`Evaluated ${evaluated} active goals`)
     for (const goal of completedGoals) {
+      // Emit goal achieved event
+      getWorkerEventBus().publish({
+        type: "goal.achieved",
+        aggregateType: "goal",
+        aggregateId: userId,
+        payload: {
+          userId,
+          goalId: "",
+          name: goal.name,
+          targetValue: goal.targetValue,
+          currentValue: goal.targetValue,
+        },
+        metadata: { userId, workspaceId: job.data.workspaceId },
+      }).catch(() => {})
+
       getNotificationQueue().add("goal-completed", {
         userId,
         workspaceId: job.data.workspaceId,

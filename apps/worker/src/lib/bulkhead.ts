@@ -23,7 +23,7 @@ const providerWorkers = new Map<string, Worker>()
 /** Create per-provider queues for bulkhead isolation. */
 export function createProviderQueues(redis: Redis): Map<string, Queue> {
   for (const cfg of PROVIDER_CONFIGS) {
-    const queueName = `sync:${cfg.provider}`
+    const queueName = `sync-${cfg.provider}`
     if (providerQueues.has(cfg.provider)) continue
 
     const limiter =
@@ -54,7 +54,7 @@ export function createProviderWorkers(
   processor: Processor,
 ): Map<string, Worker> {
   for (const cfg of PROVIDER_CONFIGS) {
-    const queueName = `sync:${cfg.provider}`
+    const queueName = `sync-${cfg.provider}`
     if (providerWorkers.has(cfg.provider)) continue
 
     const worker = new Worker(queueName, processor, {

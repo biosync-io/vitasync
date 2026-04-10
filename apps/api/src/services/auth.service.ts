@@ -313,4 +313,105 @@ export class AuthService {
     const token = await this.generateVerificationToken(user.id, user.email)
     return { token, email: user.email }
   }
+
+  // ── Password Reset ──────────────────────────────────────────
+
+  /**
+   * Generate a password reset token (1 hour expiry).
+   * Returns null if user not found or no email.
+   */
+  async generatePasswordResetToken(email: string): Promise<{ token: string; userId: string } | null> {
+    const [user] = await this.db
+      .select({ id: users.id, email: users.email })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1)
+
+    if (!user || !user.email) return null
+
+    const token = await new jose.SignJWT({ sub: user.id, email: user.email, purpose: "password-reset" })
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("1h")
+      .setIssuedAt()
+      .sign(jwtSecret)
+
+    return { token, userId: user.id }
+  }
+
+  // ── Password Setup (migration flow) ──────────────────────────
+
+  /**
+   * Generate a setup-password token for existing users (24h expiry).
+   * Used for migrated users who don't have a password yet.
+   */
+  async generateSetupToken(userId: string, email: string): Promise<{ token: string }> {
+    const token = await new jose.SignJWT({ sub: userId, email, purpose: "password-setup" })
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("24h")
+      .setIssuedAt()
+      .sign(jwtSecret)
+
+    return { token }
+  }
+
+  /**
+   * Set password for a user who doesn't have one yet (setup flow).
+   * Verifies the token, checks the user has no password, sets password and marks email as verified.
+   */
+  async setupPassword(token: string, newPassword: string): Promise<void> {
+    const { payload } = await jose.jwtVerify(token, jwtSecret)
+
+    if (payload.purpose !== "password-setup") {
+      throw new Error("Invalid token")
+    }
+
+    const userId = payload.sub!
+
+    const [user] = await this.db
+      .select({ id: users.id, passwordHash: users.passwordHash })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+
+    if (!user) throw new Error("User not found")
+
+    if (user.passwordHash) {
+      throw Object.assign(new Error("User already has a password. Use the login or reset-password flow instead."), { statusCode: 400 })
+    }
+
+    const passwordHash = await argon2.hash(newPassword)
+
+    await this.db
+      .update(users)
+      .set({ passwordHash, emailVerified: true, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+  }
+
+  /**
+   * Reset password using a valid reset token.
+   * Also revokes all existing sessions for security.
+   */
+  async resetPassword(token: string, newPassword: string): Promise<{ userId: string }> {
+    const { payload } = await jose.jwtVerify(token, jwtSecret)
+
+    if (payload.purpose !== "password-reset") {
+      throw new Error("Invalid token")
+    }
+
+    const userId = payload.sub!
+    const passwordHash = await argon2.hash(newPassword)
+
+    const [updated] = await this.db
+      .update(users)
+      .set({ passwordHash, failedLoginAttempts: 0, lockedUntil: null, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning({ id: users.id })
+
+    if (!updated) throw new Error("User not found")
+
+    // Revoke all sessions for security
+    await this.db.delete(userSessions).where(eq(userSessions.userId, userId))
+
+    return { userId }
+  }
 }

@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
-import { symptomsApi, usersApi, type SymptomLogData, type SymptomPatterns } from "../../../lib/api"
+import { symptomsApi, type SymptomLogData, type SymptomPatterns } from "../../../lib/api"
 import {
   Bar,
   BarChart,
@@ -19,6 +19,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
+import { Card, CardHeader, CardContent, PageHeader, Badge, StatCard, Button, EmptyState, StatSkeleton, TableSkeleton, MetricBar } from "../../../lib/components/ui"
 
 const SEVERITY_LABELS: Record<number, { label: string; color: string }> = {
   1: { label: "Mild", color: "bg-green-100 text-green-700 dark:bg-green-900/60 dark:text-green-300" },
@@ -54,7 +55,7 @@ function dateNDaysAgo(n: number): string {
 }
 
 export default function SymptomsPage() {
-  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
   const [showCreate, setShowCreate] = useState(false)
   const [rangeDays, setRangeDays] = useState<number>(30)
   const [form, setForm] = useState({ symptom: "", severity: "2", bodyLocation: "", triggers: "", notes: "" })
@@ -63,12 +64,6 @@ export default function SymptomsPage() {
   const fromDate = dateNDaysAgo(rangeDays)
   const toDate = new Date().toISOString().slice(0, 10)
 
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-    enabled: isAdmin,
-  })
-  const users = usersResult?.data ?? []
 
   const { data: logsResult, isLoading } = useQuery({
     queryKey: ["symptoms", selectedUserId, fromDate, toDate],
@@ -168,301 +163,276 @@ export default function SymptomsPage() {
   })
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Symptom Tracking</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Log symptoms, identify patterns, and track triggers over time.</p>
-        </div>
-        {selectedUserId && (
-          <button type="button" onClick={() => setShowCreate(!showCreate)} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+    <div className="space-y-8">
+      <PageHeader
+        title="Symptom Tracking"
+        subtitle="Log symptoms, identify patterns, and track triggers over time."
+        actions={selectedUserId ? (
+          <Button variant={showCreate ? "secondary" : "primary"} onClick={() => setShowCreate(!showCreate)}>
             {showCreate ? "Cancel" : "Log Symptom"}
-          </button>
-        )}
-      </div>
+          </Button>
+        ) : undefined}
+      />
 
-      {/* User select + date range filter */}
-      <div className="mb-6 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          {isAdmin && (
-            <div>
-              <label htmlFor="sym-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
-              <select id="sym-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-                <option value="">Select a user…</option>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-              </select>
-            </div>
-          )}
-          {selectedUserId && (
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Period</label>
-              <div className="flex gap-1">
-                {RANGE_OPTIONS.map((r) => (
-                  <button
-                    key={r.label}
-                    type="button"
-                    onClick={() => setRangeDays(r.days)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                      rangeDays === r.days
-                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
+      {/* Date range filter */}
+      <Card>
+        <CardContent>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            {selectedUserId && (
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Period</label>
+                <div className="flex gap-1">
+                  {RANGE_OPTIONS.map((r) => (
+                    <button
+                      key={r.label}
+                      type="button"
+                      onClick={() => setRangeDays(r.days)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                        rangeDays === r.days
+                          ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {!selectedUserId && isAdmin && <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-16">Select a user to view symptom data.</p>}
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Create form */}
       {showCreate && selectedUserId && (
-        <div className="mb-6 rounded-2xl border border-indigo-200/60 dark:border-indigo-800/60 bg-indigo-50/80 dark:bg-indigo-950/30 backdrop-blur-xl p-5 shadow-card">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Log a Symptom</h3>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Symptom *</label>
-              <input className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.symptom} onChange={(e) => setForm({ ...form, symptom: e.target.value })} placeholder="e.g. Headache" />
+        <Card glow="brand">
+          <CardHeader title="Log a Symptom" />
+          <CardContent>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Symptom *</label>
+                <input className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.symptom} onChange={(e) => setForm({ ...form, symptom: e.target.value })} placeholder="e.g. Headache" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Severity (1-5)</label>
+                <input type="range" min="1" max="5" className="w-full" value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })} />
+                <div className="text-center text-xs mt-1">{SEVERITY_LABELS[Number(form.severity)]?.label ?? form.severity}</div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Body Location</label>
+                <input className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.bodyLocation} onChange={(e) => setForm({ ...form, bodyLocation: e.target.value })} placeholder="e.g. Head, Neck" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Triggers (comma-sep)</label>
+                <input className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.triggers} onChange={(e) => setForm({ ...form, triggers: e.target.value })} placeholder="e.g. stress, poor sleep, dehydration" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Notes</label>
+                <input className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes…" />
+              </div>
             </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Severity (1-5)</label>
-              <input type="range" min="1" max="5" className="w-full" value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })} />
-              <div className="text-center text-xs mt-1">{SEVERITY_LABELS[Number(form.severity)]?.label ?? form.severity}</div>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Body Location</label>
-              <input className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.bodyLocation} onChange={(e) => setForm({ ...form, bodyLocation: e.target.value })} placeholder="e.g. Head, Neck" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Triggers (comma-sep)</label>
-              <input className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.triggers} onChange={(e) => setForm({ ...form, triggers: e.target.value })} placeholder="e.g. stress, poor sleep, dehydration" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Notes</label>
-              <input className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes…" />
-            </div>
-          </div>
-          <button type="button" onClick={() => createMut.mutate()} disabled={createMut.isPending || !form.symptom} className="mt-3 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
-            {createMut.isPending ? "Saving…" : "Save Symptom"}
-          </button>
-        </div>
+            <Button className="mt-3" onClick={() => createMut.mutate()} disabled={createMut.isPending || !form.symptom} loading={createMut.isPending}>
+              {createMut.isPending ? "Saving…" : "Save Symptom"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Loading state */}
+      {selectedUserId && isLoading && (
+        <>
+          <StatSkeleton count={4} />
+          <TableSkeleton />
+        </>
       )}
 
       {/* Summary stat cards */}
       {selectedUserId && stats && (
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-indigo-200/60 dark:border-indigo-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total Entries</p>
-            <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{stats.totalEntries}</p>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">last {rangeDays}d</p>
-          </div>
-          <div className="rounded-2xl border border-amber-200/60 dark:border-amber-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Avg Severity</p>
-            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.avgSeverity.toFixed(1)}</p>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{SEVERITY_LABELS[Math.round(stats.avgSeverity)]?.label ?? "—"}</p>
-          </div>
-          <div className="rounded-2xl border border-violet-200/60 dark:border-violet-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Most Common</p>
-            <p className="text-lg font-bold text-violet-600 dark:text-violet-400 truncate">{stats.mostCommonSymptom?.[0] ?? "—"}</p>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{stats.mostCommonSymptom ? `${stats.mostCommonSymptom[1]}×` : ""}</p>
-          </div>
-          <div className="rounded-2xl border border-rose-200/60 dark:border-rose-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Top Trigger</p>
-            <p className="text-lg font-bold text-rose-600 dark:text-rose-400 truncate">{stats.mostCommonTrigger?.[0] ?? "—"}</p>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{stats.mostCommonTrigger ? `${stats.mostCommonTrigger[1]}×` : ""}</p>
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Total Entries" value={stats.totalEntries} color="brand" />
+          <StatCard label="Avg Severity" value={stats.avgSeverity.toFixed(1)} />
+          <StatCard label="Most Common" value={stats.mostCommonSymptom?.[0] ?? "—"} />
+          <StatCard label="Top Trigger" value={stats.mostCommonTrigger?.[0] ?? "—"} />
         </div>
       )}
 
-      {/* Patterns overview (kept from original) */}
+      {/* Patterns overview */}
       {selectedUserId && patterns && (
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Severity Trend</p>
-            <p className={`text-2xl font-bold ${patterns.severityTrend === "improving" ? "text-emerald-600 dark:text-emerald-400" : patterns.severityTrend === "worsening" ? "text-red-600 dark:text-red-400" : "text-gray-500"}`}>
-              {patterns.severityTrend === "improving" ? "↓ Better" : patterns.severityTrend === "worsening" ? "↑ Worse" : "→ Stable"}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Stressors</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{patterns.frequentTriggers.length}</p>
-          </div>
-          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Top Triggers</p>
-            {patterns.frequentTriggers.slice(0, 3).map((t) => (
-              <div key={t.trigger} className="flex justify-between text-xs text-gray-700 dark:text-gray-300">
-                <span>{t.trigger}</span><span className="font-medium">{t.count}</span>
-              </div>
-            ))}
-            {patterns.frequentTriggers.length === 0 && <p className="text-xs text-gray-400">None recorded</p>}
-          </div>
-          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Top Locations</p>
-            {patterns.frequentLocations.slice(0, 3).map((l) => (
-              <div key={l.location} className="flex justify-between text-xs text-gray-700 dark:text-gray-300">
-                <span>{l.location}</span><span className="font-medium">{l.count}</span>
-              </div>
-            ))}
-            {patterns.frequentLocations.length === 0 && <p className="text-xs text-gray-400">None recorded</p>}
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Severity Trend"
+            value={patterns.severityTrend === "improving" ? "↓ Better" : patterns.severityTrend === "worsening" ? "↑ Worse" : "→ Stable"}
+            color={patterns.severityTrend === "improving" ? "vitality" : patterns.severityTrend === "worsening" ? "accent" : "default"}
+          />
+          <StatCard label="Stressors" value={patterns.frequentTriggers.length} />
+          <Card>
+            <CardContent>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Top Triggers</p>
+              {patterns.frequentTriggers.slice(0, 3).map((t) => (
+                <div key={t.trigger} className="flex justify-between text-xs text-gray-700 dark:text-gray-300">
+                  <span>{t.trigger}</span><span className="font-medium">{t.count}</span>
+                </div>
+              ))}
+              {patterns.frequentTriggers.length === 0 && <p className="text-xs text-gray-400">None recorded</p>}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Top Locations</p>
+              {patterns.frequentLocations.slice(0, 3).map((l) => (
+                <div key={l.location} className="flex justify-between text-xs text-gray-700 dark:text-gray-300">
+                  <span>{l.location}</span><span className="font-medium">{l.count}</span>
+                </div>
+              ))}
+              {patterns.frequentLocations.length === 0 && <p className="text-xs text-gray-400">None recorded</p>}
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* Charts row: Symptom frequency bar + Severity trend line */}
       {selectedUserId && logs.length > 0 && (
-        <div className="mb-6 grid gap-4 lg:grid-cols-2">
-          {/* Symptom frequency horizontal bar chart */}
+        <div className="grid gap-4 lg:grid-cols-2">
           {frequencyChartData.length > 0 && (
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Symptom Frequency</h3>
-              <ResponsiveContainer width="100%" height={frequencyChartData.length * 36 + 20}>
-                <BarChart data={frequencyChartData} layout="vertical" margin={{ top: 0, right: 20, bottom: 0, left: 0 }}>
-                  <XAxis type="number" tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="symptom" width={100} tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ background: "rgba(17,24,39,0.9)", border: "none", borderRadius: 8, color: "#f3f4f6", fontSize: 12 }}
-                    cursor={{ fill: "rgba(99,102,241,0.08)" }}
-                  />
-                  <Bar dataKey="count" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <Card>
+              <CardHeader title="Symptom Frequency" />
+              <CardContent>
+                <ResponsiveContainer width="100%" height={frequencyChartData.length * 36 + 20}>
+                  <BarChart data={frequencyChartData} layout="vertical" margin={{ top: 0, right: 20, bottom: 0, left: 0 }}>
+                    <XAxis type="number" tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="symptom" width={100} tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ background: "rgba(17,24,39,0.9)", border: "none", borderRadius: 8, color: "#f3f4f6", fontSize: 12 }}
+                      cursor={{ fill: "rgba(99,102,241,0.08)" }}
+                    />
+                    <Bar dataKey="count" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           )}
 
-          {/* Severity trend line chart */}
           {severityTrendData.length > 1 && (
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Severity Over Time</h3>
-              <ResponsiveContainer width="100%" height={240}>
-                <LineChart data={severityTrendData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(156,163,175,0.2)" />
-                  <XAxis dataKey="date" tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[0, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ background: "rgba(17,24,39,0.9)", border: "none", borderRadius: 8, color: "#f3f4f6", fontSize: 12 }}
-                    formatter={(value: number) => [value.toFixed(1), "Avg Severity"]}
-                  />
-                  <Line type="monotone" dataKey="avg" stroke="#f59e0b" strokeWidth={2} dot={{ fill: "#f59e0b", r: 3 }} activeDot={{ r: 5 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <Card>
+              <CardHeader title="Severity Over Time" />
+              <CardContent>
+                <ResponsiveContainer width="100%" height={240}>
+                  <LineChart data={severityTrendData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(156,163,175,0.2)" />
+                    <XAxis dataKey="date" tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ background: "rgba(17,24,39,0.9)", border: "none", borderRadius: 8, color: "#f3f4f6", fontSize: 12 }}
+                      formatter={(value: number) => [value.toFixed(1), "Avg Severity"]}
+                    />
+                    <Line type="monotone" dataKey="avg" stroke="#f59e0b" strokeWidth={2} dot={{ fill: "#f59e0b", r: 3 }} activeDot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           )}
         </div>
       )}
 
       {/* Body location pie chart */}
       {selectedUserId && locationPieData.length > 0 && (
-        <div className="mb-6 grid gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Body Locations</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={locationPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} innerRadius={40} paddingAngle={2}>
-                  {locationPieData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ background: "rgba(17,24,39,0.9)", border: "none", borderRadius: 8, color: "#f3f4f6", fontSize: 12 }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
-              {locationPieData.map((d, i) => (
-                <div key={d.name} className="flex items-center gap-1.5 text-[11px] text-gray-600 dark:text-gray-400">
-                  <span className="inline-block h-2 w-2 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                  {d.name} ({d.value})
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Top symptoms bar (original, upgraded styling) */}
-          {topSymptoms.length > 0 && (
-            <div className="lg:col-span-2 rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Most Frequent Symptoms (All Time)</h3>
-              <div className="space-y-2">
-                {topSymptoms.map((s) => {
-                  const maxCount = topSymptoms[0]?.count ?? 1
-                  const pct = Math.round((s.count / maxCount) * 100)
-                  return (
-                    <div key={s.symptom}>
-                      <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
-                        <span>{s.symptom}</span><span>{s.count}×</span>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
-                        <div className="h-2 rounded-full bg-indigo-500" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  )
-                })}
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card>
+            <CardHeader title="Body Locations" />
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie data={locationPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} innerRadius={40} paddingAngle={2}>
+                    {locationPieData.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ background: "rgba(17,24,39,0.9)", border: "none", borderRadius: 8, color: "#f3f4f6", fontSize: 12 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
+                {locationPieData.map((d, i) => (
+                  <div key={d.name} className="flex items-center gap-1.5 text-[11px] text-gray-600 dark:text-gray-400">
+                    <span className="inline-block h-2 w-2 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    {d.name} ({d.value})
+                  </div>
+                ))}
               </div>
-            </div>
+            </CardContent>
+          </Card>
+
+          {topSymptoms.length > 0 && (
+            <Card className="lg:col-span-2">
+              <CardHeader title="Most Frequent Symptoms (All Time)" />
+              <CardContent>
+                <div className="space-y-2">
+                  {topSymptoms.map((s) => {
+                    const maxCount = topSymptoms[0]?.count ?? 1
+                    return (
+                      <MetricBar key={s.symptom} label={s.symptom} value={s.count} max={maxCount} color="brand" showValue />
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       )}
 
-      {/* Log table — enhanced */}
-      {selectedUserId && (
-        <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-card overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Symptom Log ({logs.length})</h3>
-          </div>
-          {isLoading ? (
-            <div className="p-8 text-center"><div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" /></div>
-          ) : logs.length === 0 ? (
-            <p className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">No symptoms logged in this period.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-800 text-left text-xs text-gray-500 dark:text-gray-400 bg-gray-50/60 dark:bg-gray-800/40">
-                    <th className="px-5 py-3 font-medium">Symptom</th>
-                    <th className="px-5 py-3 font-medium">Severity</th>
-                    <th className="px-5 py-3 font-medium">Location</th>
-                    <th className="px-5 py-3 font-medium">Triggers</th>
-                    <th className="px-5 py-3 font-medium">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs.map((l, idx) => (
-                    <tr
-                      key={l.id}
-                      className={`border-b border-gray-50 dark:border-gray-800/50 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/10 transition-colors ${
-                        idx % 2 === 1 ? "bg-gray-50/40 dark:bg-gray-800/20" : ""
-                      }`}
-                    >
-                      <td className="px-5 py-3 font-medium text-gray-900 dark:text-gray-100">{l.symptom}</td>
-                      <td className="px-5 py-3">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${SEVERITY_LABELS[l.severity]?.color ?? ""}`}>
-                          <span className={`inline-block h-1.5 w-1.5 rounded-full ${
-                            l.severity <= 1 ? "bg-green-500" : l.severity <= 2 ? "bg-yellow-500" : l.severity <= 3 ? "bg-orange-500" : "bg-red-500"
-                          }`} />
-                          {SEVERITY_LABELS[l.severity]?.label ?? l.severity}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{l.bodyLocation ?? "—"}</td>
-                      <td className="px-5 py-3 text-gray-600 dark:text-gray-400">
-                        {l.triggers?.length ? (
-                          <div className="flex flex-wrap gap-1">
-                            {l.triggers.map((t) => (
-                              <span key={t} className="inline-block rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[11px] text-gray-600 dark:text-gray-400">{t}</span>
-                            ))}
-                          </div>
-                        ) : "—"}
-                      </td>
-                      <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDate(l.startedAt)}</td>
+      {/* Symptom log table */}
+      {selectedUserId && !isLoading && (
+        <Card>
+          <CardHeader title={`Symptom Log (${logs.length})`} />
+          <CardContent className="p-0">
+            {logs.length === 0 ? (
+              <EmptyState title="No symptoms logged" description="No symptoms logged in this period." />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-gray-800 text-left text-xs text-gray-500 dark:text-gray-400 bg-gray-50/60 dark:bg-gray-800/40">
+                      <th className="px-5 py-3 font-medium">Symptom</th>
+                      <th className="px-5 py-3 font-medium">Severity</th>
+                      <th className="px-5 py-3 font-medium">Location</th>
+                      <th className="px-5 py-3 font-medium">Triggers</th>
+                      <th className="px-5 py-3 font-medium">Date</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                  </thead>
+                  <tbody>
+                    {logs.map((l, idx) => (
+                      <tr
+                        key={l.id}
+                        className={`border-b border-gray-50 dark:border-gray-800/50 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/10 transition-colors ${
+                          idx % 2 === 1 ? "bg-gray-50/40 dark:bg-gray-800/20" : ""
+                        }`}
+                      >
+                        <td className="px-5 py-3 font-medium text-gray-900 dark:text-gray-100">{l.symptom}</td>
+                        <td className="px-5 py-3">
+                          <Badge variant={l.severity <= 2 ? "success" : l.severity === 3 ? "warning" : "danger"}>
+                            {SEVERITY_LABELS[l.severity]?.label ?? l.severity}
+                          </Badge>
+                        </td>
+                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400">{l.bodyLocation ?? "—"}</td>
+                        <td className="px-5 py-3 text-gray-600 dark:text-gray-400">
+                          {l.triggers?.length ? (
+                            <div className="flex flex-wrap gap-1">
+                              {l.triggers.map((t) => (
+                                <Badge key={t} variant="default" size="sm">{t}</Badge>
+                              ))}
+                            </div>
+                          ) : "—"}
+                        </td>
+                        <td className="px-5 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDate(l.startedAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
     </div>
   )

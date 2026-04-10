@@ -426,6 +426,26 @@ ingress:
     tls: false
     secretName: vitasync-web-tls
 
+  # Admin portal — separate subdomain with security middlewares
+  admin:
+    enabled: false
+    host: admin.vitasync.example.com
+    tls: false
+    secretName: vitasync-admin-tls
+    # IP allowlist — restrict admin access to specific CIDR ranges
+    ipAllowList:
+      enabled: false
+      sourceRange:
+        - "10.0.0.0/8"        # Private network
+        - "172.16.0.0/12"     # Private network
+        - "192.168.0.0/16"    # Private network
+    # Stricter rate limiting for admin portal
+    rateLimit:
+      enabled: false
+      average: 30       # requests per second
+      burst: 50
+      period: "1m"
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Traefik IngressRoute (alternative to standard Ingress)
 # Set enabled: true and configure routes when using Traefik as your ingress
@@ -453,6 +473,13 @@ ingressRoute:
       services:
         - name: ""   # leave empty → set to <release>-api at deploy time
           port: 3001
+    # Admin portal
+    - match: Host(`admin.vitasync.example.com`)
+      kind: Rule
+      middlewares: []
+      services:
+        - name: ""   # leave empty → set to <release>-web at deploy time
+          port: 3000
   tls:
     enabled: false
     secretName: vitasync-tls
@@ -565,6 +592,23 @@ secrets:
   # exist in the database and every dashboard request would return 401.
   # Generate with: openssl rand -hex 20  (then prefix with "vs_live_")
   ADMIN_API_KEY: "vs_live_changeme_for_production"
+
+  # Admin user — auto-created on first boot
+  ADMIN_EMAIL: ""
+  ADMIN_PASSWORD: ""
+
+  # SMTP — transactional emails (verification, reset, invitations)
+  SMTP_HOST: ""
+  SMTP_PORT: "587"
+  SMTP_SECURE: "false"
+  SMTP_USER: ""
+  SMTP_PASS: ""
+  SMTP_FROM_NAME: "VitaSync"
+  SMTP_FROM_EMAIL: ""
+
+  # Self-registration
+  ALLOW_SELF_REGISTRATION: "false"
+
   # Optional: separate dashboard API key. If not set, defaults to ADMIN_API_KEY.
   # Must be a valid key that exists in the database.
   NEXT_PUBLIC_DEFAULT_API_KEY: ""

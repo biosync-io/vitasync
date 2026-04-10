@@ -9,7 +9,6 @@ import {
   Trash2,
   ToggleLeft,
   ToggleRight,
-  Loader2,
   CheckCircle2,
   XCircle,
   ShieldAlert,
@@ -110,167 +109,146 @@ function IdpForm({ initial, onSave, onCancel, isPending }: IdpFormProps) {
   const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
 
   return (
-    <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-card p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-          {initial?.id ? "Edit Identity Provider" : "Create Identity Provider"}
-        </h3>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-all"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* Protocol tabs */}
-      <div className="flex gap-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 mb-6">
-        {(["oidc", "saml"] as const).map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => setProtocol(p)}
-            className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-              protocol === p
-                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-            }`}
-          >
-            {p.toUpperCase()}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className={labelClass}>Name</label>
-          <input type="text" value={form.name} onChange={(e) => patch("name", e.target.value)} className={inputClass} placeholder="e.g. Okta" />
-        </div>
-        <div>
-          <label className={labelClass}>Slug</label>
-          <input type="text" value={form.slug} onChange={(e) => patch("slug", e.target.value)} className={inputClass} placeholder="e.g. okta-prod" />
-        </div>
-      </div>
-
-      {protocol === "oidc" ? (
-        <div className="mt-4 space-y-4">
-          <div>
-            <label className={labelClass}>Issuer URL</label>
-            <input type="url" value={form.issuerUrl} onChange={(e) => patch("issuerUrl", e.target.value)} className={inputClass} placeholder="https://accounts.google.com" />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className={labelClass}>Client ID</label>
-              <input type="text" value={form.clientId} onChange={(e) => patch("clientId", e.target.value)} className={inputClass} placeholder="Client ID" />
-            </div>
-            <div>
-              <label className={labelClass}>Client Secret</label>
-              <input type="password" value={form.clientSecret} onChange={(e) => patch("clientSecret", e.target.value)} className={inputClass} placeholder="Client Secret" />
-            </div>
-          </div>
-          <div>
-            <label className={labelClass}>Scopes</label>
-            <input type="text" value={form.scopes} onChange={(e) => patch("scopes", e.target.value)} className={inputClass} placeholder="openid profile email" />
-          </div>
-          <button
-            type="button"
-            onClick={handleTest}
-            className="inline-flex items-center gap-2 rounded-xl border border-blue-200 dark:border-blue-800 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all"
-          >
-            <TestTube2 className="h-4 w-4" /> Test Discovery
-          </button>
-        </div>
-      ) : (
-        <div className="mt-4 space-y-4">
-          <div>
-            <label className={labelClass}>Entity ID</label>
-            <input type="text" value={form.entityId} onChange={(e) => patch("entityId", e.target.value)} className={inputClass} placeholder="urn:example:idp" />
-          </div>
-          <div>
-            <label className={labelClass}>SSO URL</label>
-            <input type="url" value={form.ssoUrl} onChange={(e) => patch("ssoUrl", e.target.value)} className={inputClass} placeholder="https://idp.example.com/sso" />
-          </div>
-          <div>
-            <label className={labelClass}>Certificate</label>
-            <textarea
-              value={form.certificate}
-              onChange={(e) => patch("certificate", e.target.value)}
-              rows={4}
-              className={`${inputClass} resize-none font-mono text-xs`}
-              placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={handleTest}
-            className="inline-flex items-center gap-2 rounded-xl border border-purple-200 dark:border-purple-800 px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all"
-          >
-            <FileKey2 className="h-4 w-4" /> Validate Certificate
-          </button>
-        </div>
-      )}
-
-      {testResult && (
-        <div className={`mt-3 flex items-center gap-2 text-sm ${testResult.success ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>
-          {testResult.success ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-          {testResult.message}
-        </div>
-      )}
-
-      {/* Common settings */}
-      <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800 space-y-4">
+    <Card>
+      <CardHeader>
         <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            {initial?.id ? "Edit Identity Provider" : "Create Identity Provider"}
+          </h3>
+          <Button variant="ghost" size="sm" icon={X} onClick={onCancel} />
+        </div>
+      </CardHeader>
+      <CardContent>
+        {/* Protocol tabs */}
+        <div className="flex gap-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 mb-6">
+          {(["oidc", "saml"] as const).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setProtocol(p)}
+              className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                protocol === p
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
+            >
+              {p.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Auto Provision Users</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Automatically create accounts for new SSO users</p>
+            <label className={labelClass}>Name</label>
+            <input type="text" value={form.name} onChange={(e) => patch("name", e.target.value)} className={inputClass} placeholder="e.g. Okta" />
           </div>
-          <button
-            type="button"
-            onClick={() => patch("autoProvision", !form.autoProvision)}
-            aria-label="Toggle auto provision"
-          >
-            {form.autoProvision ? (
-              <ToggleRight className="h-7 w-7 text-indigo-500" />
-            ) : (
-              <ToggleLeft className="h-7 w-7 text-gray-300 dark:text-gray-600" />
-            )}
-          </button>
+          <div>
+            <label className={labelClass}>Slug</label>
+            <input type="text" value={form.slug} onChange={(e) => patch("slug", e.target.value)} className={inputClass} placeholder="e.g. okta-prod" />
+          </div>
         </div>
 
-        <div>
-          <label className={labelClass}>Default Role</label>
-          <select
-            value={form.defaultRole}
-            onChange={(e) => patch("defaultRole", e.target.value)}
-            className={inputClass}
-          >
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
-            <option value="viewer">Viewer</option>
-          </select>
-        </div>
-      </div>
+        {protocol === "oidc" ? (
+          <div className="mt-4 space-y-4">
+            <div>
+              <label className={labelClass}>Issuer URL</label>
+              <input type="url" value={form.issuerUrl} onChange={(e) => patch("issuerUrl", e.target.value)} className={inputClass} placeholder="https://accounts.google.com" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className={labelClass}>Client ID</label>
+                <input type="text" value={form.clientId} onChange={(e) => patch("clientId", e.target.value)} className={inputClass} placeholder="Client ID" />
+              </div>
+              <div>
+                <label className={labelClass}>Client Secret</label>
+                <input type="password" value={form.clientSecret} onChange={(e) => patch("clientSecret", e.target.value)} className={inputClass} placeholder="Client Secret" />
+              </div>
+            </div>
+            <div>
+              <label className={labelClass}>Scopes</label>
+              <input type="text" value={form.scopes} onChange={(e) => patch("scopes", e.target.value)} className={inputClass} placeholder="openid profile email" />
+            </div>
+            <Button variant="outline" size="sm" icon={TestTube2} onClick={handleTest}>
+              Test Discovery
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-4">
+            <div>
+              <label className={labelClass}>Entity ID</label>
+              <input type="text" value={form.entityId} onChange={(e) => patch("entityId", e.target.value)} className={inputClass} placeholder="urn:example:idp" />
+            </div>
+            <div>
+              <label className={labelClass}>SSO URL</label>
+              <input type="url" value={form.ssoUrl} onChange={(e) => patch("ssoUrl", e.target.value)} className={inputClass} placeholder="https://idp.example.com/sso" />
+            </div>
+            <div>
+              <label className={labelClass}>Certificate</label>
+              <textarea
+                value={form.certificate}
+                onChange={(e) => patch("certificate", e.target.value)}
+                rows={4}
+                className={`${inputClass} resize-none font-mono text-xs`}
+                placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+              />
+            </div>
+            <Button variant="outline" size="sm" icon={FileKey2} onClick={handleTest}>
+              Validate Certificate
+            </Button>
+          </div>
+        )}
 
-      <div className="mt-6 flex gap-3">
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!form.name || !form.slug || isPending}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-        >
-          {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-          {initial?.id ? "Update Provider" : "Create Provider"}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
+        {testResult && (
+          <div className={`mt-3 flex items-center gap-2 text-sm ${testResult.success ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>
+            {testResult.success ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+            {testResult.message}
+          </div>
+        )}
+
+        {/* Common settings */}
+        <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Auto Provision Users</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Automatically create accounts for new SSO users</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => patch("autoProvision", !form.autoProvision)}
+              aria-label="Toggle auto provision"
+            >
+              {form.autoProvision ? (
+                <ToggleRight className="h-7 w-7 text-indigo-500" />
+              ) : (
+                <ToggleLeft className="h-7 w-7 text-gray-300 dark:text-gray-600" />
+              )}
+            </button>
+          </div>
+
+          <div>
+            <label className={labelClass}>Default Role</label>
+            <select
+              value={form.defaultRole}
+              onChange={(e) => patch("defaultRole", e.target.value)}
+              className={inputClass}
+            >
+              <option value="member">Member</option>
+              <option value="admin">Admin</option>
+              <option value="viewer">Viewer</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-6 flex gap-3">
+          <Button loading={isPending} disabled={!form.name || !form.slug} onClick={handleSubmit}>
+            {initial?.id ? "Update Provider" : "Create Provider"}
+          </Button>
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -397,7 +375,7 @@ export default function IdentityProvidersPage() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50 truncate">{idp.name}</h3>
-                          <Badge variant={idp.protocol === "oidc" ? "info" : "purple"}>
+                          <Badge variant={idp.protocol === "oidc" ? "info" : "purple"} size="sm">
                             {idp.protocol.toUpperCase()}
                           </Badge>
                         </div>
@@ -431,9 +409,9 @@ export default function IdentityProvidersPage() {
                       </div>
                       <div>
                         <span className="text-gray-500 dark:text-gray-400">Status:</span>{" "}
-                        <span className={`font-medium ${idp.enabled ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400"}`}>
+                        <Badge variant={idp.enabled ? "success" : "default"} dot size="sm">
                           {idp.enabled ? "Enabled" : "Disabled"}
-                        </span>
+                        </Badge>
                       </div>
                       {idp.issuerUrl && (
                         <div className="sm:col-span-2">

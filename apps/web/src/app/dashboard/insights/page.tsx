@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useState, useMemo } from "react"
+import { AlertTriangle, BarChart3, Search } from "lucide-react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
 import {
   type Insight,
@@ -11,6 +12,7 @@ import {
   insightsApi,
   usersApi,
 } from "../../../lib/api"
+import { PageHeader, Badge, Card, CardHeader, CardContent, StatCard, CardSkeleton, StatSkeleton, EmptyState, Button } from "../../../lib/components/ui"
 
 /* ── Constants ─────────────────────────────────────────────────────── */
 
@@ -291,118 +293,71 @@ export default function InsightsPage() {
   const has = selectedUserId && allInsights.length > 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* ═══ HERO ═══ */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 dark:border-white/[0.06] bg-gray-950 dark:bg-black p-6 sm:p-8 shadow-2xl">
-        {/* Animated gradient mesh bg */}
-        <div className="cyber-mesh absolute inset-0 pointer-events-none" />
-        {/* Holographic sweep */}
-        <div className="holo-shimmer absolute inset-0 pointer-events-none" />
-        {/* Grid overlay */}
-        <div className="absolute inset-0 opacity-[0.04] bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTSAwIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMC41Ii8+PC9zdmc+')] pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-accent-500/20 border border-accent-400/20 backdrop-blur-sm">
-                <span className="text-xl">🧠</span>
-                <div className="absolute -inset-0.5 rounded-xl bg-accent-500/10 animate-pulse" />
-              </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                  Insights Engine
-                </h1>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-emerald-400/80">Live analysis</span>
-                </div>
-              </div>
-            </div>
-            <p className="text-white/50 text-sm max-w-lg leading-relaxed">
-              {algorithms.length > 0
-                ? <><span className="font-bold text-accent-400">{algorithms.length}</span> proprietary algorithms across <span className="font-bold text-accent-400">{visibleCategories.length}</span> health dimensions — generating intelligence from your biometric data.</>
-                : "Next-gen algorithms analyzing your health data in real-time."}
-            </p>
-          </div>
-          {has && (
+      <PageHeader
+        title="Insights Engine"
+        subtitle={
+          algorithms.length > 0
+            ? `${algorithms.length} proprietary algorithms across ${visibleCategories.length} health dimensions — generating intelligence from your biometric data.`
+            : "Next-gen algorithms analyzing your health data in real-time."
+        }
+        badge={<Badge variant="success" dot pulse>Live Analysis</Badge>}
+        actions={
+          has ? (
             <div className="flex items-center gap-5 shrink-0">
               <ScoreRing score={healthScore} size={80} />
               <div className="text-right">
-                <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] font-bold">Health Score</p>
-                <p className="text-lg font-black text-white mt-0.5 tabular-nums">{healthScore}<span className="text-xs text-white/40 font-medium">/100</span></p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] font-bold">Health Score</p>
+                <p className="text-lg font-black text-gray-900 dark:text-gray-100 mt-0.5 tabular-nums">{healthScore}<span className="text-xs text-gray-400 font-medium">/100</span></p>
                 <p className="text-[10px] mt-0.5" style={{ color: healthScore >= 70 ? "#10b981" : healthScore >= 40 ? "#f59e0b" : "#ef4444" }}>
                   {healthScore >= 70 ? "■ Excellent" : healthScore >= 40 ? "■ Moderate" : "■ Needs attention"}
                 </p>
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
 
       {/* ═══ CONTROL BAR ═══ */}
-      <div className="rounded-2xl border border-gray-200/50 dark:border-gray-800/30 bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl p-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-          <div>
-            <p className="block text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500 mb-1.5">Range</p>
-            <div className="inline-flex rounded-xl bg-gray-100/80 dark:bg-gray-800/40 p-0.5 border border-gray-200/40 dark:border-gray-700/20">
-              {RANGES.map((dr) => (
-                <button key={dr.value} type="button" onClick={() => setDateRange(dr.value)}
-                  className={`rounded-lg px-3.5 py-1.5 text-[11px] font-bold tracking-wide transition-all ${dateRange === dr.value ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}
-                >{dr.label}</button>
-              ))}
+      <Card>
+        <CardContent>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+            <div>
+              <p className="block text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500 mb-1.5">Range</p>
+              <div className="inline-flex rounded-xl bg-gray-100/80 dark:bg-gray-800/40 p-0.5 border border-gray-200/40 dark:border-gray-700/20">
+                {RANGES.map((dr) => (
+                  <button key={dr.value} type="button" onClick={() => setDateRange(dr.value)}
+                    className={`rounded-lg px-3.5 py-1.5 text-[11px] font-bold tracking-wide transition-all ${dateRange === dr.value ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}
+                  >{dr.label}</button>
+                ))}
+              </div>
+            </div>
+            <div className="min-w-[160px]">
+              <label htmlFor="insight-cat" className="block text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500 mb-1.5">Category</label>
+              <select id="insight-cat" className="w-full rounded-xl border border-gray-200/60 dark:border-gray-700/40 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:border-accent-500 focus:ring-2 focus:ring-accent-500/20 transition-all" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value as InsightCategory | "")}>
+                <option value="">All Categories</option>
+                {visibleCategories.map((c) => <option key={c} value={c}>{CAT[c].icon} {CAT[c].label}{catCounts.has(c) ? ` (${catCounts.get(c)})` : ""}</option>)}
+              </select>
+            </div>
+            <div className="min-w-[140px]">
+              <label htmlFor="insight-sev" className="block text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500 mb-1.5">Severity</label>
+              <select id="insight-sev" className="w-full rounded-xl border border-gray-200/60 dark:border-gray-700/40 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:border-accent-500 focus:ring-2 focus:ring-accent-500/20 transition-all" value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value as InsightSeverity | "")}>
+                <option value="">All Severities</option>
+                {ALL_SEV.map((s) => <option key={s} value={s}>{SEV[s].icon} {s.charAt(0).toUpperCase() + s.slice(1)} ({counts[s]})</option>)}
+              </select>
             </div>
           </div>
-          <div className="min-w-[160px]">
-            <label htmlFor="insight-cat" className="block text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500 mb-1.5">Category</label>
-            <select id="insight-cat" className="w-full rounded-xl border border-gray-200/60 dark:border-gray-700/40 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:border-accent-500 focus:ring-2 focus:ring-accent-500/20 transition-all" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value as InsightCategory | "")}>
-              <option value="">All Categories</option>
-              {visibleCategories.map((c) => <option key={c} value={c}>{CAT[c].icon} {CAT[c].label}{catCounts.has(c) ? ` (${catCounts.get(c)})` : ""}</option>)}
-            </select>
-          </div>
-          <div className="min-w-[140px]">
-            <label htmlFor="insight-sev" className="block text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500 mb-1.5">Severity</label>
-            <select id="insight-sev" className="w-full rounded-xl border border-gray-200/60 dark:border-gray-700/40 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:border-accent-500 focus:ring-2 focus:ring-accent-500/20 transition-all" value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value as InsightSeverity | "")}>
-              <option value="">All Severities</option>
-              {ALL_SEV.map((s) => <option key={s} value={s}>{SEV[s].icon} {s.charAt(0).toUpperCase() + s.slice(1)} ({counts[s]})</option>)}
-            </select>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* ═══ SEVERITY ORBS ═══ */}
+      {/* ═══ SEVERITY STAT CARDS ═══ */}
       {has && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 stagger-grid">
-          {(["critical", "warning", "info", "positive"] as const).map((sev) => {
-            const s = SEV[sev], isActive = severityFilter === sev
-            const pct = allInsights.length > 0 ? Math.round((counts[sev] / allInsights.length) * 100) : 0
-            return (
-              <button key={sev} type="button" title={`Filter by ${sev}`}
-                onClick={() => setSeverityFilter(isActive ? "" : sev)}
-                className={`group relative rounded-2xl border p-4 text-left transition-all duration-300 backdrop-blur-sm overflow-hidden ${s.bg} ${s.border} ${isActive ? "ring-2 ring-accent-500/60 ring-offset-2 dark:ring-offset-gray-950" : "hover:shadow-lg"}`}
-                style={isActive ? {} : { boxShadow: `0 0 0 0 rgba(${s.glowRGB},0)` }}
-                onMouseEnter={(e) => { if (!isActive) (e.currentTarget.style.boxShadow = `0 4px 24px -4px rgba(${s.glowRGB},0.25)`) }}
-                onMouseLeave={(e) => { if (!isActive) (e.currentTarget.style.boxShadow = `0 0 0 0 rgba(${s.glowRGB},0)`) }}
-              >
-                {/* Ambient glow blob */}
-                <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full opacity-[0.07] group-hover:opacity-[0.12] transition-opacity" style={{ background: `radial-gradient(circle, ${s.hex}, transparent 70%)` }} />
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${s.gradient} text-white text-sm font-black shadow-lg`} style={{ boxShadow: `0 4px 12px -2px rgba(${s.glowRGB},0.4)` }}>
-                      {s.icon}
-                    </span>
-                    <span className={`text-3xl font-black tabular-nums ${s.text} number-pop`}>{counts[sev]}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 capitalize tracking-wide">{sev}</p>
-                    <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 tabular-nums">{pct}%</span>
-                  </div>
-                  <div className="mt-2.5 h-1 rounded-full bg-gray-200/40 dark:bg-gray-700/20 overflow-hidden">
-                    <div className={`h-full rounded-full transition-all duration-700 ${s.barColor}`} style={{ width: `${pct}%`, boxShadow: `0 0 6px rgba(${s.glowRGB},0.4)` }} />
-                  </div>
-                </div>
-              </button>
-            )
-          })}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard label="Critical" value={counts.critical} icon={<span>{SEV.critical.icon}</span>} color="accent" />
+          <StatCard label="Warning" value={counts.warning} icon={<span>{SEV.warning.icon}</span>} color="vitality" />
+          <StatCard label="Info" value={counts.info} icon={<span>{SEV.info.icon}</span>} color="brand" />
+          <StatCard label="Positive" value={counts.positive} icon={<span>{SEV.positive.icon}</span>} color="default" />
         </div>
       )}
 
@@ -428,73 +383,69 @@ export default function InsightsPage() {
 
       {/* ═══ VISUALIZATION ROW ═══ */}
       {has && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 stagger-grid">
-          <div className="rounded-2xl border border-gray-200/40 dark:border-gray-800/20 bg-white/50 dark:bg-gray-900/30 backdrop-blur-xl p-5 shadow-sm">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-4">Health Dimensions</h3>
-            <CyberRadar data={radarData} size={260} />
-          </div>
-          <div className="rounded-2xl border border-gray-200/40 dark:border-gray-800/20 bg-white/50 dark:bg-gray-900/30 backdrop-blur-xl p-5 shadow-sm">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-4">Severity Distribution</h3>
-            <div className="flex items-center justify-center py-2"><CyberDonut segments={donutSegs} size={200} /></div>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              {donutSegs.map((seg) => (
-                <div key={seg.label} className="flex items-center gap-2 text-[11px]">
-                  <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: seg.color, boxShadow: `0 0 6px ${seg.color}60` }} />
-                  <span className="text-gray-400 dark:text-gray-500">{seg.label}</span>
-                  <span className="font-bold text-gray-700 dark:text-gray-300 ml-auto tabular-nums">{seg.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-2xl border border-gray-200/40 dark:border-gray-800/20 bg-white/50 dark:bg-gray-900/30 backdrop-blur-xl p-5 shadow-sm">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-4">Category Breakdown</h3>
-            <div className="space-y-2.5">
-              {Array.from(catCounts.entries()).sort((a, b) => b[1] - a[1]).map(([cat, count]) => (
-                <CyberBar key={cat} label={CAT[cat].label} icon={CAT[cat].icon} value={count} max={Math.max(1, ...Array.from(catCounts.values()))} dotColor={CAT[cat].dotColor} />
-              ))}
-            </div>
-          </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <Card>
+            <CardHeader title="Health Dimensions" />
+            <CardContent>
+              <CyberRadar data={radarData} size={260} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader title="Severity Distribution" />
+            <CardContent>
+              <div className="flex items-center justify-center py-2"><CyberDonut segments={donutSegs} size={200} /></div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {donutSegs.map((seg) => (
+                  <div key={seg.label} className="flex items-center gap-2 text-[11px]">
+                    <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: seg.color, boxShadow: `0 0 6px ${seg.color}60` }} />
+                    <span className="text-gray-400 dark:text-gray-500">{seg.label}</span>
+                    <span className="font-bold text-gray-700 dark:text-gray-300 ml-auto tabular-nums">{seg.value}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader title="Category Breakdown" />
+            <CardContent>
+              <div className="space-y-2.5">
+                {Array.from(catCounts.entries()).sort((a, b) => b[1] - a[1]).map(([cat, count]) => (
+                  <CyberBar key={cat} label={CAT[cat].label} icon={CAT[cat].icon} value={count} max={Math.max(1, ...Array.from(catCounts.values()))} dotColor={CAT[cat].dotColor} />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* ═══ LOADING ═══ */}
       {selectedUserId && isLoading && (
-        <div className="relative flex flex-col items-center justify-center rounded-2xl border border-gray-200/30 dark:border-gray-800/20 bg-white/40 dark:bg-gray-900/20 backdrop-blur-xl py-24 overflow-hidden">
-          <div className="absolute inset-0 cyber-mesh pointer-events-none" />
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="relative">
-              <div className="h-14 w-14 animate-spin rounded-full border-[3px] border-accent-500/20 border-t-accent-500" style={{ filter: "drop-shadow(0 0 8px rgba(var(--ai-500),0.3))" }} />
-              <div className="absolute inset-0 flex items-center justify-center"><span className="text-xl">🧠</span></div>
-            </div>
-            <div className="data-stream flex gap-1 mt-4">
-              <span className="h-1 w-1 rounded-full bg-accent-500" />
-              <span className="h-1 w-1 rounded-full bg-accent-500" />
-              <span className="h-1 w-1 rounded-full bg-accent-500" />
-            </div>
-            <p className="mt-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Running <span className="text-accent-500 font-bold">{algorithms.length}</span> algorithms…</p>
-            <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">Analyzing {rangeDays} days of biometric data</p>
-          </div>
-        </div>
+        <>
+          <StatSkeleton count={4} />
+          <CardSkeleton count={3} />
+        </>
       )}
 
       {/* ═══ ERROR ═══ */}
       {selectedUserId && isError && (
-        <div className="rounded-2xl border border-red-400/20 dark:border-red-400/10 bg-red-500/[0.04] backdrop-blur-sm p-8 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10 border border-red-400/20 mx-auto mb-4">
-            <span className="text-2xl">⚠️</span>
-          </div>
-          <h3 className="text-sm font-bold text-red-500 dark:text-red-400">Analysis Failed</h3>
-          <p className="mt-1 text-xs text-red-400/60 dark:text-red-400/40">Ensure the user has synced health data for the selected range.</p>
-        </div>
+        <Card>
+          <EmptyState
+            icon={AlertTriangle}
+            title="Analysis Failed"
+            description="Ensure the user has synced health data for the selected range."
+          />
+        </Card>
       )}
 
       {/* ═══ NO DATA ═══ */}
       {selectedUserId && !isLoading && !isError && allInsights.length === 0 && (
-        <div className="rounded-2xl border border-gray-200/30 dark:border-gray-800/20 bg-white/40 dark:bg-gray-900/20 backdrop-blur-sm p-14 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-500/10 border border-gray-400/20 mx-auto mb-4"><span className="text-2xl">📊</span></div>
-          <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300">No Insights Found</h3>
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Insufficient health data in the selected {rangeDays}-day window.</p>
-        </div>
+        <Card>
+          <EmptyState
+            icon={BarChart3}
+            title="No Insights Found"
+            description={`Insufficient health data in the selected ${rangeDays}-day window.`}
+          />
+        </Card>
       )}
 
       {/* ═══ INSIGHTS LIST ═══ */}
@@ -505,8 +456,7 @@ export default function InsightsPage() {
               {filtered.length === allInsights.length ? `All Insights (${allInsights.length})` : `Filtered (${filtered.length} of ${allInsights.length})`}
             </h2>
             {(categoryFilter || severityFilter) && (
-              <button type="button" onClick={() => { setCategoryFilter(""); setSeverityFilter("") }}
-                className="text-[11px] text-accent-500 hover:text-accent-600 font-bold tracking-wide">Clear filters</button>
+              <Button variant="ghost" size="sm" onClick={() => { setCategoryFilter(""); setSeverityFilter("") }}>Clear filters</Button>
             )}
           </div>
           <div className="space-y-3">
@@ -518,27 +468,26 @@ export default function InsightsPage() {
       {/* ═══ ALGORITHM CATALOG TOGGLE ═══ */}
       {has && (
         <div className="pt-2 text-center">
-          <button type="button" onClick={() => setShowAlgorithms(!showAlgorithms)}
-            className="inline-flex items-center gap-3 text-sm font-bold text-accent-500 hover:text-accent-400 transition-colors">
-            <span className="h-px w-10 bg-gradient-to-r from-transparent to-accent-500/30" />
+          <Button variant="secondary" onClick={() => setShowAlgorithms(!showAlgorithms)}>
             {showAlgorithms ? "Hide" : "View"} Algorithm Catalog ({algorithms.length})
-            <span className="h-px w-10 bg-gradient-to-l from-transparent to-accent-500/30" />
-          </button>
+          </Button>
         </div>
       )}
 
       {showAlgorithms && algorithms.length > 0 && (
-        <div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-            <div>
-              <h2 className="text-lg font-black text-gray-900 dark:text-gray-100">Algorithm Catalog</h2>
-              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 tracking-wide">{algorithms.length} proprietary health algorithms</p>
-            </div>
-            <input type="text" placeholder="Search algorithms…" value={algSearch} onChange={(e) => setAlgSearch(e.target.value)}
-              className="rounded-xl border border-gray-200/50 dark:border-gray-700/30 bg-gray-50/60 dark:bg-gray-800/30 backdrop-blur-sm px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 w-full sm:w-64 focus:border-accent-500 focus:ring-2 focus:ring-accent-500/20 transition-all" />
-          </div>
-          <AlgorithmGrid algorithms={algorithms} search={algSearch} />
-        </div>
+        <Card>
+          <CardHeader
+            title="Algorithm Catalog"
+            subtitle={`${algorithms.length} proprietary health algorithms`}
+            action={
+              <input type="text" placeholder="Search algorithms…" value={algSearch} onChange={(e) => setAlgSearch(e.target.value)}
+                className="rounded-xl border border-gray-200/50 dark:border-gray-700/30 bg-gray-50/60 dark:bg-gray-800/30 backdrop-blur-sm px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 w-full sm:w-64 focus:border-accent-500 focus:ring-2 focus:ring-accent-500/20 transition-all" />
+            }
+          />
+          <CardContent>
+            <AlgorithmGrid algorithms={algorithms} search={algSearch} />
+          </CardContent>
+        </Card>
       )}
     </div>
   )
@@ -706,7 +655,7 @@ function AlgorithmGrid({ algorithms, search }: { algorithms: InsightAlgorithm[];
   for (const alg of filtered) { const arr = grouped.get(alg.category) ?? []; arr.push(alg); grouped.set(alg.category, arr) }
 
   if (filtered.length === 0) {
-    return <div className="rounded-2xl border border-gray-200/30 dark:border-gray-800/20 bg-white/40 dark:bg-gray-900/20 backdrop-blur-sm p-10 text-center"><p className="text-sm text-gray-400 dark:text-gray-500">No algorithms match &ldquo;{search}&rdquo;</p></div>
+    return <EmptyState icon={Search} title="No Match" description={`No algorithms match "${search}"`} />
   }
 
   return (

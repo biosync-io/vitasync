@@ -282,3 +282,76 @@ A Helm chart for deploying VitaSync — a self-hosted wearable health data aggre
 | worker.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | worker.tolerations | list | `[]` |  |
 
+## First Admin User
+
+Set admin credentials to auto-create an admin on first boot:
+
+```yaml
+secrets:
+  ADMIN_EMAIL: "admin@yourdomain.com"
+  ADMIN_PASSWORD: "YourSecurePassword!"
+```
+
+Or use the CLI after deployment:
+```bash
+kubectl exec -it deploy/vitasync-api -- npx tsx src/cli/create-admin.ts --email admin@yourdomain.com --password YourPass!
+```
+
+## Email Configuration
+
+Configure SMTP for transactional emails (verification, password reset, admin invitations):
+
+```yaml
+secrets:
+  SMTP_HOST: "smtp.sendgrid.net"
+  SMTP_PORT: "587"
+  SMTP_USER: "apikey"
+  SMTP_PASS: "SG.xxxxx"
+  SMTP_FROM_NAME: "VitaSync"
+  SMTP_FROM_EMAIL: "noreply@yourdomain.com"
+```
+
+Alternatively, configure SMTP from the admin portal: Admin → Settings → Email Configuration.
+
+## Migrating Existing Users
+
+If you have existing users (created via API key) who need login access:
+
+1. **Via Admin Portal:** Admin → Users → "Invite All" button
+2. **Via CLI:** `kubectl exec -it deploy/vitasync-api -- npx tsx src/cli/migrate-users.ts`
+
+This sends setup-password emails to all users without a login.
+
+## Admin Portal Ingress
+
+The admin portal can be served on a separate subdomain with additional security:
+
+### Traefik IngressRoute
+
+```yaml
+ingress:
+  admin:
+    enabled: true
+    host: admin.yourdomain.com
+    ipAllowList:
+      enabled: true
+      sourceRange:
+        - "10.0.0.0/8"       # Your VPN CIDR
+    rateLimit:
+      enabled: true
+      average: 30
+      burst: 50
+```
+
+### Standard Kubernetes Ingress
+
+```yaml
+ingress:
+  enabled: true
+  admin:
+    enabled: true
+    host: admin.yourdomain.com
+    tls: true
+    secretName: admin-tls-secret
+```
+

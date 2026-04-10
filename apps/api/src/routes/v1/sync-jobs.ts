@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify"
+import { requireSelf } from "../../plugins/auth.js"
 import { getSyncQueue } from "../../queues/sync.js"
 
 const syncJobsRoutes: FastifyPluginAsync = async (app) => {
@@ -140,6 +141,59 @@ const syncJobsRoutes: FastifyPluginAsync = async (app) => {
       total: connections.length,
       enqueued,
     })
+  })
+
+  /**
+   * GET /v1/sync-jobs/user/:userId
+   * Returns sync job history for a specific user by joining sync_jobs with provider_connections.
+   * Requires the authenticated user to be the same as :userId (or admin).
+   */
+  app.get("/user/:userId", { preHandler: [requireSelf()] }, async (request, reply) => {
+    const { z } = await import("zod")
+    const { getDb, syncJobs, providerConnections } = await import("@biosync-io/db")
+    const drizzle = await import("drizzle-orm")
+
+    const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
+
+    const query = z
+      .object({
+        limit: z.coerce.number().int().min(1).max(200).default(50),
+        offset: z.coerce.number().int().min(0).default(0),
+      })
+      .parse(request.query)
+
+    const db = getDb()
+
+    const [rows, countRows] = await Promise.all([
+      db
+        .select({
+          id: syncJobs.id,
+          connectionId: syncJobs.connectionId,
+          status: syncJobs.status,
+          providerId: syncJobs.providerId,
+          startedAt: syncJobs.startedAt,
+          completedAt: syncJobs.completedAt,
+          error: syncJobs.error,
+          metricsSynced: syncJobs.metricsSynced,
+          eventsSynced: syncJobs.eventsSynced,
+          durationMs: syncJobs.durationMs,
+          providerCallStats: syncJobs.providerCallStats,
+          createdAt: syncJobs.createdAt,
+        })
+        .from(syncJobs)
+        .innerJoin(providerConnections, drizzle.eq(syncJobs.connectionId, providerConnections.id))
+        .where(drizzle.eq(providerConnections.userId, userId))
+        .orderBy(drizzle.desc(syncJobs.createdAt))
+        .limit(query.limit)
+        .offset(query.offset),
+      db
+        .select({ total: drizzle.count() })
+        .from(syncJobs)
+        .innerJoin(providerConnections, drizzle.eq(syncJobs.connectionId, providerConnections.id))
+        .where(drizzle.eq(providerConnections.userId, userId)),
+    ])
+
+    return reply.send({ data: rows, total: countRows[0]?.total ?? 0 })
   })
 }
 

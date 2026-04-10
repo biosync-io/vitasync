@@ -5,13 +5,14 @@ await initTelemetry()
 
 import { createHash } from "node:crypto"
 import { closeDb, getDb, initDb } from "@biosync-io/db"
-import { apiKeys, workspaces } from "@biosync-io/db"
+import { apiKeys, users, workspaces } from "@biosync-io/db"
 import { registerFitbitProvider } from "@biosync-io/provider-fitbit"
 import { registerGarminProvider } from "@biosync-io/provider-garmin"
 import { registerStravaProvider } from "@biosync-io/provider-strava"
 import { registerWhoopProvider } from "@biosync-io/provider-whoop"
 import { registerWithingsProvider } from "@biosync-io/provider-withings"
 import { eq } from "drizzle-orm"
+import * as argon2 from "argon2"
 import { config } from "./config.js"
 import { buildServer } from "./server.js"
 
@@ -64,6 +65,27 @@ async function bootstrap(log: { info: (msg: string) => void }) {
     .onConflictDoNothing() // unique constraint on key_hash
 
   log.info(`Bootstrap: admin API key ready (prefix: ${keyPrefix})`)
+
+  // Auto-create admin user from env vars (idempotent)
+  if (config.ADMIN_EMAIL && config.ADMIN_PASSWORD) {
+    const existing = await db.select().from(users).where(eq(users.email, config.ADMIN_EMAIL)).limit(1)
+    if (existing.length === 0) {
+      const passwordHash = await argon2.hash(config.ADMIN_PASSWORD)
+      await db.insert(users).values({
+        workspaceId: workspace.id,
+        externalId: config.ADMIN_EMAIL,
+        email: config.ADMIN_EMAIL,
+        passwordHash,
+        role: "admin",
+        displayName: "Admin",
+        emailVerified: true,
+      })
+      log.info(`Bootstrap: admin user created: ${config.ADMIN_EMAIL}`)
+    } else if (existing[0]!.role !== "admin") {
+      await db.update(users).set({ role: "admin" }).where(eq(users.id, existing[0]!.id))
+      log.info(`Bootstrap: user promoted to admin: ${config.ADMIN_EMAIL}`)
+    }
+  }
 }
 
 async function main() {

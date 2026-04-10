@@ -1,6 +1,17 @@
 import { defineConfig } from "vitest/config"
+import path from "node:path"
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      // The @biosync-io/db package doesn't export ./lib/field-encryption yet;
+      // map the deep import to the source file so Vite can resolve it in tests.
+      "@biosync-io/db/lib/field-encryption": path.resolve(
+        __dirname,
+        "../../packages/db/src/lib/field-encryption.ts",
+      ),
+    },
+  },
   test: {
     globals: true,
     environment: "node",

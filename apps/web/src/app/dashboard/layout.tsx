@@ -123,6 +123,9 @@ const navSections: Array<{
   {
     title: "Account",
     items: [
+      { href: "/dashboard/providers", label: "Connected Devices", icon: Zap, color: "text-yellow-500" },
+      { href: "/dashboard/sync-jobs", label: "Sync History", icon: RefreshCw, color: "text-green-500" },
+      { href: "/dashboard/notifications", label: "Notifications", icon: Bell, color: "text-rose-500" },
       { href: "/dashboard/exports", label: "Data Export", icon: Upload, color: "text-fuchsia-500" },
       { href: "/dashboard/security", label: "Security", icon: Shield, color: "text-indigo-500" },
       { href: "/dashboard/privacy", label: "Privacy", icon: Lock, color: "text-purple-500" },
@@ -248,23 +251,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between px-4">
+      <div className="flex h-20 items-center justify-between px-5 border-b border-gray-200/30 dark:border-white/[0.04]">
         <Logo collapsed={!isMobile && !sidebarOpen} />
         {!isMobile && (
           <button
             type="button"
             onClick={() => setSidebarOpen((o) => !o)}
-            className="hidden md:flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300 transition-colors"
+            className="hidden md:flex h-7 w-7 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100/60 hover:text-gray-600 dark:hover:bg-white/[0.04] dark:hover:text-gray-300 transition-all duration-200"
             title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
-            <ChevronLeft className={`h-4 w-4 transition-transform duration-200 ${sidebarOpen ? "" : "rotate-180"}`} />
+            <ChevronLeft className={`h-4 w-4 transition-transform duration-300 ease-in-out ${sidebarOpen ? "" : "rotate-180"}`} />
           </button>
         )}
         {isMobile && (
           <button
             type="button"
             onClick={() => setMobileMenuOpen(false)}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+            className="flex h-7 w-7 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100/60 hover:text-gray-600 dark:hover:bg-white/[0.04] dark:hover:text-gray-300 transition-all duration-200"
           >
             <X className="h-5 w-5" />
           </button>
@@ -272,13 +275,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-2">
-        {navSections.map((section) => {
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        {navSections.map((section, sectionIndex) => {
           const collapsed = !isMobile && !sidebarOpen
           return (
-            <div key={section.title} className="mb-4">
+            <div key={section.title}>
+              {sectionIndex > 0 && (
+                <hr className="my-3 border-gray-200/40 dark:border-white/[0.06]" />
+              )}
               {!collapsed && (
-                <h3 className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                <h3 className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                   {section.title}
                 </h3>
               )}
@@ -294,15 +300,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <Link
                         href={item.href as Parameters<typeof Link>[0]["href"]}
                         title={collapsed ? item.label : undefined}
-                        className={`group flex items-center rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                        className={`group relative flex items-center rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 ${
                           collapsed ? "justify-center" : "gap-3"
                         } ${
                           isActive
-                            ? "bg-accent-500 text-white shadow-md shadow-accent-500/25"
-                            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                            ? "bg-accent-50 dark:bg-accent-500/10 text-accent-700 dark:text-accent-300 border-l-[3px] border-accent-500"
+                            : "text-gray-600 hover:bg-gray-100/60 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.04] dark:hover:text-gray-100 border-l-[3px] border-transparent"
                         }`}
                       >
-                        <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-white" : `${item.color} group-hover:opacity-80`}`} />
+                        <Icon className={`h-[18px] w-[18px] shrink-0 transition-colors duration-200 ${isActive ? "text-accent-500" : "text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300"}`} />
                         {!collapsed && (
                           <span className="truncate">{item.label}</span>
                         )}
@@ -322,13 +328,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </nav>
 
       {/* Bottom bar */}
-      <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-0.5">
+      <div className="border-t border-gray-200/30 dark:border-white/[0.04] p-3 space-y-0.5">
         <button
           type="button"
           onClick={() => {
             document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true }))
           }}
-          className={`flex w-full items-center rounded-xl px-3 py-2.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors ${
+          className={`flex w-full items-center rounded-xl px-3 py-2 text-sm text-gray-500 hover:bg-gray-100/60 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.04] dark:hover:text-gray-200 transition-all duration-200 ${
             !isMobile && !sidebarOpen ? "justify-center" : "gap-3"
           }`}
         >
@@ -336,7 +342,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {(isMobile || sidebarOpen) && (
             <>
               <span className="flex-1 text-left">Search</span>
-              <kbd className="hidden sm:inline-flex rounded-md border border-gray-200 dark:border-gray-700 px-1.5 py-0.5 text-[10px] font-mono text-gray-400">⌘K</kbd>
+              <kbd className="hidden sm:inline-flex rounded-md border border-gray-200/60 dark:border-white/[0.08] px-1.5 py-0.5 text-[10px] font-mono text-gray-400">⌘K</kbd>
             </>
           )}
         </button>
@@ -346,7 +352,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             type="button"
             onClick={() => setThemeOpen((o) => !o)}
             title={`Theme: ${DARK_LABELS[darkMode]} — click to customize`}
-            className={`flex w-full items-center rounded-xl px-3 py-2.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors ${
+            className={`flex w-full items-center rounded-xl px-3 py-2 text-sm text-gray-500 hover:bg-gray-100/60 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.04] dark:hover:text-gray-200 transition-all duration-200 ${
               !isMobile && !sidebarOpen ? "justify-center" : "gap-3"
             }`}
           >
@@ -360,7 +366,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           href="https://biosync-io.github.io/vitasync/"
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex items-center rounded-xl px-3 py-2.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors ${
+          className={`flex items-center rounded-xl px-3 py-2 text-sm text-gray-500 hover:bg-gray-100/60 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.04] dark:hover:text-gray-200 transition-all duration-200 ${
             !isMobile && !sidebarOpen ? "justify-center" : "gap-3"
           }`}
         >
@@ -379,8 +385,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* User info & sign out */}
         {user && (
-          <div className={`flex items-center rounded-xl px-3 py-2.5 ${!isMobile && !sidebarOpen ? "justify-center" : "gap-3"}`}>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-accent-400 to-accent-600 text-white text-xs font-bold">
+          <div className={`flex items-center rounded-xl px-3 py-2 ${!isMobile && !sidebarOpen ? "justify-center" : "gap-3"}`}>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent-400 to-accent-600 text-white text-xs font-bold shadow-lg shadow-accent-500/20">
               {(user.displayName ?? user.email ?? "U").charAt(0).toUpperCase()}
             </div>
             {(isMobile || sidebarOpen) && (
@@ -397,7 +403,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               type="button"
               onClick={() => logout()}
               title="Sign out"
-              className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-colors"
+              className="shrink-0 flex h-8 w-8 items-center justify-center rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-all duration-200"
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -408,15 +414,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   )
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex h-screen bg-gray-50/50 dark:bg-gray-950">
       <CommandPalette />
 
       {/* Mobile top bar */}
-      <div className="fixed top-0 left-0 right-0 z-30 flex h-16 items-center justify-between bg-white/80 backdrop-blur-xl border-b border-gray-100 px-4 dark:bg-gray-900/80 dark:border-gray-800 md:hidden">
+      <div className="fixed top-0 left-0 right-0 z-30 flex h-16 items-center justify-between bg-white/60 backdrop-blur-2xl border-b border-accent-500/20 px-4 dark:bg-gray-950/60 dark:border-accent-500/20 md:hidden">
         <button
           type="button"
           onClick={() => setMobileMenuOpen(true)}
-          className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 hover:bg-gray-100/60 dark:text-gray-400 dark:hover:bg-white/[0.04] transition-all duration-200"
           aria-label="Open menu"
         >
           <Menu className="h-5 w-5" />
@@ -426,7 +432,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button
             type="button"
             onClick={cycleDarkMode}
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-600 hover:bg-gray-100/60 dark:text-gray-400 dark:hover:bg-white/[0.04] transition-all duration-200"
             aria-label="Toggle theme"
           >
             <ThemeIcon className="h-5 w-5" />
@@ -439,14 +445,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {isMobile && mobileMenuOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
             onKeyDown={(e) => e.key === "Enter" && setMobileMenuOpen(false)}
             role="button"
             tabIndex={0}
             aria-label="Close menu"
           />
-          <aside className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-white dark:bg-gray-900 shadow-2xl animate-slide-in-left">
+          <aside className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-white/80 dark:bg-gray-950/90 backdrop-blur-2xl shadow-2xl animate-slide-in-left">
             {sidebarContent}
           </aside>
         </>
@@ -454,7 +460,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Desktop sidebar */}
       <aside
-        className={`hidden md:flex flex-col bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 transition-all duration-200 shrink-0 ${
+        className={`hidden md:flex flex-col bg-white/60 dark:bg-gray-950/80 backdrop-blur-2xl border-r border-gray-200/30 dark:border-white/[0.04] transition-all duration-300 ease-in-out shrink-0 ${
           sidebarOpen ? "w-64" : "w-[72px]"
         }`}
       >
@@ -464,9 +470,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top header bar */}
-        <header className="hidden md:flex h-16 items-center justify-between border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl px-6 shrink-0">
+        <header className="hidden md:flex h-16 items-center justify-between border-b border-gray-200/30 dark:border-white/[0.04] bg-white/60 dark:bg-gray-950/60 backdrop-blur-2xl px-6 lg:px-8 shrink-0">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100">
               {currentPage?.label ?? "Dashboard"}
             </h2>
           </div>
@@ -475,10 +481,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button
               type="button"
               onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true }))}
-              className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 transition-colors w-64"
+              className="flex items-center gap-2 rounded-full bg-gray-50/80 dark:bg-white/[0.04] border border-gray-200/60 dark:border-white/[0.08] px-4 py-2 text-sm text-gray-400 hover:border-gray-300 dark:hover:border-white/[0.12] transition-all duration-200 w-48 lg:w-64"
             >
               <Search className="h-4 w-4" />
-              <span>Search anything here...</span>
+              <span>Search anything…</span>
               <kbd className="ml-auto text-[10px] font-mono opacity-50">⌘K</kbd>
             </button>
             {/* Notifications */}
@@ -489,8 +495,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto pt-16 md:pt-0">
-          <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+        <main className="flex-1 overflow-y-auto pt-16 md:pt-0 scroll-smooth">
+          <div className="p-6 lg:p-8 animate-fade-in-down">{children}</div>
         </main>
       </div>
 
@@ -554,7 +560,7 @@ function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative"
+        className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100/60 dark:hover:bg-white/[0.04] transition-all duration-200 relative"
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
@@ -565,8 +571,8 @@ function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-96 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl overflow-hidden animate-fade-in-down">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="absolute right-0 top-12 z-50 w-96 rounded-2xl border border-gray-200/60 dark:border-white/[0.08] bg-white/80 dark:bg-gray-950/90 backdrop-blur-2xl shadow-2xl overflow-hidden animate-fade-in-down">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200/30 dark:border-white/[0.04]">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Notifications</h3>
             {unreadCount > 0 && (
               <button type="button" onClick={handleMarkAllRead} className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline">
@@ -575,7 +581,7 @@ function NotificationBell() {
             )}
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-gray-50 dark:divide-gray-800">
+          <div className="max-h-80 overflow-y-auto divide-y divide-gray-100/60 dark:divide-white/[0.04]">
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center">
                 <Bell className="mx-auto h-8 w-8 text-gray-300 dark:text-gray-600 mb-2" />
@@ -588,7 +594,7 @@ function NotificationBell() {
             )}
           </div>
 
-          <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-2">
+          <div className="border-t border-gray-200/30 dark:border-white/[0.04] px-4 py-2">
             <Link
               href="/dashboard/inbox"
               onClick={() => setOpen(false)}
@@ -606,7 +612,7 @@ function NotificationBell() {
 function NotificationItem({ notification: n, onClose }: { notification: InAppNotification; onClose: () => void }) {
   const ago = formatTimeAgo(n.createdAt)
   const content = (
-    <div className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${!n.read ? "bg-indigo-50/50 dark:bg-indigo-950/20" : ""}`}>
+    <div className={`px-4 py-3 hover:bg-gray-50/60 dark:hover:bg-white/[0.04] transition-all duration-200 ${!n.read ? "bg-indigo-50/50 dark:bg-indigo-950/20" : ""}`}>
       <div className="flex items-start gap-2.5">
         <span className="text-base mt-0.5 shrink-0">{CATEGORY_ICONS[n.category] ?? "🔔"}</span>
         <div className="flex-1 min-w-0">
@@ -697,9 +703,9 @@ function UserProfileMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-80 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl overflow-hidden animate-fade-in-down">
+        <div className="absolute right-0 top-12 z-50 w-80 rounded-2xl border border-gray-200/60 dark:border-white/[0.08] bg-white/80 dark:bg-gray-950/90 backdrop-blur-2xl shadow-2xl overflow-hidden animate-fade-in-down">
           {/* Profile header */}
-          <div className="px-5 py-4 bg-gradient-to-br from-accent-50 to-accent-100/50 dark:from-accent-950/30 dark:to-accent-900/20 border-b border-gray-100 dark:border-gray-800">
+          <div className="px-5 py-4 bg-gradient-to-br from-accent-50 to-accent-100/50 dark:from-accent-950/30 dark:to-accent-900/20 border-b border-gray-200/30 dark:border-white/[0.04]">
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-accent-500/20">
                 {initials}
@@ -746,11 +752,11 @@ function UserProfileMenu() {
           </div>
 
           {/* Actions */}
-          <div className="border-t border-gray-100 dark:border-gray-800 px-2 py-2">
+          <div className="border-t border-gray-200/30 dark:border-white/[0.04] px-2 py-2">
             <Link
               href="/dashboard/settings"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/60 dark:hover:bg-white/[0.04] transition-all duration-200"
             >
               <Settings className="h-4 w-4 text-gray-400" />
               Settings
@@ -758,7 +764,7 @@ function UserProfileMenu() {
             <Link
               href="/dashboard/security"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100/60 dark:hover:bg-white/[0.04] transition-all duration-200"
             >
               <Shield className="h-4 w-4 text-gray-400" />
               Security
@@ -766,7 +772,7 @@ function UserProfileMenu() {
             <button
               type="button"
               onClick={() => { setOpen(false); logout() }}
-              className="flex w-full items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="flex w-full items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
             >
               <LogOut className="h-4 w-4" />
               Sign out

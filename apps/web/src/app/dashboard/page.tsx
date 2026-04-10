@@ -1,10 +1,9 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
-  PieChart, Pie, Cell,
 } from "recharts"
 import { useSelectedUser } from "../../lib/user-selection-context"
 import {
@@ -32,20 +31,30 @@ import {
   Heart,
   Zap,
   Shield,
-  TrendingUp,
-  TrendingDown,
   ArrowRight,
-  KeyRound,
-  Webhook,
   Brain,
   Moon,
   Dumbbell,
   Flame,
   Target,
-  CalendarDays,
-  CheckCircle2,
-  Circle,
+  Sparkles,
+  KeyRound,
+  Webhook,
 } from "lucide-react"
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  StatCard,
+  PageHeader,
+  Badge,
+  MetricRing,
+  MetricBar,
+  MetricTrend,
+  StatSkeleton,
+  CardSkeleton,
+  EmptyState,
+} from "../../lib/components/ui"
 
 /* ─── Helpers ─── */
 function getScoreLabel(score: number): { text: string; color: string } {
@@ -70,48 +79,6 @@ function formatDuration(secs: number): string {
   return `${h}h ${m % 60}m`
 }
 
-/* ─── Score Ring SVG ─── */
-function ScoreRing({ value, max = 100, size = 100, label, color, icon: Icon }: {
-  value: number; max?: number; size?: number; label: string; color: string
-  icon: React.ComponentType<{ className?: string }>
-}) {
-  const r = (size - 10) / 2
-  const circ = 2 * Math.PI * r
-  const pct = Math.min(1, value / max)
-  const offset = circ * (1 - pct)
-  const status = getScoreLabel(value)
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="transform -rotate-90">
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" className="text-gray-200 dark:text-gray-800" strokeWidth={6} />
-          <circle
-            cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={6}
-            strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
-            className="transition-all duration-1000 ease-out"
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-gray-900 dark:text-gray-50">{Math.round(value)}</span>
-        </div>
-      </div>
-      <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color }}>
-        <Icon className="h-4 w-4" />
-        <span>{label}</span>
-      </div>
-      <span className={`text-[11px] font-semibold ${status.color}`}>{status.text}</span>
-    </div>
-  )
-}
-
-function DashCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6 shadow-sm hover:shadow-md transition-shadow duration-200 ${className}`}>
-      {children}
-    </div>
-  )
-}
-
 /* ─── Sparkline ─── */
 function Sparkline({ data, color, height = 32 }: { data: number[]; color: string; height?: number }) {
   const chartData = data.map((v, i) => ({ i, v }))
@@ -130,345 +97,11 @@ function Sparkline({ data, color, height = 32 }: { data: number[]; color: string
   )
 }
 
-function StatCard({ label, value, subtitle, icon: Icon, trend, trendValue, sparkData, sparkColor, iconBg, iconColor }: {
-  label: string; value: string | number; subtitle: string
-  icon: React.ComponentType<{ className?: string }>
-  trend?: "up" | "down"; trendValue?: string
-  sparkData?: number[]; sparkColor?: string
-  iconBg?: string; iconColor?: string
-}) {
-  return (
-    <DashCard>
-      <div className="flex items-start justify-between">
-        <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${iconBg ?? "bg-accent-50 dark:bg-accent-900/20"}`}>
-          <Icon className={`h-5 w-5 ${iconColor ?? "text-accent-600 dark:text-accent-400"}`} />
-        </div>
-        {trend && trendValue && (
-          <span className={`inline-flex items-center gap-0.5 rounded-lg px-2 py-1 text-xs font-medium ${
-            trend === "up"
-              ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
-              : "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400"
-          }`}>
-            {trend === "up" ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-            {trendValue}
-          </span>
-        )}
-      </div>
-      <p className="mt-4 text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">{value}</p>
-      <p className="mt-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</p>
-      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{subtitle}</p>
-      {sparkData && sparkData.length > 2 && (
-        <div className="mt-3 -mx-1">
-          <Sparkline data={sparkData} color={sparkColor ?? "#ef4444"} />
-        </div>
-      )}
-    </DashCard>
-  )
-}
-
-/* ─── Donut Chart ─── */
-const DONUT_COLORS = ["#ef4444", "#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"]
-
-function CategoryDonut({ data }: { data: [string, number][] }) {
-  const total = data.reduce((s, [, v]) => s + v, 0)
-  const chartData = data.map(([name, value]) => ({ name, value }))
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="relative h-40 w-40">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData} dataKey="value" cx="50%" cy="50%"
-              innerRadius={45} outerRadius={70} paddingAngle={2} strokeWidth={0}
-            >
-              {chartData.map((_, i) => (
-                <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
-              ))}
-            </Pie>
-          </PieChart>
-        </ResponsiveContainer>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{total}</span>
-          <span className="text-[10px] text-gray-500 dark:text-gray-400">Total</span>
-        </div>
-      </div>
-      <div className="w-full space-y-2">
-        {data.slice(0, 6).map(([cat, count], i) => (
-          <div key={cat} className="flex items-center gap-2 text-xs">
-            <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
-            <span className="text-gray-600 dark:text-gray-400 capitalize flex-1 truncate">{cat.replace("_", " ")}</span>
-            <span className="font-semibold text-gray-900 dark:text-gray-100">{count}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* ─── Weekly Schedule / Recent Workouts ─── */
-function WeeklySchedule({ events }: { events: WorkoutEvent[] }) {
-  const days = useMemo(() => {
-    const now = new Date()
-    const result: { label: string; dayNum: number; isToday: boolean; workouts: WorkoutEvent[] }[] = []
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 86400000)
-      const dayStr = d.toISOString().slice(0, 10)
-      result.push({
-        label: d.toLocaleDateString("en-US", { weekday: "short" }),
-        dayNum: d.getDate(),
-        isToday: i === 0,
-        workouts: events.filter((e) => e.startedAt.slice(0, 10) === dayStr),
-      })
-    }
-    return result
-  }, [events])
-
-  return (
-    <DashCard>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <CalendarDays className="h-4 w-4 text-indigo-500" />
-          This Week
-        </h2>
-        <a href="/dashboard/training" className="inline-flex items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline">
-          Schedule <ArrowRight className="h-3.5 w-3.5" />
-        </a>
-      </div>
-      {/* Day pills */}
-      <div className="flex gap-1.5 mb-4">
-        {days.map((d) => (
-          <div
-            key={d.label}
-            className={`flex-1 flex flex-col items-center rounded-xl py-2 text-xs transition-colors ${
-              d.isToday
-                ? "bg-accent-500 text-white shadow-lg shadow-accent-500/25"
-                : d.workouts.length > 0
-                  ? "bg-accent-50 dark:bg-accent-900/20 text-accent-700 dark:text-accent-300"
-                  : "bg-gray-50 dark:bg-gray-800/50 text-gray-400 dark:text-gray-500"
-            }`}
-          >
-            <span className="font-medium">{d.label}</span>
-            <span className={`text-lg font-bold ${d.isToday ? "" : ""}`}>{d.dayNum}</span>
-            {d.workouts.length > 0 && (
-              <span className={`h-1.5 w-1.5 rounded-full mt-0.5 ${d.isToday ? "bg-white" : "bg-accent-500"}`} />
-            )}
-          </div>
-        ))}
-      </div>
-      {/* Recent activity list */}
-      <div className="space-y-2">
-        {events.slice(0, 4).map((ev) => (
-          <div key={ev.id} className="flex items-center gap-3 rounded-xl bg-gray-50/80 dark:bg-gray-800/30 px-3.5 py-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30">
-              <Dumbbell className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                {ev.title || ev.activityType || ev.eventType}
-              </p>
-              <p className="text-[11px] text-gray-400 dark:text-gray-500">
-                {ev.durationSeconds ? formatDuration(ev.durationSeconds) : "—"}
-                {ev.caloriesKcal ? ` · ${Math.round(ev.caloriesKcal)} kcal` : ""}
-              </p>
-            </div>
-            {ev.avgHeartRate && (
-              <span className="text-xs font-medium text-red-500 flex items-center gap-0.5">
-                <Heart className="h-3 w-3" /> {ev.avgHeartRate}
-              </span>
-            )}
-          </div>
-        ))}
-        {events.length === 0 && (
-          <p className="text-center text-xs text-gray-400 dark:text-gray-500 py-4">No activities this week</p>
-        )}
-      </div>
-    </DashCard>
-  )
-}
-
-/* ─── Daily Biometric Timeline (mini area chart) ─── */
-function BiometricTimeline({ metrics }: { metrics: { time: string; hr: number | null; calories: number | null }[] }) {
-  if (metrics.length < 2) return null
-  return (
-    <DashCard>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <Activity className="h-4 w-4 text-red-500" />
-          Today&apos;s Biometrics
-        </h2>
-        <div className="flex items-center gap-4 text-[10px] font-medium">
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" />Heart Rate</span>
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" />Calories</span>
-        </div>
-      </div>
-      <div className="h-44">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={metrics} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
-            <defs>
-              <linearGradient id="hrGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ef4444" stopOpacity={0.2} />
-                <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="calGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.2} />
-                <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <XAxis dataKey="time" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-            <Tooltip
-              contentStyle={{ fontSize: 12, borderRadius: 12, border: "1px solid rgba(55, 65, 81, 0.8)", boxShadow: "0 4px 12px rgba(0,0,0,.08)" }}
-              labelStyle={{ fontWeight: 600 }}
-            />
-            <Area type="monotone" dataKey="hr" stroke="#ef4444" strokeWidth={2} fill="url(#hrGrad)" dot={false} name="Heart Rate" />
-            <Area type="monotone" dataKey="calories" stroke="#f59e0b" strokeWidth={2} fill="url(#calGrad)" dot={false} name="Calories" />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    </DashCard>
-  )
-}
-
-/* ─── Goal Progress Bars (Mindo-style) ─── */
-function GoalProgress({ goals }: { goals: GoalData[] }) {
-  const active = goals.filter((g) => g.status === "active").slice(0, 5)
-  if (active.length === 0) return null
-  return (
-    <DashCard>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <Target className="h-4 w-4 text-emerald-500" />
-          Active Goals
-        </h2>
-        <a href="/dashboard/goals" className="inline-flex items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline">
-          All goals <ArrowRight className="h-3.5 w-3.5" />
-        </a>
-      </div>
-      <div className="space-y-4">
-        {active.map((g) => {
-          const pct = g.targetValue > 0 ? Math.min(100, Math.round(((g.currentValue ?? 0) / g.targetValue) * 100)) : 0
-          const barColor = pct >= 80 ? "from-emerald-400 to-emerald-500" : pct >= 40 ? "from-blue-400 to-blue-500" : "from-amber-400 to-amber-500"
-          return (
-            <div key={g.id}>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{g.name}</span>
-                <span className="text-xs font-bold text-gray-900 dark:text-gray-100 ml-2 shrink-0">{pct}%</span>
-              </div>
-              <div className="relative h-2.5 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                <div
-                  className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r ${barColor} transition-all duration-700`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              {g.streak > 0 && (
-                <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                  <Flame className="h-3 w-3 text-orange-400" /> {g.streak} day streak
-                </p>
-              )}
-            </div>
-          )
-        })}
-      </div>
-    </DashCard>
-  )
-}
-
-/* ─── Daily Target vs Actual Score ─── */
-const DAILY_SCORE_TARGETS = [
-  { key: "overallScore" as const, label: "Overall", target: 80, icon: Heart, color: "#ef4444" },
-  { key: "sleepScore" as const, label: "Sleep", target: 75, icon: Moon, color: "#6366f1" },
-  { key: "activityScore" as const, label: "Activity", target: 70, icon: Activity, color: "#f59e0b" },
-  { key: "recoveryScore" as const, label: "Recovery", target: 70, icon: Shield, color: "#10b981" },
-]
-
-function DailyTargetActual({ healthScore, goals }: { healthScore: HealthScoreData | null | undefined; goals: GoalData[] }) {
-  const dailyGoals = goals.filter((g) => g.status === "active" && g.goalType === "daily").slice(0, 4)
-
-  if (!healthScore && dailyGoals.length === 0) return null
-
-  return (
-    <DashCard>
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <Target className="h-4 w-4 text-accent-600 dark:text-accent-400" />
-          Daily Target vs Actual
-        </h2>
-        <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-          {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-        </span>
-      </div>
-
-      {/* Health Score Targets */}
-      {healthScore && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
-          {DAILY_SCORE_TARGETS.map(({ key, label, target, icon: Icon, color }) => {
-            const actual = (key === "overallScore" ? healthScore.overallScore : (healthScore as unknown as Record<string, number | null>)[key]) as number | null
-            const value = actual ?? 0
-            const pct = Math.min(100, Math.round((value / target) * 100))
-            const met = value >= target
-            return (
-              <div key={key} className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 p-3 transition-all hover:shadow-sm">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Icon className="h-3.5 w-3.5" style={{ color }} />
-                  <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">{label}</span>
-                  {met && <CheckCircle2 className="h-3 w-3 text-emerald-500 ml-auto" />}
-                  {!met && <Circle className="h-3 w-3 text-gray-300 dark:text-gray-600 ml-auto" />}
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-lg font-bold text-gray-900 dark:text-gray-50">{value}</span>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">/ {target}</span>
-                </div>
-                <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${pct}%`, backgroundColor: met ? "#10b981" : color }}
-                  />
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Daily Goal Targets */}
-      {dailyGoals.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Daily Goals</p>
-          {dailyGoals.map((g) => {
-            const actual = g.currentValue ?? 0
-            const pct = g.targetValue > 0 ? Math.min(100, Math.round((actual / g.targetValue) * 100)) : 0
-            const met = actual >= g.targetValue
-            return (
-              <div key={g.id} className="flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{g.name}</span>
-                    <div className="flex items-center gap-1.5 ml-2 shrink-0">
-                      <span className="text-xs font-bold text-gray-900 dark:text-gray-50">{actual.toLocaleString()}</span>
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500">/ {g.targetValue.toLocaleString()}{g.unit ? ` ${g.unit}` : ""}</span>
-                      {met ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> : <Circle className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />}
-                    </div>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-700 ${met ? "bg-gradient-to-r from-emerald-400 to-emerald-500" : "bg-gradient-to-r from-accent-400 to-accent-500"}`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {healthScore && !dailyGoals.length && (
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-2">
-          <a href="/dashboard/goals" className="text-accent-600 dark:text-accent-400 hover:underline">Create daily goals</a> to track more targets
-        </p>
-      )}
-    </DashCard>
-  )
+const SEVERITY_BADGE: Record<InsightSeverity, "danger" | "warning" | "info" | "success"> = {
+  critical: "danger",
+  warning: "warning",
+  info: "info",
+  positive: "success",
 }
 
 export default function DashboardPage() {
@@ -479,7 +112,6 @@ export default function DashboardPage() {
   const { data: webhooks = [] } = useQuery({ queryKey: ["webhooks"], queryFn: webhooksApi.list })
   const { data: algorithms } = useQuery({ queryKey: ["insight-algorithms"], queryFn: () => insightsApi.algorithms() })
 
-  // Fetch selected user directly so greeting works even if list hasn't loaded
   const { data: selectedUser } = useQuery({
     queryKey: ["user", selectedUserId],
     queryFn: () => usersApi.get(selectedUserId),
@@ -510,7 +142,6 @@ export default function DashboardPage() {
     enabled: !!selectedUserId,
   })
 
-  // Recent workouts (this week)
   const weekAgo = useMemo(() => new Date(Date.now() - 7 * 86400000).toISOString(), [])
   const { data: recentEvents } = useQuery({
     queryKey: ["recent-events", selectedUserId],
@@ -518,14 +149,12 @@ export default function DashboardPage() {
     enabled: !!selectedUserId,
   })
 
-  // Active goals
   const { data: goalsResult } = useQuery({
     queryKey: ["active-goals", selectedUserId],
     queryFn: () => goalsApi.list(selectedUserId, { status: "active" }),
     enabled: !!selectedUserId,
   })
 
-  // Today's heart rate metrics for timeline
   const todayStart = useMemo(() => {
     const d = new Date(); d.setHours(0, 0, 0, 0); return d.toISOString()
   }, [])
@@ -540,14 +169,12 @@ export default function DashboardPage() {
     enabled: !!selectedUserId,
   })
 
-  // Mood stats
   const { data: moodStats } = useQuery({
     queryKey: ["mood-stats", selectedUserId],
     queryFn: () => moodApi.stats(selectedUserId, 7),
     enabled: !!selectedUserId,
   })
 
-  // Sleep quality
   const { data: sleepQuality } = useQuery({
     queryKey: ["sleep-quality", selectedUserId],
     queryFn: () => sleepAnalysisApi.quality(selectedUserId, 7),
@@ -566,7 +193,6 @@ export default function DashboardPage() {
   const sevCounts: Record<InsightSeverity, number> = { critical: 0, warning: 0, info: 0, positive: 0 }
   for (const i of insights) sevCounts[i.severity]++
 
-  // Build biometric timeline data
   const timelineData = useMemo(() => {
     const hrData = todayHr?.data ?? []
     const calData = todayCal?.data ?? []
@@ -592,7 +218,6 @@ export default function DashboardPage() {
       }))
   }, [todayHr, todayCal])
 
-  // Build sparkline data from score history
   const healthSparkline = useMemo(() => (scoreHistory?.data ?? []).map((s) => s.overallScore).reverse(), [scoreHistory])
   const sleepSparkline = useMemo(() => (scoreHistory?.data ?? []).map((s) => s.sleepScore ?? 0).reverse(), [scoreHistory])
   const activitySparkline = useMemo(() => (scoreHistory?.data ?? []).map((s) => s.activityScore ?? 0).reverse(), [scoreHistory])
@@ -606,260 +231,564 @@ export default function DashboardPage() {
 
   const algoCount = algorithms?.total ?? 0
 
-  // Date display
-  const dateStr = now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+  const [dateStr, setDateStr] = useState("")
+  const [greeting, setGreeting] = useState("Welcome")
+  useEffect(() => {
+    setDateStr(new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }))
+    setGreeting(getGreeting())
+  }, [])
 
-  // Quick-glance metrics for the greeting card
   const readinessRec = readiness?.recommendation?.replace("_", " ") ?? null
 
+  /* Derived metrics for the new layout */
+  const yesterdayScore = scoreHistory?.data?.[1]?.overallScore ?? 0
+  const healthScoreChange =
+    scoreHistory?.data && scoreHistory.data.length >= 2 && yesterdayScore > 0
+      ? Math.round(((healthScore?.overallScore ?? 0) - yesterdayScore) / yesterdayScore * 100)
+      : undefined
+
+  const latestHr = useMemo(() => {
+    const hrData = todayHr?.data ?? []
+    const last = hrData[hrData.length - 1]
+    return last ? Math.round(last.value) : null
+  }, [todayHr])
+
+  const totalCalories = useMemo(() => {
+    const calData = todayCal?.data ?? []
+    return calData.length > 0 ? Math.round(calData.reduce((s, m) => s + m.value, 0)) : null
+  }, [todayCal])
+
+  const statsLoading = !!selectedUserId && healthScore === undefined && readiness === undefined
+  const activeGoals = (goalsResult?.data ?? []).filter((g: GoalData) => g.status === "active").slice(0, 5)
+  const workouts = recentEvents?.data ?? []
+
   return (
-    <div className="space-y-6">
-      {/* ──────────── Personalized Greeting Header ──────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <span className="inline-flex items-center gap-1.5 rounded-lg bg-accent-50 dark:bg-accent-900/20 px-3 py-1 text-xs font-semibold text-accent-600 dark:text-accent-400">
-              <Activity className="h-3.5 w-3.5" />
-              Live
-            </span>
-            <span className="text-xs text-gray-400 dark:text-gray-500">{dateStr}</span>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight animate-fade-in-down">
-            {selectedUser
-              ? `${getGreeting()}, ${selectedUser.displayName || selectedUser.externalId} 👋`
-              : "Health Command Center"}
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {selectedUser && readinessRec
-              ? <>Today&apos;s recommendation: <span className="font-medium text-accent-600 dark:text-accent-400 capitalize">{readinessRec}</span> · {algoCount} algorithms active</>
-              : <>{algoCount} proprietary algorithms analyzing your biometric data in real-time.</>}
-          </p>
-        </div>
+    <div className="space-y-8">
+      {/* ──── Page Header ──── */}
+      <PageHeader
+        title={
+          selectedUser
+            ? `${greeting}, ${selectedUser.displayName || selectedUser.externalId} 👋`
+            : "Health Command Center"
+        }
+        subtitle={
+          selectedUser && readinessRec
+            ? `${dateStr} · Recommendation: ${readinessRec} · ${algoCount} algorithms active`
+            : dateStr || `${algoCount} proprietary algorithms analyzing your biometric data`
+        }
+        badge={<Badge variant="success" dot pulse>Live</Badge>}
+      />
 
-      </div>
-
+      {/* ──── Stats Row ──── */}
       {selectedUserId && (
         <>
-          {/* ──────────── Quick Status Row — Mood / Sleep / Strain ──────────── */}
-          {(moodStats || sleepQuality || trainingLoad) && (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 stagger-grid">
-              {moodStats && (
-                <div className="flex items-center gap-4 rounded-2xl border border-purple-100 dark:border-purple-800/40 bg-purple-50/60 dark:bg-purple-900/10 px-5 py-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/30 text-2xl">
-                    {moodStats.avgScore >= 7 ? "😊" : moodStats.avgScore >= 4 ? "😐" : "😞"}
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{moodStats.avgScore.toFixed(1)}<span className="text-sm font-normal text-gray-400">/10</span></p>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Avg Mood · 7d</p>
-                  </div>
-                </div>
-              )}
-              {sleepQuality && (
-                <div className="flex items-center gap-4 rounded-2xl border border-blue-100 dark:border-blue-800/40 bg-blue-50/60 dark:bg-blue-900/10 px-5 py-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30">
-                    <Moon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{sleepQuality.avgEfficiency.toFixed(1)}<span className="text-sm font-normal text-gray-400">%</span></p>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Sleep Efficiency · Score {sleepQuality.avgSleepScore}</p>
-                  </div>
-                </div>
-              )}
-              {trainingLoad && (
-                <div className="flex items-center gap-4 rounded-2xl border border-amber-100 dark:border-amber-800/40 bg-amber-50/60 dark:bg-amber-900/10 px-5 py-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/30">
-                    <Flame className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{Math.round(trainingLoad.fitness)}<span className="text-sm font-normal text-gray-400"> fit</span></p>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium capitalize">Status: {trainingLoad.status}</p>
-                  </div>
-                </div>
-              )}
+          {statsLoading ? (
+            <StatSkeleton count={4} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                label="Health Score"
+                value={healthScore?.overallScore ?? "—"}
+                {...(healthScoreChange != null ? { change: healthScoreChange, changeLabel: "vs yesterday" } : {})}
+                icon={<Heart className="h-5 w-5" />}
+                color="brand"
+              />
+              <StatCard
+                label="Readiness"
+                value={readiness?.score ?? "—"}
+                icon={<Shield className="h-5 w-5" />}
+                color="vitality"
+              />
+              <StatCard
+                label="Sleep Quality"
+                value={sleepQuality ? sleepQuality.avgSleepScore : "—"}
+                icon={<Moon className="h-5 w-5" />}
+                color="brand"
+              />
+              <StatCard
+                label="Mood"
+                value={moodStats ? moodStats.avgScore.toFixed(1) : "—"}
+                icon={<Brain className="h-5 w-5" />}
+                color="accent"
+              />
             </div>
           )}
 
-          {/* ──────────── Score Rings with Qualitative Labels ──────────── */}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 stagger-grid">
-            <DashCard className="flex items-center justify-center py-6">
-              <ScoreRing value={healthScore?.overallScore ?? 0} label="Health" color="#ef4444" icon={Heart} />
-            </DashCard>
-            <DashCard className="flex items-center justify-center py-6">
-              <ScoreRing value={readiness?.score ?? 0} label="Readiness" color="#10b981" icon={Shield} />
-            </DashCard>
-            <DashCard className="flex items-center justify-center py-6">
-              <ScoreRing value={trainingLoad?.fatigue ?? 0} label="Strain" color="#f59e0b" icon={Zap} />
-            </DashCard>
-            <DashCard className="flex items-center justify-center py-6">
-              <ScoreRing value={healthScore?.recoveryScore ?? 0} label="Recovery" color="#8b5cf6" icon={Activity} />
-            </DashCard>
+          {/* ──── Main Grid ──── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Biometric Timeline */}
+              <Card>
+                <CardHeader
+                  title="Today's Biometrics"
+                  subtitle="Heart rate & calorie timeline"
+                  icon={<Activity className="h-5 w-5 text-accent-500" />}
+                  action={
+                    <div className="flex items-center gap-4 text-[10px] font-medium">
+                      <span className="flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-red-500" />
+                        Heart Rate
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-amber-500" />
+                        Calories
+                      </span>
+                    </div>
+                  }
+                />
+                <CardContent>
+                  {timelineData.length >= 2 ? (
+                    <div className="h-52">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={timelineData} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+                          <defs>
+                            <linearGradient id="hrGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#ef4444" stopOpacity={0.2} />
+                              <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
+                            </linearGradient>
+                            <linearGradient id="calGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.2} />
+                              <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <XAxis dataKey="time" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                          <Tooltip
+                            contentStyle={{
+                              fontSize: 12,
+                              borderRadius: 12,
+                              border: "1px solid rgba(55,65,81,0.8)",
+                              boxShadow: "0 4px 12px rgba(0,0,0,.08)",
+                            }}
+                            labelStyle={{ fontWeight: 600 }}
+                          />
+                          <Area type="monotone" dataKey="hr" stroke="#ef4444" strokeWidth={2} fill="url(#hrGrad)" dot={false} name="Heart Rate" />
+                          <Area type="monotone" dataKey="calories" stroke="#f59e0b" strokeWidth={2} fill="url(#calGrad)" dot={false} name="Calories" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon={Activity}
+                      title="No biometric data yet"
+                      description="Heart rate and calorie data will appear here as your devices sync."
+                    />
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recent Workouts */}
+              <Card>
+                <CardHeader
+                  title="Recent Workouts"
+                  subtitle="This week's activity"
+                  icon={<Dumbbell className="h-5 w-5 text-orange-500" />}
+                  action={
+                    <a
+                      href="/dashboard/training"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-brand-500 hover:text-brand-600 transition-colors"
+                    >
+                      View all <ArrowRight className="h-3.5 w-3.5" />
+                    </a>
+                  }
+                />
+                <CardContent>
+                  {workouts.length > 0 ? (
+                    <div className="space-y-2">
+                      {workouts.slice(0, 5).map((ev: WorkoutEvent) => (
+                        <div
+                          key={ev.id}
+                          className="flex items-center gap-3 rounded-xl bg-gray-50/80 dark:bg-white/[0.02] px-4 py-3 transition-colors hover:bg-gray-100/80 dark:hover:bg-white/[0.04]"
+                        >
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-500/10">
+                            <Dumbbell className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-50 truncate">
+                              {ev.title || ev.activityType || ev.eventType}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {ev.durationSeconds ? formatDuration(ev.durationSeconds) : "—"}
+                              {ev.caloriesKcal ? ` · ${Math.round(ev.caloriesKcal)} kcal` : ""}
+                            </p>
+                          </div>
+                          {ev.avgHeartRate && (
+                            <Badge variant="danger" size="sm">
+                              <Heart className="h-3 w-3" /> {ev.avgHeartRate}
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon={Dumbbell}
+                      title="No workouts this week"
+                      description="Sync your fitness tracker to see workout activity here."
+                      action={{ label: "Connect Provider", href: "/dashboard/providers" }}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Active Goals */}
+              <Card>
+                <CardHeader
+                  title="Active Goals"
+                  subtitle="Track your progress"
+                  icon={<Target className="h-5 w-5 text-vitality-500" />}
+                  action={
+                    <a
+                      href="/dashboard/goals"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-brand-500 hover:text-brand-600 transition-colors"
+                    >
+                      All goals <ArrowRight className="h-3.5 w-3.5" />
+                    </a>
+                  }
+                />
+                <CardContent>
+                  {activeGoals.length > 0 ? (
+                    <div className="space-y-5">
+                      {activeGoals.map((g: GoalData) => {
+                        const pct =
+                          g.targetValue > 0
+                            ? Math.min(100, Math.round(((g.currentValue ?? 0) / g.targetValue) * 100))
+                            : 0
+                        const barColor: "vitality" | "brand" | "amber" =
+                          pct >= 80 ? "vitality" : pct >= 40 ? "brand" : "amber"
+                        return (
+                          <div key={g.id} className="space-y-1">
+                            <MetricBar
+                              label={g.name}
+                              value={g.currentValue ?? 0}
+                              max={g.targetValue}
+                              color={barColor}
+                            />
+                            {g.streak > 0 && (
+                              <p className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1 pl-0.5">
+                                <Flame className="h-3 w-3 text-orange-400" /> {g.streak} day streak
+                              </p>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon={Target}
+                      title="No active goals"
+                      description="Set health and fitness goals to track your progress."
+                      action={{ label: "Create Goal", href: "/dashboard/goals" }}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Health Score Ring */}
+              <Card glow="brand">
+                <CardContent className="flex flex-col items-center py-8 gap-4">
+                  <MetricRing
+                    value={healthScore?.overallScore ?? 0}
+                    size="lg"
+                    color="brand"
+                    label="Health Score"
+                  />
+                  <span
+                    className={`text-xs font-semibold ${getScoreLabel(healthScore?.overallScore ?? 0).color}`}
+                  >
+                    {getScoreLabel(healthScore?.overallScore ?? 0).text}
+                  </span>
+                  {scoreHistory?.data && scoreHistory.data.length >= 2 && (
+                    <MetricTrend
+                      current={healthScore?.overallScore ?? 0}
+                      previous={yesterdayScore}
+                      label="vs yesterday"
+                    />
+                  )}
+                  {healthSparkline.length > 2 && (
+                    <div className="w-full mt-2">
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1 text-center">
+                        14-day trend
+                      </p>
+                      <Sparkline data={healthSparkline} color="#6366f1" height={36} />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Quick Status */}
+              <Card glow="vitality">
+                <CardHeader
+                  title="Quick Status"
+                  icon={<Sparkles className="h-5 w-5 text-vitality-500" />}
+                />
+                <CardContent className="space-y-4">
+                  {readiness && (
+                    <div className="rounded-xl bg-vitality-50/50 dark:bg-vitality-500/5 p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Readiness
+                        </span>
+                        <Badge variant="success" size="sm">
+                          {readiness.score}/100
+                        </Badge>
+                      </div>
+                      {readinessRec && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                          Rec:{" "}
+                          <span className="font-semibold text-vitality-600 dark:text-vitality-400">
+                            {readinessRec}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {trainingLoad && (
+                    <div className="rounded-xl bg-amber-50/50 dark:bg-amber-500/5 p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Training Load
+                        </span>
+                        <Badge variant="warning" size="sm" className="capitalize">
+                          {trainingLoad.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold text-gray-900 dark:text-gray-50">
+                          {Math.round(trainingLoad.fitness)}
+                        </span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          fitness · {Math.round(trainingLoad.fatigue)} fatigue
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {sleepQuality && (
+                    <div className="rounded-xl bg-brand-50/50 dark:bg-brand-500/5 p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Sleep (7d avg)
+                        </span>
+                        <Badge variant="info" size="sm">
+                          {sleepQuality.avgEfficiency.toFixed(0)}% eff
+                        </Badge>
+                      </div>
+                      <MetricBar
+                        value={sleepQuality.avgSleepScore}
+                        max={100}
+                        label="Sleep Score"
+                        color="brand"
+                      />
+                      {sleepSparkline.length > 2 && (
+                        <Sparkline data={sleepSparkline} color="#6366f1" height={28} />
+                      )}
+                    </div>
+                  )}
+                  {!readiness && !trainingLoad && !sleepQuality && (
+                    <EmptyState
+                      icon={Sparkles}
+                      title="No status data"
+                      description="Connect a provider to see your readiness and training status."
+                    />
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Top Insights */}
+              <Card>
+                <CardHeader
+                  title="Top Insights"
+                  subtitle={
+                    insights.length > 0
+                      ? `${sevCounts.critical} critical · ${sevCounts.warning} warnings · ${sevCounts.positive} positive`
+                      : "Analytics engine insights"
+                  }
+                  icon={<Brain className="h-5 w-5 text-purple-500" />}
+                  action={
+                    insights.length > 0 ? (
+                      <a
+                        href="/dashboard/insights"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-brand-500 hover:text-brand-600 transition-colors"
+                      >
+                        All {insights.length} <ArrowRight className="h-3.5 w-3.5" />
+                      </a>
+                    ) : undefined
+                  }
+                />
+                <CardContent>
+                  {topInsights.length > 0 ? (
+                    <div className="space-y-2.5">
+                      {topInsights.map((insight: Insight) => (
+                        <div
+                          key={insight.id}
+                          className="flex items-start gap-3 rounded-xl bg-gray-50/80 dark:bg-white/[0.02] p-3.5 transition-colors hover:bg-gray-100/80 dark:hover:bg-white/[0.04]"
+                        >
+                          <Badge
+                            variant={SEVERITY_BADGE[insight.severity]}
+                            size="sm"
+                            dot
+                            className="mt-0.5 shrink-0 capitalize"
+                          >
+                            {insight.severity}
+                          </Badge>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-50 truncate">
+                              {insight.title}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5 leading-relaxed">
+                              {insight.description}
+                            </p>
+                          </div>
+                          {insight.value != null && (
+                            <div className="text-right flex-shrink-0">
+                              <span className="text-sm font-bold text-gray-900 dark:text-gray-50">
+                                {insight.value}
+                              </span>
+                              {insight.unit && (
+                                <span className="text-[10px] text-gray-400 ml-0.5">{insight.unit}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {catArray.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-gray-100 dark:border-white/[0.04]">
+                          {catArray.slice(0, 4).map(([cat]) => (
+                            <Badge key={cat} variant="default" size="sm" className="capitalize">
+                              {cat.replace("_", " ")}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon={Brain}
+                      title="No insights yet"
+                      description="Insights will appear once enough health data has been collected."
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
-          {/* ──────────── Daily Target vs Actual ──────────── */}
-          <DailyTargetActual healthScore={healthScore} goals={goalsResult?.data ?? []} />
-
-          {/* ──────────── Daily Biometric Timeline ──────────── */}
-          <BiometricTimeline metrics={timelineData} />
-
-          {/* ──────────── Severity Overview ──────────── */}
-          {insights.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 stagger-grid">
-              {(["critical", "warning", "info", "positive"] as const).map((sev) => {
-                const config: Record<InsightSeverity, { bg: string; text: string; icon: string; border: string }> = {
-                  critical: { bg: "bg-red-50 dark:bg-red-900/10", text: "text-red-600 dark:text-red-400", icon: "✕", border: "border-red-100 dark:border-red-800/40" },
-                  warning: { bg: "bg-amber-50 dark:bg-amber-900/10", text: "text-amber-600 dark:text-amber-400", icon: "⚠", border: "border-amber-100 dark:border-amber-800/40" },
-                  info: { bg: "bg-blue-50 dark:bg-blue-900/10", text: "text-blue-600 dark:text-blue-400", icon: "ℹ", border: "border-blue-100 dark:border-blue-800/40" },
-                  positive: { bg: "bg-emerald-50 dark:bg-emerald-900/10", text: "text-emerald-600 dark:text-emerald-400", icon: "✓", border: "border-emerald-100 dark:border-emerald-800/40" },
-                }
-                const s = config[sev]
-                return (
-                  <div key={sev} className={`flex items-center gap-3 rounded-2xl border ${s.border} ${s.bg} px-4 py-3.5 transition-all hover:scale-[1.02]`}>
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${s.text} text-lg font-bold`}>
-                      {s.icon}
-                    </div>
-                    <div>
-                      <p className={`text-2xl font-bold ${s.text}`}>{sevCounts[sev]}</p>
-                      <p className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-medium">{sev}</p>
-                    </div>
+          {/* ──── Quick Metrics Row ──── */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card>
+              <CardContent>
+                <MetricBar
+                  label="Heart Rate"
+                  value={latestHr ?? 0}
+                  max={200}
+                  color="accent"
+                />
+                {latestHr != null && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                    Latest: {latestHr} bpm
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent>
+                <MetricBar
+                  label="Calories Burned"
+                  value={totalCalories ?? 0}
+                  max={2500}
+                  color="amber"
+                />
+                {totalCalories != null && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                    {totalCalories.toLocaleString()} kcal today
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent>
+                <MetricBar
+                  label="Activity Score"
+                  value={healthScore?.activityScore ?? 0}
+                  max={100}
+                  color="vitality"
+                />
+                {activitySparkline.length > 2 && (
+                  <div className="mt-2">
+                    <Sparkline data={activitySparkline} color="#10b981" height={28} />
                   </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* ──────────── 3-Col: Priority Insights + Donut + Goals ──────────── */}
-          {insights.length > 0 && (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 stagger-grid">
-              {/* Priority Insights */}
-              <DashCard className="lg:col-span-1">
-                <div className="flex items-center justify-between mb-5">
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Priority Insights</h2>
-                  <a href="/dashboard/insights" className="inline-flex items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline">
-                    All {insights.length} <ArrowRight className="h-3.5 w-3.5" />
-                  </a>
-                </div>
-                <div className="space-y-2.5">
-                  {topInsights.map((insight) => (
-                    <InsightRow key={insight.id} insight={insight} />
-                  ))}
-                </div>
-              </DashCard>
-
-              {/* Category Donut Chart */}
-              <DashCard>
-                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                  Category Distribution
-                </h2>
-                <CategoryDonut data={catArray.slice(0, 8)} />
-              </DashCard>
-
-              {/* Active Goals (Mindo-style progress bars) */}
-              <GoalProgress goals={goalsResult?.data ?? []} />
-            </div>
-          )}
-
-          {/* ──────────── Weekly Schedule + Metrics Row ──────────── */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 stagger-grid">
-            <WeeklySchedule events={recentEvents?.data ?? []} />
-
-            {/* Health Score Trend (sparkline card) */}
-            <DashCard>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-blue-500" />
-                  Health Trend
-                </h2>
-                <a href="/dashboard/health-scores" className="inline-flex items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline">
-                  Details <ArrowRight className="h-3.5 w-3.5" />
-                </a>
-              </div>
-              {healthSparkline.length > 2 ? (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Overall Score · 14d</p>
-                    <Sparkline data={healthSparkline} color="#ef4444" height={40} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sleep Score</p>
-                    <Sparkline data={sleepSparkline} color="#3b82f6" height={40} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Activity Score</p>
-                    <Sparkline data={activitySparkline} color="#10b981" height={40} />
-                  </div>
-                </div>
-              ) : (
-                <p className="text-center text-xs text-gray-400 dark:text-gray-500 py-8">Not enough data yet</p>
-              )}
-            </DashCard>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </>
       )}
 
-      {/* ──────────── Platform Stats with Sparklines ──────────── */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 stagger-grid">
-        <StatCard label="Providers" value={providers.length} subtitle="OAuth integrations" icon={Zap}
-          iconBg="bg-purple-50 dark:bg-purple-900/20" iconColor="text-purple-600 dark:text-purple-400"
-          sparkData={[3, 3, 4, 4, 5, providers.length]} sparkColor="#8b5cf6" />
-        <StatCard label="Algorithms" value={algoCount} subtitle="Proprietary analyses" icon={Brain} trend="up" trendValue="+12%"
-          iconBg="bg-emerald-50 dark:bg-emerald-900/20" iconColor="text-emerald-600 dark:text-emerald-400"
-          sparkData={[20, 24, 28, 32, 36, algoCount]} sparkColor="#10b981" />
-        <StatCard label="API Keys" value={keys.length} subtitle="Active credentials" icon={KeyRound}
-          iconBg="bg-blue-50 dark:bg-blue-900/20" iconColor="text-blue-600 dark:text-blue-400"
-          sparkData={[1, 1, 2, 2, 3, keys.length]} sparkColor="#3b82f6" />
-        <StatCard label="Webhooks" value={webhooks.length} subtitle="Event subscriptions" icon={Webhook}
-          iconBg="bg-amber-50 dark:bg-amber-900/20" iconColor="text-amber-600 dark:text-amber-400"
-          sparkData={[0, 1, 1, 2, 2, webhooks.length]} sparkColor="#f59e0b" />
+      {/* ──── Platform Stats ──── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Providers"
+          value={providers.length}
+          icon={<Zap className="h-5 w-5" />}
+          color="default"
+        />
+        <StatCard
+          label="Algorithms"
+          value={algoCount}
+          icon={<Brain className="h-5 w-5" />}
+          color="vitality"
+        />
+        <StatCard
+          label="API Keys"
+          value={keys.length}
+          icon={<KeyRound className="h-5 w-5" />}
+          color="brand"
+        />
+        <StatCard
+          label="Webhooks"
+          value={webhooks.length}
+          icon={<Webhook className="h-5 w-5" />}
+          color="accent"
+        />
       </div>
 
       {/* Connected Providers */}
       {providers.length > 0 && (
-        <DashCard>
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Connected Providers</h2>
-            <a href="/dashboard/providers" className="inline-flex items-center gap-1 text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline">
-              Manage
-              <ArrowRight className="h-3.5 w-3.5" />
-            </a>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {providers.map((p) => (
-              <div
-                key={p.id}
-                className="flex items-center gap-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 px-4 py-3.5 transition-all hover:shadow-sm hover:border-accent-200 dark:hover:border-accent-800 group"
+        <Card>
+          <CardHeader
+            title="Connected Providers"
+            action={
+              <a
+                href="/dashboard/providers"
+                className="inline-flex items-center gap-1 text-xs font-medium text-brand-500 hover:text-brand-600 transition-colors"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent-400 to-accent-600 text-sm font-bold text-white uppercase shadow-lg shadow-accent-500/20 group-hover:scale-105 transition-transform">
-                  {p.name[0]}
+                Manage <ArrowRight className="h-3.5 w-3.5" />
+              </a>
+            }
+          />
+          <CardContent>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {providers.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center gap-3 rounded-xl border border-gray-100 dark:border-white/[0.06] bg-gray-50/50 dark:bg-white/[0.02] px-4 py-3.5 transition-all hover:shadow-sm hover:border-brand-200 dark:hover:border-brand-500/20 group"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-sm font-bold text-white uppercase shadow-lg shadow-brand-500/20 group-hover:scale-105 transition-transform">
+                    {p.name[0]}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-50">{p.name}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 capitalize">{p.authType}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{p.name}</p>
-                  <p className="text-xs text-gray-400 capitalize">{p.authType}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </DashCard>
-      )}
-
-    </div>
-  )
-}
-
-function InsightRow({ insight }: { insight: Insight }) {
-  return (
-    <div className="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 p-3.5 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
-      <span className={`mt-1.5 inline-block h-2 w-2 rounded-full shrink-0 ${
-        { critical: "bg-red-500", warning: "bg-amber-500", info: "bg-blue-500", positive: "bg-emerald-500" }[insight.severity]
-      }`} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{insight.title}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5 leading-relaxed">{insight.description}</p>
-      </div>
-      {insight.value != null && (
-        <div className="text-right flex-shrink-0">
-          <span className="text-base font-bold text-gray-900 dark:text-gray-100">{insight.value}</span>
-          {insight.unit && <span className="text-[10px] text-gray-400 ml-0.5">{insight.unit}</span>}
-        </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   )

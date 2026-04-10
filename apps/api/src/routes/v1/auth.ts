@@ -2,6 +2,8 @@ import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { config } from "../../config.js"
 import { AuthService } from "../../services/auth.service.js"
+import { getEmailService } from "../../services/email.service.js"
+import { createHash } from "node:crypto"
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -102,6 +104,13 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       ...(body.displayName != null ? { displayName: body.displayName } : {}),
       ...(body.gender != null ? { gender: body.gender } : {}),
     })
+
+    // Send verification email
+    const emailService = getEmailService()
+    const baseUrl = request.headers.origin || config.OAUTH_REDIRECT_BASE_URL
+    if (user.email) {
+      await emailService.sendVerificationEmail(user.email, user.verificationToken, baseUrl)
+    }
 
     return reply.status(201).send({
       id: user.id,
@@ -270,15 +279,65 @@ const authRoutes: FastifyPluginAsync = async (app) => {
         message: "Email already verified or no email set.",
       })
     }
-    // In production, send via the notification system. In dev, return the token directly.
+    // Send verification email
+    const emailService = getEmailService()
+    const baseUrl = request.headers.origin || config.OAUTH_REDIRECT_BASE_URL
+    await emailService.sendVerificationEmail(result.email, result.token, baseUrl)
+
     request.log.info(
       { verificationUrl: `/v1/auth/verify-email?token=${result.token}` },
-      "Verification email (dev mode)",
+      "Verification email sent",
     )
     return reply.send({
       message: "Verification email sent.",
       ...(config.NODE_ENV !== "production" ? { verificationToken: result.token } : {}),
     })
+  })
+
+  // POST /forgot-password — request a password reset link
+  app.post("/forgot-password", async (request, reply) => {
+    const { email } = z.object({ email: z.string().email() }).parse(request.body)
+
+    const result = await authService.generatePasswordResetToken(email)
+
+    // Send password reset email
+    if (result) {
+      const emailService = getEmailService()
+      const baseUrl = request.headers.origin || config.OAUTH_REDIRECT_BASE_URL
+      await emailService.sendPasswordResetEmail(email, result.token, baseUrl)
+    }
+
+    // Always return success to prevent email enumeration
+    const response: Record<string, string> = {
+      message: "If an account with that email exists, a password reset link has been sent.",
+    }
+
+    if (result && config.NODE_ENV !== "production") {
+      // Dev mode: include the token directly for testing
+      response.resetToken = result.token
+      response.resetUrl = `/login/reset-password?token=${result.token}`
+      request.log.info({ resetUrl: response.resetUrl }, "Password reset link (dev mode)")
+    }
+
+    return reply.send(response)
+  })
+
+  // POST /reset-password — reset password with token
+  app.post("/reset-password", async (request, reply) => {
+    const { token, newPassword } = z.object({
+      token: z.string().min(1),
+      newPassword: z.string().min(8).max(128),
+    }).parse(request.body)
+
+    try {
+      await authService.resetPassword(token, newPassword)
+      return reply.send({ message: "Password has been reset. You can now sign in." })
+    } catch (err) {
+      return reply.status(400).send({
+        code: "INVALID_TOKEN",
+        message: "Invalid or expired reset link. Please request a new one.",
+      })
+    }
   })
 
   // PATCH /password
@@ -303,6 +362,116 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       .clearCookie("vs_refresh", cookieOpts)
 
     return { success: true, message: "Password changed. All sessions revoked." }
+  })
+
+  // POST /setup-password — for migrated users setting password for first time
+  app.post("/setup-password", async (request, reply) => {
+    const body = z.object({
+      token: z.string().min(1),
+      password: z.string().min(8).max(128),
+    }).parse(request.body)
+
+    try {
+      await authService.setupPassword(body.token, body.password)
+      return reply.send({ message: "Password set successfully. You can now sign in." })
+    } catch (err) {
+      const statusCode = (err as { statusCode?: number }).statusCode || 400
+      return reply.status(statusCode).send({
+        code: "INVALID_TOKEN",
+        message: statusCode === 400 && (err as Error).message.includes("already has a password")
+          ? (err as Error).message
+          : "Invalid or expired setup link. Please request a new one.",
+      })
+    }
+  })
+
+  // POST /accept-invite — accept an admin invitation
+  app.post("/accept-invite", async (request, reply) => {
+    const body = z.object({
+      token: z.string().min(1),
+      password: z.string().min(8).max(128),
+      displayName: z.string().max(255).optional(),
+    }).parse(request.body)
+
+    const { adminInvitations, getDb, users, workspaces } = await import("@biosync-io/db")
+    const { eq } = await import("drizzle-orm")
+    const argon2 = await import("argon2")
+    const db = getDb()
+
+    const tokenHash = createHash("sha256").update(body.token).digest("hex")
+
+    // Find invitation by token hash
+    const [invitation] = await db
+      .select()
+      .from(adminInvitations)
+      .where(eq(adminInvitations.tokenHash, tokenHash))
+      .limit(1)
+
+    if (!invitation) {
+      return reply.status(400).send({
+        code: "INVALID_TOKEN",
+        message: "Invalid invitation token.",
+      })
+    }
+
+    if (invitation.acceptedAt) {
+      return reply.status(400).send({
+        code: "ALREADY_ACCEPTED",
+        message: "This invitation has already been accepted.",
+      })
+    }
+
+    if (invitation.expiresAt < new Date()) {
+      return reply.status(400).send({
+        code: "EXPIRED",
+        message: "This invitation has expired.",
+      })
+    }
+
+    // Get workspace for the inviting user
+    const [inviter] = await db
+      .select({ workspaceId: users.workspaceId })
+      .from(users)
+      .where(eq(users.id, invitation.invitedBy))
+      .limit(1)
+
+    if (!inviter) {
+      return reply.status(500).send({
+        code: "INTERNAL_ERROR",
+        message: "Inviting user not found.",
+      })
+    }
+
+    // Create the admin user
+    const passwordHash = await argon2.hash(body.password)
+    const [user] = await db
+      .insert(users)
+      .values({
+        workspaceId: inviter.workspaceId,
+        externalId: invitation.email,
+        email: invitation.email,
+        passwordHash,
+        role: invitation.role,
+        displayName: body.displayName ?? "Admin",
+        emailVerified: true,
+      })
+      .returning()
+
+    // Mark invitation as accepted
+    await db
+      .update(adminInvitations)
+      .set({ acceptedAt: new Date() })
+      .where(eq(adminInvitations.id, invitation.id))
+
+    request.log.info({ userId: user!.id, email: invitation.email }, "Admin invitation accepted")
+
+    return reply.status(201).send({
+      id: user!.id,
+      email: user!.email,
+      role: user!.role,
+      displayName: user!.displayName,
+      message: "Account created. You can now log in.",
+    })
   })
 }
 

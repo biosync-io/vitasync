@@ -9,6 +9,7 @@ import {
   notificationsApi,
 } from "../../../lib/api"
 import { Pagination } from "../../../lib/Pagination"
+import { PageHeader, StatCard, Card, CardContent, TableSkeleton, EmptyState, Badge, Button } from "../../../lib/components/ui"
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -86,177 +87,167 @@ export default function NotificationLogsPage() {
   const channelTypes = [...new Set(allLogs.map((l) => l.channelType))]
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Notification Logs</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Complete delivery history for all notification channels. Auto-refreshes every 10 seconds.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader title="Notification Logs" subtitle="Complete delivery history for all notification channels. Auto-refreshes every 10 seconds." />
 
       {/* Stats cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard label="Total" value={stats.total} color="text-gray-900 dark:text-gray-100" />
-            <StatCard label="Delivered" value={stats.delivered} color="text-emerald-600 dark:text-emerald-400" />
-            <StatCard label="Pending" value={stats.pending} color="text-amber-600 dark:text-amber-400" />
-            <StatCard label="Failed" value={stats.failed} color="text-red-600 dark:text-red-400" />
-          </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <StatCard label="Total" value={stats.total} />
+        <StatCard label="Delivered" value={stats.delivered} color="vitality" />
+        <StatCard label="Pending" value={stats.pending} />
+        <StatCard label="Failed" value={stats.failed} color="accent" />
+      </div>
 
-          {/* Filters */}
-          <div className="flex flex-wrap gap-3">
-            <select
-              value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-              className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-              aria-label="Filter by status"
-            >
-              <option value="">All statuses</option>
-              <option value="delivered">Delivered</option>
-              <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
-            </select>
-            <select
-              value={channelFilter}
-              onChange={(e) => { setChannelFilter(e.target.value); setPage(1) }}
-              className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
-              aria-label="Filter by channel type"
-            >
-              <option value="">All channels</option>
-              {channelTypes.map((ct) => (
-                <option key={ct} value={ct}>
-                  {ct.charAt(0).toUpperCase() + ct.slice(1)}
-                </option>
-              ))}
-            </select>
-            <span className="flex items-center text-xs text-gray-400 dark:text-gray-500">
-              {filteredLogs.length} result{filteredLogs.length !== 1 ? "s" : ""}
-            </span>
-          </div>
+      {/* Filters */}
+      <Card>
+        <CardContent className="flex flex-wrap gap-3 items-center">
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
+            className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+            aria-label="Filter by status"
+          >
+            <option value="">All statuses</option>
+            <option value="delivered">Delivered</option>
+            <option value="pending">Pending</option>
+            <option value="failed">Failed</option>
+          </select>
+          <select
+            value={channelFilter}
+            onChange={(e) => { setChannelFilter(e.target.value); setPage(1) }}
+            className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+            aria-label="Filter by channel type"
+          >
+            <option value="">All channels</option>
+            {channelTypes.map((ct) => (
+              <option key={ct} value={ct}>
+                {ct.charAt(0).toUpperCase() + ct.slice(1)}
+              </option>
+            ))}
+          </select>
+          <span className="flex items-center text-xs text-gray-400 dark:text-gray-500">
+            {filteredLogs.length} result{filteredLogs.length !== 1 ? "s" : ""}
+          </span>
+        </CardContent>
+      </Card>
 
-          {/* Log list */}
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 dark:border-gray-700 border-t-indigo-600" />
-            </div>
-          ) : filteredLogs.length === 0 ? (
-            <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-12 text-center">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                {allLogs.length === 0 ? "No notification activity yet." : "No logs match the current filters."}
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Desktop table */}
-              <div className="hidden sm:block rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800">
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Channel</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Title</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Attempts</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Time</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-8" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                    {pagedLogs.map((log) => {
-                          const st = STATUS_STYLES[log.status] ?? DEFAULT_STATUS
-                      const isExpanded = expandedId === log.id
-                      return (
-                        <>
-                          <tr
-                            key={log.id}
-                            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
-                            onClick={() => setExpandedId(isExpanded ? null : log.id)}
-                          >
-                            <td className="px-4 py-3">
-                              <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${st.bg}`}>
-                                <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
-                                {st.label}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="text-sm">
-                                {CHANNEL_ICONS[log.channelType] ?? "📣"}{" "}
-                                <span className="text-gray-700 dark:text-gray-300">{log.channelType}</span>
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="text-sm text-gray-900 dark:text-gray-100 truncate max-w-xs block">{log.title}</span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="text-sm text-gray-500 dark:text-gray-400">{log.attempts}</span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <TimeAgo date={log.deliveredAt ?? log.createdAt} />
-                            </td>
-                            <td className="px-4 py-3 text-gray-400">
+      {/* Log list */}
+      {isLoading ? (
+        <TableSkeleton rows={5} cols={6} />
+      ) : filteredLogs.length === 0 ? (
+        <EmptyState
+          title={allLogs.length === 0 ? "No notification activity yet." : "No logs match the current filters."}
+          description="Try adjusting your filters or check back later."
+        />
+      ) : (
+        <>
+          {/* Desktop table */}
+          <Card className="hidden sm:block">
+            <CardContent className="p-0">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800">
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Channel</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Title</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Attempts</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Time</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-8" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {pagedLogs.map((log) => {
+                    const st = STATUS_STYLES[log.status] ?? DEFAULT_STATUS
+                    const isExpanded = expandedId === log.id
+                    return (
+                      <>
+                        <tr
+                          key={log.id}
+                          className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                          onClick={() => setExpandedId(isExpanded ? null : log.id)}
+                        >
+                          <td className="px-4 py-3">
+                            <Badge variant={log.status === "delivered" ? "success" : log.status === "pending" ? "warning" : "danger"} dot>{st.label}</Badge>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm">
+                              {CHANNEL_ICONS[log.channelType] ?? "📣"}{" "}
+                              <span className="text-gray-700 dark:text-gray-300">{log.channelType}</span>
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm text-gray-900 dark:text-gray-100 truncate max-w-xs block">{log.title}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">{log.attempts}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <TimeAgo date={log.deliveredAt ?? log.createdAt} />
+                          </td>
+                          <td className="px-4 py-3 text-gray-400">
+                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : log.id) }}>
                               <span className={`transform transition-transform inline-block ${isExpanded ? "rotate-90" : ""}`}>›</span>
+                            </Button>
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr key={`${log.id}-detail`} className="bg-gray-50 dark:bg-gray-800/30">
+                            <td colSpan={6} className="px-4 py-4">
+                              <LogDetail log={log} />
                             </td>
                           </tr>
-                          {isExpanded && (
-                            <tr key={`${log.id}-detail`} className="bg-gray-50 dark:bg-gray-800/30">
-                              <td colSpan={6} className="px-4 py-4">
-                                <LogDetail log={log} />
-                              </td>
-                            </tr>
-                          )}
-                        </>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                        )}
+                      </>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
 
-              {/* Mobile cards */}
-              <div className="sm:hidden space-y-3">
-                {pagedLogs.map((log) => {
-                  const st = STATUS_STYLES[log.status] ?? DEFAULT_STATUS
-                  const isExpanded = expandedId === log.id
-                  return (
-                    <div
-                      key={log.id}
-                      className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden"
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-3">
+            {pagedLogs.map((log) => {
+              const st = STATUS_STYLES[log.status] ?? DEFAULT_STATUS
+              const isExpanded = expandedId === log.id
+              return (
+                <Card key={log.id}>
+                  <CardContent>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(isExpanded ? null : log.id)}
+                      className="w-full text-left"
                     >
-                      <button
-                        type="button"
-                        onClick={() => setExpandedId(isExpanded ? null : log.id)}
-                        className="w-full p-4 text-left"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${st.bg}`}>
-                              <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
-                              {st.label}
-                            </span>
-                            <span className="text-sm">
-                              {CHANNEL_ICONS[log.channelType]} {log.channelType}
-                            </span>
-                          </div>
-                          <TimeAgo date={log.deliveredAt ?? log.createdAt} />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={log.status === "delivered" ? "success" : log.status === "pending" ? "warning" : "danger"} dot>{st.label}</Badge>
+                          <span className="text-sm">
+                            {CHANNEL_ICONS[log.channelType]} {log.channelType}
+                          </span>
                         </div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-2 truncate">
-                          {log.title}
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                          {log.attempts} attempt{log.attempts !== 1 ? "s" : ""}
-                        </p>
-                      </button>
-                      {isExpanded && (
-                        <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-3">
-                          <LogDetail log={log} />
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+                        <TimeAgo date={log.deliveredAt ?? log.createdAt} />
+                      </div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-2 truncate">
+                        {log.title}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        {log.attempts} attempt{log.attempts !== 1 ? "s" : ""}
+                      </p>
+                    </button>
+                  </CardContent>
+                  {isExpanded && (
+                    <CardContent className="border-t border-gray-100 dark:border-gray-800">
+                      <LogDetail log={log} />
+                    </CardContent>
+                  )}
+                </Card>
+              )
+            })}
+          </div>
 
-              <Pagination page={page} pageSize={PAGE_SIZE} total={filteredLogs.length} onChange={setPage} />
-            </>
-          )}
+          <Pagination page={page} pageSize={PAGE_SIZE} total={filteredLogs.length} onChange={setPage} />
+        </>
+      )}
     </div>
   )
 }
@@ -302,17 +293,6 @@ function LogDetail({ log }: { log: NotificationLog }) {
           </pre>
         </div>
       )}
-    </div>
-  )
-}
-
-// ── Stat Card ─────────────────────────────────────────────────────
-
-function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
-      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{label}</p>
-      <p className={`text-2xl font-bold mt-1 ${color}`}>{value}</p>
     </div>
   )
 }

@@ -3,7 +3,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
-import { trainingPlansApi, usersApi, type TrainingPlanData } from "../../../lib/api"
+import { trainingPlansApi, type TrainingPlanData } from "../../../lib/api"
+import { PageHeader, Badge, Card, CardHeader, CardContent, CardFooter, StatCard, Button, EmptyState, CardSkeleton, StatSkeleton, MetricBar, Select, Input } from "../../../lib/components/ui"
 
 const STATUS_STYLES: Record<string, string> = {
   active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300",
@@ -19,18 +20,20 @@ const LEVEL_LABELS: Record<string, string> = {
   elite: "⚡ Elite",
 }
 
+const STATUS_BADGE_VARIANT: Record<string, "default" | "success" | "warning" | "danger" | "info" | "purple"> = {
+  active: "success",
+  draft: "default",
+  completed: "info",
+  paused: "warning",
+}
+
 export default function TrainingPage() {
-  const { selectedUserId, setSelectedUserId } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
   const [showGenerate, setShowGenerate] = useState(false)
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null)
   const [form, setForm] = useState({ goal: "fitness", fitnessLevel: "intermediate", durationWeeks: "8" })
   const queryClient = useQueryClient()
 
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-  })
-  const users = usersResult?.data ?? []
 
   const { data: plansResult, isLoading } = useQuery({
     queryKey: ["training-plans", selectedUserId],
@@ -53,79 +56,75 @@ export default function TrainingPage() {
   })
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">Training Plans</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">AI-generated periodized training plans based on your fitness data and goals.</p>
-        </div>
-        {selectedUserId && (
-          <button type="button" onClick={() => setShowGenerate(!showGenerate)} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
-            {showGenerate ? "Cancel" : "Generate Plan"}
-          </button>
-        )}
-      </div>
-
-      {/* User select */}
-      <div className="mb-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-        <label htmlFor="train-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
-        <select id="train-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-          <option value="">Select a user…</option>
-          {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-        </select>
-      </div>
-
-      {!selectedUserId && <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-16">Select a user to manage training plans.</p>}
+    <div className="space-y-8">
+      <PageHeader
+        title="Training Plans"
+        subtitle="AI-generated periodized training plans based on your fitness data and goals."
+        actions={selectedUserId ? <Button onClick={() => setShowGenerate(!showGenerate)}>{showGenerate ? "Cancel" : "Generate Plan"}</Button> : undefined}
+      />
 
       {/* Generate form */}
       {showGenerate && selectedUserId && (
-        <div className="mb-6 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Generate Training Plan</h3>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Goal</label>
-              <select className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.goal} onChange={(e) => setForm({ ...form, goal: e.target.value })}>
-                <option value="fitness">General Fitness</option>
-                <option value="weight_loss">Weight Loss</option>
-                <option value="muscle_gain">Muscle Gain</option>
-                <option value="endurance">Endurance</option>
-                <option value="strength">Strength</option>
-                <option value="flexibility">Flexibility</option>
-                <option value="marathon">Marathon Prep</option>
-                <option value="5k">5K Training</option>
-              </select>
+        <Card>
+          <CardHeader title="Generate Training Plan" />
+          <CardContent>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <Select
+                label="Goal"
+                value={form.goal}
+                onChange={(e) => setForm({ ...form, goal: e.target.value })}
+                options={[
+                  { value: "fitness", label: "General Fitness" },
+                  { value: "weight_loss", label: "Weight Loss" },
+                  { value: "muscle_gain", label: "Muscle Gain" },
+                  { value: "endurance", label: "Endurance" },
+                  { value: "strength", label: "Strength" },
+                  { value: "flexibility", label: "Flexibility" },
+                  { value: "marathon", label: "Marathon Prep" },
+                  { value: "5k", label: "5K Training" },
+                ]}
+              />
+              <Select
+                label="Fitness Level"
+                value={form.fitnessLevel}
+                onChange={(e) => setForm({ ...form, fitnessLevel: e.target.value })}
+                options={[
+                  { value: "beginner", label: "Beginner" },
+                  { value: "intermediate", label: "Intermediate" },
+                  { value: "advanced", label: "Advanced" },
+                  { value: "elite", label: "Elite" },
+                ]}
+              />
+              <Input
+                label="Duration (weeks)"
+                type="number"
+                min={1}
+                max={52}
+                value={form.durationWeeks}
+                onChange={(e) => setForm({ ...form, durationWeeks: e.target.value })}
+              />
             </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Fitness Level</label>
-              <select className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.fitnessLevel} onChange={(e) => setForm({ ...form, fitnessLevel: e.target.value })}>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-                <option value="elite">Elite</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Duration (weeks)</label>
-              <input type="number" min="1" max="52" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm" value={form.durationWeeks} onChange={(e) => setForm({ ...form, durationWeeks: e.target.value })} />
-            </div>
-          </div>
-          <button type="button" onClick={() => generateMut.mutate()} disabled={generateMut.isPending} className="mt-3 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
-            {generateMut.isPending ? "Generating…" : "Generate Plan"}
-          </button>
-        </div>
+            <Button
+              className="mt-3"
+              onClick={() => generateMut.mutate()}
+              disabled={generateMut.isPending}
+              loading={generateMut.isPending}
+            >
+              {generateMut.isPending ? "Generating…" : "Generate Plan"}
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Plans list */}
       {selectedUserId && (
         <div className="space-y-4">
-          {isLoading && (
-            <div className="p-8 text-center"><div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" /></div>
-          )}
+          {isLoading && <CardSkeleton count={3} />}
           {!isLoading && plans.length === 0 && (
-            <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">No training plans yet. Generate one to get started.</p>
+            <EmptyState title="No training plans yet" description="Generate one to get started." />
           )}
           {plans.map((plan) => (
-            <div key={plan.id} className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+            <Card key={plan.id} hover>
               <button
                 type="button"
                 className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors text-left"
@@ -141,7 +140,7 @@ export default function TrainingPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[plan.status] ?? ""}`}>{plan.status}</span>
+                  <Badge variant={STATUS_BADGE_VARIANT[plan.status] ?? "default"}>{plan.status}</Badge>
                   <svg className={`h-4 w-4 text-gray-400 transition-transform ${expandedPlan === plan.id ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
@@ -178,7 +177,7 @@ export default function TrainingPage() {
                   )}
                 </div>
               )}
-            </div>
+            </Card>
           ))}
         </div>
       )}

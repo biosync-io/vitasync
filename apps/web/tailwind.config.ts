@@ -1,8 +1,21 @@
 import type { Config } from "tailwindcss"
+import path from "path"
 
 const config: Config = {
-  content: ["./src/app/**/*.{ts,tsx}", "./src/lib/**/*.{ts,tsx}"],
+  content: [
+    "./src/app/**/*.{ts,tsx}",
+    "./src/lib/**/*.{ts,tsx}",
+    // Explicit paths to catch all pages during Docker builds
+    path.join(__dirname, "src/**/*.{ts,tsx}"),
+  ],
   darkMode: "class",
+  // Safelist critical responsive classes that may be purged in Docker builds
+  safelist: [
+    { pattern: /^lg:/ },
+    { pattern: /^md:/ },
+    { pattern: /^sm:/ },
+    { pattern: /^xl:/ },
+  ],
   theme: {
     extend: {
       colors: {

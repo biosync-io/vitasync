@@ -64,6 +64,20 @@
       "when": 1774500000000,
       "tag": "0008_add_sync_job_provider_stats",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774600000000,
+      "tag": "0011_add_saga_executions",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1774700000000,
+      "tag": "0013_add_projections",
+      "breakpoints": true
     }
   ]
 }

@@ -15,7 +15,8 @@ import {
   YAxis,
 } from "recharts"
 import { useSelectedUser } from "../../../lib/user-selection-context"
-import { anomaliesApi, analyticsApi, usersApi, type AnomalyData } from "../../../lib/api"
+import { anomaliesApi, analyticsApi, type AnomalyData } from "../../../lib/api"
+import { PageHeader, Badge, Card, CardHeader, CardContent, StatCard, StatSkeleton, CardSkeleton, TableSkeleton, EmptyState, Button, Select } from "../../../lib/components/ui"
 
 /* ---------- constants ---------- */
 
@@ -82,19 +83,13 @@ function zScoreBarColor(z: number) {
 /* ---------- component ---------- */
 
 export default function AnomaliesPage() {
-  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
   const [severityFilter, setSeverityFilter] = useState("")
   const [lookbackDays, setLookbackDays] = useState<number>(7)
   const queryClient = useQueryClient()
 
   /* --- queries --- */
 
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-    enabled: isAdmin,
-  })
-  const users = usersResult?.data ?? []
 
   const { data: anomaliesResult, isLoading } = useQuery({
     queryKey: ["anomalies", selectedUserId, severityFilter],
@@ -171,170 +166,164 @@ export default function AnomaliesPage() {
   const loading = isLoading || analyticsLoading
 
   return (
-    <div>
+    <div className="space-y-8">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">Anomaly Detection</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">AI-powered detection of unusual patterns in your health metrics.</p>
-        </div>
-        {selectedUserId && (
-          <button type="button" onClick={() => detectMut.mutate()} disabled={detectMut.isPending} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
-            {detectMut.isPending ? "Scanning…" : "Run Detection"}
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Anomalies"
+        subtitle="AI-powered detection of unusual patterns in your health metrics."
+        badge={<Badge variant="danger" dot>{allAnomalies.length} detected</Badge>}
+        actions={
+          selectedUserId ? (
+            <Button onClick={() => detectMut.mutate()} loading={detectMut.isPending}>
+              Run Detection
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* Filters */}
-      <div className="mb-6 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
-        <div className="flex flex-wrap gap-6 items-end">
-          {isAdmin && (
+      <Card>
+        <CardContent>
+          <div className="flex flex-wrap gap-6 items-end">
+            <Select
+              label="Severity"
+              options={[
+                { value: "", label: "All" },
+                { value: "low", label: "Low" },
+                { value: "medium", label: "Medium" },
+                { value: "high", label: "High" },
+                { value: "critical", label: "Critical" },
+              ]}
+              value={severityFilter}
+              onChange={(e) => setSeverityFilter(e.target.value)}
+            />
             <div>
-              <label htmlFor="anom-user" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
-              <select id="anom-user" className="w-full max-w-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-                <option value="">Select a user…</option>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-              </select>
-            </div>
-          )}
-          <div>
-            <label htmlFor="anom-sev" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Severity</label>
-            <select id="anom-sev" className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100" value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value)}>
-              <option value="">All</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Lookback</label>
-            <div className="flex gap-1.5">
-              {LOOKBACK_OPTIONS.map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setLookbackDays(d)}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                    lookbackDays === d
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-                  }`}
-                >
-                  {d}d
-                </button>
-              ))}
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Lookback</label>
+              <div className="flex gap-1.5">
+                {LOOKBACK_OPTIONS.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setLookbackDays(d)}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
+                      lookbackDays === d
+                        ? "bg-indigo-600 text-white shadow-sm"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    {d}d
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {!selectedUserId && isAdmin && <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-16">Select a user to view anomalies.</p>}
+        </CardContent>
+      </Card>
 
       {/* Summary stat cards */}
       {selectedUserId && (
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger-grid">
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total Anomalies</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{allAnomalies.length}</p>
+        loading ? (
+          <StatSkeleton count={4} />
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Total Anomalies" value={allAnomalies.length} />
+            <StatCard label="Critical" value={criticalCount} color="accent" />
+            <StatCard label="High" value={highCount} color="brand" />
+            <StatCard label="Warning" value={warningCount} color="vitality" />
           </div>
-          <div className="rounded-2xl border border-red-200 dark:border-red-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card text-center">
-            <div className="mx-auto mb-1 h-2 w-2 rounded-full bg-red-500" />
-            <p className="text-xs text-gray-500 dark:text-gray-400">Critical</p>
-            <p className="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">{criticalCount}</p>
-          </div>
-          <div className="rounded-2xl border border-orange-200 dark:border-orange-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card text-center">
-            <div className="mx-auto mb-1 h-2 w-2 rounded-full bg-orange-500" />
-            <p className="text-xs text-gray-500 dark:text-gray-400">High</p>
-            <p className="mt-1 text-2xl font-bold text-orange-600 dark:text-orange-400">{highCount}</p>
-          </div>
-          <div className="rounded-2xl border border-yellow-200 dark:border-yellow-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-4 shadow-card text-center">
-            <div className="mx-auto mb-1 h-2 w-2 rounded-full bg-yellow-500" />
-            <p className="text-xs text-gray-500 dark:text-gray-400">Warning</p>
-            <p className="mt-1 text-2xl font-bold text-yellow-600 dark:text-yellow-400">{warningCount}</p>
-          </div>
-        </div>
+        )
       )}
 
       {/* Charts row */}
       {selectedUserId && allAnomalies.length > 0 && (
-        <div className="mb-6 grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
           {/* Timeline bar chart */}
-          <div className="lg:col-span-2 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Anomaly Timeline</h3>
-            {timelineData.length > 0 ? (
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={timelineData} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
-                    <CartesianGrid {...GRID_PROPS} />
-                    <XAxis dataKey="date" tick={TICK_STYLE} tickLine={false} axisLine={false} />
-                    <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} allowDecimals={false} />
-                    <Tooltip {...TOOLTIP_STYLE} />
-                    <Bar dataKey="critical" stackId="s" fill={SEVERITY_COLORS.critical} radius={[0, 0, 0, 0]} name="Critical" />
-                    <Bar dataKey="high" stackId="s" fill={SEVERITY_COLORS.high} name="High" />
-                    <Bar dataKey="medium" stackId="s" fill={SEVERITY_COLORS.medium} name="Warning" />
-                    <Bar dataKey="low" stackId="s" fill={SEVERITY_COLORS.low} radius={[3, 3, 0, 0]} name="Info" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <p className="py-12 text-center text-sm text-gray-400">No timeline data available.</p>
-            )}
-          </div>
+          <Card className="lg:col-span-2">
+            <CardHeader title="Anomaly Timeline" />
+            <CardContent>
+              {timelineData.length > 0 ? (
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={timelineData} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
+                      <CartesianGrid {...GRID_PROPS} />
+                      <XAxis dataKey="date" tick={TICK_STYLE} tickLine={false} axisLine={false} />
+                      <YAxis tick={TICK_STYLE} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <Tooltip {...TOOLTIP_STYLE} />
+                      <Bar dataKey="critical" stackId="s" fill={SEVERITY_COLORS.critical} radius={[0, 0, 0, 0]} name="Critical" />
+                      <Bar dataKey="high" stackId="s" fill={SEVERITY_COLORS.high} name="High" />
+                      <Bar dataKey="medium" stackId="s" fill={SEVERITY_COLORS.medium} name="Warning" />
+                      <Bar dataKey="low" stackId="s" fill={SEVERITY_COLORS.low} radius={[3, 3, 0, 0]} name="Info" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyState title="No timeline data" description="No timeline data available." />
+              )}
+            </CardContent>
+          </Card>
 
           {/* Severity pie / donut */}
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Severity Distribution</h3>
-            {pieData.length > 0 ? (
-              <div className="h-56 flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={3}
-                      dataKey="value"
-                      nameKey="name"
-                      stroke="none"
-                    >
-                      {pieData.map((entry) => (
-                        <Cell key={entry.name} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <Tooltip {...TOOLTIP_STYLE} />
-                  </PieChart>
-                </ResponsiveContainer>
+          <Card>
+            <CardHeader title="Severity Distribution" />
+            <CardContent>
+              {pieData.length > 0 ? (
+                <div className="h-56 flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={3}
+                        dataKey="value"
+                        nameKey="name"
+                        stroke="none"
+                      >
+                        {pieData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip {...TOOLTIP_STYLE} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <EmptyState title="No data" description="No severity data available." />
+              )}
+              {/* Legend */}
+              <div className="mt-2 flex flex-wrap justify-center gap-3">
+                {pieData.map((entry) => (
+                  <span key={entry.name} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
+                    {entry.name} ({entry.value})
+                  </span>
+                ))}
               </div>
-            ) : (
-              <p className="py-12 text-center text-sm text-gray-400">No data.</p>
-            )}
-            {/* Legend */}
-            <div className="mt-2 flex flex-wrap justify-center gap-3">
-              {pieData.map((entry) => (
-                <span key={entry.name} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                  <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
-                  {entry.name} ({entry.value})
-                </span>
-              ))}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* Anomaly table */}
       {selectedUserId && (
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-card overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Detected Anomalies</h3>
-            <span className="text-xs text-gray-500 dark:text-gray-400">{allAnomalies.length} result{allAnomalies.length !== 1 ? "s" : ""}</span>
-          </div>
+        <Card>
+          <CardHeader
+            title="Detected Anomalies"
+            subtitle={`${allAnomalies.length} result${allAnomalies.length !== 1 ? "s" : ""}`}
+          />
           {loading ? (
-            <div className="p-8 text-center"><div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" /></div>
+            <CardContent>
+              <TableSkeleton rows={5} cols={7} />
+            </CardContent>
           ) : allAnomalies.length === 0 ? (
-            <p className="p-8 text-center text-sm text-gray-500 dark:text-gray-400">No anomalies detected. Run detection to scan recent data.</p>
+            <CardContent>
+              <EmptyState
+                title="No anomalies detected"
+                description="Run detection to scan recent data."
+              />
+            </CardContent>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -416,9 +405,9 @@ export default function AnomaliesPage() {
                         {/* Action */}
                         <td className="px-5 py-3">
                           {a.status === "new" && (
-                            <button type="button" onClick={() => ackMut.mutate(a.id)} disabled={ackMut.isPending} className="rounded-lg bg-gray-200 dark:bg-gray-700 px-2.5 py-1 text-xs font-medium hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors">
+                            <Button variant="secondary" size="sm" onClick={() => ackMut.mutate(a.id)} disabled={ackMut.isPending}>
                               Acknowledge
-                            </button>
+                            </Button>
                           )}
                         </td>
                       </tr>
@@ -428,7 +417,7 @@ export default function AnomaliesPage() {
               </table>
             </div>
           )}
-        </div>
+        </Card>
       )}
     </div>
   )

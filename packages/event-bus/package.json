@@ -1,0 +1,30 @@
+{
+  "name": "@biosync-io/event-bus",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Domain event bus with Redis pub/sub and in-process dispatch for VitaSync",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "test": "node --test --experimental-transform-types --no-warnings src/__tests__/event-bus.test.ts"
+  },
+  "dependencies": {
+    "ioredis": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3"
+  },
+  "license": "AGPL-3.0"
+}

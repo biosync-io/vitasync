@@ -16,7 +16,7 @@ import {
 } from "recharts"
 import { useSelectedUser } from "../../../lib/user-selection-context"
 import { type HealthMetric, type TimeseriesPoint, healthApi} from "../../../lib/api"
-import { PageHeader, Card, CardHeader, CardContent, Badge, EmptyState } from "../../../lib/components/ui"
+import { PageHeader, Card, CardHeader, CardContent, Badge, EmptyState, StatSkeleton, CardSkeleton } from "../../../lib/components/ui"
 import { Stethoscope } from "lucide-react"
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -175,7 +175,7 @@ export default function BodyMetricsPage() {
   })
 
   // Fetch summary counts
-  const { data: summary = [] } = useQuery({
+  const { data: summary = [], isLoading: summaryLoading } = useQuery({
     queryKey: ["body-summary", selectedUserId],
     queryFn: () => healthApi.summary(selectedUserId),
     enabled: !!selectedUserId,
@@ -282,7 +282,14 @@ export default function BodyMetricsPage() {
         </CardContent>
       </Card>
 
-      {selectedUserId && (
+      {selectedUserId && summaryLoading && (
+        <div className="space-y-8">
+          <StatSkeleton count={6} className="sm:grid-cols-3 lg:grid-cols-6" />
+          <CardSkeleton count={2} />
+        </div>
+      )}
+
+      {selectedUserId && !summaryLoading && (
         <div className="space-y-8">
           {/* Summary Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

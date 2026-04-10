@@ -29,6 +29,28 @@ spec:
           port: {{ .port }}
       {{- end }}
   {{- end }}
+  {{- if .Values.ingress.admin.enabled }}
+    - match: Host(`{{ .Values.ingress.admin.host }}`)
+      kind: Rule
+      {{- $adminMiddlewares := list }}
+      {{- if .Values.ingress.admin.ipAllowList.enabled }}
+      {{- $adminMiddlewares = append $adminMiddlewares (dict "name" (printf "%s-admin-ip-allowlist" .Release.Name) "namespace" .Release.Namespace) }}
+      {{- end }}
+      {{- if .Values.ingress.admin.rateLimit.enabled }}
+      {{- $adminMiddlewares = append $adminMiddlewares (dict "name" (printf "%s-admin-rate-limit" .Release.Name) "namespace" .Release.Namespace) }}
+      {{- end }}
+      {{- if $adminMiddlewares }}
+      middlewares:
+      {{- range $adminMiddlewares }}
+        - name: {{ .name }}
+          namespace: {{ .namespace }}
+      {{- end }}
+      {{- end }}
+      services:
+        - name: {{ include "vitasync.fullname" . }}-web
+          namespace: {{ .Release.Namespace }}
+          port: {{ .Values.web.service.port | default 3000 }}
+  {{- end }}
   {{- if .Values.ingressRoute.tls.enabled }}
   tls:
     {{- if .Values.ingressRoute.tls.secretName }}

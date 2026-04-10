@@ -1,3 +1,4 @@
+import cookie from "@fastify/cookie"
 import cors from "@fastify/cors"
 import helmet from "@fastify/helmet"
 import rateLimit from "@fastify/rate-limit"
@@ -7,6 +8,7 @@ import Fastify, { type FastifyError } from "fastify"
 import { config } from "./config.js"
 import authPlugin from "./plugins/auth.js"
 import { bullBoardPlugin } from "./plugins/bull-board.js"
+import eventBusPlugin from "./plugins/event-bus.js"
 import queuesPlugin from "./plugins/queues.js"
 import { registerV1Routes } from "./routes/v1/index.js"
 
@@ -56,6 +58,9 @@ export async function buildServer() {
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
+
+  // ── Cookie parsing ──────────────────────────────────────────
+  await app.register(cookie)
 
   // ── Rate limiting ────────────────────────────────────────────
   await app.register(rateLimit, {
@@ -130,6 +135,12 @@ export async function buildServer() {
   // ── Routes ───────────────────────────────────────────────────
   await app.register(authPlugin)
   await app.register(queuesPlugin)
+  await app.register(eventBusPlugin)
+
+  // ── CQRS buses & projections ────────────────────────────────
+  const { setupCQRS } = await import("./cqrs/index.js")
+  setupCQRS(app)
+
   await app.register(registerV1Routes)
 
   // ── API request logging → PostgreSQL ────────────────────────

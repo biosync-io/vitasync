@@ -5,7 +5,21 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { Toaster } from "sonner"
 import { useState } from "react"
 import { ThemeProvider } from "../lib/ThemeProvider"
+import { AuthProvider, useAuth } from "../lib/auth-context"
 import { UserSelectionProvider } from "../lib/user-selection-context"
+
+/** Bridges auth context → user selection context */
+function AuthAwareUserSelection({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth()
+  return (
+    <UserSelectionProvider
+      authUserId={user?.id}
+      authUserRole={user?.role}
+    >
+      {children}
+    </UserSelectionProvider>
+  )
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -23,7 +37,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <UserSelectionProvider>{children}</UserSelectionProvider>
+        <AuthProvider>
+          <AuthAwareUserSelection>{children}</AuthAwareUserSelection>
+        </AuthProvider>
       </ThemeProvider>
       <Toaster
         position="top-right"

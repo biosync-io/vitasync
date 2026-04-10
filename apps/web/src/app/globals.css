@@ -2,8 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Global focus indicators for keyboard accessibility ────────────────── */
+/* ── Global smoothness ─────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* GPU-accelerated transitions on interactive elements */
 @layer base {
+  a, button, [role="button"], select, input, textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Smooth transitions on all interactive elements */
+  a, button, [role="button"] {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Focus indicators for keyboard accessibility */
   button:focus-visible,
   a:focus-visible,
   [role="button"]:focus-visible,
@@ -16,6 +36,17 @@
   }
 }
 
+/* Smooth page transitions — content fades in on every navigation */
+@layer utilities {
+  .page-transition {
+    animation: pageIn 0.25s ease-out both;
+  }
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Mobile sidebar slide-in animation ─────────────────────────────────── */
 @keyframes slide-in-left {
   from { transform: translateX(-100%); }
@@ -23,6 +54,15 @@
 }
 .animate-slide-in-left {
   animation: slide-in-left 0.2s ease-out;
+}
+
+/* ── Fade-in-down utility ──────────────────────────────────────────────── */
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-down {
+  animation: fade-in-down 0.3s ease-out both;
 }
 
 /* ── Responsive table: card layout on small screens ────────────────────── */
@@ -799,4 +839,25 @@ select {
 .group:hover .hud-corners::before,
 .group:hover .hud-corners::after {
   opacity: 0.5;
+}
+
+/* ── Login page animations ─────────────────────────────────────────────── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes spotlight {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }

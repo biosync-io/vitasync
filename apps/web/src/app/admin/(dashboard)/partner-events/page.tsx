@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useState, useEffect, useCallback } from "react"
 import { type InboundWebhookLog, inboundWebhookLogsApi } from "../../../../lib/api"
 import { Pagination } from "../../../../lib/Pagination"
-import { PageHeader, Card, CardContent, Badge, TableSkeleton, EmptyState, StatusDot } from "../../../../lib/components/ui"
+import { PageHeader, Card, CardContent, Badge, StatCard, TableSkeleton, EmptyState, StatusDot } from "../../../../lib/components/ui"
 import { Webhook } from "lucide-react"
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -101,18 +101,8 @@ export default function PartnerEventsPage() {
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card>
-          <CardContent>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Total Events</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-50 mt-1">{total.toLocaleString()}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Data Points Ingested</p>
-            <p className="text-2xl font-bold text-vitality-600 dark:text-vitality-400 mt-1">{totalIngested.toLocaleString()}</p>
-          </CardContent>
-        </Card>
+        <StatCard label="Total Events" value={total.toLocaleString()} />
+        <StatCard label="Data Points Ingested" value={totalIngested.toLocaleString()} color="vitality" />
         <Card>
           <CardContent>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Providers Active</p>
@@ -193,7 +183,7 @@ export default function PartnerEventsPage() {
 
       {/* Content */}
       {isLoading ? (
-        <TableSkeleton rows={5} cols={5} />
+        <TableSkeleton rows={5} cols={6} />
       ) : logs.length === 0 ? (
         <EmptyState
           icon={Webhook}

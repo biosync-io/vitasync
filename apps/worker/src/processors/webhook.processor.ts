@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto"
 import { getDb, webhookDeliveries, webhooks } from "@biosync-io/db"
 import type { Job } from "bullmq"
 import { eq } from "drizzle-orm"
+import { getWorkerEventBus } from "../lib/event-bus.js"
 
 export interface WebhookJobData {
   webhookId: string
@@ -82,6 +83,19 @@ export async function processWebhookJob(job: Job<WebhookJobData>): Promise<void>
         responseStatus,
       })
       .where(eq(webhookDeliveries.id, deliveryId))
+
+    // Emit webhook delivered event
+    getWorkerEventBus().publish({
+      type: "webhook.delivered",
+      aggregateType: "webhook",
+      aggregateId: webhookId,
+      payload: {
+        webhookId,
+        deliveryId,
+        eventType,
+        responseStatus: responseStatus!,
+      },
+    }).catch(() => {})
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
 
@@ -94,6 +108,19 @@ export async function processWebhookJob(job: Job<WebhookJobData>): Promise<void>
         responseStatus,
       })
       .where(eq(webhookDeliveries.id, deliveryId))
+
+    // Emit webhook failed event
+    getWorkerEventBus().publish({
+      type: "webhook.failed",
+      aggregateType: "webhook",
+      aggregateId: webhookId,
+      payload: {
+        webhookId,
+        deliveryId,
+        eventType,
+        error: message,
+      },
+    }).catch(() => {})
 
     throw err // Re-throw so BullMQ retries
   }

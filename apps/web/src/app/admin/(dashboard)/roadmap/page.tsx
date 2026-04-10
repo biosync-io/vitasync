@@ -1,7 +1,7 @@
 "use client"
 
 import { CheckCircle2, Zap, Star, Rocket, Server, Bell, Brain, Globe, Users, Shield } from "lucide-react"
-import { PageHeader, Card as DSCard, CardHeader as DSCardHeader, CardContent as DSCardContent, Badge } from "../../../../lib/components/ui"
+import { PageHeader, Card, CardHeader, CardContent, Badge } from "../../../../lib/components/ui"
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
@@ -178,8 +178,8 @@ function RoadmapCard({
   }[variant]
 
   return (
-    <DSCard hover>
-      <DSCardHeader
+    <Card hover>
+      <CardHeader
         icon={
           <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}>
             <Icon className={`h-5 w-5 ${iconColor}`} />
@@ -189,7 +189,7 @@ function RoadmapCard({
         subtitle={card.subtitle}
         action={<StatusBadge variant={variant} />}
       />
-      <DSCardContent>
+      <CardContent>
         <ul className="space-y-2">
           {card.items.map((item) => (
             <li key={item.label} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -206,8 +206,8 @@ function RoadmapCard({
             </li>
           ))}
         </ul>
-      </DSCardContent>
-    </DSCard>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -223,8 +223,8 @@ export default function RoadmapPage() {
         subtitle="What's been built, what's in progress, and what's coming next"
       />
 
-      <DSCard>
-        <DSCardContent>
+      <Card>
+        <CardContent>
           {/* Bar */}
           <div className="flex h-3 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
             {phases.map((p) => (
@@ -241,8 +241,8 @@ export default function RoadmapPage() {
               </div>
             ))}
           </div>
-        </DSCardContent>
-      </DSCard>
+        </CardContent>
+      </Card>
 
       {/* ---- Completed ---- */}
       <section>

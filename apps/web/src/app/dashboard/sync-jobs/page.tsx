@@ -1,657 +1,272 @@
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
-import { type SyncJob, type SyncJobRecord, syncJobsApi } from "../../../lib/api"
-import { Pagination } from "../../../lib/Pagination"
-import { ExportButton } from "../../../lib/ExportButton"
+import { RefreshCw, Zap } from "lucide-react"
+import { type SyncJobRecord, userSyncJobsApi } from "../../../lib/api"
+import { useSelectedUser } from "../../../lib/user-selection-context"
+import {
+  PageHeader,
+  Card,
+  CardHeader,
+  CardContent,
+  Badge,
+  type BadgeVariant,
+  EmptyState,
+  TableSkeleton,
+} from "../../../lib/components/ui"
 
 const PAGE_SIZE = 25
 
-const STATES = ["active", "waiting", "delayed", "completed", "failed"] as const
-
-type Tab = "queue" | "history"
-
-const STATE_STYLES: Record<SyncJob["state"], string> = {
-  active: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-  waiting: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
-  delayed: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
-  completed: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
-  failed: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+const STATUS_CONFIG: Record<string, { label: string; variant: BadgeVariant; icon: string }> = {
+  completed: { label: "Completed", variant: "success", icon: "✓" },
+  failed: { label: "Failed", variant: "danger", icon: "✗" },
+  running: { label: "Active", variant: "info", icon: "⟳" },
+  pending: { label: "Pending", variant: "warning", icon: "⏳" },
 }
 
-const STATE_ICONS: Record<SyncJob["state"], string> = {
-  active: "⟳",
-  waiting: "⏳",
-  delayed: "⏱",
-  completed: "✓",
-  failed: "✗",
+const PROVIDER_EMOJI: Record<string, string> = {
+  garmin: "⌚",
+  fitbit: "📱",
+  oura: "💍",
+  whoop: "🏋️",
+  apple_health: "🍎",
+  google_fit: "🏃",
+  withings: "⚖️",
+  polar: "❄️",
+  strava: "🚴",
+  cronometer: "🥗",
 }
 
-function formatTs(ts: number | null): string {
-  if (!ts) return "—"
-  return new Date(ts).toLocaleString()
+function formatRelativeTime(dateStr: string | null): string {
+  if (!dateStr) return "—"
+  const now = Date.now()
+  const then = new Date(dateStr).getTime()
+  const diffMs = now - then
+  if (diffMs < 0) return "just now"
+  const mins = Math.floor(diffMs / 60_000)
+  if (mins < 1) return "just now"
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days}d ago`
+  return new Date(dateStr).toLocaleDateString()
 }
 
-function formatDuration(job: SyncJob): string {
-  if (!job.processedOn || !job.finishedOn) return "—"
-  const ms = job.finishedOn - job.processedOn
+function formatDuration(ms: number | null): string {
+  if (ms == null) return "—"
   if (ms < 1000) return `${ms}ms`
-  return `${(ms / 1000).toFixed(1)}s`
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`
+  return `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`
 }
 
-export default function SyncJobsPage() {
-  const qc = useQueryClient()
-  const [tab, setTab] = useState<Tab>("queue")
+export default function UserSyncJobsPage() {
+  const { selectedUserId } = useSelectedUser()
   const [page, setPage] = useState(1)
-  const [stateFilter, setStateFilter] = useState<SyncJob["state"] | "">("")
-  const [search, setSearch] = useState("")
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "duration">("newest")
 
-  const { data, isLoading, dataUpdatedAt } = useQuery({
-    queryKey: ["sync-jobs"],
-    queryFn: syncJobsApi.list,
-    refetchInterval: 5_000,
+  const { data, isLoading } = useQuery({
+    queryKey: ["user-sync-jobs", selectedUserId, page],
+    queryFn: () =>
+      userSyncJobsApi.list(selectedUserId, {
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+      }),
+    enabled: !!selectedUserId,
+    refetchInterval: 15_000,
   })
 
-  const sweepMutation = useMutation({
-    mutationFn: syncJobsApi.sweep,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["sync-jobs"] }),
-  })
+  const jobs = data?.data ?? []
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
-  const allJobs = data?.jobs ?? []
-
-  const counts = allJobs.reduce(
-    (acc, j) => {
-      acc[j.state] = (acc[j.state] ?? 0) + 1
-      return acc
-    },
-    {} as Record<string, number>,
-  )
-
-  // Filtered + sorted jobs
-  const filteredJobs = useMemo(() => {
-    let result = allJobs
-
-    // State filter
-    if (stateFilter) {
-      result = result.filter((j) => j.state === stateFilter)
+  const counts = useMemo(() => {
+    const c = { completed: 0, failed: 0, running: 0, pending: 0 }
+    for (const j of jobs) {
+      if (j.status in c) c[j.status as keyof typeof c]++
     }
+    return c
+  }, [jobs])
 
-    // Text search (job ID, connection ID, user ID, provider, type)
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      result = result.filter(
-        (j) =>
-          j.id?.toLowerCase().includes(q) ||
-          j.data.connectionId?.toLowerCase().includes(q) ||
-          j.data.userId?.toLowerCase().includes(q) ||
-          j.data.providerId?.toLowerCase().includes(q) ||
-          j.data.type?.toLowerCase().includes(q) ||
-          j.name?.toLowerCase().includes(q),
-      )
-    }
-
-    // Sort
-    if (sortBy === "oldest") {
-      result = [...result].sort((a, b) => a.timestamp - b.timestamp)
-    } else if (sortBy === "duration") {
-      result = [...result].sort((a, b) => {
-        const durA = a.processedOn && a.finishedOn ? a.finishedOn - a.processedOn : 0
-        const durB = b.processedOn && b.finishedOn ? b.finishedOn - b.processedOn : 0
-        return durB - durA
-      })
-    } else {
-      result = [...result].sort((a, b) => b.timestamp - a.timestamp)
-    }
-
-    return result
-  }, [allJobs, stateFilter, search, sortBy])
-
-  const jobs = filteredJobs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
-  function clearFilters() {
-    setStateFilter("")
-    setSearch("")
-    setSortBy("newest")
-    setPage(1)
+  if (!selectedUserId) {
+    return (
+      <div>
+        <PageHeader title="Sync History" subtitle="View sync activity for your connected devices" />
+        <Card className="mt-6">
+          <EmptyState
+            icon={RefreshCw}
+            title="No user selected"
+            description="Please sign in to view your sync history."
+          />
+        </Card>
+      </div>
+    )
   }
-
-  const hasActiveFilters = stateFilter !== "" || search.trim() !== "" || sortBy !== "newest"
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Sync Jobs</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Live view of the BullMQ sync queue. Refreshes every 5 seconds.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {sweepMutation.isSuccess && (
-            <span className="text-xs text-emerald-600 dark:text-emerald-400">
-              {sweepMutation.data.message}
-            </span>
-          )}
-          {sweepMutation.isError && (
-            <span className="text-xs text-red-600 dark:text-red-400">
-              Sweep failed
-            </span>
-          )}
-          {dataUpdatedAt > 0 && (
-            <span className="text-xs text-gray-400 hidden sm:inline">
-              Updated {new Date(dataUpdatedAt).toLocaleTimeString()}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => sweepMutation.mutate()}
-            disabled={sweepMutation.isPending}
-            className="rounded-lg border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-50 transition-colors"
-          >
-            {sweepMutation.isPending ? "Sweeping…" : "⚡ Trigger Sync Sweep"}
-          </button>
-          <button
-            type="button"
-            onClick={() => qc.invalidateQueries({ queryKey: ["sync-jobs"] })}
-            className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-          >
-            ↻ Refresh
-          </button>
-        </div>
+      <PageHeader title="Sync History" subtitle="View sync activity for your connected devices" />
+
+      {/* Status summary */}
+      <div className="mt-6 flex flex-wrap gap-2">
+        {(["completed", "failed", "running", "pending"] as const).map((status) => {
+          const cfg = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG]!!
+          return (
+            <Badge key={status} variant={cfg.variant as "success" | "danger" | "info" | "warning"} dot>
+              {cfg.icon} {cfg.label} {counts[status]}
+            </Badge>
+          )
+        })}
+        <span className="ml-auto text-xs text-gray-400 dark:text-gray-500 self-center">
+          {total} total
+        </span>
       </div>
 
-      {/* Tabs */}
-      <div className="mb-5 flex gap-1 border-b border-gray-200 dark:border-gray-800">
-        <button type="button" onClick={() => { setTab("queue"); setPage(1) }}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "queue" ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}`}>
-          ⚡ Live Queue
-        </button>
-        <button type="button" onClick={() => { setTab("history"); setPage(1) }}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "history" ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"}`}>
-          📊 Sync History
-        </button>
-      </div>
-
-      {tab === "history" ? (
-        <SyncHistoryTab />
-      ) : (
-      <>
-      {/* Failed jobs alert banner */}
-      {(() => {
-        const failedJobs = allJobs.filter((j) => j.state === "failed")
-        if (failedJobs.length === 0) return null
-        return (
-          <div className="mb-4 rounded-2xl border border-red-200 dark:border-red-800/40 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/20 px-5 py-4 flex items-start gap-3">
-            <span className="text-xl shrink-0 mt-0.5">⚠️</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-red-800 dark:text-red-300">{failedJobs.length} sync job{failedJobs.length > 1 ? "s" : ""} failed</p>
-              <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
-                {failedJobs.slice(0, 3).map((j) => {
-                  const provider = j.data.providerId ? `[${j.data.providerId}] ` : ""
-                  return `${provider}${j.failedReason?.slice(0, 80) ?? "Unknown error"}`
-                }).join(" · ")}
-                {failedJobs.length > 3 && ` and ${failedJobs.length - 3} more…`}
-              </p>
+      {/* Job list */}
+      <Card className="mt-4">
+        <CardHeader title="Recent Syncs" subtitle={`Showing page ${page} of ${totalPages}`} />
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="p-6">
+              <TableSkeleton rows={5} cols={6} />
             </div>
-            <button type="button" onClick={() => { setStateFilter("failed"); setPage(1) }} className="shrink-0 rounded-lg bg-red-100 dark:bg-red-900/30 px-3 py-1.5 text-xs font-medium text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
-              View Failed
-            </button>
-          </div>
-        )
-      })()}
-
-      {/* Summary badges — clickable to filter by state */}
-      <div className="mb-4 flex flex-wrap gap-2">
-        {STATES.map((state) => (
-          <button
-            key={state}
-            type="button"
-            onClick={() => {
-              setStateFilter((prev) => (prev === state ? "" : state))
-              setPage(1)
-            }}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium transition-all ${STATE_STYLES[state]} ${
-              stateFilter === state
-                ? "ring-2 ring-offset-1 ring-current scale-105"
-                : stateFilter && stateFilter !== state
-                  ? "opacity-50"
-                  : ""
-            }`}
-          >
-            <span>{STATE_ICONS[state]}</span>
-            <span className="capitalize">{state}</span>
-            <span className="ml-0.5 font-bold">{counts[state] ?? 0}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Filters bar */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1 max-w-sm">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Search by job ID, connection, user, type…"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(1)
-            }}
-            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pl-9 pr-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-300"
-          >
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-            <option value="duration">Longest duration</option>
-          </select>
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              Clear filters
-            </button>
-          )}
-          <ExportButton
-            data={filteredJobs.map((j) => ({
-              id: j.id ?? "",
-              state: j.state,
-              provider: j.data.providerId ?? "",
-              connectionId: j.data.connectionId ?? "",
-              userId: j.data.userId ?? "",
-              type: j.data.type ?? "",
-              started: j.processedOn ? new Date(j.processedOn).toISOString() : "",
-              finished: j.finishedOn ? new Date(j.finishedOn).toISOString() : "",
-              duration: j.processedOn && j.finishedOn ? `${j.finishedOn - j.processedOn}ms` : "",
-              attempts: j.attemptsMade,
-              error: j.failedReason ?? "",
-            }))}
-            filename="sync-jobs"
-          />
-        </div>
-      </div>
-
-      {/* Results count */}
-      {hasActiveFilters && !isLoading && (
-        <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">
-          Showing {filteredJobs.length} of {allJobs.length} jobs
-        </p>
-      )}
-
-      {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton
-            <div key={i} className="h-16 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
-          ))}
-        </div>
-      ) : jobs.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 py-20 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {hasActiveFilters ? "No jobs match the current filters." : "No sync jobs in the queue."}
-          </p>
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-            {hasActiveFilters ? (
-              <button type="button" onClick={clearFilters} className="text-indigo-600 dark:text-indigo-400 hover:underline">
-                Clear all filters
-              </button>
-            ) : (
-              "Jobs appear here when providers are synced manually or by the scheduler."
-            )}
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* Desktop table view */}
-          <div className="hidden sm:block rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                <thead className="bg-gray-50 dark:bg-gray-800/60">
-                  <tr>
-                    {["Status", "Provider", "Job ID", "Connection", "User", "Started", "Duration", "Attempts", "Error"].map(
-                      (h) => (
+          ) : jobs.length === 0 ? (
+            <EmptyState
+              icon={RefreshCw}
+              title="No sync jobs yet"
+              description="Sync jobs will appear here once your connected devices start syncing data."
+              action={{ label: "Connect a Device", href: "/dashboard/providers", icon: Zap }}
+            />
+          ) : (
+            <>
+              {/* Desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                  <thead className="bg-gray-50 dark:bg-gray-800/60">
+                    <tr>
+                      {["Status", "Provider", "Started", "Duration", "Metrics", "Events", "Error"].map((h) => (
                         <th
                           key={h}
                           className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                         >
                           {h}
                         </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {jobs.map((job) => (
-                    <tr key={`${job.id}-${job.timestamp}`} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${STATE_STYLES[job.state]}`}
-                        >
-                          {STATE_ICONS[job.state]}{" "}
-                          <span className="capitalize">{job.state}</span>
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 capitalize whitespace-nowrap">
-                        {job.data.providerId ?? job.data.type ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400 max-w-[120px] truncate">
-                        {job.id ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300 max-w-[140px] truncate">
-                        {job.data.connectionId ? (
-                          <span title={job.data.connectionId}>
-                            {job.data.connectionId.slice(0, 8)}…
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 dark:text-gray-500">{job.data.type ?? "—"}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300 max-w-[120px] truncate">
-                        {job.data.userId ? (
-                          <span title={job.data.userId}>{job.data.userId.slice(0, 8)}…</span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {job.processedOn ? formatTs(job.processedOn) : formatTs(job.timestamp)}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 tabular-nums">
-                        {formatDuration(job)}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 tabular-nums">
-                        {job.attemptsMade}
-                      </td>
-                      <td className="px-4 py-3 text-xs max-w-[300px]">
-                        {job.failedReason ? (
-                          <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 px-2.5 py-1.5">
-                            <p className="text-red-700 dark:text-red-400 font-medium break-words whitespace-pre-wrap">{job.failedReason}</p>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </td>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Mobile card view */}
-          <div className="sm:hidden space-y-3">
-            {jobs.map((job) => (
-              <div
-                key={`m-${job.id}-${job.timestamp}`}
-                className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATE_STYLES[job.state]}`}
-                    >
-                      {STATE_ICONS[job.state]} <span className="capitalize">{job.state}</span>
-                    </span>
-                    {job.data.providerId && (
-                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">{job.data.providerId}</span>
-                    )}
-                  </div>
-                  <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
-                    {job.attemptsMade} attempt{job.attemptsMade !== 1 ? "s" : ""}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-gray-400 dark:text-gray-500">Job ID</span>
-                    <p className="font-mono text-gray-700 dark:text-gray-300 truncate">{job.id ?? "—"}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-400 dark:text-gray-500">Duration</span>
-                    <p className="font-mono text-gray-700 dark:text-gray-300 tabular-nums">{formatDuration(job)}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-400 dark:text-gray-500">Connection</span>
-                    <p className="font-mono text-gray-700 dark:text-gray-300 truncate">
-                      {job.data.connectionId ? job.data.connectionId.slice(0, 12) + "…" : job.data.type ?? "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-400 dark:text-gray-500">User</span>
-                    <p className="font-mono text-gray-700 dark:text-gray-300 truncate">
-                      {job.data.userId ? job.data.userId.slice(0, 12) + "…" : "—"}
-                    </p>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-gray-400 dark:text-gray-500">Started</span>
-                    <p className="text-gray-700 dark:text-gray-300">
-                      {job.processedOn ? formatTs(job.processedOn) : formatTs(job.timestamp)}
-                    </p>
-                  </div>
-                  {job.failedReason && (
-                    <div className="col-span-2">
-                      <span className="text-red-400">Error</span>
-                      <p className="text-red-600 dark:text-red-400 break-words">{job.failedReason}</p>
-                    </div>
-                  )}
-                </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {jobs.map((job) => (
+                      <SyncJobRow key={job.id} job={job} />
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
 
-          <Pagination page={page} pageSize={PAGE_SIZE} total={filteredJobs.length} onChange={setPage} />
-        </>
-      )}
-      </>
-      )}
+              {/* Mobile card view */}
+              <div className="sm:hidden divide-y divide-gray-100 dark:divide-gray-800">
+                {jobs.map((job) => (
+                  <SyncJobMobileCard key={job.id} job={job} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40"
+                  >
+                    ← Prev
+                  </button>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40"
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
 
-// ── Sync History Tab (PostgreSQL-backed) ────────────────────────────────
-
-const HISTORY_PAGE_SIZE = 25
-const DB_STATUSES = ["completed", "failed", "running", "pending"] as const
-
-const DB_STATUS_STYLES: Record<string, string> = {
-  completed: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
-  failed: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-  running: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-  pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
-}
-
-function formatDurationMs(ms: number | null): string {
-  if (ms == null) return "—"
-  if (ms < 1000) return `${ms}ms`
-  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`
-  return `${(ms / 60_000).toFixed(1)}m`
-}
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "—"
-  return new Date(iso).toLocaleString()
-}
-
-function SyncHistoryTab() {
-  const [histPage, setHistPage] = useState(1)
-  const [providerFilter, setProviderFilter] = useState("")
-  const [statusFilter, setStatusFilter] = useState("")
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["sync-history", providerFilter, statusFilter, histPage],
-    queryFn: () =>
-      syncJobsApi.history({
-        providerId: providerFilter || undefined,
-        status: statusFilter || undefined,
-        limit: HISTORY_PAGE_SIZE,
-        offset: (histPage - 1) * HISTORY_PAGE_SIZE,
-      }),
-    refetchInterval: 15_000,
-  })
-
-  const records = data?.data ?? []
-  const total = data?.total ?? 0
-
-  // Collect unique providers from results for filter dropdown
-  const providers = useMemo(() => {
-    const set = new Set<string>()
-    for (const r of records) {
-      if (r.providerId) set.add(r.providerId)
-    }
-    return [...set].sort()
-  }, [records])
+function SyncJobRow({ job }: { job: SyncJobRecord }) {
+  const cfg = STATUS_CONFIG[job.status as keyof typeof STATUS_CONFIG]! ?? STATUS_CONFIG.pending
+  const emoji = PROVIDER_EMOJI[job.providerId ?? ""] ?? "🔗"
 
   return (
-    <div>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        Persistent sync job records from the database with provider API call stats.
-      </p>
-
-      {/* Filters */}
-      <div className="mb-4 flex flex-wrap gap-3 items-center">
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setHistPage(1) }}
-          className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-300"
-        >
-          <option value="">All statuses</option>
-          {DB_STATUSES.map((s) => (
-            <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-          ))}
-        </select>
-        {providers.length > 0 && (
-          <select
-            value={providerFilter}
-            onChange={(e) => { setProviderFilter(e.target.value); setHistPage(1) }}
-            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-300"
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+      <td className="px-4 py-3">
+        <Badge variant={cfg.variant as any} size="sm" dot>
+          {cfg.label}
+        </Badge>
+      </td>
+      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
+        {emoji} <span className="capitalize">{job.providerId ?? "Unknown"}</span>
+      </td>
+      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+        {formatRelativeTime(job.startedAt ?? job.createdAt)}
+      </td>
+      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+        {formatDuration(job.durationMs)}
+      </td>
+      <td className="px-4 py-3 text-xs text-gray-700 dark:text-gray-300 tabular-nums font-medium">
+        {job.metricsSynced > 0 ? job.metricsSynced.toLocaleString() : "—"}
+      </td>
+      <td className="px-4 py-3 text-xs text-gray-700 dark:text-gray-300 tabular-nums">
+        {job.eventsSynced > 0 ? job.eventsSynced : "—"}
+      </td>
+      <td className="px-4 py-3 text-xs max-w-[250px]">
+        {job.error ? (
+          <span
+            className="text-red-600 dark:text-red-400 truncate block"
+            title={job.error}
           >
-            <option value="">All providers</option>
-            {providers.map((p) => (
-              <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
-            ))}
-          </select>
+            {job.error.length > 80 ? `${job.error.slice(0, 80)}…` : job.error}
+          </span>
+        ) : (
+          <span className="text-gray-400">—</span>
         )}
-        <span className="text-xs text-gray-400 dark:text-gray-500">{total} records</span>
+      </td>
+    </tr>
+  )
+}
+
+function SyncJobMobileCard({ job }: { job: SyncJobRecord }) {
+  const cfg = STATUS_CONFIG[job.status as keyof typeof STATUS_CONFIG]! ?? STATUS_CONFIG.pending
+  const emoji = PROVIDER_EMOJI[job.providerId ?? ""] ?? "🔗"
+
+  return (
+    <div className="px-4 py-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          {emoji} <span className="capitalize">{job.providerId ?? "Unknown"}</span>
+        </span>
+        <Badge variant={cfg.variant as any} size="sm" dot>
+          {cfg.label}
+        </Badge>
       </div>
-
-      {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton
-            <div key={i} className="h-16 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
-          ))}
-        </div>
-      ) : records.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 py-16 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">No sync history records yet.</p>
-        </div>
-      ) : (
-        <>
-          <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                <thead className="bg-gray-50 dark:bg-gray-800/60">
-                  <tr>
-                    {["Status", "Provider", "Metrics", "Events", "API Calls", "Errors", "Duration", "Endpoints", "Started", "Error"].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {records.map((r) => {
-                    const stats = r.providerCallStats
-                    return (
-                      <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${DB_STATUS_STYLES[r.status] ?? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"}`}>
-                            {r.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 capitalize whitespace-nowrap">
-                          {r.providerId ?? "—"}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-700 dark:text-gray-300 tabular-nums font-medium">
-                          {r.metricsSynced > 0 ? r.metricsSynced.toLocaleString() : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-700 dark:text-gray-300 tabular-nums">
-                          {r.eventsSynced > 0 ? r.eventsSynced : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-xs tabular-nums">
-                          {stats ? (
-                            <span className="font-medium text-indigo-600 dark:text-indigo-400">{stats.totalCalls}</span>
-                          ) : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-xs tabular-nums">
-                          {stats && stats.totalErrors > 0 ? (
-                            <span className="font-medium text-red-600 dark:text-red-400">{stats.totalErrors}</span>
-                          ) : stats ? (
-                            <span className="text-green-600 dark:text-green-400">0</span>
-                          ) : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">
-                          {formatDurationMs(r.durationMs)}
-                        </td>
-                        <td className="px-4 py-3 text-xs max-w-[350px]">
-                          {stats && stats.endpoints.length > 0 ? (
-                            <div className="space-y-1">
-                              {stats.endpoints.map((ep) => (
-                                <div key={ep.endpoint} className="flex items-center gap-2 rounded bg-gray-50 dark:bg-gray-800/60 px-2 py-1">
-                                  <span className="font-mono text-[10px] text-gray-600 dark:text-gray-400 truncate flex-1" title={ep.endpoint}>
-                                    {ep.endpoint}
-                                  </span>
-                                  <span className="shrink-0 text-[10px] tabular-nums font-medium text-gray-700 dark:text-gray-300">
-                                    ×{ep.calls}
-                                  </span>
-                                  <span className="shrink-0 text-[10px] tabular-nums text-green-600 dark:text-green-400">
-                                    ✓{ep.success}
-                                  </span>
-                                  {ep.errors > 0 && (
-                                    <span className="shrink-0 text-[10px] tabular-nums text-red-600 dark:text-red-400">
-                                      ✗{ep.errors}
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                          {formatDate(r.startedAt)}
-                        </td>
-                        <td className="px-4 py-3 text-xs max-w-[200px]">
-                          {r.error ? (
-                            <span className="text-red-600 dark:text-red-400 break-words line-clamp-2" title={r.error}>{r.error}</span>
-                          ) : "—"}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <Pagination page={histPage} pageSize={HISTORY_PAGE_SIZE} total={total} onChange={setHistPage} />
-        </>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+        <span>{formatRelativeTime(job.startedAt ?? job.createdAt)}</span>
+        <span>{formatDuration(job.durationMs)}</span>
+        {job.metricsSynced > 0 && <span>{job.metricsSynced} metrics</span>}
+        {job.eventsSynced > 0 && <span>{job.eventsSynced} events</span>}
+      </div>
+      {job.error && (
+        <p className="text-xs text-red-600 dark:text-red-400 truncate" title={job.error}>
+          {job.error.length > 100 ? `${job.error.slice(0, 100)}…` : job.error}
+        </p>
       )}
     </div>
   )

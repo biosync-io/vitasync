@@ -20,6 +20,10 @@ COPY packages/providers/whoop/package.json ./packages/providers/whoop/
 COPY packages/providers/withings/package.json ./packages/providers/withings/
 COPY packages/analytics/package.json ./packages/analytics/
 COPY packages/notifications/core/package.json ./packages/notifications/core/
+COPY packages/event-bus/package.json ./packages/event-bus/
+COPY packages/circuit-breaker/package.json ./packages/circuit-breaker/
+COPY packages/cqrs/package.json ./packages/cqrs/
+COPY packages/saga/package.json ./packages/saga/
 
 RUN pnpm install --frozen-lockfile
 
@@ -34,6 +38,10 @@ COPY packages/providers/whoop ./packages/providers/whoop
 COPY packages/providers/withings ./packages/providers/withings
 COPY packages/analytics ./packages/analytics
 COPY packages/notifications/core ./packages/notifications/core
+COPY packages/event-bus ./packages/event-bus
+COPY packages/circuit-breaker ./packages/circuit-breaker
+COPY packages/cqrs ./packages/cqrs
+COPY packages/saga ./packages/saga
 COPY apps/api ./apps/api
 
 # Build all workspace dependencies then the api
@@ -47,6 +55,10 @@ RUN pnpm --filter @biosync-io/provider-whoop build
 RUN pnpm --filter @biosync-io/provider-withings build
 RUN pnpm --filter @biosync-io/analytics build
 RUN pnpm --filter @biosync-io/notification-core build
+RUN pnpm --filter @biosync-io/event-bus build
+RUN pnpm --filter @biosync-io/circuit-breaker build
+RUN pnpm --filter @biosync-io/cqrs build
+RUN pnpm --filter @biosync-io/saga build
 RUN pnpm --filter @biosync-io/api build
 
 # ─── Stage 2: Runtime ────────────────────────────────────────────────────────
@@ -75,6 +87,10 @@ COPY --from=builder /repo/packages/providers/whoop/package.json ./packages/provi
 COPY --from=builder /repo/packages/providers/withings/package.json ./packages/providers/withings/
 COPY --from=builder /repo/packages/analytics/package.json ./packages/analytics/
 COPY --from=builder /repo/packages/notifications/core/package.json ./packages/notifications/core/
+COPY --from=builder /repo/packages/event-bus/package.json ./packages/event-bus/
+COPY --from=builder /repo/packages/circuit-breaker/package.json ./packages/circuit-breaker/
+COPY --from=builder /repo/packages/cqrs/package.json ./packages/cqrs/
+COPY --from=builder /repo/packages/saga/package.json ./packages/saga/
 
 RUN pnpm install --frozen-lockfile --prod
 
@@ -89,6 +105,10 @@ COPY --from=builder /repo/packages/providers/whoop/dist ./packages/providers/who
 COPY --from=builder /repo/packages/providers/withings/dist ./packages/providers/withings/dist
 COPY --from=builder /repo/packages/analytics/dist ./packages/analytics/dist
 COPY --from=builder /repo/packages/notifications/core/dist ./packages/notifications/core/dist
+COPY --from=builder /repo/packages/event-bus/dist ./packages/event-bus/dist
+COPY --from=builder /repo/packages/circuit-breaker/dist ./packages/circuit-breaker/dist
+COPY --from=builder /repo/packages/cqrs/dist ./packages/cqrs/dist
+COPY --from=builder /repo/packages/saga/dist ./packages/saga/dist
 
 USER vitasync
 

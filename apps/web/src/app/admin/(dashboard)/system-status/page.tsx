@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { AlertTriangle } from "lucide-react"
 import { type SystemStatus, systemApi } from "../../../../lib/api"
-import { PageHeader, Card, CardHeader, CardContent, Badge, StatusDot, CardSkeleton } from "../../../../lib/components/ui"
+import { PageHeader, Card, CardHeader, CardContent, Badge, StatusDot, StatSkeleton, CardSkeleton } from "../../../../lib/components/ui"
 
 const FALLBACK_BADGE = { label: "Unknown", class: "bg-gray-50 dark:bg-gray-950/30 border-gray-200 dark:border-gray-800/40", dot: "bg-gray-500" }
 
@@ -66,7 +66,8 @@ export default function SystemStatusPage() {
           title="System Status"
           subtitle="Real-time health monitoring for all VitaSync services."
         />
-        <CardSkeleton count={5} className="grid-cols-1" />
+        <StatSkeleton count={4} />
+        <CardSkeleton count={3} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-2" />
       </div>
     )
   }

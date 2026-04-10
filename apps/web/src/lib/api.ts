@@ -182,6 +182,19 @@ export const syncJobsApi = {
   sweep: () => request<{ message: string; total: number; enqueued: number }>("/v1/sync-jobs/sweep", { method: "POST" }),
 }
 
+// ---- User Sync Jobs (scoped to a single user) ----
+export const userSyncJobsApi = {
+  list: (userId: string, params?: { limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams()
+    if (params?.limit) qs.set("limit", String(params.limit))
+    if (params?.offset) qs.set("offset", String(params.offset))
+    const query = qs.toString()
+    return request<{ data: SyncJobRecord[]; total: number }>(
+      `/v1/sync-jobs/user/${userId}${query ? `?${query}` : ""}`,
+    )
+  },
+}
+
 export interface SyncJobRecord {
   id: string
   connectionId: string
@@ -1465,4 +1478,51 @@ export interface Passkey {
 export const passkeysApi = {
   list: () => request<Passkey[]>("/v1/auth/passkeys"),
   delete: (id: string) => request<void>(`/v1/auth/passkeys/${id}`, { method: "DELETE" }),
+}
+
+// ---- Admin Invitations ----
+export const adminInvitationsApi = {
+  list: () => request<{ data: any[] }>("/v1/admin/invitations"),
+  create: (email: string) =>
+    request<{ id: string; email: string; token: string; expiresAt: string }>("/v1/admin/invitations", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  revoke: (id: string) => request<void>(`/v1/admin/invitations/${id}`, { method: "DELETE" }),
+}
+
+// ---- Admin User Management ----
+export const adminUsersApi = {
+  promote: (userId: string) =>
+    request<{ success: boolean; message: string }>(`/v1/admin/users/${userId}/promote`, { method: "POST" }),
+  demote: (userId: string) =>
+    request<{ success: boolean; message: string }>(`/v1/admin/users/${userId}/demote`, { method: "POST" }),
+}
+
+// ---- User Migration (admin) ----
+export const migrationApi = {
+  bulkInvite: () =>
+    request<{ total: number; sent: number; skipped: number; message: string }>("/v1/admin/users/bulk-invite", { method: "POST" }),
+  status: () =>
+    request<{ total: number; withLogin: number; withoutLogin: number }>("/v1/admin/users/migration-status"),
+}
+
+// ---- SMTP Settings (admin) ----
+export const smtpSettingsApi = {
+  get: () => request<{ source: string; config: Record<string, unknown> | null; updatedAt?: string }>("/v1/admin/settings/smtp"),
+  update: (config: Record<string, unknown>) =>
+    request<{ message: string; config: Record<string, unknown> }>("/v1/admin/settings/smtp", {
+      method: "PUT",
+      body: JSON.stringify(config),
+    }),
+  test: (config: Record<string, unknown>) =>
+    request<{ success: boolean; error?: string }>("/v1/admin/settings/smtp/test", {
+      method: "POST",
+      body: JSON.stringify(config),
+    }),
+  testSend: (config: Record<string, unknown> & { testEmail: string }) =>
+    request<{ success: boolean; message?: string; error?: string }>("/v1/admin/settings/smtp/test-send", {
+      method: "POST",
+      body: JSON.stringify(config),
+    }),
 }

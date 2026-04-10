@@ -26,6 +26,9 @@ COPY packages/notifications/email/package.json ./packages/notifications/email/
 COPY packages/notifications/push/package.json ./packages/notifications/push/
 COPY packages/notifications/ntfy/package.json ./packages/notifications/ntfy/
 COPY packages/notifications/webhook/package.json ./packages/notifications/webhook/
+COPY packages/event-bus/package.json ./packages/event-bus/
+COPY packages/circuit-breaker/package.json ./packages/circuit-breaker/
+COPY packages/saga/package.json ./packages/saga/
 
 RUN pnpm install --frozen-lockfile
 
@@ -46,6 +49,9 @@ COPY packages/notifications/email ./packages/notifications/email
 COPY packages/notifications/push ./packages/notifications/push
 COPY packages/notifications/ntfy ./packages/notifications/ntfy
 COPY packages/notifications/webhook ./packages/notifications/webhook
+COPY packages/event-bus ./packages/event-bus
+COPY packages/circuit-breaker ./packages/circuit-breaker
+COPY packages/saga ./packages/saga
 COPY apps/worker ./apps/worker
 
 RUN pnpm --filter @biosync-io/types build
@@ -65,6 +71,9 @@ RUN pnpm --filter @biosync-io/notification-email build
 RUN pnpm --filter @biosync-io/notification-push build
 RUN pnpm --filter @biosync-io/notification-ntfy build
 RUN pnpm --filter @biosync-io/notification-webhook build
+RUN pnpm --filter @biosync-io/event-bus build
+RUN pnpm --filter @biosync-io/circuit-breaker build
+RUN pnpm --filter @biosync-io/saga build
 RUN pnpm --filter @biosync-io/worker build
 
 # ─── Stage 2: Runtime ────────────────────────────────────────────────────────
@@ -98,6 +107,9 @@ COPY --from=builder /repo/packages/notifications/email/package.json ./packages/n
 COPY --from=builder /repo/packages/notifications/push/package.json ./packages/notifications/push/
 COPY --from=builder /repo/packages/notifications/ntfy/package.json ./packages/notifications/ntfy/
 COPY --from=builder /repo/packages/notifications/webhook/package.json ./packages/notifications/webhook/
+COPY --from=builder /repo/packages/event-bus/package.json ./packages/event-bus/
+COPY --from=builder /repo/packages/circuit-breaker/package.json ./packages/circuit-breaker/
+COPY --from=builder /repo/packages/saga/package.json ./packages/saga/
 
 RUN pnpm install --frozen-lockfile --prod
 
@@ -119,6 +131,9 @@ COPY --from=builder /repo/packages/notifications/email/dist ./packages/notificat
 COPY --from=builder /repo/packages/notifications/push/dist ./packages/notifications/push/dist
 COPY --from=builder /repo/packages/notifications/ntfy/dist ./packages/notifications/ntfy/dist
 COPY --from=builder /repo/packages/notifications/webhook/dist ./packages/notifications/webhook/dist
+COPY --from=builder /repo/packages/event-bus/dist ./packages/event-bus/dist
+COPY --from=builder /repo/packages/circuit-breaker/dist ./packages/circuit-breaker/dist
+COPY --from=builder /repo/packages/saga/dist ./packages/saga/dist
 
 USER vitasync
 

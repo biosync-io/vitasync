@@ -8,6 +8,7 @@ import {
 } from "@biosync-io/db"
 import type { Job } from "bullmq"
 import { and, eq, gte, lte, sql, avg, count } from "drizzle-orm"
+import { getWorkerEventBus } from "../lib/event-bus.js"
 
 export interface ReportJobData {
   userId: string
@@ -62,6 +63,20 @@ export async function processReportJob(job: Job<ReportJobData>): Promise<void> {
   }
 
   job.log(`${reportType} report processing complete for user ${userId}`)
+
+  // Emit export completed event
+  getWorkerEventBus().publish({
+    type: "export.completed",
+    aggregateType: "report",
+    aggregateId: job.data.reportId ?? userId,
+    payload: {
+      userId,
+      exportId: job.data.reportId ?? "",
+      format: "json",
+      sizeBytes: null,
+    },
+    metadata: { userId, ...(job.data.workspaceId ? { workspaceId: job.data.workspaceId } : {}) },
+  }).catch(() => {})
 }
 
 // ── Inline helpers ──────────────────────────────────────────────

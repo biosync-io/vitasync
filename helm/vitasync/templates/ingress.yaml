@@ -15,7 +15,7 @@ spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
   {{- end }}
-  {{- $hasTls := or .Values.ingress.api.tls .Values.ingress.web.tls }}
+  {{- $hasTls := or .Values.ingress.api.tls .Values.ingress.web.tls .Values.ingress.admin.tls }}
   {{- if $hasTls }}
   tls:
     {{- if .Values.ingress.api.tls }}
@@ -27,6 +27,11 @@ spec:
     - hosts:
         - {{ .Values.ingress.web.host | quote }}
       secretName: {{ .Values.ingress.web.secretName }}
+    {{- end }}
+    {{- if .Values.ingress.admin.tls }}
+    - hosts:
+        - {{ .Values.ingress.admin.host | quote }}
+      secretName: {{ .Values.ingress.admin.secretName }}
     {{- end }}
   {{- end }}
   rules:
@@ -47,6 +52,18 @@ spec:
       http:
         paths:
           - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}-web
+                port:
+                  number: {{ .Values.web.service.port }}
+    {{- end }}
+    {{- if and .Values.ingress.admin.enabled .Values.web.enabled }}
+    - host: {{ .Values.ingress.admin.host | quote }}
+      http:
+        paths:
+          - path: /admin
             pathType: Prefix
             backend:
               service:

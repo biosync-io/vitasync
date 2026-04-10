@@ -11,7 +11,7 @@ import {
   notificationsApi,
 } from "../../../../lib/api"
 import { Pagination } from "../../../../lib/Pagination"
-import { PageHeader, Card, CardContent, Badge, Button, CardSkeleton, EmptyState as DSEmptyState } from "../../../../lib/components/ui"
+import { PageHeader, Card, CardHeader, CardContent, Badge, Button, CardSkeleton, EmptyState as DSEmptyState } from "../../../../lib/components/ui"
 import { Bell, Plus, ListFilter } from "lucide-react"
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -263,27 +263,27 @@ function ChannelsPanel({ userId, queryClient }: { userId: string; queryClient: R
                         >
                           {testingId === ch.id ? "Sending…" : "Test"}
                         </Button>
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => toggleMut.mutate({ channelId: ch.id, enabled: !ch.enabled })}
-                          className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                         >
                           {ch.enabled ? "Pause" : "Enable"}
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => { setEditingId(ch.id); setShowCreate(false) }}
-                          className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                         >
                           Edit
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
                           onClick={() => { if (confirm(`Delete channel "${ch.label}"?`)) deleteMut.mutate(ch.id) }}
-                          className="rounded-lg px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                         >
                           Delete
-                        </button>
+                        </Button>
                       </div>
                     </div>
 
@@ -417,13 +417,9 @@ function ChannelForm({
   const isPending = createMut.isPending || updateMut.isPending
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-          {isEdit ? `Edit Channel — ${editChannel.label}` : "New Notification Channel"}
-        </h2>
-      </div>
-      <div className="px-6 py-5 space-y-4">
+    <Card>
+      <CardHeader title={isEdit ? `Edit Channel — ${editChannel.label}` : "New Notification Channel"} />
+      <CardContent className="space-y-4">
         {error && (
           <div className="rounded-lg bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">
             {error}
@@ -507,24 +503,22 @@ function ChannelForm({
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <button
-            type="button"
+          <Button
+            variant="primary"
             onClick={handleSubmit}
-            disabled={isPending}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            loading={isPending}
           >
             {isPending ? "Saving…" : isEdit ? "Update Channel" : "Create Channel"}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="outline"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             Cancel
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -651,9 +645,9 @@ function RulesPanel({ userId, queryClient }: { userId: string; queryClient: Retu
                         {(rule.categories as string[]).map((cat) => {
                           const catDef = CATEGORIES.find((c) => c.value === cat)
                           return (
-                            <span key={cat} className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-400">
+                            <Badge key={cat} variant="default" size="sm">
                               {catDef?.icon} {catDef?.label ?? cat}
-                            </span>
+                            </Badge>
                           )
                         })}
                       </div>
@@ -677,27 +671,27 @@ function RulesPanel({ userId, queryClient }: { userId: string; queryClient: Retu
                     </div>
 
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => toggleMut.mutate({ ruleId: rule.id, enabled: !rule.enabled })}
-                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
                         {rule.enabled ? "Pause" : "Enable"}
-                      </button>
-                      <button
-                        type="button"
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => { setEditingId(rule.id); setShowCreate(false) }}
-                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
                         Edit
-                      </button>
-                      <button
-                        type="button"
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
                         onClick={() => { if (confirm(`Delete rule "${rule.name}"?`)) deleteMut.mutate(rule.id) }}
-                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                       >
                         Delete
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   </CardContent>
@@ -794,13 +788,9 @@ function RuleForm({
   const isPending = createMut.isPending || updateMut.isPending
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-          {isEdit ? `Edit Rule — ${editRule.name}` : "New Routing Rule"}
-        </h2>
-      </div>
-      <div className="px-6 py-5 space-y-4">
+    <Card>
+      <CardHeader title={isEdit ? `Edit Rule — ${editRule.name}` : "New Routing Rule"} />
+      <CardContent className="space-y-4">
         {error && (
           <div className="rounded-lg bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">
             {error}
@@ -899,24 +889,22 @@ function RuleForm({
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <button
-            type="button"
+          <Button
+            variant="primary"
             onClick={handleSubmit}
-            disabled={isPending}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            loading={isPending}
           >
             {isPending ? "Saving…" : isEdit ? "Update Rule" : "Create Rule"}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="outline"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             Cancel
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 

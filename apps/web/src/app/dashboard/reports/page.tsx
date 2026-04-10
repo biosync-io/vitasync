@@ -2,7 +2,9 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState, useMemo } from "react"
+import { FileText } from "lucide-react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
+import { PageHeader, Card, CardHeader, CardContent, Badge, Button, EmptyState, CardSkeleton, TableSkeleton, StatCard } from "../../../lib/components/ui"
 import {
   reportsApi,
   healthScoresApi,
@@ -208,24 +210,19 @@ export default function ReportsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 animate-fade-in-down">
-            Health Intelligence Reports
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {algorithms.length > 0
-              ? <>Comprehensive analytics powered by <span className="font-semibold text-indigo-600 dark:text-indigo-400">{algorithms.length}</span> algorithms across {Object.keys(CATEGORY_COLORS).length} dimensions.</>
-              : "Generate and view comprehensive health reports with actionable recommendations."
-            }
-          </p>
-        </div>
-        {selectedUserId && (
-          <button type="button" onClick={() => setShowGenerate(!showGenerate)} className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all">
+      <PageHeader
+        title="Health Intelligence Reports"
+        subtitle={
+          algorithms.length > 0
+            ? `Comprehensive analytics powered by ${algorithms.length} algorithms across ${Object.keys(CATEGORY_COLORS).length} dimensions.`
+            : "Generate and view comprehensive health reports with actionable recommendations."
+        }
+        actions={selectedUserId ? (
+          <Button variant="primary" onClick={() => setShowGenerate(!showGenerate)}>
             {showGenerate ? "Cancel" : "✦ Generate Report"}
-          </button>
-        )}
-      </div>
+          </Button>
+        ) : undefined}
+      />
 
       {/* Tab switcher */}
       {selectedUserId && (
@@ -249,209 +246,213 @@ export default function ReportsPage() {
 
       {/* Generate form */}
       {showGenerate && selectedUserId && (
-        <div className="mb-6 rounded-2xl border border-indigo-200/60 dark:border-indigo-800/60 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 p-6 shadow-sm animate-fade-in">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <span className="h-5 w-5 rounded-full bg-indigo-600 flex items-center justify-center text-white text-[10px]">✦</span>
-            Generate New Report
-          </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Report Type</label>
-              <select title="Report type" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm" value={form.reportType} onChange={(e) => setForm({ ...form, reportType: e.target.value })}>
-                <option value="weekly">📅 Weekly Summary</option>
-                <option value="monthly">🗓️ Monthly Summary</option>
-                <option value="quarterly">📊 Quarterly Review</option>
-                <option value="annual">📈 Annual Review</option>
-                <option value="custom">⚙️ Custom Period</option>
-              </select>
+        <Card className="mb-6">
+          <CardHeader title="Generate New Report" />
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Report Type</label>
+                <select title="Report type" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm" value={form.reportType} onChange={(e) => setForm({ ...form, reportType: e.target.value })}>
+                  <option value="weekly">📅 Weekly Summary</option>
+                  <option value="monthly">🗓️ Monthly Summary</option>
+                  <option value="quarterly">📊 Quarterly Review</option>
+                  <option value="annual">📈 Annual Review</option>
+                  <option value="custom">⚙️ Custom Period</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Period Start</label>
+                <input type="date" title="Period start" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm" value={form.periodStart} onChange={(e) => setForm({ ...form, periodStart: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Period End</label>
+                <input type="date" title="Period end" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm" value={form.periodEnd} onChange={(e) => setForm({ ...form, periodEnd: e.target.value })} />
+              </div>
+              <div className="flex items-end">
+                <Button variant="primary" onClick={() => generateMut.mutate()} loading={generateMut.isPending} className="w-full">
+                  Generate
+                </Button>
+              </div>
             </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Period Start</label>
-              <input type="date" title="Period start" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm" value={form.periodStart} onChange={(e) => setForm({ ...form, periodStart: e.target.value })} />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Period End</label>
-              <input type="date" title="Period end" className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm" value={form.periodEnd} onChange={(e) => setForm({ ...form, periodEnd: e.target.value })} />
-            </div>
-            <div className="flex items-end">
-              <button type="button" onClick={() => generateMut.mutate()} disabled={generateMut.isPending} className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-                {generateMut.isPending ? "Generating…" : "Generate"}
-              </button>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* ═══════════ LIVE DASHBOARD TAB ═══════════ */}
       {selectedUserId && activeTab === "live" && (
-        <div className="space-y-6 animate-fade-in-up">
+        <div className="space-y-8 animate-fade-in-up">
           {/* Score rings row */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-5 stagger-grid">
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 flex flex-col items-center">
+            <Card className="p-4 flex flex-col items-center">
               <ScoreRing value={healthScore?.overallScore ?? 0} label="Health" color="#6366f1" />
               {healthScore?.grade && <span className="mt-2 text-xs font-bold text-indigo-600 dark:text-indigo-400">{healthScore.grade}</span>}
-            </div>
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 flex flex-col items-center">
+            </Card>
+            <Card className="p-4 flex flex-col items-center">
               <ScoreRing value={readiness?.score ?? 0} label="Readiness" color="#10b981" />
               {readiness?.recommendation && <span className="mt-2 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 uppercase">{readiness.recommendation.replace("_", " ")}</span>}
-            </div>
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 flex flex-col items-center">
+            </Card>
+            <Card className="p-4 flex flex-col items-center">
               <ScoreRing value={healthScore?.sleepScore ?? 0} label="Sleep" color="#8b5cf6" />
-            </div>
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 flex flex-col items-center">
+            </Card>
+            <Card className="p-4 flex flex-col items-center">
               <ScoreRing value={healthScore?.cardioScore ?? 0} label="Cardio" color="#ef4444" />
-            </div>
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 flex flex-col items-center">
+            </Card>
+            <Card className="p-4 flex flex-col items-center">
               <ScoreRing value={healthScore?.recoveryScore ?? 0} label="Recovery" color="#14b8a6" />
-            </div>
+            </Card>
           </div>
 
           {/* Severity overview + trend */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {/* Severity cards */}
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-5">
-              <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-4 uppercase tracking-wide">Insight Distribution (30d)</h3>
-              <div className="grid grid-cols-4 gap-3">
-                {(["positive", "info", "warning", "critical"] as const).map(sev => (
-                  <div key={sev} className={`rounded-xl p-3 text-center ${
-                    sev === "positive" ? "bg-emerald-50 dark:bg-emerald-950/30" :
-                    sev === "info" ? "bg-blue-50 dark:bg-blue-950/30" :
-                    sev === "warning" ? "bg-amber-50 dark:bg-amber-950/30" :
-                    "bg-red-50 dark:bg-red-950/30"
-                  }`}>
-                    <p className={`text-2xl font-bold ${sevColor[sev]}`}>{sevCounts[sev]}</p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase mt-1">{sev}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs text-gray-500 dark:text-gray-400">Total: {insights.length} insights</span>
-                {insights.length > 0 && (
-                  <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400">
-                    {Math.round((sevCounts.positive / insights.length) * 100)}% positive
-                  </span>
-                )}
-              </div>
-            </div>
+            <Card>
+              <CardHeader title="Insight Distribution (30d)" />
+              <CardContent>
+                <div className="grid grid-cols-4 gap-4">
+                  {(["positive", "info", "warning", "critical"] as const).map(sev => (
+                    <div key={sev} className={`rounded-xl p-3 text-center ${
+                      sev === "positive" ? "bg-emerald-50 dark:bg-emerald-950/30" :
+                      sev === "info" ? "bg-blue-50 dark:bg-blue-950/30" :
+                      sev === "warning" ? "bg-amber-50 dark:bg-amber-950/30" :
+                      "bg-red-50 dark:bg-red-950/30"
+                    }`}>
+                      <p className={`text-2xl font-bold ${sevColor[sev]}`}>{sevCounts[sev]}</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase mt-1">{sev}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Total: {insights.length} insights</span>
+                  {insights.length > 0 && (
+                    <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                      {Math.round((sevCounts.positive / insights.length) * 100)}% positive
+                    </span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Health score trend */}
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-5">
-              <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-4 uppercase tracking-wide">Health Score Trend</h3>
-              {sparkData.length >= 2 ? (
-                <div className="flex flex-col items-center gap-3">
-                  <SparkLine data={sparkData} width={300} height={60} />
-                  <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                    <span>Low: <strong className="text-gray-900 dark:text-gray-100">{Math.min(...sparkData)}</strong></span>
-                    <span>Avg: <strong className="text-gray-900 dark:text-gray-100">{Math.round(sparkData.reduce((a, b) => a + b, 0) / sparkData.length)}</strong></span>
-                    <span>High: <strong className="text-gray-900 dark:text-gray-100">{Math.max(...sparkData)}</strong></span>
-                    <span>Latest: <strong className="text-indigo-600 dark:text-indigo-400">{sparkData[sparkData.length - 1]}</strong></span>
+            <Card>
+              <CardHeader title="Health Score Trend" />
+              <CardContent>
+                {sparkData.length >= 2 ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <SparkLine data={sparkData} width={300} height={60} />
+                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                      <span>Low: <strong className="text-gray-900 dark:text-gray-100">{Math.min(...sparkData)}</strong></span>
+                      <span>Avg: <strong className="text-gray-900 dark:text-gray-100">{Math.round(sparkData.reduce((a, b) => a + b, 0) / sparkData.length)}</strong></span>
+                      <span>High: <strong className="text-gray-900 dark:text-gray-100">{Math.max(...sparkData)}</strong></span>
+                      <span>Latest: <strong className="text-indigo-600 dark:text-indigo-400">{sparkData[sparkData.length - 1]}</strong></span>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400 text-center py-6">Not enough history to display trend</p>
-              )}
-              {trainingLoad && (
-                <div className="mt-4 grid grid-cols-3 gap-3 border-t border-gray-200 dark:border-gray-800 pt-4">
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{Math.round(trainingLoad.ctl)}</p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Fitness</p>
+                ) : (
+                  <p className="text-sm text-gray-400 text-center py-6">Not enough history to display trend</p>
+                )}
+                {trainingLoad && (
+                  <div className="mt-4 grid grid-cols-3 gap-4 border-t border-gray-200 dark:border-gray-800 pt-4">
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{Math.round(trainingLoad.ctl)}</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Fitness</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{Math.round(trainingLoad.atl)}</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Fatigue</p>
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-lg font-bold ${trainingLoad.tsb >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>{trainingLoad.tsb > 0 ? "+" : ""}{Math.round(trainingLoad.tsb)}</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Form</p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{Math.round(trainingLoad.atl)}</p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Fatigue</p>
-                  </div>
-                  <div className="text-center">
-                    <p className={`text-lg font-bold ${trainingLoad.tsb >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>{trainingLoad.tsb > 0 ? "+" : ""}{Math.round(trainingLoad.tsb)}</p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Form</p>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Radar + Category breakdown + Top Insights */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 stagger-grid">
             {/* Radar */}
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-5">
-              <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-3 uppercase tracking-wide">Health Dimensions</h3>
-              {radarData.length >= 3 ? (
-                <RadarChart data={radarData} size={220} />
-              ) : (
-                <p className="text-sm text-gray-400 text-center py-10">Need 3+ categories</p>
-              )}
-            </div>
+            <Card>
+              <CardHeader title="Health Dimensions" />
+              <CardContent>
+                {radarData.length >= 3 ? (
+                  <RadarChart data={radarData} size={220} />
+                ) : (
+                  <p className="text-sm text-gray-400 text-center py-10">Need 3+ categories</p>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Category bars */}
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-5">
-              <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-3 uppercase tracking-wide">By Category</h3>
-              <div className="space-y-2">
-                {catBreakdown.map(([cat, stats]) => (
-                  <HBar
-                    key={cat}
-                    label={cat.replace("_", " ")}
-                    value={stats.total}
-                    max={Math.max(10, ...catBreakdown.map(([, s]) => s.total))}
-                    color={CATEGORY_COLORS[cat] ?? "bg-gray-500"}
-                  />
-                ))}
-                {catBreakdown.length === 0 && <p className="text-sm text-gray-400 text-center py-8">No insights yet</p>}
-              </div>
-            </div>
+            <Card>
+              <CardHeader title="By Category" />
+              <CardContent>
+                <div className="space-y-2">
+                  {catBreakdown.map(([cat, stats]) => (
+                    <HBar
+                      key={cat}
+                      label={cat.replace("_", " ")}
+                      value={stats.total}
+                      max={Math.max(10, ...catBreakdown.map(([, s]) => s.total))}
+                      color={CATEGORY_COLORS[cat] ?? "bg-gray-500"}
+                    />
+                  ))}
+                  {catBreakdown.length === 0 && <p className="text-sm text-gray-400 text-center py-8">No insights yet</p>}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Priority insights */}
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-5">
-              <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-3 uppercase tracking-wide">Priority Insights</h3>
-              <div className="space-y-2.5">
-                {topInsights.map((ins, i) => (
-                  <div key={ins.id} className="flex items-start gap-2.5">
-                    <span className={`text-sm mt-0.5 ${sevColor[ins.severity]}`}>{sevIcon[ins.severity]}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{ins.title}</p>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{ins.description}</p>
+            <Card>
+              <CardHeader title="Priority Insights" />
+              <CardContent>
+                <div className="space-y-2.5">
+                  {topInsights.map((ins, i) => (
+                    <div key={ins.id} className="flex items-start gap-2.5">
+                      <span className={`text-sm mt-0.5 ${sevColor[ins.severity]}`}>{sevIcon[ins.severity]}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{ins.title}</p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{ins.description}</p>
+                      </div>
+                      {ins.value != null && (
+                        <span className={`text-xs font-bold shrink-0 ${sevColor[ins.severity]}`}>{ins.value}{ins.unit ? ` ${ins.unit}` : ""}</span>
+                      )}
                     </div>
-                    {ins.value != null && (
-                      <span className={`text-xs font-bold shrink-0 ${sevColor[ins.severity]}`}>{ins.value}{ins.unit ? ` ${ins.unit}` : ""}</span>
-                    )}
-                  </div>
-                ))}
-                {topInsights.length === 0 && <p className="text-sm text-gray-400 text-center py-8">No insights yet</p>}
-              </div>
-            </div>
+                  ))}
+                  {topInsights.length === 0 && <p className="text-sm text-gray-400 text-center py-8">No insights yet</p>}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Score detail grid */}
           {healthScore && (
-            <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-5">
-              <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-4 uppercase tracking-wide">Score Breakdown</h3>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                {[
-                  { label: "Overall", value: healthScore.overallScore, color: "bg-indigo-500" },
-                  { label: "Sleep", value: healthScore.sleepScore, color: "bg-violet-500" },
-                  { label: "Activity", value: healthScore.activityScore, color: "bg-green-500" },
-                  { label: "Cardio", value: healthScore.cardioScore, color: "bg-rose-500" },
-                  { label: "Body", value: healthScore.bodyScore, color: "bg-purple-500" },
-                ].map(({ label, value, color }) => (
-                  <div key={label}>
-                    <HBar label={label} value={value ?? 0} color={color} />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Card>
+              <CardHeader title="Score Breakdown" />
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+                  {[
+                    { label: "Overall", value: healthScore.overallScore, color: "bg-indigo-500" },
+                    { label: "Sleep", value: healthScore.sleepScore, color: "bg-violet-500" },
+                    { label: "Activity", value: healthScore.activityScore, color: "bg-green-500" },
+                    { label: "Cardio", value: healthScore.cardioScore, color: "bg-rose-500" },
+                    { label: "Body", value: healthScore.bodyScore, color: "bg-purple-500" },
+                  ].map(({ label, value, color }) => (
+                    <div key={label}>
+                      <HBar label={label} value={value ?? 0} color={color} />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       )}
 
       {/* ═══════════ SAVED REPORTS TAB ═══════════ */}
       {selectedUserId && activeTab === "reports" && (
-        <div className="space-y-4 animate-fade-in">
-          {isLoading && (
-            <div className="py-12 text-center"><div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" /></div>
-          )}
+        <div className="space-y-8 animate-fade-in">
+          {isLoading && <TableSkeleton rows={5} cols={4} />}
           {!isLoading && reports.length === 0 && (
-            <div className="flex flex-col items-center py-16">
-              <span className="text-4xl mb-3">📄</span>
-              <p className="text-sm text-gray-500 dark:text-gray-400">No reports yet. Generate one to get started.</p>
-            </div>
+            <EmptyState title="No reports yet" description="Generate one to get started." icon={FileText} />
           )}
           {reports.map((report) => {
             const meta = REPORT_TYPE_META[report.reportType] ?? { icon: "⚙️", gradient: "from-gray-500 to-gray-600" }
@@ -459,7 +460,7 @@ export default function ReportsPage() {
             const isExpanded = expandedReport === report.id
 
             return (
-              <div key={report.id} className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm shadow-sm overflow-hidden transition-all hover:shadow-md">
+              <Card hover key={report.id} className="overflow-hidden">
                 <button
                   type="button"
                   className="w-full px-6 py-5 flex items-center justify-between text-left transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/30"
@@ -527,7 +528,7 @@ export default function ReportsPage() {
                     <p className="text-[10px] text-gray-400 dark:text-gray-500">Generated on {new Date(report.createdAt).toLocaleString()}</p>
                   </div>
                 )}
-              </div>
+              </Card>
             )
           })}
         </div>

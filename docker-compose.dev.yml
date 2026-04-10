@@ -8,11 +8,11 @@ name: vitasync
 services:
   postgres:
     ports:
-      - "5432:5432"  # expose to host for local DB tools
+      - "5433:5432"  # expose to host for local DB tools
 
   redis:
     ports:
-      - "6379:6379"  # expose to host for redis-cli / RedisInsight
+      - "6380:6379"  # expose to host for redis-cli / RedisInsight
 
   api:
     build:
@@ -22,20 +22,34 @@ services:
       NODE_ENV: development
       DATABASE_URL: postgresql://vitasync:changeme@postgres:5432/vitasync
       REDIS_URL: redis://redis:6379
-      PORT: "3001"
+      PORT: "3003"
       HOST: "0.0.0.0"
       LOG_LEVEL: debug
       JWT_SECRET: dev-jwt-secret-at-least-32-chars-long
       ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
-      CORS_ORIGINS: "http://localhost:3000"
-      OAUTH_REDIRECT_BASE_URL: "http://localhost:3001"
+      CORS_ORIGINS: "http://localhost:3002"
+      OAUTH_REDIRECT_BASE_URL: "http://localhost:3003"
       # Bootstrap: creates the default workspace + admin key on first boot
       ADMIN_WORKSPACE_SLUG: default
       ADMIN_API_KEY: "vs_test_dev0000000000000000000000000000"
+      ADMIN_EMAIL: "admin@vitasync.local"
+      ADMIN_PASSWORD: "Admin123!"
+      # SMTP — configure for email testing (e.g. Mailpit, Mailtrap)
+      # SMTP_HOST: "mailpit"
+      # SMTP_PORT: "1025"
+      # SMTP_FROM_NAME: "VitaSync Dev"
+      # SMTP_FROM_EMAIL: "dev@vitasync.local"
+      ALLOW_SELF_REGISTRATION: "true"
+      API_PORT: "3003"
+      API_INTERNAL_PORT: "3003"
     volumes:
       - ./apps/api/src:/repo/apps/api/src:ro
-    ports:
-      - "3001:3001"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3003/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   worker:
     build:
@@ -50,21 +64,53 @@ services:
     volumes:
       - ./apps/worker/src:/repo/apps/worker/src:ro
 
+  notification-worker:
+    build:
+      target: builder
+    command: ["pnpm", "--filter", "@biosync-io/worker", "dev"]
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://vitasync:changeme@postgres:5432/vitasync
+      REDIS_URL: redis://redis:6379
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      WORKER_QUEUES: notifications
+      LOG_LEVEL: debug
+    volumes:
+      - ./apps/worker/src:/repo/apps/worker/src:ro
+
+  report-worker:
+    build:
+      target: builder
+    command: ["pnpm", "--filter", "@biosync-io/worker", "dev"]
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://vitasync:changeme@postgres:5432/vitasync
+      REDIS_URL: redis://redis:6379
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      WORKER_QUEUES: reports
+      LOG_LEVEL: debug
+    volumes:
+      - ./apps/worker/src:/repo/apps/worker/src:ro
+
   web:
     build:
       dockerfile: apps/web/Dockerfile
       target: builder
-    command: ["pnpm", "--filter", "@biosync-io/web", "dev"]
+    command:
+      - sh
+      - -c
+      - |
+        cp -r apps/web/public apps/web/.next/standalone/apps/web/public
+        cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
+        node apps/web/.next/standalone/apps/web/server.js
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
       # Server-side proxy target — must use the Docker service name, not localhost
-      INTERNAL_API_URL: http://api:3001
+      INTERNAL_API_URL: http://api:3003
       # Browser-facing API URL (used by client-side code)
-      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_API_URL: http://localhost:3003
       # Pre-configured API key for local dev — avoids manual Settings setup
       NEXT_PUBLIC_DEFAULT_API_KEY: "vs_test_dev0000000000000000000000000000"
-    volumes:
-      - ./apps/web/src:/repo/apps/web/src:ro
-      - ./apps/web/public:/repo/apps/web/public:ro
-    ports:
-      - "3000:3000"
+      WEB_PORT: "3002"

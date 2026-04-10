@@ -15,8 +15,8 @@ import {
   CardContent,
   Badge,
   TableSkeleton,
-  EmptyState as DSEmptyState,
-  StatCard as DSStatCard,
+  EmptyState,
+  StatCard,
 } from "../../../../lib/components/ui"
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -104,10 +104,10 @@ export default function NotificationLogsPage() {
 
       {/* Stats cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <DSStatCard label="Total" value={stats.total} />
-            <DSStatCard label="Delivered" value={stats.delivered} color="vitality" />
-            <DSStatCard label="Pending" value={stats.pending} />
-            <DSStatCard label="Failed" value={stats.failed} color="accent" />
+            <StatCard label="Total" value={stats.total} color="default" />
+            <StatCard label="Delivered" value={stats.delivered} color="vitality" />
+            <StatCard label="Pending" value={stats.pending} color="brand" />
+            <StatCard label="Failed" value={stats.failed} color="accent" />
           </div>
 
           {/* Filters */}
@@ -147,12 +147,12 @@ export default function NotificationLogsPage() {
 
           {/* Log list */}
           {isLoading ? (
-            <TableSkeleton rows={5} cols={5} />
+            <TableSkeleton rows={5} cols={6} />
           ) : filteredLogs.length === 0 ? (
-            <DSEmptyState
+            <EmptyState
               icon={Bell}
               title={allLogs.length === 0 ? "No notification activity yet" : "No logs match the current filters"}
-              description={allLogs.length === 0 ? "Notifications will appear here once they are sent." : "Try adjusting your filters."}
+              description={allLogs.length === 0 ? "Notifications will appear here once channels are configured." : "Try adjusting your filters."}
             />
           ) : (
             <>
@@ -232,10 +232,7 @@ export default function NotificationLogsPage() {
                   const st = STATUS_STYLES[log.status] ?? DEFAULT_STATUS
                   const isExpanded = expandedId === log.id
                   return (
-                    <div
-                      key={log.id}
-                      className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden"
-                    >
+                    <Card key={log.id}>
                       <button
                         type="button"
                         onClick={() => setExpandedId(isExpanded ? null : log.id)}
@@ -268,7 +265,7 @@ export default function NotificationLogsPage() {
                           <LogDetail log={log} />
                         </div>
                       )}
-                    </div>
+                    </Card>
                   )
                 })}
               </div>
@@ -321,17 +318,6 @@ function LogDetail({ log }: { log: NotificationLog }) {
           </pre>
         </div>
       )}
-    </div>
-  )
-}
-
-// ── Stat Card ─────────────────────────────────────────────────────
-
-function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
-      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{label}</p>
-      <p className={`text-2xl font-bold mt-1 ${color}`}>{value}</p>
     </div>
   )
 }

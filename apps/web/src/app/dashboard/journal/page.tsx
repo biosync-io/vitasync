@@ -3,7 +3,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
-import { type JournalEntry, type JournalStats, journalApi, usersApi } from "../../../lib/api"
+import { type JournalEntry, type JournalStats, journalApi} from "../../../lib/api"
+import { Card, CardHeader, CardContent, CardFooter, PageHeader, Badge, StatCard, Button, EmptyState, CardSkeleton, StatSkeleton, MetricBar, MetricRing, Toggle, Input, Select } from "../../../lib/components/ui"
+import { BookOpen, Search, X } from "lucide-react"
 
 const MOOD_EMOJI: Record<number, string> = { 1: "😢", 2: "😟", 3: "😐", 4: "🙂", 5: "😄" }
 const MOOD_COLORS: Record<number, string> = {
@@ -78,7 +80,7 @@ function MoodDistChart({ data }: { data: Record<string, number> }) {
 }
 
 export default function JournalPage() {
-  const { selectedUserId, setSelectedUserId, isAdmin } = useSelectedUser()
+  const { selectedUserId } = useSelectedUser()
   const [showCreate, setShowCreate] = useState(false)
   const [search, setSearch] = useState("")
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -92,12 +94,6 @@ export default function JournalPage() {
   })
   const queryClient = useQueryClient()
 
-  const { data: usersResult } = useQuery({
-    queryKey: ["users", 0],
-    queryFn: () => usersApi.list({ limit: 200, offset: 0 }),
-    enabled: isAdmin,
-  })
-  const users = usersResult?.data ?? []
 
   const { data: entriesResult, isLoading } = useQuery({
     queryKey: ["journal-entries", selectedUserId, search],
@@ -141,157 +137,136 @@ export default function JournalPage() {
   const moodVal = Number(form.moodScore)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between animate-fade-in-down">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Daily Journal</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Reflect, grow, and discover patterns in your wellness journey.</p>
-        </div>
-        {selectedUserId && (
-          <button type="button" onClick={() => setShowCreate(!showCreate)}
-            className={`group relative overflow-hidden rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all duration-300 ${
-              showCreate
-                ? "bg-gray-500 hover:bg-gray-600"
-                : "bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5"
-            }`}>
-            {showCreate ? "Cancel" : "✍️ New Entry"}
-          </button>
-        )}
-      </div>
-
-      {/* User select */}
-      {isAdmin && (
-        <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-5 shadow-card">
-          <label htmlFor="journal-user" className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">User</label>
-          <select id="journal-user" className="w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-            <option value="">Select a user…</option>
-            {users.map((u) => <option key={u.id} value={u.id}>{u.displayName || u.externalId}</option>)}
-          </select>
-        </div>
-      )}
-
-      {!selectedUserId && isAdmin && (
-        <div className="flex flex-col items-center justify-center py-24 animate-fade-in">
-          <span className="text-6xl mb-4 animate-float">📔</span>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Select a user to view journal entries.</p>
-        </div>
-      )}
+      <PageHeader
+        title="Journal"
+        subtitle="Reflect, grow, and discover patterns in your wellness journey."
+        actions={
+          selectedUserId ? (
+            <Button
+              variant={showCreate ? "secondary" : "primary"}
+              onClick={() => setShowCreate(!showCreate)}
+            >
+              {showCreate ? "Cancel" : "✍️ New Entry"}
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* Create form */}
       {showCreate && selectedUserId && (
-        <div className="rounded-2xl border border-indigo-200/60 dark:border-indigo-800/40 bg-gradient-to-br from-indigo-50/80 to-purple-50/50 dark:from-indigo-950/40 dark:to-purple-950/20 backdrop-blur-xl p-6 shadow-lg shadow-indigo-500/5 animate-fade-in-up">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <span className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm shadow-lg shadow-indigo-500/30">📝</span>
-            New Journal Entry
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Title (optional)</label>
-              <input placeholder="Today's reflection..." className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500/40 transition-all" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Journal Entry *</label>
-              <textarea rows={5} placeholder="Write about your day, thoughts, experiences…" className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500/40 transition-all resize-none" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-800/60 p-4 text-center">
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Mood</label>
-                <input type="range" min="1" max="5" className="w-full accent-indigo-500" value={form.moodScore} onChange={(e) => setForm({ ...form, moodScore: e.target.value })} />
-                <div className={`mt-2 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r ${MOOD_COLORS[moodVal]} px-3 py-1 text-white shadow-md ${MOOD_GLOW[moodVal]}`}>
-                  <span className="text-lg">{MOOD_EMOJI[moodVal]}</span>
-                  <span className="text-xs font-semibold">{moodVal}/5</span>
+        <Card glow="brand">
+          <CardHeader title="New Journal Entry" icon={<span>📝</span>} />
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Title (optional)</label>
+                <input placeholder="Today's reflection..." className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500/40 transition-all" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Journal Entry *</label>
+                <textarea rows={5} placeholder="Write about your day, thoughts, experiences…" className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500/40 transition-all resize-none" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-800/60 p-4 text-center">
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Mood</label>
+                  <input type="range" min="1" max="5" className="w-full accent-indigo-500" value={form.moodScore} onChange={(e) => setForm({ ...form, moodScore: e.target.value })} />
+                  <div className={`mt-2 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r ${MOOD_COLORS[moodVal]} px-3 py-1 text-white shadow-md ${MOOD_GLOW[moodVal]}`}>
+                    <span className="text-lg">{MOOD_EMOJI[moodVal]}</span>
+                    <span className="text-xs font-semibold">{moodVal}/5</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Feeling</label>
+                  <select className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm" value={form.moodLabel} onChange={(e) => setForm({ ...form, moodLabel: e.target.value })}>
+                    {MOOD_LABELS.map((m) => <option key={m} value={m}>{LABEL_EMOJI[m]} {m.charAt(0).toUpperCase() + m.slice(1)}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Tags</label>
+                  <input placeholder="health, work, travel" className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">🙏 Gratitude</label>
+                  <textarea rows={2} placeholder={"Good sleep\nFamily time"} className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-sm resize-none" value={form.gratitude} onChange={(e) => setForm({ ...form, gratitude: e.target.value })} />
                 </div>
               </div>
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Feeling</label>
-                <select className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm" value={form.moodLabel} onChange={(e) => setForm({ ...form, moodLabel: e.target.value })}>
-                  {MOOD_LABELS.map((m) => <option key={m} value={m}>{LABEL_EMOJI[m]} {m.charAt(0).toUpperCase() + m.slice(1)}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Tags</label>
-                <input placeholder="health, work, travel" className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">🙏 Gratitude</label>
-                <textarea rows={2} placeholder={"Good sleep\nFamily time"} className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-sm resize-none" value={form.gratitude} onChange={(e) => setForm({ ...form, gratitude: e.target.value })} />
+              <div className="flex justify-end">
+                <Button variant="primary" onClick={() => createMut.mutate()} loading={createMut.isPending} disabled={!form.body.trim()}>
+                  Save Entry
+                </Button>
               </div>
             </div>
-            <div className="flex justify-end">
-              <button type="button" onClick={() => createMut.mutate()} disabled={createMut.isPending || !form.body.trim()}
-                className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-2.5 text-sm font-semibold text-white hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 disabled:opacity-50 transition-all duration-200 hover:-translate-y-0.5">
-                {createMut.isPending ? "Saving…" : "Save Entry"}
-              </button>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Stats cards */}
       {selectedUserId && stats && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger-grid">
-          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card hover:shadow-card-hover transition-all duration-300 text-center">
-            <p className="text-4xl font-bold tracking-tight bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">{stats.totalEntries}</p>
-            <p className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-medium mt-1">Entries (30d)</p>
-          </div>
-          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card hover:shadow-card-hover transition-all duration-300 flex items-center justify-center">
-            <MoodRing score={stats.avgMoodScore} />
-          </div>
-          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card hover:shadow-card-hover transition-all duration-300 flex items-center justify-center">
-            <StreakFlame count={stats.streak} />
-          </div>
-          <div className="rounded-2xl border border-gray-200/60 dark:border-gray-800/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-6 shadow-card hover:shadow-card-hover transition-all duration-300">
-            {Object.keys(stats.moodDistribution).length > 0
-              ? <MoodDistChart data={stats.moodDistribution} />
-              : (
-                <div className="text-center">
-                  <p className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-medium mb-2">Top Tags</p>
-                  <div className="flex flex-wrap justify-center gap-1">
-                    {stats.topTags.length > 0
-                      ? stats.topTags.map((tag) => (
-                          <span key={tag} className="rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 px-2.5 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-400">{tag}</span>
-                        ))
-                      : <span className="text-xs text-gray-400">No tags yet</span>}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Entries (30d)" value={stats.totalEntries} color="brand" />
+          <Card>
+            <CardContent className="flex items-center justify-center">
+              <MoodRing score={stats.avgMoodScore} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center justify-center">
+              <StreakFlame count={stats.streak} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              {Object.keys(stats.moodDistribution).length > 0
+                ? <MoodDistChart data={stats.moodDistribution} />
+                : (
+                  <div className="text-center">
+                    <p className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-medium mb-2">Top Tags</p>
+                    <div className="flex flex-wrap justify-center gap-1">
+                      {stats.topTags.length > 0
+                        ? stats.topTags.map((tag) => (
+                            <Badge key={tag} variant="info">{tag}</Badge>
+                          ))
+                        : <span className="text-xs text-gray-400">No tags yet</span>}
+                    </div>
                   </div>
-                </div>
-              )}
-          </div>
+                )}
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* Search bar */}
       {selectedUserId && (
-        <div className="relative animate-fade-in">
-          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-400">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          </div>
-          <input placeholder="Search journal entries…" className="w-full max-w-lg rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl pl-11 pr-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all shadow-card" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Input
+          icon={Search}
+          placeholder="Search journal entries…"
+          value={search}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+          className="max-w-lg"
+        />
+      )}
+
+      {/* Loading */}
+      {selectedUserId && isLoading && (
+        <div className="space-y-8">
+          <StatSkeleton count={4} />
+          <CardSkeleton count={3} />
         </div>
       )}
 
       {/* Entries list */}
-      {selectedUserId && isLoading && (
-        <div className="flex items-center justify-center py-20">
-          <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
-        </div>
-      )}
       {selectedUserId && !isLoading && (
-        <div className="space-y-3 stagger-list">
+        <div className="space-y-3">
           {entries.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
-              <span className="text-5xl mb-3 animate-float">✨</span>
-              <p className="text-sm text-gray-500 dark:text-gray-400">No journal entries yet. Start writing!</p>
-            </div>
+            <EmptyState icon={BookOpen} title="No journal entries yet" description="Start writing to track your wellness journey!" />
           )}
           {entries.map((entry) => {
             const isExpanded = expandedId === entry.id
             const mScore = entry.moodScore ?? 3
             return (
-              <div key={entry.id}
-                className={`group rounded-2xl border bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-card hover:shadow-card-hover transition-all duration-300 overflow-hidden ${
-                  isExpanded ? "border-indigo-300 dark:border-indigo-700" : "border-gray-200/60 dark:border-gray-800/60"
-                }`}>
+              <Card key={entry.id} hover>
                 <div className="flex items-start gap-4 p-5">
                   {/* Mood indicator */}
                   <div className={`shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br ${MOOD_COLORS[mScore]} flex items-center justify-center text-lg text-white shadow-md ${MOOD_GLOW[mScore]} transition-transform duration-200 group-hover:scale-110`}>
@@ -303,18 +278,17 @@ export default function JournalPage() {
                         {new Date(entry.entryDate).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
                       </span>
                       {entry.moodLabel && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide rounded-full bg-purple-100/80 dark:bg-purple-900/30 px-2 py-0.5 text-purple-600 dark:text-purple-400">
+                        <Badge variant="purple" size="sm">
                           {LABEL_EMOJI[entry.moodLabel]} {entry.moodLabel}
-                        </span>
+                        </Badge>
                       )}
                     </div>
                     {entry.title && <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 leading-snug">{entry.title}</h3>}
                     <p className={`text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed ${isExpanded ? "" : "line-clamp-2"}`}>{entry.body}</p>
                   </div>
-                  <button type="button" onClick={() => deleteMut.mutate(entry.id)}
-                    className="shrink-0 h-7 w-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all" title="Delete">
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
+                  <Button variant="ghost" size="sm" onClick={() => deleteMut.mutate(entry.id)} className="shrink-0 opacity-0 group-hover:opacity-100">
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
 
                 {isExpanded && (
@@ -335,14 +309,14 @@ export default function JournalPage() {
                       {entry.tags && (entry.tags as string[]).length > 0 && (
                         <div className="flex flex-wrap gap-1.5 content-start">
                           {(entry.tags as string[]).map((tag) => (
-                            <span key={tag} className="rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 border border-blue-200/50 dark:border-blue-700/30 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-400">{tag}</span>
+                            <Badge key={tag} variant="info">{tag}</Badge>
                           ))}
                         </div>
                       )}
                     </div>
                   </div>
                 )}
-              </div>
+              </Card>
             )
           })}
         </div>

@@ -1,0 +1,36 @@
+{
+  "name": "@biosync-io/cqrs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CQRS command and query buses with middleware support for VitaSync",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "test": "node --test --experimental-transform-types --no-warnings src/__tests__/cqrs.test.ts"
+  },
+  "peerDependencies": {
+    "zod": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3",
+    "zod": "^3.24.1"
+  },
+  "license": "AGPL-3.0"
+}
