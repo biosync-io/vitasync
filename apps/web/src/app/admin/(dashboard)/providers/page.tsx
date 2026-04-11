@@ -1,16 +1,12 @@
 "use client"
 
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useState, useEffect, useCallback, useRef } from "react"
-import { type ProviderDef, type Connection, providersApi, connectionsApi, getRuntimeDefaultKey } from "../../../../lib/api"
-import { PageHeader, Card, CardHeader, CardContent, Badge, Button, CardSkeleton, StatusDot } from "../../../../lib/components/ui"
+import { useQuery } from "@tanstack/react-query"
+import { type ProviderDef, providersApi } from "../../../../lib/api"
+import { PageHeader, Card, CardHeader, CardContent, Badge, CardSkeleton } from "../../../../lib/components/ui"
 
-/** Resolve the public-facing API URL for display in docs/config sections */
-function useApiBaseUrl(): string {
-  if (typeof window !== "undefined") {
-    // In browser: use current origin (works in any deployment)
-    return window.location.origin
-  }
+/** Resolve the public-facing origin for callback URL display */
+function useOrigin(): string {
+  if (typeof window !== "undefined") return window.location.origin
   return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
 }
 
@@ -37,456 +33,143 @@ const ALL_SUPPORTED_PROVIDERS: ProviderDef[] = [
   { id: "apple_health", name: "Apple Health", description: "iOS health data hub. Aggregates data from Apple Watch, apps, and medical records. Requires companion app.", authType: "oauth2", capabilities: ["steps", "heart_rate", "sleep", "workout", "weight", "blood_oxygen", "heart_rate_variability"], logoUrl: null },
 ]
 
+/** Env vars required for each provider's OAuth credentials */
+const PROVIDER_ENV_VARS: Record<string, string[]> = {
+  fitbit: ["FITBIT_CLIENT_ID", "FITBIT_CLIENT_SECRET"],
+  garmin: ["GARMIN_CONSUMER_KEY", "GARMIN_CONSUMER_SECRET"],
+  strava: ["STRAVA_CLIENT_ID", "STRAVA_CLIENT_SECRET"],
+  whoop: ["WHOOP_CLIENT_ID", "WHOOP_CLIENT_SECRET"],
+  withings: ["WITHINGS_CLIENT_ID", "WITHINGS_CLIENT_SECRET"],
+  polar: ["POLAR_CLIENT_ID", "POLAR_CLIENT_SECRET"],
+}
+
 export default function ProvidersPage() {
-  const apiBaseUrl = useApiBaseUrl()
+  const origin = useOrigin()
 
   const { data: apiProviders = [], isLoading } = useQuery<ProviderDef[]>({
     queryKey: ["providers"],
     queryFn: () => providersApi.list(),
   })
 
-  // Merge: show all supported providers, mark which are configured
   const configuredIds = new Set(apiProviders.map((p) => p.id))
-  const allProviders = ALL_SUPPORTED_PROVIDERS.map((sp) => {
-    const configured = apiProviders.find((p) => p.id === sp.id)
-    return { ...sp, ...(configured ?? {}), isConfigured: configuredIds.has(sp.id) }
-  })
+  const configuredCount = ALL_SUPPORTED_PROVIDERS.filter((p) => configuredIds.has(p.id)).length
+  const totalCount = ALL_SUPPORTED_PROVIDERS.length
 
-
-  const { data: connections = [] } = useQuery<Connection[]>({
-    queryKey: ["connections"],
-    queryFn: () => connectionsApi.list(""),
-    enabled: false,
-  })
-
-  const activeConnections = connections.filter((c) => c.status === "connected")
-  const connectedProviderIds = new Set(activeConnections.map((c) => c.providerId))
+  const allProviders = ALL_SUPPORTED_PROVIDERS.map((sp) => ({
+    ...sp,
+    isConfigured: configuredIds.has(sp.id),
+  }))
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Providers"
-        subtitle="Connect wearable devices via OAuth. Each user can connect to multiple providers simultaneously."
+        subtitle="Manage wearable provider integrations and OAuth credentials"
+        badge={
+          !isLoading ? (
+            <Badge variant={configuredCount > 0 ? "success" : "default"} dot>
+              {configuredCount} of {totalCount} configured
+            </Badge>
+          ) : undefined
+        }
       />
 
-      {/* Connected providers status */}
-      {false && connections.length > 0 && (
-        <div className="rounded-2xl border border-emerald-200/60 dark:border-emerald-800/40 bg-gradient-to-br from-emerald-50/60 to-teal-50/30 dark:from-emerald-950/30 dark:to-teal-950/15 backdrop-blur-xl p-5 shadow-card">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-3">Connected Providers ({activeConnections.length})</h2>
-          <div className="flex flex-wrap gap-3">
-            {connections.map((conn) => {
-              const colors = PROVIDER_COLORS[conn.providerId] ?? { bg: "from-gray-400 to-gray-500", icon: "🔗" }
-              const isActive = conn.status === "connected"
-              return (
-                <div key={conn.id} className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 shadow-sm ${
-                  isActive
-                    ? "border-emerald-200 dark:border-emerald-800/40 bg-white/80 dark:bg-gray-900/80"
-                    : "border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20"
-                }`}>
-                  <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${colors.bg} flex items-center justify-center text-white text-sm shadow-md`}>
-                    {colors.icon}
-                  </div>
-                  <div>
-                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">{conn.providerId}</span>
-                    {isActive ? (
-                      <StatusDot status="online" label="Connected" pulse className="ml-2" />
-                    ) : (
-                      <StatusDot status="warning" label="Disconnected" className="ml-2" />
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
+      {/* Provider cards grid */}
       {isLoading ? (
         <CardSkeleton count={6} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-grid">
-          {allProviders.map((provider) => (
-            <ProviderCard key={provider.id} provider={provider} isConnected={connectedProviderIds.has(provider.id)} connection={connections.find((c) => c.providerId === provider.id)} isConfigured={provider.isConfigured} selectedUserId={""} />
-          ))}
-        </div>
-      )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {allProviders.map((provider) => {
+            const colors = PROVIDER_COLORS[provider.id] ?? { bg: "from-gray-400 to-gray-500", icon: "🔗" }
+            const envVars = PROVIDER_ENV_VARS[provider.id]
 
-      <Card>
-        <CardHeader title="OAuth Authorization URL" subtitle="To connect a user to a provider, redirect their browser to:" />
-        <CardContent>
-          <code className="block rounded-xl bg-gray-900 dark:bg-gray-950 px-5 py-3.5 text-sm text-emerald-400 font-mono overflow-auto">
-            {`GET ${apiBaseUrl}/v1/oauth/{providerId}/authorize?userId={userId}`}
-          </code>
-        </CardContent>
-      </Card>
+            return (
+              <Card key={provider.id} hover className={provider.isConfigured ? "border-emerald-300/60 dark:border-emerald-800/40" : undefined}>
+                <CardContent>
+                  {/* Header: icon + name + auth badge + status */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center text-2xl shadow-lg`}>
+                        {colors.icon}
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{provider.name}</h3>
+                        <Badge variant={provider.authType === "oauth2" ? "info" : "purple"} size="sm">
+                          {provider.authType?.toUpperCase() ?? "OAUTH2"}
+                        </Badge>
+                      </div>
+                    </div>
+                    <Badge variant={provider.isConfigured ? "success" : "default"} dot size="sm">
+                      {provider.isConfigured ? "Configured" : "Not Configured"}
+                    </Badge>
+                  </div>
 
-      {/* Inbound Provider Webhooks */}
-      <Card className="border-blue-200/60 dark:border-blue-800/40 bg-gradient-to-br from-blue-50/60 to-indigo-50/30 dark:from-blue-950/30 dark:to-indigo-950/15">
-        <CardHeader
-          title="Inbound Provider Webhooks"
-          subtitle="Some providers can push real-time updates to VitaSync instead of waiting for scheduled syncs. Configure the webhook URL in each provider's developer dashboard."
-        />
-        <CardContent>
-          <div className="space-y-4">
-            {/* WHOOP */}
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-sm shadow-md">💪</div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">WHOOP Webhooks</h3>
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">✓ Supported</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Webhook URL (paste in WHOOP Developer Dashboard)</p>
-                  <code className="block rounded-lg bg-gray-900 dark:bg-gray-950 px-4 py-2.5 text-xs text-emerald-400 font-mono overflow-auto select-all">
-                    {`${apiBaseUrl}/v1/inbound/whoop/webhook`}
-                  </code>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Events received</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {["workout.updated", "workout.deleted", "sleep.updated", "sleep.deleted", "recovery.updated", "recovery.deleted"].map((evt) => (
-                      <Badge key={evt} variant="info" size="sm">{evt}</Badge>
+                  {/* Description */}
+                  <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">{provider.description}</p>
+
+                  {/* Capabilities */}
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {provider.capabilities.map((cap) => (
+                      <Badge key={cap} variant="default" size="sm" className="capitalize">
+                        {cap.replace(/_/g, " ")}
+                      </Badge>
                     ))}
                   </div>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Setup steps</p>
-                  <ol className="text-xs text-gray-600 dark:text-gray-400 space-y-1 list-decimal list-inside">
-                    <li>Go to <a href="https://developer-dashboard.whoop.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline">WHOOP Developer Dashboard</a></li>
-                    <li>Open your app settings → Webhooks section</li>
-                    <li>Paste the URL above and select <strong>v2</strong> model version</li>
-                    <li>Set <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded text-[10px]">WHOOP_WEBHOOK_SECRET</code> env var to your app&apos;s client secret</li>
-                    <li>Save — WHOOP will now push real-time workout/sleep/recovery events</li>
-                  </ol>
-                </div>
-                <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-3 py-2">
-                  <p className="text-[10px] text-amber-700 dark:text-amber-400">
-                    <strong>Signature verification:</strong> VitaSync validates every incoming webhook using HMAC-SHA256 with <code className="bg-amber-100 dark:bg-amber-800/30 px-1 rounded">X-WHOOP-Signature</code> and <code className="bg-amber-100 dark:bg-amber-800/30 px-1 rounded">X-WHOOP-Signature-Timestamp</code> headers.
-                  </p>
-                </div>
-                <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-3 py-2">
-                  <p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 mb-1">How to verify it&apos;s working:</p>
-                  <ol className="text-[10px] text-emerald-600 dark:text-emerald-400 space-y-0.5 list-decimal list-inside">
-                    <li>Check <a href="/admin/sync-jobs" className="underline font-medium">Sync Jobs</a> — webhook-triggered syncs appear here</li>
-                    <li>Check API server logs: <code className="bg-emerald-100 dark:bg-emerald-800/30 px-1 rounded">docker compose logs api | grep &quot;inbound webhook&quot;</code></li>
-                    <li>Check <a href="/admin/notification-logs" className="underline font-medium">Notification Logs</a> — sync failures appear if notification rules are set</li>
-                    <li>In WHOOP app: log an activity or edit sleep → webhook fires within seconds</li>
-                  </ol>
-                </div>
-              </div>
-            </div>
 
-            {/* Other providers */}
-            <div className="rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-gray-50/50 dark:bg-gray-800/30 p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex -space-x-1">
-                  {["⌚", "🏔️", "🏃"].map((icon, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: static icons
-                    <div key={i} className="h-6 w-6 rounded-md bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs border-2 border-white dark:border-gray-900">{icon}</div>
-                  ))}
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Fitbit, Garmin, Strava — use scheduled polling (every 15 min)</p>
-                  <p className="text-[10px] text-gray-400">Webhook support can be added per provider. See the developer docs for extending.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-function ProviderCard({ provider, isConnected, connection, isConfigured, selectedUserId }: {
-  provider: ProviderDef
-  isConnected: boolean
-  connection?: Connection | undefined
-  isConfigured: boolean
-  selectedUserId: string
-}) {
-  const colors = PROVIDER_COLORS[provider.id] ?? { bg: "from-gray-400 to-gray-500", icon: "🔗" }
-  const [oauthModal, setOauthModal] = useState<{ userId: string } | null>(null)
-
-  const isDisconnected = connection != null && !isConnected
-
-  const handleConnect = () => {
-    setOauthModal({ userId: selectedUserId })
-  }
-
-  return (
-    <>
-      <Card hover className={
-        isConnected ? "border-emerald-300 dark:border-emerald-800/60 ring-1 ring-emerald-200 dark:ring-emerald-800/30"
-          : isDisconnected ? "border-amber-300 dark:border-amber-800/60 ring-1 ring-amber-200 dark:ring-amber-800/30"
-          : undefined
-      }>
-        <CardContent className="group">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center text-white text-2xl shadow-lg group-hover:scale-110 transition-transform`}>
-                {colors.icon}
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{provider.name}</h3>
-                <Badge variant={provider.authType === "oauth2" ? "info" : "purple"} size="sm">
-                  {provider.authType?.toUpperCase() ?? "OAUTH2"}
-                </Badge>
-              </div>
-            </div>
-            {isConnected && (
-              <StatusDot status="online" label="Active" pulse />
-            )}
-            {isDisconnected && (
-              <StatusDot status="warning" label="Disconnected" />
-            )}
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">{provider.description}</p>
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {provider.capabilities.map((cap) => (
-              <Badge key={cap} variant="default" size="sm" className="capitalize">
-                {cap.replace(/_/g, " ")}
-              </Badge>
-            ))}
-          </div>
-
-          {/* Connect button — always visible */}
-          {isConnected ? (
-            <div className="flex items-center justify-between rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-4 py-2.5">
-              <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">✓ Connected & Syncing</span>
-              <span className="text-[10px] text-emerald-500">Auto-sync active</span>
-            </div>
-          ) : isDisconnected ? (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-4 py-2.5">
-                <span className="text-sm font-medium text-amber-700 dark:text-amber-400">⚠ Disconnected</span>
-                <span className="text-[10px] text-amber-500">Sync paused</span>
-              </div>
-              <Button variant="secondary" size="lg" className="w-full" onClick={handleConnect}>
-                🔄 Reconnect {provider.name}
-              </Button>
-            </div>
-          ) : !isConfigured ? (
-            <div className="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/40 px-4 py-3 text-center">
-              <Badge variant="default" size="sm">Coming Soon</Badge>
-              <p className="text-[10px] text-indigo-500 dark:text-indigo-400/70 mt-1">{provider.name} integration is not yet enabled on this instance</p>
-            </div>
-          ) : (
-            <Button variant="primary" size="lg" className="w-full" onClick={handleConnect}>
-              🔗 Connect {provider.name}
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* OAuth modal */}
-      {oauthModal && (
-        <OAuthModal
-          providerId={provider.id}
-          providerName={provider.name}
-          providerIcon={colors.icon}
-          providerBg={colors.bg}
-          userId={oauthModal.userId}
-          onClose={() => setOauthModal(null)}
-        />
+                  {/* Status detail */}
+                  {provider.isConfigured ? (
+                    <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-4 py-2.5">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                      </span>
+                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Enabled — accepting connections</span>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] px-4 py-3">
+                      {envVars ? (
+                        <>
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Required environment variables</p>
+                          <div className="space-y-1">
+                            {envVars.map((v) => (
+                              <code key={v} className="block text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/[0.04] rounded px-2 py-1">
+                                {v}
+                              </code>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Requires companion app configuration</p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
       )}
-    </>
-  )
-}
 
-// ── OAuth Modal ───────────────────────────────────────────────
-
-type OAuthStatus = "idle" | "waiting" | "success" | "error"
-
-function OAuthModal({ providerId, providerName, providerIcon, providerBg, userId, onClose }: {
-  providerId: string
-  providerName: string
-  providerIcon: string
-  providerBg: string
-  userId: string
-  onClose: () => void
-}) {
-  const queryClient = useQueryClient()
-  const [status, setStatus] = useState<OAuthStatus>("idle")
-  const [errorMsg, setErrorMsg] = useState("")
-  const popupRef = useRef<Window | null>(null)
-
-  const openPopup = useCallback(() => {
-    setStatus("waiting")
-    setErrorMsg("")
-    const w = 500
-    const h = 650
-    const left = window.screenX + (window.outerWidth - w) / 2
-    const top = window.screenY + (window.outerHeight - h) / 2
-    popupRef.current = window.open(
-      `/api/v1/oauth/${providerId}/authorize?userId=${userId}`,
-      `vitasync-oauth-${providerId}`,
-      `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no`,
-    )
-  }, [providerId, userId])
-
-  // Listen for result via postMessage OR localStorage (fallback when window.opener is null)
-  useEffect(() => {
-    function handleResult(data: { type?: string; success?: boolean; error?: string }) {
-      if (data?.type !== "vitasync-oauth-result") return
-      if (data.success) {
-        setStatus("success")
-        queryClient.invalidateQueries({ queryKey: ["connections"] })
-      } else {
-        setStatus("error")
-        setErrorMsg(data.error ?? "Connection failed")
-      }
-    }
-
-    function handleMessage(event: MessageEvent) {
-      if (event.origin !== window.location.origin) return
-      handleResult(event.data)
-    }
-
-    function handleStorage(event: StorageEvent) {
-      if (event.key !== "vitasync-oauth-result" || !event.newValue) return
-      try {
-        handleResult(JSON.parse(event.newValue))
-      } catch {}
-      // Clean up so it works on next connect attempt
-      localStorage.removeItem("vitasync-oauth-result")
-    }
-
-    // Clear any stale result before starting
-    localStorage.removeItem("vitasync-oauth-result")
-
-    window.addEventListener("message", handleMessage)
-    window.addEventListener("storage", handleStorage)
-    return () => {
-      window.removeEventListener("message", handleMessage)
-      window.removeEventListener("storage", handleStorage)
-    }
-  }, [queryClient])
-
-  // Detect popup closed without completing OAuth
-  useEffect(() => {
-    if (status !== "waiting") return
-    const interval = setInterval(() => {
-      if (popupRef.current && popupRef.current.closed) {
-        popupRef.current = null
-        setStatus((s) => (s === "waiting" ? "error" : s))
-        setErrorMsg((m) => m || "Authorization window was closed before completing.")
-      }
-    }, 500)
-    return () => clearInterval(interval)
-  }, [status])
-
-  // Auto-close modal after success
-  useEffect(() => {
-    if (status !== "success") return
-    const timer = setTimeout(onClose, 2000)
-    return () => clearTimeout(timer)
-  }, [status, onClose])
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={status !== "waiting" ? onClose : undefined} />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200/60 dark:border-gray-800/60 overflow-hidden animate-fade-in-down">
-        {/* Header */}
-        <div className={`bg-gradient-to-r ${providerBg} px-6 py-5 text-white`}>
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">{providerIcon}</span>
-            <div>
-              <h2 className="text-lg font-bold">Connect {providerName}</h2>
-              <p className="text-sm opacity-90">Authorize VitaSync to access your data</p>
+      {/* OAuth Callback URLs */}
+      <Card>
+        <CardHeader
+          title="OAuth Callback URLs"
+          subtitle="Register these callback URLs in each provider's developer console"
+        />
+        <CardContent className="space-y-2">
+          {ALL_SUPPORTED_PROVIDERS.filter((p) => PROVIDER_ENV_VARS[p.id]).map((provider) => (
+            <div key={provider.id} className="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.04] px-4 py-2.5">
+              <span className="text-lg">{PROVIDER_COLORS[provider.id]?.icon ?? "🔗"}</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-20 flex-shrink-0">{provider.name}</span>
+              <code className="flex-1 text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/[0.04] rounded-lg px-3 py-1.5 overflow-auto select-all">
+                {`${origin}/v1/oauth/${provider.id}/callback`}
+              </code>
             </div>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="px-6 py-6">
-          {status === "idle" && (
-            <div className="text-center space-y-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                You&apos;ll be redirected to {providerName} to sign in and authorize access.
-                A small window will open for the authorization — please complete the sign-in there.
-              </p>
-              <button
-                type="button"
-                onClick={openPopup}
-                className={`w-full rounded-xl bg-gradient-to-r ${providerBg} px-4 py-3 text-sm font-bold text-white shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
-              >
-                Sign in with {providerName}
-              </button>
-            </div>
-          )}
-
-          {status === "waiting" && (
-            <div className="text-center space-y-4 py-4">
-              <div className="mx-auto h-12 w-12 rounded-full border-4 border-gray-200 dark:border-gray-700 border-t-indigo-500 animate-spin" />
-              <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Waiting for authorization…</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Complete the sign-in in the popup window.</p>
-              </div>
-              <button
-                type="button"
-                onClick={openPopup}
-                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
-              >
-                Popup didn&apos;t open? Click here to try again
-              </button>
-            </div>
-          )}
-
-          {status === "success" && (
-            <div className="text-center space-y-3 py-4">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                <svg className="h-7 w-7 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-              </div>
-              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{providerName} connected successfully!</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Your data will start syncing shortly.</p>
-            </div>
-          )}
-
-          {status === "error" && (
-            <div className="text-center space-y-4 py-4">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-                <svg className="h-7 w-7 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-red-700 dark:text-red-400">Connection failed</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{errorMsg}</p>
-              </div>
-              <button
-                type="button"
-                onClick={openPopup}
-                className={`w-full rounded-xl bg-gradient-to-r ${providerBg} px-4 py-3 text-sm font-bold text-white shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
-              >
-                Try Again
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="border-t border-gray-100 dark:border-gray-800 px-6 py-3 flex justify-end">
-          <button
-            type="button"
-            onClick={() => {
-              if (popupRef.current && !popupRef.current.closed) popupRef.current.close()
-              onClose()
-            }}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            {status === "success" ? "Done" : "Cancel"}
-          </button>
-        </div>
-      </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   )
 }
+
+
