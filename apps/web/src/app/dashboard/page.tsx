@@ -7,7 +7,6 @@ import {
 } from "recharts"
 import { useSelectedUser } from "../../lib/user-selection-context"
 import {
-  apiKeysApi,
   eventsApi,
   goalsApi,
   healthApi,
@@ -18,7 +17,6 @@ import {
   readinessApi,
   sleepAnalysisApi,
   usersApi,
-  webhooksApi,
   type GoalData,
   type HealthScoreData,
   type Insight,
@@ -38,8 +36,6 @@ import {
   Flame,
   Target,
   Sparkles,
-  KeyRound,
-  Webhook,
 } from "lucide-react"
 import {
   Card,
@@ -108,8 +104,6 @@ export default function DashboardPage() {
   const { selectedUserId } = useSelectedUser()
 
   const { data: providers = [] } = useQuery({ queryKey: ["providers"], queryFn: providersApi.list })
-  const { data: keys = [] } = useQuery({ queryKey: ["api-keys"], queryFn: apiKeysApi.list })
-  const { data: webhooks = [] } = useQuery({ queryKey: ["webhooks"], queryFn: webhooksApi.list })
   const { data: algorithms } = useQuery({ queryKey: ["insight-algorithms"], queryFn: () => insightsApi.algorithms() })
 
   const { data: selectedUser } = useQuery({
@@ -729,7 +723,7 @@ export default function DashboardPage() {
       )}
 
       {/* ──── Platform Stats ──── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <StatCard
           label="Providers"
           value={providers.length}
@@ -741,18 +735,6 @@ export default function DashboardPage() {
           value={algoCount}
           icon={<Brain className="h-5 w-5" />}
           color="vitality"
-        />
-        <StatCard
-          label="API Keys"
-          value={keys.length}
-          icon={<KeyRound className="h-5 w-5" />}
-          color="brand"
-        />
-        <StatCard
-          label="Webhooks"
-          value={webhooks.length}
-          icon={<Webhook className="h-5 w-5" />}
-          color="accent"
         />
       </div>
 

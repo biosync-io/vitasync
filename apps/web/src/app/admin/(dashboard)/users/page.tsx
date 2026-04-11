@@ -4,67 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { Route } from "next"
 import Link from "next/link"
 import { useState } from "react"
-import { type User, usersApi } from "../../../../lib/api"
+import { type User, usersApi, adminUsersApi, migrationApi } from "../../../../lib/api"
 import { Badge, Button, Card, CardContent, CardHeader, EmptyState, Input, PageHeader, TableSkeleton } from "../../../../lib/components/ui"
 import { Pagination } from "../../../../lib/Pagination"
 import { Mail, ShieldCheck, UserCog, UserPlus, Users } from "lucide-react"
-
-/* ── Inline migration API helpers ── */
-
-const migrationApi = {
-  bulkInvite: () =>
-    fetch("/api/v1/admin/users/bulk-invite", { method: "POST", credentials: "include" }).then(async (res) => {
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({ message: res.statusText }))
-        throw new Error(body?.message ?? `API error: ${res.status}`)
-      }
-      return res.json()
-    }),
-  status: () =>
-    fetch("/api/v1/admin/users/migration-status", { credentials: "include" }).then(async (res) => {
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({ message: res.statusText }))
-        throw new Error(body?.message ?? `API error: ${res.status}`)
-      }
-      return res.json() as Promise<{ withLogin: number; withoutLogin: number }>
-    }),
-  invite: (userId: string) =>
-    fetch(`/api/v1/admin/users/${userId}/invite`, { method: "POST", credentials: "include" }).then(async (res) => {
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({ message: res.statusText }))
-        throw new Error(body?.message ?? `API error: ${res.status}`)
-      }
-      return res.json()
-    }),
-}
-
-/* ── Inline admin role API helpers ── */
-
-const API = "/api"
-
-const promoteUser = (userId: string) =>
-  fetch(`${API}/v1/admin/users/${userId}/promote`, {
-    method: "POST",
-    credentials: "include",
-  }).then(async (res) => {
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({ message: res.statusText }))
-      throw new Error(body?.message ?? `API error: ${res.status}`)
-    }
-    return res.json()
-  })
-
-const demoteUser = (userId: string) =>
-  fetch(`${API}/v1/admin/users/${userId}/demote`, {
-    method: "POST",
-    credentials: "include",
-  }).then(async (res) => {
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({ message: res.statusText }))
-      throw new Error(body?.message ?? `API error: ${res.status}`)
-    }
-    return res.json()
-  })
 
 type UserWithRole = User & { role?: string; hasPassword?: boolean }
 
@@ -99,12 +42,12 @@ export default function UsersPage() {
   const total = data?.total ?? 0
 
   const promoteMutation = useMutation({
-    mutationFn: (userId: string) => promoteUser(userId),
+    mutationFn: (userId: string) => adminUsersApi.promote(userId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   })
 
   const demoteMutation = useMutation({
-    mutationFn: (userId: string) => demoteUser(userId),
+    mutationFn: (userId: string) => adminUsersApi.demote(userId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   })
 
@@ -148,7 +91,7 @@ export default function UsersPage() {
   const bulkInviteMutation = useMutation({
     mutationFn: () => migrationApi.bulkInvite(),
     onSuccess: (data) => {
-      setBulkInviteMsg(`Sent ${data.invited ?? data.count ?? "all"} invitations`)
+      setBulkInviteMsg(`Sent ${data.sent ?? data.total ?? "all"} invitations`)
       qc.invalidateQueries({ queryKey: ["migration-status"] })
     },
     onError: (err: Error) => setBulkInviteMsg(`Error: ${err.message}`),

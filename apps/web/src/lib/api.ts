@@ -1505,6 +1505,8 @@ export const migrationApi = {
     request<{ total: number; sent: number; skipped: number; message: string }>("/v1/admin/users/bulk-invite", { method: "POST" }),
   status: () =>
     request<{ total: number; withLogin: number; withoutLogin: number }>("/v1/admin/users/migration-status"),
+  invite: (userId: string) =>
+    request<{ message: string }>(`/v1/admin/users/${userId}/invite`, { method: "POST" }),
 }
 
 // ---- SMTP Settings (admin) ----

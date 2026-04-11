@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useSelectedUser } from "../../../lib/user-selection-context"
-import { type ProviderDef, type Connection, providersApi, connectionsApi, getRuntimeDefaultKey } from "../../../lib/api"
+import { type ProviderDef, type Connection, providersApi, connectionsApi } from "../../../lib/api"
 import { Unplug } from "lucide-react"
 import { PageHeader, Card, CardHeader, CardContent, CardSkeleton, Badge, StatusDot, Button, EmptyState } from "../../../lib/components/ui"
 

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { Copy, Check, Mail, UserPlus, XCircle } from "lucide-react"
+import { adminInvitationsApi } from "../../../../lib/api"
 import {
   PageHeader,
   Card,
@@ -17,10 +18,6 @@ import {
   type DataTableColumn,
 } from "../../../../lib/components/ui"
 
-/* ── Inline API helpers (adminInvitationsApi will be added later) ── */
-
-const API = "/api"
-
 interface Invitation {
   id: string
   email: string
@@ -32,35 +29,6 @@ interface Invitation {
   acceptedAt: string | null
   createdAt: string
 }
-
-async function fetchApi<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...((init?.headers as Record<string, string>) ?? {}),
-    },
-  })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({ message: res.statusText }))
-    throw new Error(body?.message ?? `API error: ${res.status}`)
-  }
-  if (res.status === 204) return undefined as T
-  return res.json() as Promise<T>
-}
-
-const listInvitations = () =>
-  fetchApi<{ data: Invitation[] }>("/v1/admin/invitations")
-
-const createInvitation = (email: string) =>
-  fetchApi<Invitation & { token: string }>("/v1/admin/invitations", {
-    method: "POST",
-    body: JSON.stringify({ email }),
-  })
-
-const revokeInvitation = (id: string) =>
-  fetchApi<void>(`/v1/admin/invitations/${id}`, { method: "DELETE" })
 
 /* ── Status badge helpers ── */
 
@@ -86,7 +54,7 @@ export default function InvitationsPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-invitations"],
-    queryFn: listInvitations,
+    queryFn: () => adminInvitationsApi.list(),
   })
 
   const invitations = data?.data ?? []
@@ -94,7 +62,7 @@ export default function InvitationsPage() {
   const accepted = invitations.filter((i) => i.status === "accepted")
 
   const createMut = useMutation({
-    mutationFn: (inviteEmail: string) => createInvitation(inviteEmail),
+    mutationFn: (inviteEmail: string) => adminInvitationsApi.create(inviteEmail),
     onSuccess: (result) => {
       setCreatedToken(result.token)
       setEmail("")
@@ -103,7 +71,7 @@ export default function InvitationsPage() {
   })
 
   const revokeMut = useMutation({
-    mutationFn: (id: string) => revokeInvitation(id),
+    mutationFn: (id: string) => adminInvitationsApi.revoke(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-invitations"] }),
   })
 
