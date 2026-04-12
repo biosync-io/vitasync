@@ -31,12 +31,12 @@ interface SmtpConfig {
 }
 
 const smtpApi = {
-  get: (): Promise<SmtpConfig> =>
+  get: (): Promise<{ source: string; config: Record<string, unknown> | null }> =>
     fetch("/api/v1/admin/settings/smtp", { credentials: "include" }).then((r) => {
       if (!r.ok) throw new Error("Failed to load SMTP settings")
       return r.json()
     }),
-  update: (data: Omit<SmtpConfig, "configured">): Promise<SmtpConfig> =>
+  update: (data: Record<string, unknown>): Promise<Record<string, unknown>> =>
     fetch("/api/v1/admin/settings/smtp", {
       method: "PUT",
       credentials: "include",
@@ -46,26 +46,20 @@ const smtpApi = {
       if (!r.ok) throw new Error("Failed to save SMTP settings")
       return r.json()
     }),
-  test: (data: Omit<SmtpConfig, "configured">): Promise<{ success: boolean; message: string }> =>
+  test: (data: Record<string, unknown>): Promise<{ success: boolean; error?: string }> =>
     fetch("/api/v1/admin/settings/smtp/test", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
-    }).then((r) => {
-      if (!r.ok) throw new Error("SMTP connection test failed")
-      return r.json()
-    }),
-  testSend: (data: Omit<SmtpConfig, "configured"> & { testEmail: string }): Promise<{ success: boolean; message: string }> =>
+    }).then((r) => r.json()),
+  testSend: (data: Record<string, unknown>): Promise<{ success: boolean; message?: string; error?: string }> =>
     fetch("/api/v1/admin/settings/smtp/test-send", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
-    }).then((r) => {
-      if (!r.ok) throw new Error("Failed to send test email")
-      return r.json()
-    }),
+    }).then((r) => r.json()),
 }
 
 // ── Page ────────────────────────────────────────────────────────────────────
@@ -94,13 +88,15 @@ export default function EmailSettingsPage() {
   })
 
   useEffect(() => {
-    if (config) {
-      setHost(config.host ?? "")
-      setPort(String(config.port ?? 587))
-      setSecure(config.secure ?? true)
-      setUsername(config.username ?? "")
-      setFromName(config.fromName ?? "")
-      setFromEmail(config.fromEmail ?? "")
+    if (config?.config) {
+      const c = config.config as Record<string, unknown>
+      setHost((c.host as string) ?? "")
+      setPort(String(c.port ?? 587))
+      setSecure(c.secure === true)
+      setUsername((c.user as string) ?? "")
+      setFromName((c.fromName as string) ?? "")
+      setFromEmail((c.fromEmail as string) ?? "")
+      // Don't populate password — it's masked as "••••••••" from the API
     }
   }, [config])
 
@@ -109,8 +105,8 @@ export default function EmailSettingsPage() {
       host,
       port: Number(port) || 587,
       secure,
-      username,
-      password,
+      user: username,
+      pass: password,
       fromName,
       fromEmail,
     }
@@ -169,7 +165,7 @@ export default function EmailSettingsPage() {
     )
   }
 
-  const isConfigured = config?.configured ?? false
+  const isConfigured = config?.source !== "none" && config?.config !== null
 
   return (
     <div className="max-w-3xl space-y-8">
