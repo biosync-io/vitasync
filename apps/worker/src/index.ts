@@ -14,6 +14,7 @@ import { registerWebhookNotificationChannel } from "@biosync-io/notification-web
 import { Queue, Worker } from "bullmq"
 import { Redis } from "ioredis"
 import { getConfig } from "./config.js"
+import { getLogger } from "./lib/logger.js"
 import {
   closeBulkheadResources,
   createProviderQueues,
@@ -33,6 +34,7 @@ type QueueName = "sync" | "analytics" | "webhooks" | "notifications" | "reports"
 
 async function main() {
   const config = getConfig()
+  const logger = getLogger()
   const enabledQueues = new Set(
     config.WORKER_QUEUES.split(",").map((q) => q.trim().toLowerCase()) as QueueName[],
   )
@@ -66,13 +68,13 @@ async function main() {
     enableReadyCheck: false,
     retryStrategy(times) {
       const delay = Math.min(times * 500, 15_000)
-      console.warn(`[redis] Reconnecting... attempt ${times} (delay: ${delay}ms)`)
+      logger.warn(`[redis] Reconnecting... attempt ${times} (delay: ${delay}ms)`)
       return delay
     },
   })
 
   connection.on("error", (err) => {
-    console.error("[redis] Connection error:", err.message)
+    logger.error("[redis] Connection error:", err.message)
   })
 
   // Wait for Redis to be ready before initializing queues.
@@ -82,7 +84,7 @@ async function main() {
     connection.once("ready", resolve)
     connection.once("end", () => reject(new Error("Redis connection closed before becoming ready")))
   })
-  console.info("[redis] Connection established")
+  logger.info("[redis] Connection established")
 
   const workers: Worker[] = []
   let stopScheduler: (() => Promise<void>) | null = null
@@ -99,22 +101,24 @@ async function main() {
     workers.push(syncWorker)
 
     syncWorker.on("completed", (job) => {
-      console.info(`[sync] Job ${job.id} completed`)
+      logger.info(`[sync] Job ${job.id} completed`)
     })
 
     syncWorker.on("failed", (job, err) => {
       const providerId = job?.data?.providerId ?? "unknown"
-      console.error(`[sync] Job ${job?.id} failed (${providerId}): ${err.message}`)
+      logger.error(`[sync] Job ${job?.id} failed (${providerId}): ${err.message}`)
       if (job?.data?.userId) {
         const providerLabel = providerId.charAt(0).toUpperCase() + providerId.slice(1)
-        notificationQueue.add("sync-failure", {
-          userId: job.data.userId,
-          workspaceId: job.data.workspaceId ?? "",
-          title: `${providerLabel} Sync Failed`,
-          body: `${providerLabel} sync failed: ${err.message.slice(0, 200)}`,
-          severity: "warning",
-          category: "sync",
-        }).catch((e) => console.error("[sync] Failed to enqueue failure notification:", e))
+        notificationQueue
+          .add("sync-failure", {
+            userId: job.data.userId,
+            workspaceId: job.data.workspaceId ?? "",
+            title: `${providerLabel} Sync Failed`,
+            body: `${providerLabel} sync failed: ${err.message.slice(0, 200)}`,
+            severity: "warning",
+            category: "sync",
+          })
+          .catch((e) => logger.error("[sync] Failed to enqueue failure notification:", e))
       }
     })
 
@@ -127,7 +131,7 @@ async function main() {
       },
     })
     stopScheduler = await startPeriodicScheduler(syncQueue, connection)
-    console.info("[worker] Sync queue enabled (concurrency: 5)")
+    logger.info("[worker] Sync queue enabled (concurrency: 5)")
 
     // ── Bulkhead isolation: per-provider sync queues ──────────────
     createProviderQueues(connection)
@@ -135,24 +139,28 @@ async function main() {
     for (const [provider, w] of bulkheadWorkers) {
       workers.push(w)
       w.on("completed", (job) => {
-        console.info(`[sync:${provider}] Job ${job.id} completed`)
+        logger.info(`[sync:${provider}] Job ${job.id} completed`)
       })
       w.on("failed", (job, err) => {
-        console.error(`[sync:${provider}] Job ${job?.id} failed: ${err.message}`)
+        logger.error(`[sync:${provider}] Job ${job?.id} failed: ${err.message}`)
         if (job?.data?.userId) {
           const providerLabel = provider.charAt(0).toUpperCase() + provider.slice(1)
-          notificationQueue.add("sync-failure", {
-            userId: job.data.userId,
-            workspaceId: job.data.workspaceId ?? "",
-            title: `${providerLabel} Sync Failed`,
-            body: `${providerLabel} sync failed: ${err.message.slice(0, 200)}`,
-            severity: "warning",
-            category: "sync",
-          }).catch((e) => console.error(`[sync:${provider}] Failed to enqueue failure notification:`, e))
+          notificationQueue
+            .add("sync-failure", {
+              userId: job.data.userId,
+              workspaceId: job.data.workspaceId ?? "",
+              title: `${providerLabel} Sync Failed`,
+              body: `${providerLabel} sync failed: ${err.message.slice(0, 200)}`,
+              severity: "warning",
+              category: "sync",
+            })
+            .catch((e) =>
+              logger.error(`[sync:${provider}] Failed to enqueue failure notification:`, e),
+            )
         }
       })
     }
-    console.info(`[worker] Bulkhead queues enabled for: ${[...bulkheadWorkers.keys()].join(", ")}`)
+    logger.info(`[worker] Bulkhead queues enabled for: ${[...bulkheadWorkers.keys()].join(", ")}`)
   }
 
   // ── Webhook worker ─────────────────────────────────────────────
@@ -164,12 +172,12 @@ async function main() {
     workers.push(webhookWorker)
 
     webhookWorker.on("completed", (job) => {
-      console.info(`[webhook] Job ${job.id} delivered`)
+      logger.info(`[webhook] Job ${job.id} delivered`)
     })
     webhookWorker.on("failed", (job, err) => {
-      console.error(`[webhook] Job ${job?.id} failed: ${err.message}`)
+      logger.error(`[webhook] Job ${job?.id} failed: ${err.message}`)
     })
-    console.info("[worker] Webhooks queue enabled (concurrency: 10)")
+    logger.info("[worker] Webhooks queue enabled (concurrency: 10)")
   }
 
   // ── Analytics worker ───────────────────────────────────────────
@@ -181,12 +189,12 @@ async function main() {
     workers.push(analyticsWorker)
 
     analyticsWorker.on("completed", (job) => {
-      console.info(`[analytics] Job ${job.id} completed`)
+      logger.info(`[analytics] Job ${job.id} completed`)
     })
     analyticsWorker.on("failed", (job, err) => {
-      console.error(`[analytics] Job ${job?.id} failed: ${err.message}`)
+      logger.error(`[analytics] Job ${job?.id} failed: ${err.message}`)
     })
-    console.info("[worker] Analytics queue enabled (concurrency: 3)")
+    logger.info("[worker] Analytics queue enabled (concurrency: 3)")
   }
 
   // ── Report worker ──────────────────────────────────────────────
@@ -198,25 +206,29 @@ async function main() {
     workers.push(reportWorker)
 
     reportWorker.on("completed", (job) => {
-      console.info(`[report] Job ${job.id} completed`)
+      logger.info(`[report] Job ${job.id} completed`)
       // Notify user that report is ready
       if (job?.data?.userId) {
-        const reportType = (job.data.reportType as string)?.charAt(0).toUpperCase() + (job.data.reportType as string)?.slice(1)
-        notificationQueue.add("report-ready", {
-          userId: job.data.userId,
-          workspaceId: job.data.workspaceId ?? "",
-          title: `${reportType || "Health"} Report Ready`,
-          body: `Your ${(reportType || "health").toLowerCase()} report has been generated and is ready to view.`,
-          severity: "info",
-          category: "report",
-          metadata: { reportId: job.data.reportId },
-        }).catch((e) => console.error("[report] Failed to enqueue ready notification:", e))
+        const reportType =
+          (job.data.reportType as string)?.charAt(0).toUpperCase() +
+          (job.data.reportType as string)?.slice(1)
+        notificationQueue
+          .add("report-ready", {
+            userId: job.data.userId,
+            workspaceId: job.data.workspaceId ?? "",
+            title: `${reportType || "Health"} Report Ready`,
+            body: `Your ${(reportType || "health").toLowerCase()} report has been generated and is ready to view.`,
+            severity: "info",
+            category: "report",
+            metadata: { reportId: job.data.reportId },
+          })
+          .catch((e) => logger.error("[report] Failed to enqueue ready notification:", e))
       }
     })
     reportWorker.on("failed", (job, err) => {
-      console.error(`[report] Job ${job?.id} failed: ${err.message}`)
+      logger.error(`[report] Job ${job?.id} failed: ${err.message}`)
     })
-    console.info("[worker] Reports queue enabled (concurrency: 2)")
+    logger.info("[worker] Reports queue enabled (concurrency: 2)")
   }
 
   // ── Notification worker ────────────────────────────────────────
@@ -228,19 +240,19 @@ async function main() {
     workers.push(notificationWorker)
 
     notificationWorker.on("completed", (job) => {
-      console.info(`[notification] Job ${job.id} delivered`)
+      logger.info(`[notification] Job ${job.id} delivered`)
     })
     notificationWorker.on("failed", (job, err) => {
-      console.error(`[notification] Job ${job?.id} failed: ${err.message}`)
+      logger.error(`[notification] Job ${job?.id} failed: ${err.message}`)
     })
-    console.info("[worker] Notifications queue enabled (concurrency: 8)")
+    logger.info("[worker] Notifications queue enabled (concurrency: 8)")
   }
 
-  console.info(`VitaSync Worker started. Queues: [${[...enabledQueues].join(", ")}]`)
+  logger.info(`VitaSync Worker started. Queues: [${[...enabledQueues].join(", ")}]`)
 
   // Graceful shutdown
   async function shutdown(signal: string) {
-    console.info(`Received ${signal}. Draining workers...`)
+    logger.info(`Received ${signal}. Draining workers...`)
     if (stopScheduler) await stopScheduler()
     await Promise.all([
       ...workers.map((w) => w.close()),
@@ -250,7 +262,7 @@ async function main() {
     await closeWorkerEventBus()
     await connection.quit()
     await closeDb()
-    console.info("Worker shut down cleanly.")
+    logger.info("Worker shut down cleanly.")
     process.exit(0)
   }
 
@@ -262,17 +274,21 @@ const MAX_STARTUP_RETRIES = 10
 const STARTUP_RETRY_DELAY_MS = 5_000
 
 ;(async () => {
+  const logger = getLogger()
   for (let attempt = 1; attempt <= MAX_STARTUP_RETRIES; attempt++) {
     try {
       await main()
       return // started successfully
     } catch (err) {
-      console.error(`Worker failed to start (attempt ${attempt}/${MAX_STARTUP_RETRIES}):`, err)
+      logger.error(
+        { err, attempt },
+        `Worker failed to start (attempt ${attempt}/${MAX_STARTUP_RETRIES})`,
+      )
       if (attempt === MAX_STARTUP_RETRIES) {
-        console.error("Max startup retries reached — exiting.")
+        logger.error("Max startup retries reached — exiting.")
         process.exit(1)
       }
-      console.info(`Retrying in ${STARTUP_RETRY_DELAY_MS / 1000}s...`)
+      logger.info(`Retrying in ${STARTUP_RETRY_DELAY_MS / 1000}s...`)
       await new Promise((r) => setTimeout(r, STARTUP_RETRY_DELAY_MS))
     }
   }
