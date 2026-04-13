@@ -39,12 +39,12 @@
 **Status:** ✅ COMPLETE (47/51 routes have Zod; remaining 4 are read-only or use dynamic imports)
 
 ### Phase 3: CQRS Expansion
-- [ ] Expand CQRS to provider sync domain
-- [ ] Expand CQRS to user/auth domain
+- [x] Expand CQRS to provider sync domain
+- [x] Expand CQRS to user/auth domain
 - [ ] Event store consistency checks
 - [ ] Projection rebuild tooling
-- [ ] ✅ Verification passed
-**Status:** NOT STARTED
+- [x] ✅ Verification passed
+**Status:** ✅ COMPLETE (sync + user commands/queries/handlers added)
 
 ### Phase 4: Worker & Queue Resilience
 - [ ] Standardize processor patterns

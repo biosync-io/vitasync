@@ -1,9 +1,5 @@
 import type { FastifyInstance } from "fastify"
-import {
-  CommandBus,
-  QueryBus,
-  loggingMiddleware,
-} from "@biosync-io/cqrs"
+import { CommandBus, QueryBus, loggingMiddleware } from "@biosync-io/cqrs"
 import type {
   CommandBus as CommandBusType,
   QueryBus as QueryBusType,
@@ -43,10 +39,18 @@ export function setupCQRS(app: FastifyInstance): void {
 
   // Shared logging middleware
   const logger = {
-    info: (...args: unknown[]) => { app.log.info(String(args[0])) },
-    error: (...args: unknown[]) => { app.log.error(String(args[0])) },
-    warn: (...args: unknown[]) => { app.log.warn(String(args[0])) },
-    debug: (...args: unknown[]) => { app.log.debug(String(args[0])) },
+    info: (...args: unknown[]) => {
+      app.log.info(String(args[0]))
+    },
+    error: (...args: unknown[]) => {
+      app.log.error(String(args[0]))
+    },
+    warn: (...args: unknown[]) => {
+      app.log.warn(String(args[0]))
+    },
+    debug: (...args: unknown[]) => {
+      app.log.debug(String(args[0]))
+    },
   }
 
   commandBus.use(loggingMiddleware(logger))
@@ -61,7 +65,10 @@ export function setupCQRS(app: FastifyInstance): void {
       logger.info(`[CQRS] Query "${type}" completed in ${Math.round(performance.now() - start)}ms`)
       return result
     } catch (error) {
-      logger.error(`[CQRS] Query "${type}" failed after ${Math.round(performance.now() - start)}ms`, error)
+      logger.error(
+        `[CQRS] Query "${type}" failed after ${Math.round(performance.now() - start)}ms`,
+        error,
+      )
       throw error
     }
   }
@@ -89,10 +96,6 @@ export function setupCQRS(app: FastifyInstance): void {
   app.decorate("queryBus", queryBus)
 
   app.log.info("[cqrs] Command & query buses initialized")
-  app.log.info(
-    `[cqrs] Registered commands: ${commandBus.getRegisteredCommands().join(", ")}`,
-  )
-  app.log.info(
-    `[cqrs] Registered queries: ${queryBus.getRegisteredQueries().join(", ")}`,
-  )
+  app.log.info(`[cqrs] Registered commands: ${commandBus.getRegisteredCommands().join(", ")}`)
+  app.log.info(`[cqrs] Registered queries: ${queryBus.getRegisteredQueries().join(", ")}`)
 }
