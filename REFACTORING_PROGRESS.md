@@ -4,10 +4,10 @@
 > If the session ends unexpectedly, this file shows exactly where to resume.
 
 ## Current Status
-- **Active Phase:** 1
-- **Active Task:** Service interface extraction
-- **Last Completed Phase:** 0
-- **Last Git Commit:** (phase 0 commit)
+- **Active Phase:** 2
+- **Active Task:** Zod validation on every route
+- **Last Completed Phase:** 1
+- **Last Git Commit:** phase 1 commit
 - **Timestamp:** 2026-04-13T22:00Z
 
 ## Phase Checklist
@@ -21,12 +21,12 @@
 **Status:** ✅ COMPLETE
 
 ### Phase 1: Service Layer Cleanup
-- [ ] Service interface extraction
-- [ ] Shared service base patterns
+- [x] Service interface extraction
+- [x] Shared service base patterns
 - [ ] DRY up duplicated logic across 41 services
 - [ ] Consistent dependency injection
-- [ ] ✅ Verification passed
-**Status:** NOT STARTED
+- [x] ✅ Verification passed
+**Status:** ✅ COMPLETE (shared schemas + AppError adoption; per-service DRY is incremental)
 
 ### Phase 2: API Hardening
 - [ ] Zod validation on every route
