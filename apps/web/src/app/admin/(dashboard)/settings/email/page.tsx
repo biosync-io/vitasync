@@ -78,9 +78,9 @@ export default function EmailSettingsPage() {
   const [showTestSend, setShowTestSend] = useState(false)
   const [testEmail, setTestEmail] = useState("")
 
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
-  const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null)
-  const [saveResult, setSaveResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [testResult, setTestResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null)
+  const [sendResult, setSendResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null)
+  const [saveResult, setSaveResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null)
 
   const { data: config, isLoading } = useQuery({
     queryKey: ["smtp-settings"],
@@ -349,17 +349,17 @@ export default function EmailSettingsPage() {
           <div className="flex flex-wrap gap-2">
             {saveResult && (
               <Badge variant={saveResult.success ? "success" : "danger"} dot>
-                {saveResult.message}
+                {saveResult.message || saveResult.error || (saveResult.success ? "Saved" : "Failed")}
               </Badge>
             )}
             {testResult && (
               <Badge variant={testResult.success ? "success" : "danger"} dot>
-                {testResult.message}
+                {testResult.message || testResult.error || (testResult.success ? "OK" : "Failed")}
               </Badge>
             )}
             {sendResult && (
               <Badge variant={sendResult.success ? "success" : "danger"} dot>
-                {sendResult.message}
+                {sendResult.message || sendResult.error || (sendResult.success ? "Sent" : "Failed")}
               </Badge>
             )}
           </div>

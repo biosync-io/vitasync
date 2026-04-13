@@ -74,7 +74,7 @@ async function main() {
   })
 
   connection.on("error", (err) => {
-    logger.error("[redis] Connection error:", err.message)
+    logger.error({ err }, "[redis] Connection error")
   })
 
   // Wait for Redis to be ready before initializing queues.
@@ -118,7 +118,7 @@ async function main() {
             severity: "warning",
             category: "sync",
           })
-          .catch((e) => logger.error("[sync] Failed to enqueue failure notification:", e))
+          .catch((e) => logger.error({ err: e }, "[sync] Failed to enqueue failure notification"))
       }
     })
 
@@ -155,7 +155,7 @@ async function main() {
               category: "sync",
             })
             .catch((e) =>
-              logger.error(`[sync:${provider}] Failed to enqueue failure notification:`, e),
+              logger.error({ err: e }, `[sync:${provider}] Failed to enqueue failure notification`),
             )
         }
       })
@@ -222,7 +222,7 @@ async function main() {
             category: "report",
             metadata: { reportId: job.data.reportId },
           })
-          .catch((e) => logger.error("[report] Failed to enqueue ready notification:", e))
+          .catch((e) => logger.error({ err: e }, "[report] Failed to enqueue ready notification"))
       }
     })
     reportWorker.on("failed", (job, err) => {
