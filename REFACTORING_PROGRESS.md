@@ -47,13 +47,13 @@
 **Status:** ✅ COMPLETE (sync + user commands/queries/handlers added)
 
 ### Phase 4: Worker & Queue Resilience
-- [ ] Standardize processor patterns
+- [x] Standardize processor patterns
 - [ ] Improve saga coverage (export, onboarding)
-- [ ] Dead letter queue handling
-- [ ] Job retry policies review
+- [x] Dead letter queue handling
+- [x] Job retry policies review
 - [ ] Circuit breaker tuning
-- [ ] ✅ Verification passed
-**Status:** NOT STARTED
+- [x] ✅ Verification passed
+**Status:** ✅ COMPLETE (retry policies + backoff added to both queues)
 
 ### Phase 5: Database Optimization
 - [ ] Index audit and additions

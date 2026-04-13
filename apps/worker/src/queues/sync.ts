@@ -20,6 +20,11 @@ export function getSyncQueue(): Queue {
     _syncQueue = new Queue("sync", {
       connection: getConnection(),
       defaultJobOptions: {
+        attempts: 5,
+        backoff: {
+          type: "exponential",
+          delay: 30_000, // 30s → 60s → 120s → 240s → 480s
+        },
         removeOnComplete: { count: 100 },
         removeOnFail: { count: 500 },
       },

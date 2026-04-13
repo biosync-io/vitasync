@@ -19,6 +19,15 @@ export function getNotificationQueue(): Queue {
   if (!_notificationQueue) {
     _notificationQueue = new Queue("notifications", {
       connection: getConnection(),
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: "exponential",
+          delay: 10_000, // 10s → 20s → 40s
+        },
+        removeOnComplete: { count: 200 },
+        removeOnFail: { count: 1000 },
+      },
     })
   }
   return _notificationQueue
