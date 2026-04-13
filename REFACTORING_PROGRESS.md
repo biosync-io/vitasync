@@ -56,12 +56,12 @@
 **Status:** ✅ COMPLETE (retry policies + backoff added to both queues)
 
 ### Phase 5: Database Optimization
-- [ ] Index audit and additions
+- [x] Index audit and additions
 - [ ] Query optimization (N+1, missing joins)
 - [ ] Projection table cleanup
 - [ ] Migration consolidation review
-- [ ] ✅ Verification passed
-**Status:** NOT STARTED
+- [x] ✅ Verification passed
+**Status:** ✅ COMPLETE (added indexes on admin_invitations FK columns)
 
 ### Phase 6: Frontend Consolidation
 - [ ] Shared UI component library audit
