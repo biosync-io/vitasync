@@ -10,7 +10,7 @@ import { SyncCommands } from "./sync.commands.js"
 export function registerSyncCommandHandlers(
   bus: CommandBus,
   deps: {
-    getSyncQueue: () => { add: (name: string, data: unknown, opts?: unknown) => Promise<unknown> }
+    getSyncQueue: () => Pick<import("bullmq").Queue, "add">
   },
 ): void {
   bus.register(SyncCommands.TRIGGER_SYNC, async (cmd) => {

@@ -1,5 +1,5 @@
 import type { QueryBus } from "@biosync-io/cqrs"
-import { eq, desc, and, count } from "drizzle-orm"
+import { eq, desc, count } from "drizzle-orm"
 import { SyncQueries } from "./sync.queries.js"
 
 /**
@@ -15,7 +15,7 @@ export function registerSyncQueryHandlers(
       connectionId,
       limit = 50,
       offset = 0,
-    } = query.payload as {
+    } = query.params as {
       connectionId?: string
       limit?: number
       offset?: number
@@ -39,7 +39,7 @@ export function registerSyncQueryHandlers(
 
   bus.register(SyncQueries.GET_SYNC_STATUS, async (query) => {
     const { syncJobs } = await import("@biosync-io/db")
-    const { connectionId } = query.payload as { connectionId: string }
+    const { connectionId } = query.params as { connectionId: string }
 
     const [latest] = await db
       .select()
@@ -53,7 +53,7 @@ export function registerSyncQueryHandlers(
 
   bus.register(SyncQueries.GET_CONNECTION_HEALTH, async (query) => {
     const { syncJobs } = await import("@biosync-io/db")
-    const { connectionId } = query.payload as { connectionId: string }
+    const { connectionId } = query.params as { connectionId: string }
 
     const recentJobs = await db
       .select()
