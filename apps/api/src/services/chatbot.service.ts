@@ -1,6 +1,7 @@
 import OpenAI from "openai"
 import Anthropic from "@anthropic-ai/sdk"
 import { getDb, aiProviders } from "@biosync-io/db"
+import { AppError } from "@biosync-io/types"
 import { decrypt } from "../lib/crypto.js"
 import { eq } from "drizzle-orm"
 import { HealthDataService } from "./health-data.service.js"
@@ -56,7 +57,7 @@ export class ChatbotService {
       .limit(1)
 
     if (!provider) {
-      throw new Error("AI provider not found")
+      throw AppError.notFound("AI provider")
     }
 
     let apiKey: string | null = null
@@ -93,7 +94,7 @@ export class ChatbotService {
         yield* this.streamOllama(provider.baseUrl ?? "http://localhost:11434", provider.model, systemPrompt, messages)
         break
       default:
-        throw new Error(`Unsupported provider type: ${provider.providerType}`)
+        throw AppError.unsupported(`Unsupported provider type: ${provider.providerType}`)
     }
   }
 
@@ -171,11 +172,11 @@ export class ChatbotService {
     })
 
     if (!response.ok) {
-      throw new Error(`Ollama returned ${response.status}: ${response.statusText}`)
+      throw AppError.providerError(`Ollama returned ${response.status}: ${response.statusText}`)
     }
 
     if (!response.body) {
-      throw new Error("No response body from Ollama")
+      throw AppError.providerError("No response body from Ollama")
     }
 
     const reader = response.body.getReader()

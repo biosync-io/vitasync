@@ -4,7 +4,9 @@ import helmet from "@fastify/helmet"
 import rateLimit from "@fastify/rate-limit"
 import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
+import { AppError } from "@biosync-io/types"
 import Fastify, { type FastifyError } from "fastify"
+import { ZodError } from "zod"
 import { config } from "./config.js"
 import authPlugin from "./plugins/auth.js"
 import { bullBoardPlugin } from "./plugins/bull-board.js"
@@ -208,7 +210,27 @@ export async function buildServer() {
 
   // ── Global error handler ─────────────────────────────────────
   app.setErrorHandler<FastifyError>(async (error, _req, reply) => {
-    // Log 5xx errors at error level, 4xx at warn
+    // ── AppError (thrown from services) ───────────────────────
+    if (error instanceof AppError) {
+      if (error.statusCode >= 500) {
+        app.log.error({ err: error }, error.message)
+      } else {
+        app.log.warn({ err: error }, error.message)
+      }
+      return reply.status(error.statusCode).send(error.toJSON())
+    }
+
+    // ── ZodError (input validation) ──────────────────────────
+    if (error instanceof ZodError) {
+      app.log.warn({ err: error }, "Validation error")
+      return reply.status(400).send({
+        code: "VALIDATION_ERROR",
+        message: "Validation error",
+        details: { issues: error.issues },
+      })
+    }
+
+    // ── FastifyError / generic errors ────────────────────────
     if (error.statusCode && error.statusCode < 500) {
       app.log.warn({ err: error }, "Client error")
     } else {

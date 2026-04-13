@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto"
 import { getDb, mfaTotp } from "@biosync-io/db"
+import { AppError } from "@biosync-io/types"
 import { eq } from "drizzle-orm"
 import * as OTPAuth from "otpauth"
 import * as argon2 from "argon2"
@@ -15,7 +16,7 @@ import { createCipheriv, createDecipheriv, createHash as sha256Hash } from "node
 
 function encryptSecret(plaintext: string): string {
   const hex = process.env.ENCRYPTION_KEY
-  if (!hex || hex.length !== 64) throw new Error("ENCRYPTION_KEY required")
+  if (!hex || hex.length !== 64) throw AppError.internal("ENCRYPTION_KEY required")
   const key = Buffer.from(hex, "hex")
   const iv = randomBytes(12)
   const cipher = createCipheriv("aes-256-gcm", key, iv, { authTagLength: 16 })
@@ -29,7 +30,7 @@ function decryptSecret(ciphertext: string): string {
   const parts = ciphertext.slice(3).split(":")
   if (parts.length !== 3) return ciphertext
   const hex = process.env.ENCRYPTION_KEY
-  if (!hex || hex.length !== 64) throw new Error("ENCRYPTION_KEY required")
+  if (!hex || hex.length !== 64) throw AppError.internal("ENCRYPTION_KEY required")
   const key = Buffer.from(hex, "hex")
   const [ivHex, dataHex, tagHex] = parts as [string, string, string]
   const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivHex, "hex"), { authTagLength: 16 })
@@ -58,7 +59,7 @@ export class MfaService {
       .limit(1)
 
     if (existing?.verified) {
-      throw new Error("TOTP already enrolled. Disable it first.")
+      throw AppError.conflict("TOTP already enrolled. Disable it first.")
     }
 
     // Remove any unverified enrollment
@@ -115,8 +116,8 @@ export class MfaService {
       .where(eq(mfaTotp.userId, userId))
       .limit(1)
 
-    if (!enrollment) throw new Error("No TOTP enrollment found.")
-    if (enrollment.verified) throw new Error("TOTP already verified.")
+    if (!enrollment) throw AppError.notFound("TOTP enrollment")
+    if (enrollment.verified) throw AppError.conflict("TOTP already verified.")
 
     const secret = decryptSecret(enrollment.secret)
     const valid = this.validateCode(secret, code)

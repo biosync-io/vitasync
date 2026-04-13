@@ -1,6 +1,7 @@
 import { getDb, providerConnections, users } from "@biosync-io/db"
 import { providerRegistry } from "@biosync-io/provider-core"
 import type { ProviderConnection, ProviderTokens } from "@biosync-io/types"
+import { AppError } from "@biosync-io/types"
 import { and, eq } from "drizzle-orm"
 import { config } from "../config.js"
 import { decrypt, encrypt } from "../lib/crypto.js"
@@ -25,7 +26,7 @@ export class ConnectionService {
   ): Promise<{ url: string; codeVerifier?: string }> {
     const provider = providerRegistry.resolve(providerId)
     if (!("getAuthorizationUrl" in provider)) {
-      throw new Error(`Provider '${providerId}' does not support OAuth2`)
+      throw AppError.unsupported(`Provider '${providerId}' does not support OAuth2`)
     }
     const url = provider.getAuthorizationUrl(state)
     return { url: url.toString() }
@@ -44,7 +45,7 @@ export class ConnectionService {
   }): Promise<ProviderConnection> {
     const provider = providerRegistry.resolve(params.providerId)
     if (!("exchangeCode" in provider)) {
-      throw new Error(`Provider '${params.providerId}' does not support OAuth2`)
+      throw AppError.unsupported(`Provider '${params.providerId}' does not support OAuth2`)
     }
 
     const tokens = await provider.exchangeCode(params.code)
@@ -87,8 +88,8 @@ export class ConnectionService {
       .where(eq(providerConnections.id, connectionId))
       .limit(1)
 
-    if (!conn) throw new Error(`Connection '${connectionId}' not found`)
-    if (!conn.encryptedTokens) throw new Error(`Connection '${connectionId}' has no stored tokens`)
+    if (!conn) throw AppError.notFound("Connection", connectionId)
+    if (!conn.encryptedTokens) throw AppError.validation(`Connection '${connectionId}' has no stored tokens`)
 
     return JSON.parse(decrypt(conn.encryptedTokens, this.encryptionKey)) as ProviderTokens
   }

@@ -1,5 +1,6 @@
 import { getDb, dataExports, healthMetrics, events } from "@biosync-io/db"
 import type { DataExportInsert, DataExportRow } from "@biosync-io/db"
+import { AppError } from "@biosync-io/types"
 import { and, desc, eq, gte, lte, count } from "drizzle-orm"
 
 export class DataExportService {
@@ -47,7 +48,7 @@ export class DataExportService {
       .where(eq(dataExports.id, exportId))
       .limit(1)
 
-    if (!exportRow) throw new Error("Export not found")
+    if (!exportRow) throw AppError.notFound("Export")
 
     await this.db
       .update(dataExports)
@@ -103,7 +104,7 @@ export class DataExportService {
         .update(dataExports)
         .set({ status: "failed" })
         .where(eq(dataExports.id, exportId))
-      throw new Error("Export build failed")
+      throw AppError.internal("Export build failed")
     }
   }
 

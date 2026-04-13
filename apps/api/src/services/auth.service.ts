@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto"
 import { getDb, users, userSessions } from "@biosync-io/db"
+import { AppError } from "@biosync-io/types"
 import * as argon2 from "argon2"
 import { and, eq } from "drizzle-orm"
 import * as jose from "jose"
@@ -74,20 +75,16 @@ export class AuthService {
       .limit(1)
 
     if (!user) {
-      throw Object.assign(new Error("Invalid email or password."), { statusCode: 401 })
+      throw AppError.unauthorized("Invalid email or password.")
     }
 
     // Check account lockout
     if (user.lockedUntil && user.lockedUntil > new Date()) {
-      throw Object.assign(new Error("Account is temporarily locked. Try again later."), {
-        statusCode: 423,
-      })
+      throw AppError.accountLocked()
     }
 
     if (!user.passwordHash) {
-      throw Object.assign(new Error("Password login not available for this account."), {
-        statusCode: 401,
-      })
+      throw AppError.unauthorized("Password login not available for this account.")
     }
 
     const valid = await argon2.verify(user.passwordHash, password)
@@ -102,7 +99,7 @@ export class AuthService {
 
       await this.db.update(users).set(updates).where(eq(users.id, user.id))
 
-      throw Object.assign(new Error("Invalid email or password."), { statusCode: 401 })
+      throw AppError.unauthorized("Invalid email or password.")
     }
 
     // Successful login — reset lockout counters
@@ -162,13 +159,13 @@ export class AuthService {
       // We can't look up by family without the familyId, so just reject.
       // The family-based revocation happens below when a valid session is found but
       // the incoming token doesn't match (i.e. replay of a rotated token).
-      throw Object.assign(new Error("Invalid refresh token."), { statusCode: 401 })
+      throw AppError.unauthorized("Invalid refresh token.")
     }
 
     if (session.expiresAt < new Date()) {
       // Expired — clean up
       await this.db.delete(userSessions).where(eq(userSessions.id, session.id))
-      throw Object.assign(new Error("Refresh token expired."), { statusCode: 401 })
+      throw AppError.unauthorized("Refresh token expired.")
     }
 
     // Look up the user for the JWT payload
@@ -180,7 +177,7 @@ export class AuthService {
 
     if (!user) {
       await this.db.delete(userSessions).where(eq(userSessions.familyId, session.familyId))
-      throw Object.assign(new Error("User not found."), { statusCode: 401 })
+      throw AppError.unauthorized("User not found.")
     }
 
     // Rotate: delete old token, create new one in the same family
@@ -239,12 +236,12 @@ export class AuthService {
       .limit(1)
 
     if (!user || !user.passwordHash) {
-      throw Object.assign(new Error("User not found or password not set."), { statusCode: 400 })
+      throw AppError.validation("User not found or password not set.")
     }
 
     const valid = await argon2.verify(user.passwordHash, oldPassword)
     if (!valid) {
-      throw Object.assign(new Error("Current password is incorrect."), { statusCode: 401 })
+      throw AppError.unauthorized("Current password is incorrect.")
     }
 
     const passwordHash = await argon2.hash(newPassword)
@@ -276,7 +273,7 @@ export class AuthService {
       .limit(1)
 
     if (!user) {
-      throw Object.assign(new Error("User not found."), { statusCode: 404 })
+      throw AppError.notFound("User")
     }
 
     return user
@@ -294,7 +291,7 @@ export class AuthService {
 
   async verifyEmail(token: string): Promise<{ userId: string; email: string }> {
     const { payload } = await jose.jwtVerify(token, jwtSecret)
-    if (payload.purpose !== "email-verify") throw new Error("Invalid token purpose")
+    if (payload.purpose !== "email-verify") throw AppError.unauthorized("Invalid token purpose")
 
     const userId = payload.sub!
     const email = payload.email as string
@@ -362,7 +359,7 @@ export class AuthService {
     const { payload } = await jose.jwtVerify(token, jwtSecret)
 
     if (payload.purpose !== "password-setup") {
-      throw new Error("Invalid token")
+      throw AppError.unauthorized("Invalid token")
     }
 
     const userId = payload.sub!
@@ -373,10 +370,10 @@ export class AuthService {
       .where(eq(users.id, userId))
       .limit(1)
 
-    if (!user) throw new Error("User not found")
+    if (!user) throw AppError.notFound("User")
 
     if (user.passwordHash) {
-      throw Object.assign(new Error("User already has a password. Use the login or reset-password flow instead."), { statusCode: 400 })
+      throw AppError.validation("User already has a password. Use the login or reset-password flow instead.")
     }
 
     const passwordHash = await argon2.hash(newPassword)
@@ -395,7 +392,7 @@ export class AuthService {
     const { payload } = await jose.jwtVerify(token, jwtSecret)
 
     if (payload.purpose !== "password-reset") {
-      throw new Error("Invalid token")
+      throw AppError.unauthorized("Invalid token")
     }
 
     const userId = payload.sub!
@@ -407,7 +404,7 @@ export class AuthService {
       .where(eq(users.id, userId))
       .returning({ id: users.id })
 
-    if (!updated) throw new Error("User not found")
+    if (!updated) throw AppError.notFound("User")
 
     // Revoke all sessions for security
     await this.db.delete(userSessions).where(eq(userSessions.userId, userId))

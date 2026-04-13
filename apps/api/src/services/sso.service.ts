@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto"
 import { getDb, identityProviders, userIdentities, users, userSessions } from "@biosync-io/db"
+import { AppError } from "@biosync-io/types"
 import { and, eq } from "drizzle-orm"
 import * as jose from "jose"
 import { config } from "../config.js"
@@ -117,7 +118,7 @@ export class SsoService {
     }
 
     if (!params.autoProvision) {
-      throw new Error("User not found and auto-provisioning is disabled for this IdP.")
+      throw AppError.forbidden("User not found and auto-provisioning is disabled for this IdP.")
     }
 
     // JIT provision: create user + identity link
@@ -134,7 +135,7 @@ export class SsoService {
       })
       .returning()
 
-    if (!newUser) throw new Error("Failed to create user")
+    if (!newUser) throw AppError.internal("Failed to create user")
 
     await this.db.insert(userIdentities).values({
       userId: newUser.id,
@@ -164,7 +165,7 @@ export class SsoService {
       .where(and(eq(users.id, userId), eq(users.workspaceId, workspaceId)))
       .limit(1)
 
-    if (!user) throw new Error("User not found")
+    if (!user) throw AppError.notFound("User")
 
     // Update last login
     await this.db
