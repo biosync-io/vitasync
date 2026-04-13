@@ -1,4 +1,5 @@
-import { getDb, providerConnections, users } from "@biosync-io/db"
+import { providerConnections, users } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import { providerRegistry } from "@biosync-io/provider-core"
 import type { ProviderConnection, ProviderTokens } from "@biosync-io/types"
 import { AppError } from "@biosync-io/types"
@@ -6,11 +7,7 @@ import { and, eq } from "drizzle-orm"
 import { config } from "../config.js"
 import { decrypt, encrypt } from "../lib/crypto.js"
 
-export class ConnectionService {
-  private get db() {
-    return getDb()
-  }
-
+export class ConnectionService extends BaseService {
   private get encryptionKey() {
     return config.ENCRYPTION_KEY
   }
@@ -89,7 +86,8 @@ export class ConnectionService {
       .limit(1)
 
     if (!conn) throw AppError.notFound("Connection", connectionId)
-    if (!conn.encryptedTokens) throw AppError.validation(`Connection '${connectionId}' has no stored tokens`)
+    if (!conn.encryptedTokens)
+      throw AppError.validation(`Connection '${connectionId}' has no stored tokens`)
 
     return JSON.parse(decrypt(conn.encryptedTokens, this.encryptionKey)) as ProviderTokens
   }

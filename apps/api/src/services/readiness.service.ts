@@ -28,7 +28,16 @@ export class ReadinessService {
   async getTrainingLoadHistory(
     userId: string,
     opts: { days?: number } = {},
-  ): Promise<Array<{ date: Date; dailyStrain: number; atl: number; ctl: number; tsb: number; status: string }>> {
+  ): Promise<
+    Array<{
+      date: Date
+      dailyStrain: number
+      atl: number
+      ctl: number
+      tsb: number
+      status: string
+    }>
+  > {
     const db = getDb()
     const since = new Date()
     since.setDate(since.getDate() - (opts.days ?? 30))

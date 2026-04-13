@@ -1,6 +1,7 @@
-import { getDb, goals, goalProgress, healthMetrics } from "@biosync-io/db"
+import { goals, goalProgress, healthMetrics } from "@biosync-io/db"
 import type { GoalInsert, GoalRow, GoalProgressInsert, GoalProgressRow } from "@biosync-io/db"
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm"
+import { BaseService } from "./base.service.js"
 
 /**
  * Goals Service — Feature #2 & #3 (Goal Setting + Streak Tracking)
@@ -8,22 +9,25 @@ import { and, desc, eq, gte, lte, sql } from "drizzle-orm"
  * CRUD for health goals with automatic progress tracking from synced metrics.
  * Supports daily/weekly/monthly cadences with streak counting.
  */
-export class GoalService {
-  private get db() {
-    return getDb()
-  }
-
+export class GoalService extends BaseService {
   async create(data: Omit<GoalInsert, "id" | "createdAt" | "updatedAt">): Promise<GoalRow> {
     const [row] = await this.db.insert(goals).values(data).returning()
     return row!
   }
 
-  async list(userId: string, opts: { category?: string; active?: boolean } = {}): Promise<GoalRow[]> {
+  async list(
+    userId: string,
+    opts: { category?: string; active?: boolean } = {},
+  ): Promise<GoalRow[]> {
     const conditions = [eq(goals.userId, userId)]
     if (opts.category) conditions.push(eq(goals.category, opts.category))
     if (opts.active !== undefined) conditions.push(eq(goals.isActive, opts.active))
 
-    return this.db.select().from(goals).where(and(...conditions)).orderBy(desc(goals.createdAt))
+    return this.db
+      .select()
+      .from(goals)
+      .where(and(...conditions))
+      .orderBy(desc(goals.createdAt))
   }
 
   async findById(id: string, userId: string): Promise<GoalRow | null> {
@@ -52,7 +56,10 @@ export class GoalService {
     return result.length > 0
   }
 
-  async getProgress(goalId: string, opts: { from?: Date; to?: Date; limit?: number } = {}): Promise<GoalProgressRow[]> {
+  async getProgress(
+    goalId: string,
+    opts: { from?: Date; to?: Date; limit?: number } = {},
+  ): Promise<GoalProgressRow[]> {
     const conditions = [eq(goalProgress.goalId, goalId)]
     if (opts.from) conditions.push(gte(goalProgress.date, opts.from))
     if (opts.to) conditions.push(lte(goalProgress.date, opts.to))
@@ -95,14 +102,17 @@ export class GoalService {
       const met = pct >= 100
 
       // Upsert progress
-      await this.db.insert(goalProgress).values({
-        goalId: goal.id,
-        userId,
-        date: dayStart,
-        value: total,
-        percentComplete: Math.round(pct * 10) / 10,
-        met,
-      }).onConflictDoNothing()
+      await this.db
+        .insert(goalProgress)
+        .values({
+          goalId: goal.id,
+          userId,
+          date: dayStart,
+          value: total,
+          percentComplete: Math.round(pct * 10) / 10,
+          met,
+        })
+        .onConflictDoNothing()
 
       // Update streak
       const currentStreak = met ? (goal.currentStreak ?? 0) + 1 : 0

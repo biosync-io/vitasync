@@ -1,6 +1,7 @@
-import { getDb, waterIntake } from "@biosync-io/db"
+import { waterIntake } from "@biosync-io/db"
 import type { WaterIntakeInsert, WaterIntakeRow } from "@biosync-io/db"
-import { and, desc, eq, gte, lte, sql, sum } from "drizzle-orm"
+import { and, desc, eq, gte, lte } from "drizzle-orm"
+import { BaseService } from "./base.service.js"
 
 /**
  * Water Intake Tracking Service
@@ -8,17 +9,16 @@ import { and, desc, eq, gte, lte, sql, sum } from "drizzle-orm"
  * Logs individual water intake events and provides daily summaries
  * with progress toward hydration goals.
  */
-export class WaterIntakeService {
-  private get db() {
-    return getDb()
-  }
-
+export class WaterIntakeService extends BaseService {
   async create(data: Omit<WaterIntakeInsert, "id" | "createdAt">): Promise<WaterIntakeRow> {
     const [row] = await this.db.insert(waterIntake).values(data).returning()
     return row!
   }
 
-  async list(userId: string, opts: { from?: Date; to?: Date; limit?: number } = {}): Promise<WaterIntakeRow[]> {
+  async list(
+    userId: string,
+    opts: { from?: Date; to?: Date; limit?: number } = {},
+  ): Promise<WaterIntakeRow[]> {
     const conditions = [eq(waterIntake.userId, userId)]
     if (opts.from) conditions.push(gte(waterIntake.loggedAt, opts.from))
     if (opts.to) conditions.push(lte(waterIntake.loggedAt, opts.to))
@@ -39,7 +39,10 @@ export class WaterIntakeService {
     return result.length > 0
   }
 
-  async getDailySummary(userId: string, date?: Date): Promise<{
+  async getDailySummary(
+    userId: string,
+    date?: Date,
+  ): Promise<{
     totalMl: number
     goalMl: number
     progressPct: number

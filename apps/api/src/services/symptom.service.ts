@@ -1,18 +1,18 @@
-import { getDb, symptomLogs } from "@biosync-io/db"
+import { symptomLogs } from "@biosync-io/db"
 import type { SymptomLogInsert, SymptomLogRow } from "@biosync-io/db"
 import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm"
+import { BaseService } from "./base.service.js"
 
-export class SymptomService {
-  private get db() {
-    return getDb()
-  }
-
+export class SymptomService extends BaseService {
   async create(data: Omit<SymptomLogInsert, "id" | "createdAt">): Promise<SymptomLogRow> {
     const [row] = await this.db.insert(symptomLogs).values(data).returning()
     return row!
   }
 
-  async list(userId: string, opts: { from?: Date; to?: Date; symptom?: string; limit?: number } = {}): Promise<SymptomLogRow[]> {
+  async list(
+    userId: string,
+    opts: { from?: Date; to?: Date; symptom?: string; limit?: number } = {},
+  ): Promise<SymptomLogRow[]> {
     const conditions = [eq(symptomLogs.userId, userId)]
     if (opts.from) conditions.push(gte(symptomLogs.startedAt, opts.from))
     if (opts.to) conditions.push(lte(symptomLogs.startedAt, opts.to))
@@ -35,7 +35,11 @@ export class SymptomService {
     return row ?? null
   }
 
-  async update(id: string, userId: string, data: Partial<SymptomLogInsert>): Promise<SymptomLogRow | null> {
+  async update(
+    id: string,
+    userId: string,
+    data: Partial<SymptomLogInsert>,
+  ): Promise<SymptomLogRow | null> {
     const [row] = await this.db
       .update(symptomLogs)
       .set(data)
@@ -62,12 +66,7 @@ export class SymptomService {
         count: count(),
       })
       .from(symptomLogs)
-      .where(
-        and(
-          eq(symptomLogs.userId, userId),
-          gte(symptomLogs.startedAt, since),
-        ),
-      )
+      .where(and(eq(symptomLogs.userId, userId), gte(symptomLogs.startedAt, since)))
       .groupBy(symptomLogs.symptom)
       .orderBy(desc(count()))
       .limit(10)
@@ -75,7 +74,10 @@ export class SymptomService {
     return rows.map((r) => ({ symptom: r.symptom, count: Number(r.count) }))
   }
 
-  async getPatterns(userId: string, days = 90): Promise<{
+  async getPatterns(
+    userId: string,
+    days = 90,
+  ): Promise<{
     frequentTriggers: { trigger: string; count: number }[]
     frequentLocations: { location: string; count: number }[]
     severityTrend: string
@@ -86,12 +88,7 @@ export class SymptomService {
     const logs = await this.db
       .select()
       .from(symptomLogs)
-      .where(
-        and(
-          eq(symptomLogs.userId, userId),
-          gte(symptomLogs.startedAt, since),
-        ),
-      )
+      .where(and(eq(symptomLogs.userId, userId), gte(symptomLogs.startedAt, since)))
       .orderBy(symptomLogs.startedAt)
 
     // Analyze triggers
@@ -101,7 +98,8 @@ export class SymptomService {
 
     for (const log of logs) {
       if (log.severity) severities.push(log.severity)
-      if (log.bodyLocation) locationCounts[log.bodyLocation] = (locationCounts[log.bodyLocation] ?? 0) + 1
+      if (log.bodyLocation)
+        locationCounts[log.bodyLocation] = (locationCounts[log.bodyLocation] ?? 0) + 1
       if (log.triggers && Array.isArray(log.triggers)) {
         for (const t of log.triggers as string[]) {
           triggerCounts[t] = (triggerCounts[t] ?? 0) + 1
@@ -124,7 +122,8 @@ export class SymptomService {
     if (severities.length >= 4) {
       const mid = Math.floor(severities.length / 2)
       const firstHalf = severities.slice(0, mid).reduce((a, b) => a + b, 0) / mid
-      const secondHalf = severities.slice(mid).reduce((a, b) => a + b, 0) / (severities.length - mid)
+      const secondHalf =
+        severities.slice(mid).reduce((a, b) => a + b, 0) / (severities.length - mid)
       if (secondHalf > firstHalf + 0.5) severityTrend = "worsening"
       else if (secondHalf < firstHalf - 0.5) severityTrend = "improving"
     }

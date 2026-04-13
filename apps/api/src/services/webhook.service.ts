@@ -1,13 +1,10 @@
 import { createHmac } from "node:crypto"
-import { getDb, webhookDeliveries, webhooks } from "@biosync-io/db"
+import { webhookDeliveries, webhooks } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import type { Webhook, WebhookDelivery, WebhookEvent } from "@biosync-io/types"
 import { and, desc, eq } from "drizzle-orm"
 
-export class WebhookService {
-  private get db() {
-    return getDb()
-  }
-
+export class WebhookService extends BaseService {
   async create(params: {
     workspaceId: string
     url: string

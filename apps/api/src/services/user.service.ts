@@ -1,12 +1,9 @@
-import { getDb, providerConnections, users } from "@biosync-io/db"
+import { providerConnections, users } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import type { User } from "@biosync-io/types"
 import { and, count, eq } from "drizzle-orm"
 
-export class UserService {
-  private get db() {
-    return getDb()
-  }
-
+export class UserService extends BaseService {
   async findOrCreate(params: {
     workspaceId: string
     externalId: string
@@ -62,10 +59,7 @@ export class UserService {
         .limit(opts.limit)
         .offset(opts.offset)
         .orderBy(users.createdAt),
-      this.db
-        .select({ total: count() })
-        .from(users)
-        .where(eq(users.workspaceId, workspaceId)),
+      this.db.select({ total: count() }).from(users).where(eq(users.workspaceId, workspaceId)),
     ])
     return { data: rows as User[], total: countRows[0]?.total ?? 0 }
   }
@@ -73,7 +67,12 @@ export class UserService {
   async update(
     id: string,
     workspaceId: string,
-    patch: { email?: string; displayName?: string; gender?: string | null; metadata?: Record<string, unknown> },
+    patch: {
+      email?: string
+      displayName?: string
+      gender?: string | null
+      metadata?: Record<string, unknown>
+    },
   ): Promise<User | null> {
     const [updated] = await this.db
       .update(users)

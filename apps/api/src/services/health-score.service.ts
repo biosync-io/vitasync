@@ -1,4 +1,5 @@
-import { getDb, healthScores, healthMetrics, events } from "@biosync-io/db"
+import { healthScores, healthMetrics, events } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import type { HealthScoreInsert, HealthScoreRow } from "@biosync-io/db"
 import { and, avg, count, eq, gte, lte, desc, sql, asc } from "drizzle-orm"
 import { computeReadiness, computeBodyScore as computeBodyScoreEngine } from "@biosync-io/analytics"
@@ -13,11 +14,7 @@ import { computeReadiness, computeBodyScore as computeBodyScoreEngine } from "@b
  * - Recovery (15%): recovery score, stress levels
  * - Body (15%): weight stability, body composition
  */
-export class HealthScoreService {
-  private get db() {
-    return getDb()
-  }
-
+export class HealthScoreService extends BaseService {
   async getLatest(userId: string): Promise<HealthScoreRow | null> {
     const [row] = await this.db
       .select()
@@ -28,7 +25,10 @@ export class HealthScoreService {
     return row ?? null
   }
 
-  async getHistory(userId: string, opts: { from?: Date; to?: Date; limit?: number } = {}): Promise<HealthScoreRow[]> {
+  async getHistory(
+    userId: string,
+    opts: { from?: Date; to?: Date; limit?: number } = {},
+  ): Promise<HealthScoreRow[]> {
     const { from, to, limit = 30 } = opts
     const conditions = [eq(healthScores.userId, userId)]
     if (from) conditions.push(gte(healthScores.date, from))
@@ -42,7 +42,11 @@ export class HealthScoreService {
       .limit(limit)
   }
 
-  async computeForDate(userId: string, date: Date, userGender?: string | null): Promise<HealthScoreRow> {
+  async computeForDate(
+    userId: string,
+    date: Date,
+    userGender?: string | null,
+  ): Promise<HealthScoreRow> {
     const dayStart = new Date(date)
     dayStart.setHours(0, 0, 0, 0)
     const dayEnd = new Date(date)
@@ -52,7 +56,13 @@ export class HealthScoreService {
     const metrics = await this.db
       .select({ metricType: healthMetrics.metricType, value: healthMetrics.value })
       .from(healthMetrics)
-      .where(and(eq(healthMetrics.userId, userId), gte(healthMetrics.recordedAt, dayStart), lte(healthMetrics.recordedAt, dayEnd)))
+      .where(
+        and(
+          eq(healthMetrics.userId, userId),
+          gte(healthMetrics.recordedAt, dayStart),
+          lte(healthMetrics.recordedAt, dayEnd),
+        ),
+      )
 
     const byType = new Map<string, number[]>()
     for (const m of metrics) {
@@ -62,7 +72,8 @@ export class HealthScoreService {
       byType.set(m.metricType, arr)
     }
 
-    const avg = (arr: number[]) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null
+    const avg = (arr: number[]) =>
+      arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null
 
     // Compute sub-scores
     const sleepScore = this.computeSleepScore(byType)
@@ -75,24 +86,43 @@ export class HealthScoreService {
     try {
       const readiness = await computeReadiness(userId, date)
       recoveryScore = readiness.score
-    } catch { /* fall back to basic if insufficient data */ }
+    } catch {
+      /* fall back to basic if insufficient data */
+    }
     if (recoveryScore == null) recoveryScore = this.computeRecoveryScore(byType)
 
     try {
       const body = await computeBodyScoreEngine(userId, date)
       bodyScore = body.score
-    } catch { /* fall back to basic if insufficient data */ }
+    } catch {
+      /* fall back to basic if insufficient data */
+    }
     if (bodyScore == null) bodyScore = this.computeBodyScore(byType)
 
-    const weights = { sleep: 0.25, activity: 0.25, cardio: 0.20, recovery: 0.15, body: 0.15 }
+    const weights = { sleep: 0.25, activity: 0.25, cardio: 0.2, recovery: 0.15, body: 0.15 }
     let totalWeight = 0
     let weightedSum = 0
 
-    if (sleepScore != null) { weightedSum += sleepScore * weights.sleep; totalWeight += weights.sleep }
-    if (activityScore != null) { weightedSum += activityScore * weights.activity; totalWeight += weights.activity }
-    if (cardioScore != null) { weightedSum += cardioScore * weights.cardio; totalWeight += weights.cardio }
-    if (recoveryScore != null) { weightedSum += recoveryScore * weights.recovery; totalWeight += weights.recovery }
-    if (bodyScore != null) { weightedSum += bodyScore * weights.body; totalWeight += weights.body }
+    if (sleepScore != null) {
+      weightedSum += sleepScore * weights.sleep
+      totalWeight += weights.sleep
+    }
+    if (activityScore != null) {
+      weightedSum += activityScore * weights.activity
+      totalWeight += weights.activity
+    }
+    if (cardioScore != null) {
+      weightedSum += cardioScore * weights.cardio
+      totalWeight += weights.cardio
+    }
+    if (recoveryScore != null) {
+      weightedSum += recoveryScore * weights.recovery
+      totalWeight += weights.recovery
+    }
+    if (bodyScore != null) {
+      weightedSum += bodyScore * weights.body
+      totalWeight += weights.body
+    }
 
     const overallScore = totalWeight > 0 ? Math.round((weightedSum / totalWeight) * 10) / 10 : 50
 
@@ -116,9 +146,12 @@ export class HealthScoreService {
       .from(healthScores)
       .where(and(eq(healthScores.userId, userId), gte(healthScores.date, weekAgo)))
 
-    const weekAvg = weekRows.length > 0
-      ? Math.round((weekRows.reduce((s, r) => s + r.score, overallScore) / (weekRows.length + 1)) * 10) / 10
-      : overallScore
+    const weekAvg =
+      weekRows.length > 0
+        ? Math.round(
+            (weekRows.reduce((s, r) => s + r.score, overallScore) / (weekRows.length + 1)) * 10,
+          ) / 10
+        : overallScore
 
     const grade = this.scoreToGrade(overallScore)
 

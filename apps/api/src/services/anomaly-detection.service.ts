@@ -1,4 +1,5 @@
-import { getDb, anomalyAlerts, healthMetrics, biometricBaselines } from "@biosync-io/db"
+import { anomalyAlerts, healthMetrics, biometricBaselines } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import type { AnomalyAlertInsert, AnomalyAlertRow } from "@biosync-io/db"
 import { and, desc, eq, gte, lte, asc } from "drizzle-orm"
 
@@ -9,12 +10,11 @@ import { and, desc, eq, gte, lte, asc } from "drizzle-orm"
  * Z-score analysis and IQR-based outlier detection. Runs after each sync
  * to flag abnormal readings (e.g., sudden RHR spike, SpO2 drop).
  */
-export class AnomalyDetectionService {
-  private get db() {
-    return getDb()
-  }
-
-  async list(userId: string, opts: { status?: string; severity?: string; limit?: number } = {}): Promise<AnomalyAlertRow[]> {
+export class AnomalyDetectionService extends BaseService {
+  async list(
+    userId: string,
+    opts: { status?: string; severity?: string; limit?: number } = {},
+  ): Promise<AnomalyAlertRow[]> {
     const conditions = [eq(anomalyAlerts.userId, userId)]
     if (opts.status) conditions.push(eq(anomalyAlerts.status, opts.status))
     if (opts.severity) conditions.push(eq(anomalyAlerts.severity, opts.severity))
@@ -50,7 +50,10 @@ export class AnomalyDetectionService {
    * Uses Z-score analysis: any value more than 2.5σ from the 30-day mean
    * is flagged as an anomaly.
    */
-  async detectAnomalies(userId: string, opts: { lookbackDays?: number } = {}): Promise<AnomalyAlertRow[]> {
+  async detectAnomalies(
+    userId: string,
+    opts: { lookbackDays?: number } = {},
+  ): Promise<AnomalyAlertRow[]> {
     const lookback = opts.lookbackDays ?? 1
     const now = new Date()
     const since = new Date(now.getTime() - lookback * 24 * 60 * 60 * 1000)
@@ -64,12 +67,7 @@ export class AnomalyDetectionService {
         recordedAt: healthMetrics.recordedAt,
       })
       .from(healthMetrics)
-      .where(
-        and(
-          eq(healthMetrics.userId, userId),
-          gte(healthMetrics.recordedAt, since),
-        ),
-      )
+      .where(and(eq(healthMetrics.userId, userId), gte(healthMetrics.recordedAt, since)))
       .orderBy(asc(healthMetrics.recordedAt))
 
     // Get 30-day baseline for each metric type
@@ -96,15 +94,15 @@ export class AnomalyDetectionService {
       const std = Math.sqrt(values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length)
       if (std === 0) continue
 
-      const recentValues = recent
-        .filter((r) => r.metricType === metricType && r.value != null)
+      const recentValues = recent.filter((r) => r.metricType === metricType && r.value != null)
 
       for (const reading of recentValues) {
         const zScore = (reading.value! - mean) / std
         const absZ = Math.abs(zScore)
         if (absZ < 2.5) continue
 
-        const severity = absZ >= 4 ? "critical" : absZ >= 3.5 ? "high" : absZ >= 3 ? "medium" : "low"
+        const severity =
+          absZ >= 4 ? "critical" : absZ >= 3.5 ? "high" : absZ >= 3 ? "medium" : "low"
         const direction = zScore > 0 ? "above" : "below"
 
         const [row] = await this.db

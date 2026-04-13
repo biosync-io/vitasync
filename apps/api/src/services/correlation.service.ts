@@ -1,4 +1,5 @@
-import { getDb, correlations, healthMetrics } from "@biosync-io/db"
+import { correlations, healthMetrics } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import type { CorrelationInsert, CorrelationRow } from "@biosync-io/db"
 import { and, desc, eq, gte, lte, asc } from "drizzle-orm"
 
@@ -35,12 +36,11 @@ const METRIC_PAIRS: [string, string][] = [
   ["respiratory_rate", "sleep_score"],
 ]
 
-export class CorrelationService {
-  private get db() {
-    return getDb()
-  }
-
-  async list(userId: string, opts: { strength?: string; limit?: number } = {}): Promise<CorrelationRow[]> {
+export class CorrelationService extends BaseService {
+  async list(
+    userId: string,
+    opts: { strength?: string; limit?: number } = {},
+  ): Promise<CorrelationRow[]> {
     const conditions = [eq(correlations.userId, userId)]
     if (opts.strength) conditions.push(eq(correlations.strength, opts.strength))
 
@@ -52,7 +52,10 @@ export class CorrelationService {
       .limit(opts.limit ?? 50)
   }
 
-  async computeCorrelations(userId: string, opts: { days?: number } = {}): Promise<CorrelationRow[]> {
+  async computeCorrelations(
+    userId: string,
+    opts: { days?: number } = {},
+  ): Promise<CorrelationRow[]> {
     const days = opts.days ?? 30
     const to = new Date()
     const from = new Date(to.getTime() - days * 24 * 60 * 60 * 1000)
@@ -112,7 +115,14 @@ export class CorrelationService {
       const r = this.pearsonCorrelation(valuesA, valuesB)
       if (r === null || Math.abs(r) < 0.3) continue
 
-      const strength = Math.abs(r) >= 0.7 ? "very_strong" : Math.abs(r) >= 0.5 ? "strong" : Math.abs(r) >= 0.3 ? "moderate" : "weak"
+      const strength =
+        Math.abs(r) >= 0.7
+          ? "very_strong"
+          : Math.abs(r) >= 0.5
+            ? "strong"
+            : Math.abs(r) >= 0.3
+              ? "moderate"
+              : "weak"
       const direction = r > 0 ? "positive" : "negative"
 
       const description = this.generateDescription(metricA, metricB, r, strength, direction)
@@ -136,7 +146,12 @@ export class CorrelationService {
         .insert(correlations)
         .values(insert)
         .onConflictDoUpdate({
-          target: [correlations.userId, correlations.metricA, correlations.metricB, correlations.periodEnd],
+          target: [
+            correlations.userId,
+            correlations.metricA,
+            correlations.metricB,
+            correlations.periodEnd,
+          ],
           set: insert,
         })
         .returning()
@@ -171,7 +186,13 @@ export class CorrelationService {
     return num / den
   }
 
-  private generateDescription(metricA: string, metricB: string, r: number, strength: string, direction: string): string {
+  private generateDescription(
+    metricA: string,
+    metricB: string,
+    r: number,
+    strength: string,
+    direction: string,
+  ): string {
     const nameA = metricA.replace(/_/g, " ")
     const nameB = metricB.replace(/_/g, " ")
     const dirWord = direction === "positive" ? "increases" : "decreases"

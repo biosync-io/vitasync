@@ -1,12 +1,14 @@
-import { getDb, medications, medicationLogs } from "@biosync-io/db"
-import type { MedicationInsert, MedicationRow, MedicationLogInsert, MedicationLogRow } from "@biosync-io/db"
+import { medications, medicationLogs } from "@biosync-io/db"
+import type {
+  MedicationInsert,
+  MedicationRow,
+  MedicationLogInsert,
+  MedicationLogRow,
+} from "@biosync-io/db"
 import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm"
+import { BaseService } from "./base.service.js"
 
-export class MedicationService {
-  private get db() {
-    return getDb()
-  }
-
+export class MedicationService extends BaseService {
   // --- Medications CRUD ---
 
   async createMedication(data: Omit<MedicationInsert, "id" | "createdAt">): Promise<MedicationRow> {
@@ -14,7 +16,10 @@ export class MedicationService {
     return row!
   }
 
-  async listMedications(userId: string, opts: { activeOnly?: boolean } = {}): Promise<MedicationRow[]> {
+  async listMedications(
+    userId: string,
+    opts: { activeOnly?: boolean } = {},
+  ): Promise<MedicationRow[]> {
     const conditions = [eq(medications.userId, userId)]
     if (opts.activeOnly !== false) conditions.push(eq(medications.isActive, true))
 
@@ -34,7 +39,11 @@ export class MedicationService {
     return row ?? null
   }
 
-  async updateMedication(id: string, userId: string, data: Partial<MedicationInsert>): Promise<MedicationRow | null> {
+  async updateMedication(
+    id: string,
+    userId: string,
+    data: Partial<MedicationInsert>,
+  ): Promise<MedicationRow | null> {
     const [row] = await this.db
       .update(medications)
       .set(data)
@@ -53,12 +62,18 @@ export class MedicationService {
 
   // --- Adherence logging ---
 
-  async logAdherence(data: Omit<MedicationLogInsert, "id" | "createdAt">): Promise<MedicationLogRow> {
+  async logAdherence(
+    data: Omit<MedicationLogInsert, "id" | "createdAt">,
+  ): Promise<MedicationLogRow> {
     const [row] = await this.db.insert(medicationLogs).values(data).returning()
     return row!
   }
 
-  async getAdherenceLogs(medicationId: string, userId: string, opts: { from?: Date; to?: Date; limit?: number } = {}): Promise<MedicationLogRow[]> {
+  async getAdherenceLogs(
+    medicationId: string,
+    userId: string,
+    opts: { from?: Date; to?: Date; limit?: number } = {},
+  ): Promise<MedicationLogRow[]> {
     const conditions = [
       eq(medicationLogs.medicationId, medicationId),
       eq(medicationLogs.userId, userId),
@@ -74,7 +89,11 @@ export class MedicationService {
       .limit(opts.limit ?? 50)
   }
 
-  async getAdherenceStats(medicationId: string, userId: string, days = 30): Promise<{
+  async getAdherenceStats(
+    medicationId: string,
+    userId: string,
+    days = 30,
+  ): Promise<{
     total: number
     taken: number
     missed: number

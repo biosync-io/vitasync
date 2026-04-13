@@ -91,9 +91,7 @@ export class ProjectionService {
           },
         })
 
-      this.logger.debug(
-        `[projections] Updated health_score_projection for user ${payload.userId}`,
-      )
+      this.logger.debug(`[projections] Updated health_score_projection for user ${payload.userId}`)
     } catch (err) {
       this.logger.error("[projections] Failed to update health_score_projection", err)
       throw err

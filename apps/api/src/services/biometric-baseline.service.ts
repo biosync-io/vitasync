@@ -1,13 +1,13 @@
-import { getDb, biometricBaselines, healthMetrics } from "@biosync-io/db"
+import { biometricBaselines, healthMetrics } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import type { BiometricBaselineRow } from "@biosync-io/db"
 import { and, avg, count, desc, eq, gte, max, min, sql } from "drizzle-orm"
 
-export class BiometricBaselineService {
-  private get db() {
-    return getDb()
-  }
-
-  async getBaselines(userId: string, opts: { metricType?: string } = {}): Promise<BiometricBaselineRow[]> {
+export class BiometricBaselineService extends BaseService {
+  async getBaselines(
+    userId: string,
+    opts: { metricType?: string } = {},
+  ): Promise<BiometricBaselineRow[]> {
     const conditions = [eq(biometricBaselines.userId, userId)]
     if (opts.metricType) conditions.push(eq(biometricBaselines.metricType, opts.metricType))
 
@@ -23,16 +23,17 @@ export class BiometricBaselineService {
       .select()
       .from(biometricBaselines)
       .where(
-        and(
-          eq(biometricBaselines.userId, userId),
-          eq(biometricBaselines.metricType, metricType),
-        ),
+        and(eq(biometricBaselines.userId, userId), eq(biometricBaselines.metricType, metricType)),
       )
       .limit(1)
     return row ?? null
   }
 
-  async computeBaseline(userId: string, metricType: string, windowDays = 30): Promise<BiometricBaselineRow> {
+  async computeBaseline(
+    userId: string,
+    metricType: string,
+    windowDays = 30,
+  ): Promise<BiometricBaselineRow> {
     const since = new Date()
     since.setDate(since.getDate() - windowDays)
 
@@ -133,10 +134,7 @@ export class BiometricBaselineService {
         date: new Date(),
       })
       .where(
-        and(
-          eq(biometricBaselines.userId, userId),
-          eq(biometricBaselines.metricType, metricType),
-        ),
+        and(eq(biometricBaselines.userId, userId), eq(biometricBaselines.metricType, metricType)),
       )
       .returning()
 

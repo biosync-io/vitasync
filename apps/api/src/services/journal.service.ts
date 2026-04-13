@@ -1,6 +1,7 @@
-import { getDb, journalEntries } from "@biosync-io/db"
+import { journalEntries } from "@biosync-io/db"
 import type { JournalEntryInsert, JournalEntryRow } from "@biosync-io/db"
 import { and, desc, eq, gte, ilike, lte, or, sql, count } from "drizzle-orm"
+import { BaseService } from "./base.service.js"
 
 /**
  * Daily Journal Service
@@ -8,17 +9,21 @@ import { and, desc, eq, gte, ilike, lte, or, sql, count } from "drizzle-orm"
  * Manages journal entries with mood tagging, gratitude tracking,
  * and full-text search capabilities.
  */
-export class JournalService {
-  private get db() {
-    return getDb()
-  }
-
-  async create(data: Omit<JournalEntryInsert, "id" | "createdAt" | "updatedAt">): Promise<JournalEntryRow> {
+export class JournalService extends BaseService {
+  async create(
+    data: Omit<JournalEntryInsert, "id" | "createdAt" | "updatedAt">,
+  ): Promise<JournalEntryRow> {
     const [row] = await this.db.insert(journalEntries).values(data).returning()
     return row!
   }
 
-  async update(id: string, userId: string, data: Partial<Pick<JournalEntryInsert, "title" | "body" | "moodScore" | "moodLabel" | "gratitude" | "tags">>): Promise<JournalEntryRow | null> {
+  async update(
+    id: string,
+    userId: string,
+    data: Partial<
+      Pick<JournalEntryInsert, "title" | "body" | "moodScore" | "moodLabel" | "gratitude" | "tags">
+    >,
+  ): Promise<JournalEntryRow | null> {
     const [row] = await this.db
       .update(journalEntries)
       .set({ ...data, updatedAt: new Date() })
@@ -27,7 +32,10 @@ export class JournalService {
     return row ?? null
   }
 
-  async list(userId: string, opts: { from?: Date; to?: Date; search?: string; tag?: string; limit?: number } = {}): Promise<JournalEntryRow[]> {
+  async list(
+    userId: string,
+    opts: { from?: Date; to?: Date; search?: string; tag?: string; limit?: number } = {},
+  ): Promise<JournalEntryRow[]> {
     const conditions = [eq(journalEntries.userId, userId)]
     if (opts.from) conditions.push(gte(journalEntries.entryDate, opts.from))
     if (opts.to) conditions.push(lte(journalEntries.entryDate, opts.to))
@@ -65,7 +73,10 @@ export class JournalService {
     return result.length > 0
   }
 
-  async getStats(userId: string, opts: { from?: Date; to?: Date } = {}): Promise<{
+  async getStats(
+    userId: string,
+    opts: { from?: Date; to?: Date } = {},
+  ): Promise<{
     totalEntries: number
     avgMoodScore: number
     streak: number

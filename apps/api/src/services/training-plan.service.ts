@@ -1,13 +1,13 @@
-import { getDb, trainingPlans, events, healthMetrics } from "@biosync-io/db"
+import { trainingPlans, events, healthMetrics } from "@biosync-io/db"
 import type { TrainingPlanInsert, TrainingPlanRow } from "@biosync-io/db"
 import { and, avg, count, desc, eq, gte, lte, sql, sum } from "drizzle-orm"
+import { BaseService } from "./base.service.js"
 
-export class TrainingPlanService {
-  private get db() {
-    return getDb()
-  }
-
-  async list(userId: string, opts: { status?: string; limit?: number } = {}): Promise<TrainingPlanRow[]> {
+export class TrainingPlanService extends BaseService {
+  async list(
+    userId: string,
+    opts: { status?: string; limit?: number } = {},
+  ): Promise<TrainingPlanRow[]> {
     const conditions = [eq(trainingPlans.userId, userId)]
     if (opts.status) conditions.push(eq(trainingPlans.status, opts.status))
 
@@ -28,13 +28,16 @@ export class TrainingPlanService {
     return row ?? null
   }
 
-  async generate(userId: string, opts: {
-    goal: string
-    difficulty: string
-    durationWeeks: number
-    daysPerWeek: number
-    focusAreas?: string[]
-  }): Promise<TrainingPlanRow> {
+  async generate(
+    userId: string,
+    opts: {
+      goal: string
+      difficulty: string
+      durationWeeks: number
+      daysPerWeek: number
+      focusAreas?: string[]
+    },
+  ): Promise<TrainingPlanRow> {
     // Analyze recent workout data
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -58,11 +61,17 @@ export class TrainingPlanService {
     const avgDurationMin = Math.round(Number(recentStats?.avgDuration ?? 1800) / 60)
 
     // Compute target durations based on difficulty
-    const durationMultiplier = opts.difficulty === "beginner" ? 0.8 : opts.difficulty === "advanced" ? 1.3 : 1.0
+    const durationMultiplier =
+      opts.difficulty === "beginner" ? 0.8 : opts.difficulty === "advanced" ? 1.3 : 1.0
     const targetDuration = Math.round(avgDurationMin * durationMultiplier)
 
     // Build a weekly schedule
-    const weeklySchedule = this.buildWeeklySchedule(opts.daysPerWeek, opts.goal, targetDuration, opts.focusAreas)
+    const weeklySchedule = this.buildWeeklySchedule(
+      opts.daysPerWeek,
+      opts.goal,
+      targetDuration,
+      opts.focusAreas,
+    )
 
     // Build weekly targets
     const weeklyTargets: Record<string, number>[] = []
@@ -122,14 +131,16 @@ export class TrainingPlanService {
         ),
       )
 
-    const currentWeek = Math.max(1, Math.ceil(
-      (Date.now() - plan.startsAt.getTime()) / (7 * 24 * 60 * 60 * 1000),
-    ))
+    const currentWeek = Math.max(
+      1,
+      Math.ceil((Date.now() - plan.startsAt.getTime()) / (7 * 24 * 60 * 60 * 1000)),
+    )
 
     const scheduledPerWeek = Array.isArray(plan.schedule) ? plan.schedule.length : 3
-    const adherenceRate = scheduledPerWeek > 0
-      ? Math.min(100, Math.round((Number(weekStats?.workoutCount ?? 0) / scheduledPerWeek) * 100))
-      : 0
+    const adherenceRate =
+      scheduledPerWeek > 0
+        ? Math.min(100, Math.round((Number(weekStats?.workoutCount ?? 0) / scheduledPerWeek) * 100))
+        : 0
 
     const [updated] = await this.db
       .update(trainingPlans)
@@ -154,11 +165,12 @@ export class TrainingPlanService {
     const restDays = 7 - daysPerWeek
     const schedule: Record<string, unknown>[] = []
 
-    const workoutTypes = goal === "endurance"
-      ? ["Long Run", "Tempo Run", "Easy Run", "Cross-Training", "Interval Training"]
-      : goal === "strength"
-        ? ["Upper Body", "Lower Body", "Full Body", "Core & Mobility", "Power Training"]
-        : ["Cardio", "Strength", "HIIT", "Yoga/Mobility", "Mixed Training"]
+    const workoutTypes =
+      goal === "endurance"
+        ? ["Long Run", "Tempo Run", "Easy Run", "Cross-Training", "Interval Training"]
+        : goal === "strength"
+          ? ["Upper Body", "Lower Body", "Full Body", "Core & Mobility", "Power Training"]
+          : ["Cardio", "Strength", "HIIT", "Yoga/Mobility", "Mixed Training"]
 
     let workoutIdx = 0
     for (let d = 0; d < 7; d++) {

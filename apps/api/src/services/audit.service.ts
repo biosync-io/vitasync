@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto"
-import { auditLog, getDb } from "@biosync-io/db"
+import { auditLog } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import { desc, eq } from "drizzle-orm"
 
 // Genesis hash for the first entry in the chain
@@ -17,14 +18,17 @@ interface AuditEntry {
   userAgent?: string
 }
 
-function computeEntryHash(previousHash: string, entry: {
-  timestamp: string
-  actorType: string
-  actorId: string
-  action: string
-  resourceType?: string | null
-  resourceId?: string | null
-}): string {
+function computeEntryHash(
+  previousHash: string,
+  entry: {
+    timestamp: string
+    actorType: string
+    actorId: string
+    action: string
+    resourceType?: string | null
+    resourceId?: string | null
+  },
+): string {
   const data = [
     previousHash,
     entry.timestamp,
@@ -37,11 +41,7 @@ function computeEntryHash(previousHash: string, entry: {
   return createHash("sha256").update(data).digest("hex")
 }
 
-export class AuditService {
-  private get db() {
-    return getDb()
-  }
-
+export class AuditService extends BaseService {
   /** Append a new entry to the audit log hash chain. */
   async log(entry: AuditEntry): Promise<void> {
     // Get the last entry's hash (or genesis)
@@ -81,11 +81,11 @@ export class AuditService {
   }
 
   /** Verify the integrity of the hash chain between two IDs. */
-  async verifyChain(fromId?: number, toId?: number): Promise<{ valid: boolean; checkedCount: number; brokenAt?: number }> {
-    const rows = await this.db
-      .select()
-      .from(auditLog)
-      .orderBy(auditLog.id)
+  async verifyChain(
+    fromId?: number,
+    toId?: number,
+  ): Promise<{ valid: boolean; checkedCount: number; brokenAt?: number }> {
+    const rows = await this.db.select().from(auditLog).orderBy(auditLog.id)
 
     let checkedCount = 0
     let expectedPrevHash = GENESIS_HASH

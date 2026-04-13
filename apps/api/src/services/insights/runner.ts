@@ -75,10 +75,7 @@ export function createContext(
   workouts: WorkoutRecord[],
 ): AlgorithmContext {
   return {
-    vals: (type) =>
-      (byType.get(type) ?? [])
-        .filter((r) => r.value != null)
-        .map((r) => r.value!),
+    vals: (type) => (byType.get(type) ?? []).filter((r) => r.value != null).map((r) => r.value!),
     recs: (type) => byType.get(type) ?? [],
     sorted: (v) => [...v].sort((a, b) => a - b),
     dayStats: (type) =>
@@ -95,10 +92,7 @@ export function createContext(
 
 // ── Runner ──────────────────────────────────────────────────────
 
-export function runAlgorithm(
-  alg: InsightAlgorithm,
-  ctx: AlgorithmContext,
-): Insight | null {
+export function runAlgorithm(alg: InsightAlgorithm, ctx: AlgorithmContext): Insight | null {
   const runner = registry.get(alg.id)
   if (!runner) return null
   return runner(alg, ctx)

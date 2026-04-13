@@ -1,12 +1,9 @@
-import { getDb, personalRecords } from "@biosync-io/db"
+import { personalRecords } from "@biosync-io/db"
 import type { PersonalRecordInsert, PersonalRecordRow } from "@biosync-io/db"
 import { and, eq } from "drizzle-orm"
+import { BaseService } from "./base.service.js"
 
-export class PersonalRecordService {
-  private get db() {
-    return getDb()
-  }
-
+export class PersonalRecordService extends BaseService {
   async list(userId: string): Promise<PersonalRecordRow[]> {
     return this.db
       .select()

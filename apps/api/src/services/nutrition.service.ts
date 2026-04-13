@@ -1,18 +1,18 @@
-import { getDb, nutritionLogs } from "@biosync-io/db"
+import { nutritionLogs } from "@biosync-io/db"
 import type { NutritionLogInsert, NutritionLogRow } from "@biosync-io/db"
 import { and, avg, count, desc, eq, gte, lte, sql, sum } from "drizzle-orm"
+import { BaseService } from "./base.service.js"
 
-export class NutritionService {
-  private get db() {
-    return getDb()
-  }
-
+export class NutritionService extends BaseService {
   async create(data: Omit<NutritionLogInsert, "id" | "createdAt">): Promise<NutritionLogRow> {
     const [row] = await this.db.insert(nutritionLogs).values(data).returning()
     return row!
   }
 
-  async list(userId: string, opts: { from?: Date; to?: Date; mealType?: string; limit?: number } = {}): Promise<NutritionLogRow[]> {
+  async list(
+    userId: string,
+    opts: { from?: Date; to?: Date; mealType?: string; limit?: number } = {},
+  ): Promise<NutritionLogRow[]> {
     const conditions = [eq(nutritionLogs.userId, userId)]
     if (opts.from) conditions.push(gte(nutritionLogs.consumedAt, opts.from))
     if (opts.to) conditions.push(lte(nutritionLogs.consumedAt, opts.to))
@@ -35,7 +35,11 @@ export class NutritionService {
     return row ?? null
   }
 
-  async update(id: string, userId: string, data: Partial<NutritionLogInsert>): Promise<NutritionLogRow | null> {
+  async update(
+    id: string,
+    userId: string,
+    data: Partial<NutritionLogInsert>,
+  ): Promise<NutritionLogRow | null> {
     const [row] = await this.db
       .update(nutritionLogs)
       .set(data)
@@ -52,7 +56,10 @@ export class NutritionService {
     return result.length > 0
   }
 
-  async getDailySummary(userId: string, date: Date): Promise<{
+  async getDailySummary(
+    userId: string,
+    date: Date,
+  ): Promise<{
     meals: number
     totalCalories: number
     totalProtein: number
@@ -113,12 +120,7 @@ export class NutritionService {
         avgFat: avg(nutritionLogs.fatGrams),
       })
       .from(nutritionLogs)
-      .where(
-        and(
-          eq(nutritionLogs.userId, userId),
-          gte(nutritionLogs.consumedAt, weekAgo),
-        ),
-      )
+      .where(and(eq(nutritionLogs.userId, userId), gte(nutritionLogs.consumedAt, weekAgo)))
 
     return {
       avgCalories: Math.round(Number(row?.avgCalories ?? 0)),

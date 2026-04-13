@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto"
-import { getDb, mfaTotp } from "@biosync-io/db"
+import { mfaTotp } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import { AppError } from "@biosync-io/types"
 import { eq } from "drizzle-orm"
 import * as OTPAuth from "otpauth"
@@ -33,16 +34,16 @@ function decryptSecret(ciphertext: string): string {
   if (!hex || hex.length !== 64) throw AppError.internal("ENCRYPTION_KEY required")
   const key = Buffer.from(hex, "hex")
   const [ivHex, dataHex, tagHex] = parts as [string, string, string]
-  const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivHex, "hex"), { authTagLength: 16 })
+  const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivHex, "hex"), {
+    authTagLength: 16,
+  })
   decipher.setAuthTag(Buffer.from(tagHex, "hex"))
-  return Buffer.concat([decipher.update(Buffer.from(dataHex, "hex")), decipher.final()]).toString("utf8")
+  return Buffer.concat([decipher.update(Buffer.from(dataHex, "hex")), decipher.final()]).toString(
+    "utf8",
+  )
 }
 
-export class MfaService {
-  private get db() {
-    return getDb()
-  }
-
+export class MfaService extends BaseService {
   /**
    * Start TOTP enrollment — generate secret and return otpauth URI.
    * The enrollment is not active until `verifyEnrollment()` is called.
@@ -124,10 +125,7 @@ export class MfaService {
 
     if (!valid) return false
 
-    await this.db
-      .update(mfaTotp)
-      .set({ verified: true })
-      .where(eq(mfaTotp.userId, userId))
+    await this.db.update(mfaTotp).set({ verified: true }).where(eq(mfaTotp.userId, userId))
 
     return true
   }

@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto"
-import { getDb, users, userSessions } from "@biosync-io/db"
+import { users, userSessions } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import { AppError } from "@biosync-io/types"
 import * as argon2 from "argon2"
 import { and, eq } from "drizzle-orm"
@@ -25,11 +26,7 @@ const jwtSecret = new TextEncoder().encode(config.JWT_SECRET)
 
 // ── Service ─────────────────────────────────────────────────────
 
-export class AuthService {
-  private get db() {
-    return getDb()
-  }
-
+export class AuthService extends BaseService {
   // ── Register ────────────────────────────────────────────────
 
   async register(params: {
@@ -169,11 +166,7 @@ export class AuthService {
     }
 
     // Look up the user for the JWT payload
-    const [user] = await this.db
-      .select()
-      .from(users)
-      .where(eq(users.id, session.userId))
-      .limit(1)
+    const [user] = await this.db.select().from(users).where(eq(users.id, session.userId)).limit(1)
 
     if (!user) {
       await this.db.delete(userSessions).where(eq(userSessions.familyId, session.familyId))
@@ -229,11 +222,7 @@ export class AuthService {
   // ── Change Password ─────────────────────────────────────────
 
   async changePassword(userId: string, oldPassword: string, newPassword: string) {
-    const [user] = await this.db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1)
+    const [user] = await this.db.select().from(users).where(eq(users.id, userId)).limit(1)
 
     if (!user || !user.passwordHash) {
       throw AppError.validation("User not found or password not set.")
@@ -317,7 +306,9 @@ export class AuthService {
    * Generate a password reset token (1 hour expiry).
    * Returns null if user not found or no email.
    */
-  async generatePasswordResetToken(email: string): Promise<{ token: string; userId: string } | null> {
+  async generatePasswordResetToken(
+    email: string,
+  ): Promise<{ token: string; userId: string } | null> {
     const [user] = await this.db
       .select({ id: users.id, email: users.email })
       .from(users)
@@ -326,7 +317,11 @@ export class AuthService {
 
     if (!user || !user.email) return null
 
-    const token = await new jose.SignJWT({ sub: user.id, email: user.email, purpose: "password-reset" })
+    const token = await new jose.SignJWT({
+      sub: user.id,
+      email: user.email,
+      purpose: "password-reset",
+    })
       .setProtectedHeader({ alg: "HS256" })
       .setExpirationTime("1h")
       .setIssuedAt()
@@ -373,7 +368,9 @@ export class AuthService {
     if (!user) throw AppError.notFound("User")
 
     if (user.passwordHash) {
-      throw AppError.validation("User already has a password. Use the login or reset-password flow instead.")
+      throw AppError.validation(
+        "User already has a password. Use the login or reset-password flow instead.",
+      )
     }
 
     const passwordHash = await argon2.hash(newPassword)

@@ -1,8 +1,4 @@
-import {
-  aggregateSnapshots,
-  domainEvents,
-  type Db,
-} from "@biosync-io/db"
+import { aggregateSnapshots, domainEvents, type Db } from "@biosync-io/db"
 import { and, asc, desc, eq, gt, gte, lte, sql } from "drizzle-orm"
 
 // ── Errors ────────────────────────────────────────────────────────
@@ -54,10 +50,7 @@ export class EventStoreService {
    * aggregate must match — otherwise a `ConcurrencyError` is thrown
    * (optimistic concurrency control).
    */
-  async append(
-    events: AppendEventInput[],
-    expectedSequence?: number,
-  ): Promise<void> {
+  async append(events: AppendEventInput[], expectedSequence?: number): Promise<void> {
     if (events.length === 0) return
 
     // All events in a batch must target the same aggregate
@@ -99,10 +92,7 @@ export class EventStoreService {
 
       // Auto-snapshot: if any new sequence crosses a SNAPSHOT_INTERVAL boundary
       const lastSeq = nextSeq
-      if (
-        Math.floor(lastSeq / SNAPSHOT_INTERVAL) >
-          Math.floor(currentSeq / SNAPSHOT_INTERVAL)
-      ) {
+      if (Math.floor(lastSeq / SNAPSHOT_INTERVAL) > Math.floor(currentSeq / SNAPSHOT_INTERVAL)) {
         // Build aggregate state by replaying all events (cheap for first 100, still bounded)
         const allEvents = await tx
           .select()
@@ -269,7 +259,7 @@ export class EventStoreService {
     const currentSequence =
       events.length > 0
         ? Number(events[events.length - 1]!.sequenceNumber)
-        : snapshot?.sequenceNumber ?? 0
+        : (snapshot?.sequenceNumber ?? 0)
 
     return { events, snapshot, currentSequence }
   }

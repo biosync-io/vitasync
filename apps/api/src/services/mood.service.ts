@@ -1,6 +1,7 @@
-import { getDb, moodLogs } from "@biosync-io/db"
+import { moodLogs } from "@biosync-io/db"
 import type { MoodLogInsert, MoodLogRow } from "@biosync-io/db"
-import { and, avg, count, desc, eq, gte, lte, sql } from "drizzle-orm"
+import { and, desc, eq, gte, lte } from "drizzle-orm"
+import { BaseService } from "./base.service.js"
 
 /**
  * Mood Tracking Service — Feature #6 (Mental Health Monitoring)
@@ -8,17 +9,16 @@ import { and, avg, count, desc, eq, gte, lte, sql } from "drizzle-orm"
  * Manages mood logs and provides trend analysis. Supports correlation
  * with physical health metrics for holistic wellness tracking.
  */
-export class MoodService {
-  private get db() {
-    return getDb()
-  }
-
+export class MoodService extends BaseService {
   async create(data: Omit<MoodLogInsert, "id" | "createdAt">): Promise<MoodLogRow> {
     const [row] = await this.db.insert(moodLogs).values(data).returning()
     return row!
   }
 
-  async list(userId: string, opts: { from?: Date; to?: Date; mood?: string; limit?: number } = {}): Promise<MoodLogRow[]> {
+  async list(
+    userId: string,
+    opts: { from?: Date; to?: Date; mood?: string; limit?: number } = {},
+  ): Promise<MoodLogRow[]> {
     const conditions = [eq(moodLogs.userId, userId)]
     if (opts.from) conditions.push(gte(moodLogs.recordedAt, opts.from))
     if (opts.to) conditions.push(lte(moodLogs.recordedAt, opts.to))
@@ -49,7 +49,10 @@ export class MoodService {
     return result.length > 0
   }
 
-  async getStats(userId: string, opts: { from?: Date; to?: Date } = {}): Promise<{
+  async getStats(
+    userId: string,
+    opts: { from?: Date; to?: Date } = {},
+  ): Promise<{
     avgScore: number
     avgEnergy: number
     avgStress: number
@@ -63,7 +66,15 @@ export class MoodService {
 
     const rows = await this.list(userId, { from, to, limit: 1000 })
     if (rows.length === 0) {
-      return { avgScore: 0, avgEnergy: 0, avgStress: 0, totalEntries: 0, moodDistribution: {}, trend: "stable", topFactors: [] }
+      return {
+        avgScore: 0,
+        avgEnergy: 0,
+        avgStress: 0,
+        totalEntries: 0,
+        moodDistribution: {},
+        trend: "stable",
+        topFactors: [],
+      }
     }
 
     const scores = rows.map((r) => r.score)
@@ -71,8 +82,10 @@ export class MoodService {
     const stresses = rows.filter((r) => r.stressLevel != null).map((r) => r.stressLevel!)
 
     const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length
-    const avgEnergy = energies.length > 0 ? energies.reduce((a, b) => a + b, 0) / energies.length : 0
-    const avgStress = stresses.length > 0 ? stresses.reduce((a, b) => a + b, 0) / stresses.length : 0
+    const avgEnergy =
+      energies.length > 0 ? energies.reduce((a, b) => a + b, 0) / energies.length : 0
+    const avgStress =
+      stresses.length > 0 ? stresses.reduce((a, b) => a + b, 0) / stresses.length : 0
 
     // Mood distribution
     const moodDistribution: Record<string, number> = {}
@@ -85,7 +98,8 @@ export class MoodService {
     const firstHalf = scores.slice(0, half)
     const secondHalf = scores.slice(half)
     const avg1 = firstHalf.length > 0 ? firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length : 0
-    const avg2 = secondHalf.length > 0 ? secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length : 0
+    const avg2 =
+      secondHalf.length > 0 ? secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length : 0
     const trendPct = avg1 > 0 ? ((avg2 - avg1) / avg1) * 100 : 0
     const trend = trendPct > 5 ? "improving" : trendPct < -5 ? "declining" : "stable"
 

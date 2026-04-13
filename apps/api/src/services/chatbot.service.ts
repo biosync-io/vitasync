@@ -1,6 +1,7 @@
 import OpenAI from "openai"
 import Anthropic from "@anthropic-ai/sdk"
-import { getDb, aiProviders } from "@biosync-io/db"
+import { aiProviders } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import { AppError } from "@biosync-io/types"
 import { decrypt } from "../lib/crypto.js"
 import { eq } from "drizzle-orm"
@@ -38,11 +39,7 @@ export interface ChatMessage {
   content: string
 }
 
-export class ChatbotService {
-  private get db() {
-    return getDb()
-  }
-
+export class ChatbotService extends BaseService {
   async *streamChat(params: {
     providerId: string
     userId: string
@@ -77,10 +74,7 @@ export class ChatbotService {
 
     // 4. Build message history
     const history: ChatMessage[] = params.history ?? []
-    const messages: ChatMessage[] = [
-      ...history,
-      { role: "user" as const, content: params.message },
-    ]
+    const messages: ChatMessage[] = [...history, { role: "user" as const, content: params.message }]
 
     // 5. Stream based on provider type
     switch (provider.providerType) {
@@ -91,7 +85,12 @@ export class ChatbotService {
         yield* this.streamAnthropic(apiKey!, provider.model, systemPrompt, messages)
         break
       case "ollama":
-        yield* this.streamOllama(provider.baseUrl ?? "http://localhost:11434", provider.model, systemPrompt, messages)
+        yield* this.streamOllama(
+          provider.baseUrl ?? "http://localhost:11434",
+          provider.model,
+          systemPrompt,
+          messages,
+        )
         break
       default:
         throw AppError.unsupported(`Unsupported provider type: ${provider.providerType}`)
@@ -143,10 +142,7 @@ export class ChatbotService {
     })
 
     for await (const event of stream) {
-      if (
-        event.type === "content_block_delta" &&
-        event.delta.type === "text_delta"
-      ) {
+      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
         yield event.delta.text
       }
     }

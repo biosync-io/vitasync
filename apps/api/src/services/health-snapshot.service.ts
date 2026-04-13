@@ -1,13 +1,13 @@
-import { getDb, healthSnapshots, healthMetrics, events, healthScores } from "@biosync-io/db"
+import { healthSnapshots, healthMetrics, events, healthScores } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import type { HealthSnapshotRow } from "@biosync-io/db"
 import { and, avg, count, desc, eq, gte, lte, sql, sum } from "drizzle-orm"
 
-export class HealthSnapshotService {
-  private get db() {
-    return getDb()
-  }
-
-  async list(userId: string, opts: { periodType?: string; limit?: number } = {}): Promise<HealthSnapshotRow[]> {
+export class HealthSnapshotService extends BaseService {
+  async list(
+    userId: string,
+    opts: { periodType?: string; limit?: number } = {},
+  ): Promise<HealthSnapshotRow[]> {
     const conditions = [eq(healthSnapshots.userId, userId)]
     if (opts.periodType) conditions.push(eq(healthSnapshots.periodType, opts.periodType))
 
@@ -29,12 +29,14 @@ export class HealthSnapshotService {
   }
 
   async generateWeeklySnapshot(userId: string, weekStart?: Date): Promise<HealthSnapshotRow> {
-    const start = weekStart ?? (() => {
-      const d = new Date()
-      d.setDate(d.getDate() - 7)
-      d.setHours(0, 0, 0, 0)
-      return d
-    })()
+    const start =
+      weekStart ??
+      (() => {
+        const d = new Date()
+        d.setDate(d.getDate() - 7)
+        d.setHours(0, 0, 0, 0)
+        return d
+      })()
     const end = new Date(start)
     end.setDate(end.getDate() + 7)
     end.setHours(23, 59, 59, 999)
@@ -43,13 +45,15 @@ export class HealthSnapshotService {
   }
 
   async generateMonthlySnapshot(userId: string, monthStart?: Date): Promise<HealthSnapshotRow> {
-    const start = monthStart ?? (() => {
-      const d = new Date()
-      d.setMonth(d.getMonth() - 1)
-      d.setDate(1)
-      d.setHours(0, 0, 0, 0)
-      return d
-    })()
+    const start =
+      monthStart ??
+      (() => {
+        const d = new Date()
+        d.setMonth(d.getMonth() - 1)
+        d.setDate(1)
+        d.setHours(0, 0, 0, 0)
+        return d
+      })()
     const end = new Date(start)
     end.setMonth(end.getMonth() + 1)
     end.setDate(0) // last day of month
@@ -58,7 +62,12 @@ export class HealthSnapshotService {
     return this.generateSnapshot(userId, "monthly", start, end)
   }
 
-  private async generateSnapshot(userId: string, periodType: string, periodStart: Date, periodEnd: Date): Promise<HealthSnapshotRow> {
+  private async generateSnapshot(
+    userId: string,
+    periodType: string,
+    periodStart: Date,
+    periodEnd: Date,
+  ): Promise<HealthSnapshotRow> {
     // Aggregate health metrics
     const metricAggregates = await this.db
       .select({
@@ -131,9 +140,10 @@ export class HealthSnapshotService {
 
     const currentAvgScore = Number(scoreAvg?.avgScore ?? 0)
     const previousAvgScore = Number(prevScoreAvg?.avgScore ?? 0)
-    const periodComparison = previousAvgScore > 0
-      ? Math.round(((currentAvgScore - previousAvgScore) / previousAvgScore) * 100)
-      : null
+    const periodComparison =
+      previousAvgScore > 0
+        ? Math.round(((currentAvgScore - previousAvgScore) / previousAvgScore) * 100)
+        : null
 
     const [snapshot] = await this.db
       .insert(healthSnapshots)

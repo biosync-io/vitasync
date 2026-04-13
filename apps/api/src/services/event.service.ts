@@ -1,4 +1,5 @@
-import { events, getDb } from "@biosync-io/db"
+import { events } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import type { EventInsert, EventRow } from "@biosync-io/db"
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm"
 import { decodeCursor, encodeCursor } from "../lib/cursor.js"
@@ -14,11 +15,7 @@ export interface EventQuery {
   cursor?: string
 }
 
-export class EventService {
-  private get db() {
-    return getDb()
-  }
-
+export class EventService extends BaseService {
   async query(
     params: EventQuery,
   ): Promise<{ data: EventRow[]; nextCursor?: string; hasMore: boolean }> {

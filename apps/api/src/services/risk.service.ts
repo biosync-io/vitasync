@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto"
-import { getDb, userSessions } from "@biosync-io/db"
+import { userSessions } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import { and, eq, sql } from "drizzle-orm"
 
 /**
@@ -26,11 +27,7 @@ interface RiskResult {
   factors: string[]
 }
 
-export class RiskService {
-  private get db() {
-    return getDb()
-  }
-
+export class RiskService extends BaseService {
   /**
    * Compute a risk score (0–100) for a new session.
    */
@@ -65,12 +62,7 @@ export class RiskService {
     const [existingIp] = await this.db
       .select({ id: userSessions.id })
       .from(userSessions)
-      .where(
-        and(
-          eq(userSessions.userId, params.userId),
-          eq(userSessions.ipAddress, params.ip),
-        ),
-      )
+      .where(and(eq(userSessions.userId, params.userId), eq(userSessions.ipAddress, params.ip)))
       .limit(1)
 
     if (!existingIp) {

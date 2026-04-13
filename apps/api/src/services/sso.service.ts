@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto"
-import { getDb, identityProviders, userIdentities, users, userSessions } from "@biosync-io/db"
+import { identityProviders, userIdentities, users, userSessions } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import { AppError } from "@biosync-io/types"
 import { and, eq } from "drizzle-orm"
 import * as jose from "jose"
@@ -24,22 +25,13 @@ const jwtSecret = new TextEncoder().encode(config.JWT_SECRET)
 
 // ── Service ─────────────────────────────────────────────────────
 
-export class SsoService {
-  private get db() {
-    return getDb()
-  }
-
+export class SsoService extends BaseService {
   /** Find an enabled IdP by its URL slug */
   async findIdp(workspaceSlug: string) {
     const [idp] = await this.db
       .select()
       .from(identityProviders)
-      .where(
-        and(
-          eq(identityProviders.slug, workspaceSlug),
-          eq(identityProviders.enabled, true),
-        ),
-      )
+      .where(and(eq(identityProviders.slug, workspaceSlug), eq(identityProviders.enabled, true)))
       .limit(1)
     return idp ?? null
   }
@@ -65,10 +57,7 @@ export class SsoService {
       })
       .from(identityProviders)
       .where(
-        and(
-          eq(identityProviders.workspaceId, workspaceId),
-          eq(identityProviders.enabled, true),
-        ),
+        and(eq(identityProviders.workspaceId, workspaceId), eq(identityProviders.enabled, true)),
       )
   }
 
@@ -168,10 +157,7 @@ export class SsoService {
     if (!user) throw AppError.notFound("User")
 
     // Update last login
-    await this.db
-      .update(users)
-      .set({ lastLoginAt: new Date() })
-      .where(eq(users.id, userId))
+    await this.db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, userId))
 
     // Create session & tokens
     const rawRefresh = randomBytes(48).toString("hex")

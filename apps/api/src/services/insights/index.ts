@@ -1,4 +1,5 @@
-import { getDb, healthMetrics, events } from "@biosync-io/db"
+import { healthMetrics, events } from "@biosync-io/db"
+import { BaseService } from "../base.service.js"
 import { and, eq, gte, lte, asc } from "drizzle-orm"
 import type { Insight, MetricRecord, WorkoutRecord } from "./types.js"
 import { ALGORITHMS } from "./algorithms.js"
@@ -9,11 +10,7 @@ export type { Insight, InsightAlgorithm, InsightSeverity, InsightCategory } from
 
 // ── Service ─────────────────────────────────────────────────────
 
-export class InsightsService {
-  private get db() {
-    return getDb()
-  }
-
+export class InsightsService extends BaseService {
   /** Return available algorithm definitions. */
   listAlgorithms() {
     return ALGORITHMS

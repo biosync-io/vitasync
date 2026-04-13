@@ -1,10 +1,10 @@
 import {
-  getDb,
   inAppNotifications,
   notificationChannels,
   notificationLogs,
   notificationRules,
 } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import type {
   NotificationChannelInsert,
   NotificationChannelRow,
@@ -18,11 +18,7 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm"
 /**
  * Notification Service — CRUD for notification channels, rules, and logs.
  */
-export class NotificationService {
-  private get db() {
-    return getDb()
-  }
-
+export class NotificationService extends BaseService {
   // ── Channel CRUD ────────────────────────────────────────────────────
 
   async listChannels(userId: string): Promise<NotificationChannelRow[]> {
@@ -85,7 +81,9 @@ export class NotificationService {
   async updateRule(
     id: string,
     userId: string,
-    data: Partial<Pick<NotificationRuleInsert, "name" | "categories" | "minSeverity" | "channelIds" | "enabled">>,
+    data: Partial<
+      Pick<NotificationRuleInsert, "name" | "categories" | "minSeverity" | "channelIds" | "enabled">
+    >,
   ): Promise<NotificationRuleRow | null> {
     const [row] = await this.db
       .update(notificationRules)
@@ -149,18 +147,16 @@ export class NotificationService {
       .limit(opts.limit ?? 50)
   }
 
-  async logDelivery(
-    data: {
-      userId: string
-      channelId: string
-      channelType: string
-      title: string
-      payload: Record<string, unknown>
-      status: string
-      attempts: number
-      error?: string
-    },
-  ): Promise<void> {
+  async logDelivery(data: {
+    userId: string
+    channelId: string
+    channelType: string
+    title: string
+    payload: Record<string, unknown>
+    status: string
+    attempts: number
+    error?: string
+  }): Promise<void> {
     await this.db.insert(notificationLogs).values({
       ...data,
       deliveredAt: data.status === "delivered" ? new Date() : undefined,

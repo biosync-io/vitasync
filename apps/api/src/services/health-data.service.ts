@@ -1,4 +1,5 @@
-import { getDb, healthMetrics } from "@biosync-io/db"
+import { healthMetrics } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import type { HealthMetric, HealthMetricType, SyncDataPoint } from "@biosync-io/types"
 import { and, desc, eq, gte, lt, lte, sql } from "drizzle-orm"
 import { decodeCursor, encodeCursor } from "../lib/cursor.js"
@@ -43,11 +44,7 @@ export interface HealthDataSummary {
   latest: string
 }
 
-export class HealthDataService {
-  private get db() {
-    return getDb()
-  }
-
+export class HealthDataService extends BaseService {
   async query(
     params: HealthDataQuery,
   ): Promise<{ data: HealthMetric[]; nextCursor?: string; hasMore: boolean }> {

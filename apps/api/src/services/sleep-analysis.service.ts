@@ -1,5 +1,6 @@
-import { getDb, healthMetrics } from "@biosync-io/db"
+import { healthMetrics } from "@biosync-io/db"
 import { and, eq, gte, lte, sql, desc } from "drizzle-orm"
+import { BaseService } from "./base.service.js"
 
 /**
  * Sleep Analysis Service
@@ -10,12 +11,12 @@ import { and, eq, gte, lte, sql, desc } from "drizzle-orm"
  *
  * Gender-aware: adjusts ideal sleep duration recommendations.
  */
-export class SleepAnalysisService {
-  private get db() {
-    return getDb()
-  }
-
-  async getSleepDebt(userId: string, days = 14, gender?: string | null): Promise<{
+export class SleepAnalysisService extends BaseService {
+  async getSleepDebt(
+    userId: string,
+    days = 14,
+    gender?: string | null,
+  ): Promise<{
     idealSleepHours: number
     avgSleepHours: number
     totalDebtHours: number
@@ -62,17 +63,21 @@ export class SleepAnalysisService {
       debt: Math.round((idealSleepHours - hoursSlept) * 10) / 10,
     }))
 
-    const avgSleepHours = dailyDebt.length > 0
-      ? Math.round((dailyDebt.reduce((s, d) => s + d.hoursSlept, 0) / dailyDebt.length) * 10) / 10
-      : 0
+    const avgSleepHours =
+      dailyDebt.length > 0
+        ? Math.round((dailyDebt.reduce((s, d) => s + d.hoursSlept, 0) / dailyDebt.length) * 10) / 10
+        : 0
 
-    const totalDebtHours = Math.round(dailyDebt.reduce((s, d) => s + Math.max(0, d.debt), 0) * 10) / 10
+    const totalDebtHours =
+      Math.round(dailyDebt.reduce((s, d) => s + Math.max(0, d.debt), 0) * 10) / 10
 
     let recommendation = "Your sleep is well-balanced. Keep it up!"
     if (totalDebtHours > 10) {
-      recommendation = "Significant sleep debt detected. Prioritize sleep catch-up with earlier bedtimes over the next week."
+      recommendation =
+        "Significant sleep debt detected. Prioritize sleep catch-up with earlier bedtimes over the next week."
     } else if (totalDebtHours > 5) {
-      recommendation = "Moderate sleep debt. Try adding 30–60 minutes of sleep per night to recover."
+      recommendation =
+        "Moderate sleep debt. Try adding 30–60 minutes of sleep per night to recover."
     } else if (totalDebtHours > 2) {
       recommendation = "Minor sleep debt. An extra 15–30 minutes per night should help."
     }
@@ -80,7 +85,11 @@ export class SleepAnalysisService {
     return { idealSleepHours, avgSleepHours, totalDebtHours, dailyDebt, recommendation }
   }
 
-  async getSleepQualityReport(userId: string, days = 30, gender?: string | null): Promise<{
+  async getSleepQualityReport(
+    userId: string,
+    days = 30,
+    gender?: string | null,
+  ): Promise<{
     avgSleepScore: number
     avgDurationHours: number
     avgDeepSleepPct: number
@@ -101,12 +110,24 @@ export class SleepAnalysisService {
       this.db
         .select({ data: healthMetrics.data, recordedAt: healthMetrics.recordedAt })
         .from(healthMetrics)
-        .where(and(eq(healthMetrics.userId, userId), eq(healthMetrics.metricType, "sleep"), gte(healthMetrics.recordedAt, since)))
+        .where(
+          and(
+            eq(healthMetrics.userId, userId),
+            eq(healthMetrics.metricType, "sleep"),
+            gte(healthMetrics.recordedAt, since),
+          ),
+        )
         .orderBy(healthMetrics.recordedAt),
       this.db
         .select({ value: healthMetrics.value, recordedAt: healthMetrics.recordedAt })
         .from(healthMetrics)
-        .where(and(eq(healthMetrics.userId, userId), eq(healthMetrics.metricType, "sleep_score"), gte(healthMetrics.recordedAt, since)))
+        .where(
+          and(
+            eq(healthMetrics.userId, userId),
+            eq(healthMetrics.metricType, "sleep_score"),
+            gte(healthMetrics.recordedAt, since),
+          ),
+        )
         .orderBy(healthMetrics.recordedAt),
     ])
 
@@ -154,7 +175,8 @@ export class SleepAnalysisService {
       }
     }
 
-    const calcAvg = (arr: number[]) => arr.length > 0 ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10 : 0
+    const calcAvg = (arr: number[]) =>
+      arr.length > 0 ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10 : 0
 
     const scoreValues = sleepScores.filter((s) => s.value != null).map((s) => s.value!)
     const avgSleepScore = calcAvg(scoreValues)
@@ -169,7 +191,9 @@ export class SleepAnalysisService {
     let consistencyScore = 100
     if (durations.length > 2) {
       const mean = durations.reduce((a, b) => a + b, 0) / durations.length
-      const stddev = Math.sqrt(durations.reduce((s, v) => s + (v - mean) ** 2, 0) / durations.length)
+      const stddev = Math.sqrt(
+        durations.reduce((s, v) => s + (v - mean) ** 2, 0) / durations.length,
+      )
       consistencyScore = Math.max(0, Math.round(100 - stddev * 15))
     }
 
@@ -194,22 +218,34 @@ export class SleepAnalysisService {
 
     const recommendations: string[] = []
     if (avgSleepScore > 0 && avgSleepScore < 60) {
-      recommendations.push("Your sleep score is below average. Focus on sleep hygiene fundamentals.")
+      recommendations.push(
+        "Your sleep score is below average. Focus on sleep hygiene fundamentals.",
+      )
     }
     if (avgDeepSleepPct > 0 && avgDeepSleepPct < idealDeep - 5) {
-      recommendations.push(`Deep sleep is low (${avgDeepSleepPct.toFixed(0)}%). Avoid alcohol before bed and keep room temperature between 65–68°F (18–20°C).`)
+      recommendations.push(
+        `Deep sleep is low (${avgDeepSleepPct.toFixed(0)}%). Avoid alcohol before bed and keep room temperature between 65–68°F (18–20°C).`,
+      )
     }
     if (avgRemSleepPct > 0 && avgRemSleepPct < idealREM - 5) {
-      recommendations.push(`REM sleep is low (${avgRemSleepPct.toFixed(0)}%). Reduce caffeine after noon and maintain a consistent wake time.`)
+      recommendations.push(
+        `REM sleep is low (${avgRemSleepPct.toFixed(0)}%). Reduce caffeine after noon and maintain a consistent wake time.`,
+      )
     }
     if (avgEfficiency > 0 && avgEfficiency < 85) {
-      recommendations.push(`Sleep efficiency is ${avgEfficiency.toFixed(0)}%. Only go to bed when truly sleepy, and avoid screens 30 min before bed.`)
+      recommendations.push(
+        `Sleep efficiency is ${avgEfficiency.toFixed(0)}%. Only go to bed when truly sleepy, and avoid screens 30 min before bed.`,
+      )
     }
     if (consistencyScore < 50) {
-      recommendations.push("Sleep schedule is inconsistent. A regular bedtime/wake time is one of the most impactful changes you can make.")
+      recommendations.push(
+        "Sleep schedule is inconsistent. A regular bedtime/wake time is one of the most impactful changes you can make.",
+      )
     }
     if (Math.abs(weekdayVsWeekend.weekend - weekdayVsWeekend.weekday) > 1.5) {
-      recommendations.push(`Weekend sleep is ${(weekdayVsWeekend.weekend - weekdayVsWeekend.weekday).toFixed(1)}h different from weekdays — this 'social jet lag' disrupts circadian rhythm.`)
+      recommendations.push(
+        `Weekend sleep is ${(weekdayVsWeekend.weekend - weekdayVsWeekend.weekday).toFixed(1)}h different from weekdays — this 'social jet lag' disrupts circadian rhythm.`,
+      )
     }
     if (recommendations.length === 0) {
       recommendations.push("Your sleep patterns look healthy. Keep up the good habits!")

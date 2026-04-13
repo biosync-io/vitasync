@@ -1,13 +1,10 @@
-import { apiKeys, getDb, workspaces } from "@biosync-io/db"
+import { apiKeys, workspaces } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import type { ApiKey, ApiKeyScope } from "@biosync-io/types"
 import { and, eq } from "drizzle-orm"
 import { generateApiKey } from "../lib/api-key.js"
 
-export class ApiKeyService {
-  private get db() {
-    return getDb()
-  }
-
+export class ApiKeyService extends BaseService {
   /**
    * Creates a new API key. The raw key is returned ONCE and never stored.
    */

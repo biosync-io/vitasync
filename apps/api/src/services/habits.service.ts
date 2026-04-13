@@ -1,20 +1,19 @@
-import { getDb, habits, habitLogs } from "@biosync-io/db"
+import { habits, habitLogs } from "@biosync-io/db"
 import type { HabitInsert, HabitRow, HabitLogInsert, HabitLogRow } from "@biosync-io/db"
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm"
+import { BaseService } from "./base.service.js"
 
 /**
  * Habits Tracking Service
  *
  * Manages habit definitions, daily completions, and streak calculations.
  */
-export class HabitsService {
-  private get db() {
-    return getDb()
-  }
+export class HabitsService extends BaseService {
+  // ── Habit CRUD───────────────────────────────────────────────
 
-  // ── Habit CRUD ───────────────────────────────────────────────
-
-  async createHabit(data: Omit<HabitInsert, "id" | "createdAt" | "updatedAt" | "currentStreak" | "longestStreak">): Promise<HabitRow> {
+  async createHabit(
+    data: Omit<HabitInsert, "id" | "createdAt" | "updatedAt" | "currentStreak" | "longestStreak">,
+  ): Promise<HabitRow> {
     const [row] = await this.db.insert(habits).values(data).returning()
     return row!
   }
@@ -30,7 +29,13 @@ export class HabitsService {
       .orderBy(desc(habits.createdAt))
   }
 
-  async updateHabit(id: string, userId: string, data: Partial<Pick<HabitInsert, "name" | "icon" | "color" | "frequency" | "targetDays" | "active">>): Promise<HabitRow | null> {
+  async updateHabit(
+    id: string,
+    userId: string,
+    data: Partial<
+      Pick<HabitInsert, "name" | "icon" | "color" | "frequency" | "targetDays" | "active">
+    >,
+  ): Promise<HabitRow | null> {
     const [row] = await this.db
       .update(habits)
       .set({ ...data, updatedAt: new Date() })
@@ -76,7 +81,10 @@ export class HabitsService {
     return result.length > 0
   }
 
-  async getCompletions(userId: string, opts: { from?: string; to?: string; habitId?: string } = {}): Promise<HabitLogRow[]> {
+  async getCompletions(
+    userId: string,
+    opts: { from?: string; to?: string; habitId?: string } = {},
+  ): Promise<HabitLogRow[]> {
     const conditions = [eq(habitLogs.userId, userId)]
     if (opts.habitId) conditions.push(eq(habitLogs.habitId, opts.habitId))
     if (opts.from) conditions.push(gte(habitLogs.completedDate, opts.from))
@@ -100,7 +108,9 @@ export class HabitsService {
       .orderBy(desc(habitLogs.completedDate))
       .limit(365)
 
-    const dates: string[] = logs.map((l) => l.completedDate).filter((d, i, arr) => arr.indexOf(d) === i)
+    const dates: string[] = logs
+      .map((l) => l.completedDate)
+      .filter((d, i, arr) => arr.indexOf(d) === i)
 
     let currentStreak = 0
     const today = new Date().toISOString().slice(0, 10)
@@ -138,11 +148,21 @@ export class HabitsService {
 
   // ── Summary ──────────────────────────────────────────────────
 
-  async getDailySummary(userId: string, date?: string): Promise<{
+  async getDailySummary(
+    userId: string,
+    date?: string,
+  ): Promise<{
     totalHabits: number
     completedToday: number
     completionRate: number
-    habits: Array<{ id: string; name: string; icon: string; completed: boolean; currentStreak: number; longestStreak: number }>
+    habits: Array<{
+      id: string
+      name: string
+      icon: string
+      completed: boolean
+      currentStreak: number
+      longestStreak: number
+    }>
   }> {
     const d = date ?? new Date().toISOString().slice(0, 10)
     const allHabits = await this.listHabits(userId, { active: true })
@@ -162,7 +182,8 @@ export class HabitsService {
     return {
       totalHabits: allHabits.length,
       completedToday: completedIds.size,
-      completionRate: allHabits.length > 0 ? Math.round((completedIds.size / allHabits.length) * 100) : 0,
+      completionRate:
+        allHabits.length > 0 ? Math.round((completedIds.size / allHabits.length) * 100) : 0,
       habits: habitsList,
     }
   }

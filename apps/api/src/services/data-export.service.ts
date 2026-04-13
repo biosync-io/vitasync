@@ -1,13 +1,10 @@
-import { getDb, dataExports, healthMetrics, events } from "@biosync-io/db"
+import { dataExports, healthMetrics, events } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import type { DataExportInsert, DataExportRow } from "@biosync-io/db"
 import { AppError } from "@biosync-io/types"
 import { and, desc, eq, gte, lte, count } from "drizzle-orm"
 
-export class DataExportService {
-  private get db() {
-    return getDb()
-  }
-
+export class DataExportService extends BaseService {
   async list(userId: string, opts: { limit?: number } = {}): Promise<DataExportRow[]> {
     return this.db
       .select()
@@ -26,7 +23,11 @@ export class DataExportService {
     return row ?? null
   }
 
-  async requestExport(userId: string, format: string, opts: { from?: Date; to?: Date; metricTypes?: string[] } = {}): Promise<DataExportRow> {
+  async requestExport(
+    userId: string,
+    format: string,
+    opts: { from?: Date; to?: Date; metricTypes?: string[] } = {},
+  ): Promise<DataExportRow> {
     const [row] = await this.db
       .insert(dataExports)
       .values({
@@ -57,7 +58,8 @@ export class DataExportService {
 
     try {
       const conditions = [eq(healthMetrics.userId, exportRow.userId)]
-      if (exportRow.periodStart) conditions.push(gte(healthMetrics.recordedAt, exportRow.periodStart))
+      if (exportRow.periodStart)
+        conditions.push(gte(healthMetrics.recordedAt, exportRow.periodStart))
       if (exportRow.periodEnd) conditions.push(lte(healthMetrics.recordedAt, exportRow.periodEnd))
 
       const metrics = await this.db

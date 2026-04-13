@@ -39,11 +39,7 @@ export class HealthDataEventSourcedService {
    * 2. Append domain event to event store.
    * 3. Publish to EventBus for downstream consumers.
    */
-  async recordMetric(
-    userId: string,
-    workspaceId: string,
-    data: HealthMetricInput,
-  ) {
+  async recordMetric(userId: string, workspaceId: string, data: HealthMetricInput) {
     // 1. Write to health_metrics table (existing behaviour)
     const count = await this.healthService.bulkInsert([
       {

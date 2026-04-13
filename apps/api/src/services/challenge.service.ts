@@ -1,6 +1,7 @@
-import { getDb, challenges, challengeParticipants, healthMetrics, users } from "@biosync-io/db"
+import { challenges, challengeParticipants, healthMetrics, users } from "@biosync-io/db"
 import type { ChallengeInsert, ChallengeRow, ChallengeParticipantRow } from "@biosync-io/db"
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm"
+import { BaseService } from "./base.service.js"
 
 /**
  * Challenges Service — Feature #5 (Social Challenges & Leaderboards)
@@ -8,21 +9,27 @@ import { and, desc, eq, gte, lte, sql } from "drizzle-orm"
  * Users create/join fitness challenges within their workspace.
  * Leaderboards are dynamically computed from health metric aggregation.
  */
-export class ChallengeService {
-  private get db() {
-    return getDb()
-  }
-
-  async create(data: Omit<ChallengeInsert, "id" | "createdAt" | "updatedAt">): Promise<ChallengeRow> {
+export class ChallengeService extends BaseService {
+  async create(
+    data: Omit<ChallengeInsert, "id" | "createdAt" | "updatedAt">,
+  ): Promise<ChallengeRow> {
     const [row] = await this.db.insert(challenges).values(data).returning()
     return row!
   }
 
-  async list(workspaceId: string, opts: { status?: string; limit?: number } = {}): Promise<ChallengeRow[]> {
+  async list(
+    workspaceId: string,
+    opts: { status?: string; limit?: number } = {},
+  ): Promise<ChallengeRow[]> {
     const conditions = [eq(challenges.workspaceId, workspaceId)]
     if (opts.status) conditions.push(eq(challenges.status, opts.status))
 
-    return this.db.select().from(challenges).where(and(...conditions)).orderBy(desc(challenges.createdAt)).limit(opts.limit ?? 50)
+    return this.db
+      .select()
+      .from(challenges)
+      .where(and(...conditions))
+      .orderBy(desc(challenges.createdAt))
+      .limit(opts.limit ?? 50)
   }
 
   async findById(id: string): Promise<ChallengeRow | null> {
@@ -41,12 +48,19 @@ export class ChallengeService {
   async leave(challengeId: string, userId: string): Promise<boolean> {
     const result = await this.db
       .delete(challengeParticipants)
-      .where(and(eq(challengeParticipants.challengeId, challengeId), eq(challengeParticipants.userId, userId)))
+      .where(
+        and(
+          eq(challengeParticipants.challengeId, challengeId),
+          eq(challengeParticipants.userId, userId),
+        ),
+      )
       .returning({ id: challengeParticipants.id })
     return result.length > 0
   }
 
-  async leaderboard(challengeId: string): Promise<Array<{ userId: string; displayName?: string; score: number; rank: number }>> {
+  async leaderboard(
+    challengeId: string,
+  ): Promise<Array<{ userId: string; displayName?: string; score: number; rank: number }>> {
     const participants = await this.db
       .select({
         userId: challengeParticipants.userId,

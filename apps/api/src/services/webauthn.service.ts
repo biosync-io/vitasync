@@ -1,4 +1,5 @@
-import { getDb, webauthnCredentials, users } from "@biosync-io/db"
+import { webauthnCredentials, users } from "@biosync-io/db"
+import { BaseService } from "./base.service.js"
 import { and, eq } from "drizzle-orm"
 import {
   generateRegistrationOptions,
@@ -8,10 +9,7 @@ import {
   type VerifiedRegistrationResponse,
   type VerifiedAuthenticationResponse,
 } from "@simplewebauthn/server"
-import type {
-  AuthenticatorTransportFuture,
-  CredentialDeviceType,
-} from "@simplewebauthn/types"
+import type { AuthenticatorTransportFuture, CredentialDeviceType } from "@simplewebauthn/types"
 import { config } from "../config.js"
 
 // In-memory challenge store (use Redis in production cluster)
@@ -32,11 +30,7 @@ function getChallenge(key: string): string | null {
   return entry.challenge
 }
 
-export class WebauthnService {
-  private get db() {
-    return getDb()
-  }
-
+export class WebauthnService extends BaseService {
   private get rpName() {
     return config.WEBAUTHN_RP_NAME
   }
@@ -123,8 +117,7 @@ export class WebauthnService {
       return { verified: false }
     }
 
-    const { credential, credentialDeviceType, credentialBackedUp } =
-      verification.registrationInfo
+    const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo
 
     const [created] = await this.db
       .insert(webauthnCredentials)
@@ -267,12 +260,7 @@ export class WebauthnService {
   async deleteCredential(credentialId: string, userId: string): Promise<boolean> {
     const result = await this.db
       .delete(webauthnCredentials)
-      .where(
-        and(
-          eq(webauthnCredentials.id, credentialId),
-          eq(webauthnCredentials.userId, userId),
-        ),
-      )
+      .where(and(eq(webauthnCredentials.id, credentialId), eq(webauthnCredentials.userId, userId)))
       .returning({ id: webauthnCredentials.id })
 
     return result.length > 0
