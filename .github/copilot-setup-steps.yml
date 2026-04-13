@@ -1,0 +1,34 @@
+# Copilot Cloud Agent — Environment Setup
+# This file configures the environment for the Copilot coding agent
+# when it works on issues/PRs in this repository.
+
+steps:
+  # Install Node.js
+  - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: "22"
+
+  # Install pnpm
+  - name: Setup pnpm
+    uses: pnpm/action-setup@v4
+
+  # Install all dependencies
+  - name: Install dependencies
+    run: pnpm install --frozen-lockfile
+
+  # Build shared packages (needed by apps)
+  - name: Build packages
+    run: pnpm run build --filter='./packages/*'
+
+  # Print guidelines reminder
+  - name: Print guidelines reminder
+    run: |
+      echo "========================================="
+      echo "ENGINEERING GUIDELINES ARE ENFORCED"
+      echo "Read: .github/copilot-instructions.md"
+      echo "Full: ENGINEERING_GUIDELINES.md"
+      echo "Lint: pnpm exec biome ci ."
+      echo "Test: pnpm test"
+      echo "Type: pnpm typecheck"
+      echo "========================================="

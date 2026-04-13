@@ -1,0 +1,37 @@
+# GitHub Repository Settings
+# Applied by the Settings probot app (https://github.com/apps/settings)
+# or use as reference to configure manually via GitHub UI.
+
+repository:
+  name: vitasync
+  description: "🏥 Unified wearable health data aggregation platform — Fitbit, Strava, Whoop, Garmin, and more. Built with TypeScript, Fastify, Next.js, and Helm."
+  homepage: https://biosync-io.github.io/vitasync/
+  topics:
+    - health-data
+    - wearables
+    - fitbit
+    - strava
+    - whoop
+    - garmin
+    - self-hosted
+    - typescript
+    - fastify
+    - nextjs
+    - drizzle-orm
+    - bullmq
+    - kubernetes
+    - helm
+    - postgresql
+    - redis
+    - monorepo
+    - turborepo
+  private: false
+  has_issues: true
+  has_projects: false
+  has_wiki: false
+  has_downloads: true
+  default_branch: main
+  allow_squash_merge: true
+  allow_merge_commit: true
+  allow_rebase_merge: true
+  delete_branch_on_merge: true

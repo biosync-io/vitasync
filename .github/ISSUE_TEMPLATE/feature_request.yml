@@ -1,0 +1,44 @@
+name: Feature Request
+description: Suggest a new feature for VitaSync
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the feature you'd like.
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Why is this feature important? What problem does it solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like this feature to work?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or features you've considered.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - API (Fastify backend)
+        - Web (Next.js frontend)
+        - Worker (BullMQ processor)
+        - MCP Server
+        - New Provider Integration
+        - Database / Migrations
+        - Helm Chart
+        - Docker / Docker Compose
+        - Documentation
+        - Other

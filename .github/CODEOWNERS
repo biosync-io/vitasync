@@ -1,0 +1,43 @@
+# API
+/apps/api/ @biosync-io/backend
+/packages/db/ @biosync-io/backend
+/packages/cqrs/ @biosync-io/backend
+/packages/saga/ @biosync-io/backend
+
+# Worker
+/apps/worker/ @biosync-io/backend
+
+# Frontend
+/apps/web/ @biosync-io/frontend
+
+# Providers
+/packages/providers/ @biosync-io/integrations
+
+# MCP
+/apps/mcp/ @biosync-io/integrations
+
+# Shared Packages
+/packages/types/ @biosync-io/maintainers
+/packages/event-bus/ @biosync-io/backend
+/packages/analytics/ @biosync-io/backend
+/packages/notifications/ @biosync-io/backend
+/packages/circuit-breaker/ @biosync-io/backend
+
+# Infrastructure
+/helm/ @biosync-io/devops
+/monitoring/ @biosync-io/devops
+/docker-compose*.yml @biosync-io/devops
+/Dockerfile* @biosync-io/devops
+
+# CI/CD
+/.github/ @biosync-io/maintainers
+
+# Documentation
+/apps/docs/ @biosync-io/docs
+
+# Root Config
+package.json @biosync-io/maintainers
+pnpm-lock.yaml @biosync-io/maintainers
+turbo.json @biosync-io/maintainers
+biome.json @biosync-io/maintainers
+tsconfig.base.json @biosync-io/maintainers
