@@ -9,11 +9,17 @@ import type {
 } from "@biosync-io/cqrs"
 import { getDb } from "@biosync-io/db"
 import { registerHealthCommandHandlers } from "./commands/health.handlers.js"
+import { registerSyncCommandHandlers } from "./commands/sync.handlers.js"
+import { registerUserCommandHandlers } from "./commands/user.handlers.js"
 import { registerHealthQueryHandlers } from "./queries/health.handlers.js"
+import { registerSyncQueryHandlers } from "./queries/sync.handlers.js"
+import { registerUserQueryHandlers } from "./queries/user.handlers.js"
 import { HealthDataEventSourcedService } from "../services/health-data-es.service.js"
 import { HealthDataService } from "../services/health-data.service.js"
 import { EventStoreService } from "../services/event-store.service.js"
 import { ProjectionService } from "../services/projection.service.js"
+import { UserService } from "../services/user.service.js"
+import { getSyncQueue } from "../queues/sync.js"
 
 // ── Fastify type augmentation ───────────────────────────────────
 
@@ -86,6 +92,15 @@ export function setupCQRS(app: FastifyInstance): void {
   // ── Register handlers ──────────────────────────────────────────
   registerHealthCommandHandlers(commandBus, healthEsService)
   registerHealthQueryHandlers(queryBus, db)
+
+  // Sync domain
+  registerSyncCommandHandlers(commandBus, { getSyncQueue })
+  registerSyncQueryHandlers(queryBus, db)
+
+  // User domain
+  const userService = new UserService()
+  registerUserCommandHandlers(commandBus, { userService })
+  registerUserQueryHandlers(queryBus, db)
 
   // ── Projection service ─────────────────────────────────────────
   const projectionService = new ProjectionService(db, app.eventBus, { logger })

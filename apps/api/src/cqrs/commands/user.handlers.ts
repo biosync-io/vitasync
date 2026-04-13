@@ -5,18 +5,18 @@ import { UserCommands } from "./user.commands.js"
 /**
  * Register command handlers for the user domain.
  *
- * These handlers wrap user service operations with command/event semantics.
+ * These handlers wrap UserService operations with CQRS semantics.
  */
 export function registerUserCommandHandlers(
   bus: CommandBus,
   deps: {
     userService: {
       update: (
+        id: string,
         workspaceId: string,
-        userId: string,
-        data: Record<string, unknown>,
-      ) => Promise<unknown>
-      deleteUserData: (workspaceId: string, userId: string) => Promise<void>
+        patch: Record<string, unknown>,
+      ) => Promise<unknown | null>
+      delete: (id: string, workspaceId: string) => Promise<boolean>
     }
   },
 ): void {
@@ -24,7 +24,7 @@ export function registerUserCommandHandlers(
     const { userId, ...profileData } = cmd.payload as { userId: string } & Record<string, unknown>
     const { workspaceId } = cmd.metadata
 
-    const user = await deps.userService.update(workspaceId, userId, profileData)
+    const user = await deps.userService.update(userId, workspaceId, profileData)
     if (!user) throw AppError.notFound("User", userId)
 
     return user
@@ -37,14 +37,16 @@ export function registerUserCommandHandlers(
     }
     const { workspaceId } = cmd.metadata
 
-    return deps.userService.update(workspaceId, userId, { metadata: preferences })
+    return deps.userService.update(userId, workspaceId, { metadata: preferences })
   })
 
   bus.register(UserCommands.DELETE_USER_DATA, async (cmd) => {
     const { userId } = cmd.payload as { userId: string }
     const { workspaceId } = cmd.metadata
 
-    await deps.userService.deleteUserData(workspaceId, userId)
+    const deleted = await deps.userService.delete(userId, workspaceId)
+    if (!deleted) throw AppError.notFound("User", userId)
+
     return { userId, status: "deleted" }
   })
 }
