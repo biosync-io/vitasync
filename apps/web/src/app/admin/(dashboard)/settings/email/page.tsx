@@ -19,15 +19,40 @@ import { Mail, Server, Eye, EyeOff, Send, Plug, Save, Lock } from "lucide-react"
 
 // ── SMTP Settings API ───────────────────────────────────────────────────────
 
-interface SmtpConfig {
-  host: string
-  port: number
-  secure: boolean
-  username: string
-  password: string
-  fromName: string
-  fromEmail: string
-  configured: boolean
+interface ValidationIssue {
+  path: (string | number)[]
+  message: string
+}
+
+class SmtpApiError extends Error {
+  fieldErrors: Record<string, string>
+  constructor(message: string, fieldErrors: Record<string, string> = {}) {
+    super(message)
+    this.name = "SmtpApiError"
+    this.fieldErrors = fieldErrors
+  }
+}
+
+async function handleSmtpResponse(r: Response, fallbackMessage: string): Promise<Record<string, unknown>> {
+  if (r.ok) return r.json()
+  let body: Record<string, unknown> | undefined
+  try {
+    body = await r.json()
+  } catch {
+    // non-JSON response
+  }
+  const fieldErrors: Record<string, string> = {}
+  if (body?.code === "VALIDATION_ERROR" && body.details) {
+    const issues = (body.details as { issues?: ValidationIssue[] }).issues ?? []
+    for (const issue of issues) {
+      const field = issue.path?.[0]
+      if (field) fieldErrors[String(field)] = issue.message
+    }
+  }
+  const message = Object.keys(fieldErrors).length > 0
+    ? `Validation failed: ${Object.values(fieldErrors).join(", ")}`
+    : (body?.message as string) ?? fallbackMessage
+  throw new SmtpApiError(message, fieldErrors)
 }
 
 const smtpApi = {
@@ -42,10 +67,7 @@ const smtpApi = {
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
-    }).then((r) => {
-      if (!r.ok) throw new Error("Failed to save SMTP settings")
-      return r.json()
-    }),
+    }).then((r) => handleSmtpResponse(r, "Failed to save SMTP settings")),
   test: (data: Record<string, unknown>): Promise<{ success: boolean; error?: string }> =>
     fetch("/api/v1/admin/settings/smtp/test", {
       method: "POST",
@@ -81,6 +103,7 @@ export default function EmailSettingsPage() {
   const [testResult, setTestResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null)
   const [sendResult, setSendResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null)
   const [saveResult, setSaveResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const { data: config, isLoading } = useQuery({
     queryKey: ["smtp-settings"],
@@ -118,9 +141,15 @@ export default function EmailSettingsPage() {
       setSaveResult({ success: true, message: "SMTP settings saved successfully" })
       setTestResult(null)
       setSendResult(null)
+      setFieldErrors({})
       queryClient.invalidateQueries({ queryKey: ["smtp-settings"] })
     },
     onError: (err: Error) => {
+      if (err instanceof SmtpApiError && Object.keys(err.fieldErrors).length > 0) {
+        setFieldErrors(err.fieldErrors)
+      } else {
+        setFieldErrors({})
+      }
       setSaveResult({ success: false, message: err.message })
     },
   })
@@ -203,8 +232,9 @@ export default function EmailSettingsPage() {
               label="SMTP Host"
               placeholder="smtp.gmail.com"
               value={host}
-              onChange={(e) => setHost(e.target.value)}
+              onChange={(e) => { setHost(e.target.value); setFieldErrors((p) => ({ ...p, host: "" })) }}
               icon={Server}
+              {...(fieldErrors.host ? { error: fieldErrors.host } : {})}
             />
             <Input
               label="SMTP Port"
@@ -272,17 +302,19 @@ export default function EmailSettingsPage() {
               label="From Name"
               placeholder="VitaSync"
               value={fromName}
-              onChange={(e) => setFromName(e.target.value)}
+              onChange={(e) => { setFromName(e.target.value); setFieldErrors((p) => ({ ...p, fromName: "" })) }}
               hint="Display name for outgoing emails"
+              {...(fieldErrors.fromName ? { error: fieldErrors.fromName } : {})}
             />
             <Input
               label="From Email"
               placeholder="noreply@vitasync.io"
               type="email"
               value={fromEmail}
-              onChange={(e) => setFromEmail(e.target.value)}
+              onChange={(e) => { setFromEmail(e.target.value); setFieldErrors((p) => ({ ...p, fromEmail: "" })) }}
               icon={Mail}
               hint="Sender email address"
+              {...(fieldErrors.fromEmail ? { error: fieldErrors.fromEmail } : {})}
             />
           </div>
         </CardContent>

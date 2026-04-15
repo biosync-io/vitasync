@@ -143,6 +143,57 @@ export async function buildServer() {
   const { setupCQRS } = await import("./cqrs/index.js")
   setupCQRS(app)
 
+  // ── Error handlers ──────────────────────────────────────────
+  // Must be set BEFORE route registration so child contexts inherit them.
+  app.setErrorHandler<FastifyError>(async (error, _req, reply) => {
+    // ── AppError (thrown from services) ───────────────────────
+    if (error instanceof AppError) {
+      if (error.statusCode >= 500) {
+        app.log.error({ err: error }, error.message)
+      } else {
+        app.log.warn({ err: error }, error.message)
+      }
+      return reply.status(error.statusCode).send(error.toJSON())
+    }
+
+    // ── ZodError (input validation) ──────────────────────────
+    // Use name check as fallback — instanceof can fail with duplicate Zod copies in pnpm
+    if (error instanceof ZodError || (error.name === "ZodError" && "issues" in error)) {
+      const issues = "issues" in error && Array.isArray(error.issues) ? error.issues : []
+      app.log.warn({ err: error }, "Validation error")
+      return reply.status(400).send({
+        code: "VALIDATION_ERROR",
+        message: "Validation error",
+        details: { issues },
+      })
+    }
+
+    // ── FastifyError / generic errors ────────────────────────
+    if (error.statusCode && error.statusCode < 500) {
+      app.log.warn({ err: error }, "Client error")
+    } else {
+      app.log.error({ err: error }, "Server error")
+    }
+
+    // Don't leak internal error details in production
+    const message =
+      config.NODE_ENV === "production" && (!error.statusCode || error.statusCode >= 500)
+        ? "Internal server error"
+        : error.message
+
+    return reply.status(error.statusCode ?? 500).send({
+      code: error.code ?? "INTERNAL_ERROR",
+      message,
+      ...(config.NODE_ENV !== "production" && error.statusCode && error.statusCode >= 500
+        ? { stack: error.stack }
+        : {}),
+    })
+  })
+
+  app.setNotFoundHandler(async (_req, reply) => {
+    return reply.status(404).send({ code: "NOT_FOUND", message: "Route not found" })
+  })
+
   await app.register(registerV1Routes)
 
   // ── API request logging → PostgreSQL ────────────────────────
@@ -207,54 +258,6 @@ export async function buildServer() {
       timestamp: new Date().toISOString(),
     }),
   )
-
-  // ── Global error handler ─────────────────────────────────────
-  app.setErrorHandler<FastifyError>(async (error, _req, reply) => {
-    // ── AppError (thrown from services) ───────────────────────
-    if (error instanceof AppError) {
-      if (error.statusCode >= 500) {
-        app.log.error({ err: error }, error.message)
-      } else {
-        app.log.warn({ err: error }, error.message)
-      }
-      return reply.status(error.statusCode).send(error.toJSON())
-    }
-
-    // ── ZodError (input validation) ──────────────────────────
-    if (error instanceof ZodError) {
-      app.log.warn({ err: error }, "Validation error")
-      return reply.status(400).send({
-        code: "VALIDATION_ERROR",
-        message: "Validation error",
-        details: { issues: error.issues },
-      })
-    }
-
-    // ── FastifyError / generic errors ────────────────────────
-    if (error.statusCode && error.statusCode < 500) {
-      app.log.warn({ err: error }, "Client error")
-    } else {
-      app.log.error({ err: error }, "Server error")
-    }
-
-    // Don't leak internal error details in production
-    const message =
-      config.NODE_ENV === "production" && (!error.statusCode || error.statusCode >= 500)
-        ? "Internal server error"
-        : error.message
-
-    return reply.status(error.statusCode ?? 500).send({
-      code: error.code ?? "INTERNAL_ERROR",
-      message,
-      ...(config.NODE_ENV !== "production" && error.statusCode && error.statusCode >= 500
-        ? { stack: error.stack }
-        : {}),
-    })
-  })
-
-  app.setNotFoundHandler(async (_req, reply) => {
-    return reply.status(404).send({ code: "NOT_FOUND", message: "Route not found" })
-  })
 
   return app
 }
