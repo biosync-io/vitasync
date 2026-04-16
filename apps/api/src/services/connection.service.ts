@@ -1,11 +1,14 @@
-import { providerConnections, users } from "@biosync-io/db"
-import { BaseService } from "./base.service.js"
+import {
+  type ProviderConnection as DbProviderConnection,
+  providerConnections,
+} from "@biosync-io/db"
 import { providerRegistry } from "@biosync-io/provider-core"
 import type { ProviderConnection, ProviderTokens } from "@biosync-io/types"
 import { AppError } from "@biosync-io/types"
 import { and, eq } from "drizzle-orm"
 import { config } from "../config.js"
 import { decrypt, encrypt } from "../lib/crypto.js"
+import { BaseService } from "./base.service.js"
 
 export class ConnectionService extends BaseService {
   private get encryptionKey() {
@@ -115,6 +118,57 @@ export class ConnectionService extends BaseService {
     const result = await this.db
       .update(providerConnections)
       .set({ status: "disconnected", updatedAt: new Date() })
+      .where(eq(providerConnections.id, connectionId))
+      .returning({ id: providerConnections.id })
+
+    return result.length > 0
+  }
+
+  /**
+   * Retrieve a connection by its ID, including encrypted tokens.
+   * Used for operations that need to decrypt and use the tokens (e.g., revocation).
+   */
+  async getById(connectionId: string): Promise<DbProviderConnection | null> {
+    const [row] = await this.db
+      .select()
+      .from(providerConnections)
+      .where(eq(providerConnections.id, connectionId))
+      .limit(1)
+
+    return row ?? null
+  }
+
+  /**
+   * Disconnect a connection with best-effort token revocation.
+   * Attempts to revoke tokens at the provider before updating status.
+   */
+  async disconnectWithRevocation(
+    connectionId: string,
+    _workspaceId: string,
+    log?: { warn: (obj: Record<string, unknown>, msg: string) => void },
+  ): Promise<boolean> {
+    const connection = await this.getById(connectionId)
+    if (!connection) return false
+
+    // Best-effort token revocation at the provider
+    if (connection.encryptedTokens && providerRegistry.isRegistered(connection.providerId)) {
+      try {
+        const provider = providerRegistry.resolve(connection.providerId)
+        if ("revokeTokens" in provider && typeof provider.revokeTokens === "function") {
+          const tokens = JSON.parse(decrypt(connection.encryptedTokens, this.encryptionKey))
+          await provider.revokeTokens(tokens)
+        }
+      } catch (err) {
+        log?.warn(
+          { err, connectionId, providerId: connection.providerId },
+          "Token revocation failed (best-effort)",
+        )
+      }
+    }
+
+    const result = await this.db
+      .update(providerConnections)
+      .set({ status: "disconnected", encryptedTokens: null, updatedAt: new Date() })
       .where(eq(providerConnections.id, connectionId))
       .returning({ id: providerConnections.id })
 

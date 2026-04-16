@@ -1,11 +1,40 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { ConnectionService } from "../services/connection.service.js"
-import { TEST_USER_ID, TEST_WORKSPACE_ID, buildTestApp } from "./helpers.js"
+import { buildTestApp, TEST_USER_ID, TEST_WORKSPACE_ID } from "./helpers.js"
+
+// Mock DB so route registration doesn't fail (identity-providers calls getDb() eagerly)
+vi.mock("@biosync-io/db", () => {
+  const stub = new Proxy({}, { get: (_t, p) => (typeof p === "string" ? `col.${p}` : undefined) })
+  return {
+    getDb: () =>
+      new Proxy(
+        {},
+        {
+          get: () => () =>
+            new Proxy(
+              {},
+              {
+                get:
+                  () =>
+                  (..._a: unknown[]) =>
+                    new Proxy({}, { get: () => () => [] }),
+              },
+            ),
+        },
+      ),
+    providerConnections: stub,
+    users: stub,
+    identityProviders: stub,
+    userIdentities: stub,
+    apiKeys: stub,
+  }
+})
 
 vi.mock("../services/connection.service.js", () => {
   const ConnectionService = vi.fn()
   ConnectionService.prototype.list = vi.fn()
   ConnectionService.prototype.disconnect = vi.fn()
+  ConnectionService.prototype.disconnectWithRevocation = vi.fn()
   return { ConnectionService }
 })
 
@@ -58,8 +87,8 @@ describe("Connections routes", () => {
   })
 
   describe("DELETE /v1/users/:userId/connections/:connectionId", () => {
-    it("disconnects and returns 204", async () => {
-      vi.mocked(ConnectionService.prototype.disconnect).mockResolvedValue(true)
+    it("disconnects with revocation and returns 204", async () => {
+      vi.mocked(ConnectionService.prototype.disconnectWithRevocation).mockResolvedValue(true)
 
       const res = await app.inject({
         method: "DELETE",
@@ -67,10 +96,15 @@ describe("Connections routes", () => {
       })
 
       expect(res.statusCode).toBe(204)
+      expect(ConnectionService.prototype.disconnectWithRevocation).toHaveBeenCalledWith(
+        TEST_CONNECTION_ID,
+        expect.any(String),
+        expect.any(Object),
+      )
     })
 
     it("returns 404 when connection not found", async () => {
-      vi.mocked(ConnectionService.prototype.disconnect).mockResolvedValue(false)
+      vi.mocked(ConnectionService.prototype.disconnectWithRevocation).mockResolvedValue(false)
 
       const res = await app.inject({
         method: "DELETE",

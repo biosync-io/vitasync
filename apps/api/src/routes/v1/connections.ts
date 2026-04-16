@@ -1,4 +1,3 @@
-import { providerRegistry } from "@biosync-io/provider-core"
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { requireScope, requireSelf } from "../../plugins/auth.js"
@@ -22,7 +21,11 @@ const connectionsRoutes: FastifyPluginAsync = async (app) => {
       const { connectionId } = z
         .object({ userId: z.string().uuid(), connectionId: z.string().uuid() })
         .parse(request.params)
-      const ok = await connectionService.disconnect(connectionId, request.workspaceId)
+      const ok = await connectionService.disconnectWithRevocation(
+        connectionId,
+        request.workspaceId,
+        request.log,
+      )
       if (!ok) return reply.status(404).send({ code: "NOT_FOUND", message: "Connection not found" })
       return reply.status(204).send()
     },

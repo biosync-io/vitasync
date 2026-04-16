@@ -2,22 +2,10 @@ import { providerRegistry } from "@biosync-io/provider-core"
 import type { FastifyPluginAsync } from "fastify"
 import { z } from "zod"
 import { config } from "../../config.js"
+import { generateState, verifyState } from "../../lib/oauth-state.js"
 import { ConnectionService } from "../../services/connection.service.js"
 
 const connectionService = new ConnectionService()
-
-// Simple in-memory store for OAuth state params (use Redis in production cluster)
-const stateStore = new Map<string, { userId: string; workspaceId: string; codeVerifier?: string }>()
-
-function cleanExpiredState() {
-  // States older than 10 minutes are removed — called lazily
-  const TEN_MIN = 10 * 60 * 1000
-  const now = Date.now()
-  for (const [key, _] of stateStore) {
-    const timestamp = Number(key.split("_")[0])
-    if (!Number.isNaN(timestamp) && now - timestamp > TEN_MIN) stateStore.delete(key)
-  }
-}
 
 const oauthRoutes: FastifyPluginAsync = async (app) => {
   /**
@@ -36,24 +24,25 @@ const oauthRoutes: FastifyPluginAsync = async (app) => {
         .send({ code: "NOT_FOUND", message: `Provider '${providerId}' is not available` })
     }
 
-    cleanExpiredState()
-
-    const state = `${Date.now()}_${Math.random().toString(36).slice(2)}`
     const redirectUri = `${config.OAUTH_REDIRECT_BASE_URL}/v1/oauth/${providerId}/callback`
 
     const { url, codeVerifier } = await connectionService.getAuthorizationUrl(
       providerId,
       redirectUri,
-      state,
+      "placeholder", // state is replaced below
     )
 
-    stateStore.set(state, {
-      userId,
-      workspaceId: request.workspaceId,
-      ...(codeVerifier !== undefined && { codeVerifier }),
-    })
+    // Generate HMAC-signed state containing { userId, workspaceId, providerId }
+    const state = generateState(
+      { userId, workspaceId: request.workspaceId, providerId },
+      codeVerifier !== undefined ? { codeVerifier } : undefined,
+    )
 
-    return reply.redirect(url, 302)
+    // Replace placeholder state with the signed state in the redirect URL
+    const authUrl = new URL(url)
+    authUrl.searchParams.set("state", state)
+
+    return reply.redirect(authUrl.toString(), 302)
   })
 
   /**
@@ -71,42 +60,38 @@ const oauthRoutes: FastifyPluginAsync = async (app) => {
       })
       .parse(request.query)
 
+    // Provider reported an error (e.g., user denied access)
     if (error) {
       app.log.warn({ providerId, error, error_description }, "OAuth authorization error")
-      return reply
-        .status(200)
-        .type("text/html")
-        .send(oauthResultPage({ success: false, providerId, error: error_description ?? error }))
+      return reply.status(400).send({ code: "OAUTH_ERROR", message: error_description ?? error })
     }
 
     if (!code || !state) {
       return reply
-        .status(200)
-        .type("text/html")
-        .send(oauthResultPage({ success: false, providerId, error: "Missing code or state parameter" }))
+        .status(400)
+        .send({ code: "OAUTH_INVALID_PARAMS", message: "Missing code or state parameter" })
     }
 
-    const stored = stateStore.get(state)
-    if (!stored) {
-      return reply
-        .status(200)
-        .type("text/html")
-        .send(oauthResultPage({ success: false, providerId, error: "Invalid or expired state. Please try again." }))
+    // Verify HMAC signature, expiry, and one-time use
+    const statePayload = verifyState(state)
+    if (!statePayload || statePayload.providerId !== providerId) {
+      return reply.status(400).send({
+        code: "OAUTH_STATE_MISMATCH",
+        message: "Invalid or expired OAuth state. Please try again.",
+      })
     }
-
-    stateStore.delete(state)
 
     const redirectUri = `${config.OAUTH_REDIRECT_BASE_URL}/v1/oauth/${providerId}/callback`
 
     let connection: { id: string }
     try {
       connection = await connectionService.completeOAuth2({
-        userId: stored.userId,
-        workspaceId: stored.workspaceId,
+        userId: statePayload.userId,
+        workspaceId: statePayload.workspaceId,
         providerId,
         code,
         redirectUri,
-        ...(stored.codeVerifier !== undefined && { codeVerifier: stored.codeVerifier }),
+        ...(statePayload.codeVerifier !== undefined && { codeVerifier: statePayload.codeVerifier }),
       })
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err)
@@ -117,20 +102,23 @@ const oauthRoutes: FastifyPluginAsync = async (app) => {
         .send(oauthResultPage({ success: false, providerId, error: errMsg }))
     }
 
-    return reply
-      .type("text/html")
-      .send(
-        oauthResultPage({
-          success: true,
-          providerId,
-          connectionId: connection.id,
-        }),
-      )
+    return reply.type("text/html").send(
+      oauthResultPage({
+        success: true,
+        providerId,
+        connectionId: connection.id,
+      }),
+    )
   })
 }
 
 /** Returns a small HTML page that notifies the opener window and auto-closes. */
-function oauthResultPage(result: { success: boolean; providerId: string; connectionId?: string; error?: string }): string {
+function oauthResultPage(result: {
+  success: boolean
+  providerId: string
+  connectionId?: string
+  error?: string
+}): string {
   const payload = JSON.stringify(result)
   return `<!DOCTYPE html>
 <html lang="en">
