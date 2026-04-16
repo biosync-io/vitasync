@@ -1,98 +1,35 @@
-import { OAuth2Provider, defaultSyncWindow, providerRegistry } from "@biosync-io/provider-core"
+import { createHash, randomBytes } from "node:crypto"
+import { defaultSyncWindow, OAuth2Provider, providerRegistry } from "@biosync-io/provider-core"
 import type { OAuthTokens, ProviderDefinition, SyncDataPoint, SyncOptions } from "@biosync-io/types"
 import { HealthMetricType, MetricUnit } from "@biosync-io/types"
-import { z } from "zod"
+import { RateLimitBudget } from "./rate-limiter.js"
+import {
+  FitbitActivitySummarySchema,
+  FitbitBodyWeightResponseSchema,
+  FitbitBreathingRateResponseSchema,
+  FitbitHeartRateResponseSchema,
+  FitbitHrvResponseSchema,
+  FitbitSleepResponseSchema,
+  FitbitSpO2ResponseSchema,
+  FitbitTokenResponseSchema,
+} from "./schemas.js"
 
-// ── Fitbit API response schemas ───────────────────────────────
+// ── PKCE helpers ──────────────────────────────────────────────
 
-const FitbitTokenResponse = z.object({
-  access_token: z.string(),
-  refresh_token: z.string(),
-  token_type: z.string(),
-  expires_in: z.number(),
-  user_id: z.string(),
-  scope: z.string(),
-})
+export function generateCodeVerifier(): string {
+  return randomBytes(32).toString("base64url") // 43 chars
+}
 
-const FitbitActivitySummary = z.object({
-  summary: z.object({
-    steps: z.number().optional(),
-    caloriesOut: z.number().optional(),
-    distances: z
-      .array(
-        z.object({
-          activity: z.string(),
-          distance: z.number(),
-        }),
-      )
-      .optional(),
-    floors: z.number().optional(),
-    activeScore: z.number().optional(),
-    fairlyActiveMinutes: z.number().optional(),
-    veryActiveMinutes: z.number().optional(),
-    lightlyActiveMinutes: z.number().optional(),
-    sedentaryMinutes: z.number().optional(),
-  }),
-})
-
-const FitbitHeartRateResponse = z.object({
-  "activities-heart": z.array(
-    z.object({
-      dateTime: z.string(),
-      value: z.object({
-        restingHeartRate: z.number().optional(),
-        heartRateZones: z
-          .array(
-            z.object({
-              name: z.string(),
-              minutes: z.number(),
-              caloriesOut: z.number(),
-              min: z.number(),
-              max: z.number(),
-            }),
-          )
-          .optional(),
-      }),
-    }),
-  ),
-})
-
-const FitbitSleepResponse = z.object({
-  sleep: z.array(
-    z.object({
-      logId: z.number(),
-      startTime: z.string(),
-      endTime: z.string(),
-      duration: z.number(),
-      efficiency: z.number(),
-      levels: z
-        .object({
-          summary: z
-            .object({
-              light: z.object({ minutes: z.number() }).optional(),
-              deep: z.object({ minutes: z.number() }).optional(),
-              rem: z.object({ minutes: z.number() }).optional(),
-              wake: z.object({ minutes: z.number() }).optional(),
-            })
-            .optional(),
-        })
-        .optional(),
-    }),
-  ),
-  summary: z
-    .object({
-      totalMinutesAsleep: z.number().optional(),
-      totalSleepRecords: z.number().optional(),
-    })
-    .optional(),
-})
+export function generateCodeChallenge(verifier: string): string {
+  return createHash("sha256").update(verifier).digest("base64url")
+}
 
 // ── Provider definition ───────────────────────────────────────
 
 const FITBIT_DEFINITION: ProviderDefinition = {
   id: "fitbit",
   name: "Fitbit",
-  description: "Sync activity, heart rate, sleep, and body metrics from Fitbit devices.",
+  description: "Sync activity, sleep, heart rate, HRV, SpO2, and body data from Fitbit devices.",
   logoUrl: "https://vitasync.dev/provider-logos/fitbit.svg",
   docsUrl: "https://dev.fitbit.com/build/reference/web-api/",
   capabilities: {
@@ -104,14 +41,19 @@ const FITBIT_DEFINITION: ProviderDefinition = {
       HealthMetricType.ACTIVE_MINUTES,
       HealthMetricType.HEART_RATE,
       HealthMetricType.RESTING_HEART_RATE,
+      HealthMetricType.HEART_RATE_VARIABILITY,
       HealthMetricType.SLEEP,
       HealthMetricType.SLEEP_SCORE,
+      HealthMetricType.SPO2,
+      HealthMetricType.RESPIRATORY_RATE,
       HealthMetricType.WEIGHT,
+      HealthMetricType.BODY_FAT,
+      HealthMetricType.BMI,
     ],
     supportsWebhooks: true,
     oauth2: true,
     oauth1: false,
-    minSyncIntervalSeconds: 300,
+    minSyncIntervalSeconds: 300, // 5 minutes
   },
 }
 
@@ -123,13 +65,15 @@ export class FitbitProvider extends OAuth2Provider {
   private static readonly BASE_URL = "https://api.fitbit.com"
   private static readonly AUTH_URL = "https://www.fitbit.com/oauth2/authorize"
   private static readonly TOKEN_URL = "https://api.fitbit.com/oauth2/token"
+  private static readonly REVOKE_URL = "https://api.fitbit.com/oauth2/revoke"
   private static readonly SCOPES = [
     "activity",
     "heartrate",
     "sleep",
     "weight",
-    "nutrition",
     "profile",
+    "oxygen_saturation",
+    "respiratory_rate",
   ]
 
   getAuthorizationUrl(state: string): URL {
@@ -166,7 +110,7 @@ export class FitbitProvider extends OAuth2Provider {
       throw new Error(`Fitbit token exchange failed: ${response.status} ${err}`)
     }
 
-    const raw = FitbitTokenResponse.parse(await response.json())
+    const raw = FitbitTokenResponseSchema.parse(await response.json())
     return {
       accessToken: raw.access_token,
       refreshToken: raw.refresh_token,
@@ -200,7 +144,7 @@ export class FitbitProvider extends OAuth2Provider {
       throw new Error(`Fitbit token refresh failed: ${response.status} ${err}`)
     }
 
-    const raw = FitbitTokenResponse.parse(await response.json())
+    const raw = FitbitTokenResponseSchema.parse(await response.json())
     return {
       accessToken: raw.access_token,
       refreshToken: raw.refresh_token,
@@ -210,29 +154,90 @@ export class FitbitProvider extends OAuth2Provider {
     }
   }
 
-  async *syncData(tokens: OAuthTokens, options?: SyncOptions): AsyncGenerator<SyncDataPoint> {
-    const { startDate, endDate } = defaultSyncWindow(options)
+  async revokeTokens(tokens: OAuthTokens): Promise<void> {
+    const credentials = Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString(
+      "base64",
+    )
 
-    // Fitbit's daily summary endpoints take "YYYY-MM-DD" date ranges
-    const start = startDate.toISOString().substring(0, 10)
-    const end = endDate.toISOString().substring(0, 10)
-
-    yield* this.#syncActivitySummary(tokens, start, end)
-    yield* this.#syncHeartRate(tokens, start, end)
-    yield* this.#syncSleep(tokens, start, end)
+    await fetch(FitbitProvider.REVOKE_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({ token: tokens.accessToken }),
+    })
   }
 
-  async *#syncActivitySummary(
+  async *syncData(tokens: OAuthTokens, options?: SyncOptions): AsyncGenerator<SyncDataPoint> {
+    const { startDate, endDate } = defaultSyncWindow(options)
+    const requested = options?.dataTypes
+    const budget = new RateLimitBudget()
+
+    const start = formatDate(startDate)
+    const end = formatDate(endDate)
+
+    // Activity + heart rate + sleep use date-range endpoints
+    if (
+      includesAny(requested, [
+        HealthMetricType.STEPS,
+        HealthMetricType.CALORIES,
+        HealthMetricType.DISTANCE,
+        HealthMetricType.FLOORS,
+        HealthMetricType.ACTIVE_MINUTES,
+      ])
+    ) {
+      yield* this.syncActivity(tokens, start, budget)
+    }
+
+    if (
+      includesAny(requested, [HealthMetricType.HEART_RATE, HealthMetricType.RESTING_HEART_RATE])
+    ) {
+      yield* this.syncHeartRate(tokens, start, end, budget)
+    }
+
+    if (includesAny(requested, [HealthMetricType.SLEEP, HealthMetricType.SLEEP_SCORE])) {
+      yield* this.syncSleep(tokens, start, end, budget)
+    }
+
+    if (includesAny(requested, [HealthMetricType.SPO2])) {
+      yield* this.syncSpO2(tokens, start, budget)
+    }
+
+    if (includesAny(requested, [HealthMetricType.HEART_RATE_VARIABILITY])) {
+      yield* this.syncHrv(tokens, start, budget)
+    }
+
+    if (includesAny(requested, [HealthMetricType.RESPIRATORY_RATE])) {
+      yield* this.syncBreathingRate(tokens, start, budget)
+    }
+
+    if (
+      includesAny(requested, [
+        HealthMetricType.WEIGHT,
+        HealthMetricType.BODY_FAT,
+        HealthMetricType.BMI,
+      ])
+    ) {
+      yield* this.syncBodyWeight(tokens, start, end, budget)
+    }
+  }
+
+  // ── Data Fetchers ────────────────────────────────────────────
+
+  private async *syncActivity(
     tokens: OAuthTokens,
-    start: string,
-    end: string,
+    date: string,
+    budget: RateLimitBudget,
   ): AsyncGenerator<SyncDataPoint> {
-    const res = await this.#get(tokens, `/1/user/-/activities/date/${start}.json`)
-    const parsed = FitbitActivitySummary.safeParse(res)
+    const res = await this.apiGet(tokens, `/1/user/-/activities/date/${date}.json`, budget)
+    if (!res) return
+
+    const parsed = FitbitActivitySummarySchema.safeParse(res)
     if (!parsed.success) return
 
     const { summary } = parsed.data
-    const recordedAt = new Date(`${start}T00:00:00Z`)
+    const recordedAt = new Date(`${date}T00:00:00Z`)
 
     if (summary.steps != null) {
       yield {
@@ -260,7 +265,6 @@ export class FitbitProvider extends OAuth2Provider {
         providerId: "fitbit",
         metricType: HealthMetricType.DISTANCE,
         recordedAt,
-        // Fitbit returns km
         value: totalDistance * 1000,
         unit: MetricUnit.METERS,
       }
@@ -288,13 +292,20 @@ export class FitbitProvider extends OAuth2Provider {
     }
   }
 
-  async *#syncHeartRate(
+  private async *syncHeartRate(
     tokens: OAuthTokens,
     start: string,
     end: string,
+    budget: RateLimitBudget,
   ): AsyncGenerator<SyncDataPoint> {
-    const res = await this.#get(tokens, `/1/user/-/activities/heart/date/${start}/${end}.json`)
-    const parsed = FitbitHeartRateResponse.safeParse(res)
+    const res = await this.apiGet(
+      tokens,
+      `/1/user/-/activities/heart/date/${start}/${end}.json`,
+      budget,
+    )
+    if (!res) return
+
+    const parsed = FitbitHeartRateResponseSchema.safeParse(res)
     if (!parsed.success) return
 
     for (const entry of parsed.data["activities-heart"]) {
@@ -312,13 +323,16 @@ export class FitbitProvider extends OAuth2Provider {
     }
   }
 
-  async *#syncSleep(
+  private async *syncSleep(
     tokens: OAuthTokens,
     start: string,
     end: string,
+    budget: RateLimitBudget,
   ): AsyncGenerator<SyncDataPoint> {
-    const res = await this.#get(tokens, `/1.2/user/-/sleep/date/${start}/${end}.json`)
-    const parsed = FitbitSleepResponse.safeParse(res)
+    const res = await this.apiGet(tokens, `/1.2/user/-/sleep/date/${start}/${end}.json`, budget)
+    if (!res) return
+
+    const parsed = FitbitSleepResponseSchema.safeParse(res)
     if (!parsed.success) return
 
     for (const session of parsed.data.sleep) {
@@ -347,10 +361,137 @@ export class FitbitProvider extends OAuth2Provider {
     }
   }
 
-  async #get(tokens: OAuthTokens, path: string): Promise<unknown> {
+  private async *syncSpO2(
+    tokens: OAuthTokens,
+    date: string,
+    budget: RateLimitBudget,
+  ): AsyncGenerator<SyncDataPoint> {
+    const res = await this.apiGet(tokens, `/1/user/-/spo2/date/${date}.json`, budget)
+    if (!res) return
+
+    const parsed = FitbitSpO2ResponseSchema.safeParse(res)
+    if (!parsed.success) return
+
+    const recordedAt = new Date(`${parsed.data.dateTime}T00:00:00Z`)
+    yield {
+      providerId: "fitbit",
+      metricType: HealthMetricType.SPO2,
+      recordedAt,
+      value: parsed.data.value.avg,
+      unit: MetricUnit.PERCENT,
+      data: { min: parsed.data.value.min, max: parsed.data.value.max },
+    }
+  }
+
+  private async *syncHrv(
+    tokens: OAuthTokens,
+    date: string,
+    budget: RateLimitBudget,
+  ): AsyncGenerator<SyncDataPoint> {
+    const res = await this.apiGet(tokens, `/1/user/-/hrv/date/${date}.json`, budget)
+    if (!res) return
+
+    const parsed = FitbitHrvResponseSchema.safeParse(res)
+    if (!parsed.success) return
+
+    for (const entry of parsed.data.hrv) {
+      const recordedAt = new Date(`${entry.dateTime}T00:00:00Z`)
+      yield {
+        providerId: "fitbit",
+        metricType: HealthMetricType.HEART_RATE_VARIABILITY,
+        recordedAt,
+        value: entry.value.dailyRmssd,
+        unit: MetricUnit.MILLISECONDS,
+        data: { deepRmssd: entry.value.deepRmssd },
+      }
+    }
+  }
+
+  private async *syncBreathingRate(
+    tokens: OAuthTokens,
+    date: string,
+    budget: RateLimitBudget,
+  ): AsyncGenerator<SyncDataPoint> {
+    const res = await this.apiGet(tokens, `/1/user/-/br/date/${date}.json`, budget)
+    if (!res) return
+
+    const parsed = FitbitBreathingRateResponseSchema.safeParse(res)
+    if (!parsed.success) return
+
+    for (const entry of parsed.data.br) {
+      const recordedAt = new Date(`${entry.dateTime}T00:00:00Z`)
+      yield {
+        providerId: "fitbit",
+        metricType: HealthMetricType.RESPIRATORY_RATE,
+        recordedAt,
+        value: entry.value.breathingRate,
+        unit: MetricUnit.BREATHS_PER_MINUTE,
+      }
+    }
+  }
+
+  private async *syncBodyWeight(
+    tokens: OAuthTokens,
+    start: string,
+    end: string,
+    budget: RateLimitBudget,
+  ): AsyncGenerator<SyncDataPoint> {
+    const res = await this.apiGet(
+      tokens,
+      `/1/user/-/body/log/weight/date/${start}/${end}.json`,
+      budget,
+    )
+    if (!res) return
+
+    const parsed = FitbitBodyWeightResponseSchema.safeParse(res)
+    if (!parsed.success) return
+
+    for (const entry of parsed.data.weight) {
+      const recordedAt = new Date(`${entry.date}T${entry.time}`)
+
+      yield {
+        providerId: "fitbit",
+        metricType: HealthMetricType.WEIGHT,
+        recordedAt,
+        value: entry.weight,
+        unit: MetricUnit.KILOGRAMS,
+      }
+
+      if (entry.fat != null) {
+        yield {
+          providerId: "fitbit",
+          metricType: HealthMetricType.BODY_FAT,
+          recordedAt,
+          value: entry.fat,
+          unit: MetricUnit.PERCENT,
+        }
+      }
+
+      if (entry.bmi != null) {
+        yield {
+          providerId: "fitbit",
+          metricType: HealthMetricType.BMI,
+          recordedAt,
+          value: entry.bmi,
+        }
+      }
+    }
+  }
+
+  // ── API helper ──────────────────────────────────────────────
+
+  private async apiGet(
+    tokens: OAuthTokens,
+    path: string,
+    budget: RateLimitBudget,
+  ): Promise<unknown | null> {
+    await budget.waitIfNeeded()
+
     const response = await fetch(`${FitbitProvider.BASE_URL}${path}`, {
       headers: { Authorization: `Bearer ${tokens.accessToken}` },
     })
+
+    budget.update(response.headers)
 
     if (response.status === 401) {
       throw new Error("FITBIT_TOKEN_EXPIRED")
@@ -364,21 +505,25 @@ export class FitbitProvider extends OAuth2Provider {
   }
 }
 
+// ── Helpers ───────────────────────────────────────────────────
+
+function formatDate(date: Date): string {
+  return date.toISOString().substring(0, 10)
+}
+
+function includesAny(requested: readonly string[] | undefined, types: readonly string[]): boolean {
+  if (!requested) return true
+  return types.some((t) => requested.includes(t))
+}
+
 // ── Auto-registration ─────────────────────────────────────────
 
-/**
- * Call this function once at application startup to register the Fitbit provider.
- * The provider will only be registered if the required env vars are present.
- */
 export function registerFitbitProvider() {
   const clientId = process.env.FITBIT_CLIENT_ID
   const clientSecret = process.env.FITBIT_CLIENT_SECRET
   const redirectBase = process.env.OAUTH_REDIRECT_BASE_URL
 
-  if (!clientId || !clientSecret) {
-    console.warn("[FitbitProvider] Skipping registration: FITBIT_CLIENT_ID/SECRET not set.")
-    return
-  }
+  if (!clientId || !clientSecret) return // graceful skip
 
   providerRegistry.register(FITBIT_DEFINITION, () => {
     return new FitbitProvider({
