@@ -1,6 +1,6 @@
 # ─── Stage 1: Dependencies ───────────────────────────────────────────────────
 # Build date: 2026-03-17
-FROM node:22-alpine AS deps
+FROM node:26-alpine AS deps
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -13,7 +13,7 @@ COPY packages/types/package.json ./packages/types/
 RUN pnpm install --frozen-lockfile
 
 # ─── Stage 2: Builder ────────────────────────────────────────────────────────
-FROM node:22-alpine AS builder
+FROM node:26-alpine AS builder
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -36,7 +36,7 @@ ENV NODE_ENV=production
 RUN pnpm --filter @biosync-io/web build
 
 # ─── Stage 3: Runtime ────────────────────────────────────────────────────────
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 
 RUN addgroup -S vitasync && adduser -S vitasync -G vitasync
 
