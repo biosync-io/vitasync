@@ -1,6 +1,6 @@
 # ─── Stage 1: Builder ────────────────────────────────────────────────────────
 # Build date: 2026-03-17
-FROM node:22-alpine AS builder
+FROM node:26-alpine AS builder
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -68,7 +68,7 @@ RUN pnpm --filter @biosync-io/notification-webhook build
 RUN pnpm --filter @biosync-io/worker build
 
 # ─── Stage 2: Runtime ────────────────────────────────────────────────────────
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
